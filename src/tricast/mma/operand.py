@@ -74,9 +74,21 @@ class Operand:
             self.__dict__["_k_major"] = cached
         return cached[1]
 
+    def all_finite(self) -> bool:
+        """Whether values, scale and alpha hold no Inf or NaN; cached while they are unchanged
+        (a weight operand is checked once, not on every forward)."""
+        tensors = [t for t in (self.values, self.scale, self.alpha) if t is not None]
+        state = tuple(tensor_state(t) for t in tensors)
+        cached = self.__dict__.get("_all_finite")
+        if cached is None or cached[0] != state:
+            cached = (state, all(bool(torch.isfinite(t).all()) for t in tensors))
+            self.__dict__["_all_finite"] = cached
+        return cached[1]
+
     def __getstate__(self) -> dict:
         state = dict(self.__dict__)
         state.pop("_k_major", None)  # derived from values; rebuilt on first use
+        state.pop("_all_finite", None)
         return state
 
     def scale_per_element(self) -> torch.Tensor | None:

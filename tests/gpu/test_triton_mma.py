@@ -209,6 +209,29 @@ def test_shapes(backends, shape):
     _compare(backends, a, b, MMASpec(f_bits=13, chunk_size=32, out_format=FP32))
 
 
+@pytest.mark.parametrize("recipe,expected", [
+    ("hopper_fp8_w8a8", (True, "int32", False)),     # CoFDA F=13, tensor scales in the epilogue
+    ("blackwell_fp8_w8a8", (True, "int64", False)),  # F=25 needs the wide sum
+    ("mxfp8_w_a", (True, "int64", True)),            # E8M0 product scales fold into exponents
+    ("nvfp4_w_a", (True, "int32", False)),           # GDFS group sums at G=6
+    ("int8_row_w8a8", (True, "int32", False)),        # int8 x int8 over K=64 fits int32
+    ("fp64_reference", (False, "int64", False)),
+])
+def test_fast_path_is_selected_for_bundled_recipes(backends, recipe, expected):
+    from tricast.mma.api import as_operand
+    from tricast.quant.api import quantize
+    from tricast.recipe import load_recipe
+    from tricast.reference.mma import resolve_scale_apply
+
+    _, kernels = backends
+    spec = load_recipe(recipe).defaults
+    x = torch.randn(4, 64, generator=torch.Generator().manual_seed(42))
+    ops = [as_operand(quantize(x, q, backend="reference")) if q is not None else as_operand(x)
+           for q in (spec.activation, spec.weight)]
+    fast, acc, _, pow2 = kernels._fast_path(*ops, spec.mma, resolve_scale_apply(spec.mma, *ops))
+    assert (fast, {tl.int32: "int32", tl.int64: "int64"}[acc], pow2) == expected
+
+
 @pytest.mark.parametrize("algorithm", ["cofda", "gdfs", "fp32_fma", "fp64", "int_exact"])
 def test_tile_invariance_and_no_reference_fallback(backends, monkeypatch, algorithm):
     reference, kernel = backends

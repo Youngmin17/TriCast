@@ -22,6 +22,7 @@ from .ieee import add_rn, f64_to_f32_rn, fma_rn, mul_rn
 from .mma_core import (
     aligned,
     c_operand,
+    decode_f32,
     finish,
     merge,
     pack_f32,
@@ -125,18 +126,197 @@ def _group(A, B, SA, SB, rm, rn, start, M, N, K,
     return tn, te, tm, tz & valid, tnan & valid, ti & valid
 
 
+# Fast path (finite operands, narrow products): exponents of zero values carry _ZERO_E, so a
+# product with a zero operand never wins a chunk maximum and needs no mask; any Inf/NaN in the
+# chunk's rows, columns or running value sends that chunk to the exact general path instead.
+_ZERO_E = tl.constexpr(-(1 << 20))
+_NO_TERM = tl.constexpr(-(1 << 22))
+_REAL_TERM = tl.constexpr(-(1 << 19))
+
+
+@triton.jit
+def _fast_side(P, S, rows, k, end, size, K, FMT: tl.constexpr, DESC: tl.constexpr, POW2: tl.constexpr):
+    """One K column of one operand: sign, exponent, int32 significand, and an Inf/NaN flag.
+    POW2 folds a power-of-two product scale into the exponent (NADPE E8M0 path)."""
+    v = tl.load(P + k * size + rows, (rows < size) & (k < K) & (k < end), other=0).to(tl.float32)
+    bits = v.to(tl.uint32, bitcast=True)
+    special = (bits & 0x7F800000) == 0x7F800000
+    zero = (bits & 0x7FFFFFFF) == 0
+    if FMT[2] or FMT[1] < -126:
+        neg, e, m = decode_f32(v, FMT[0], FMT[1], FMT[2], FMT[3])
+        m = m.to(tl.int32)
+    else:
+        # decode_f32 in int32 for float formats whose grid lies in fp32's range (fp8/fp6/fp4,
+        # bf16, fp16, fp32): a format subnormal is an fp32 normal (or, for bf16, an fp32
+        # subnormal), so the significand only ever shifts right.
+        raw_e = ((bits >> 23) & 255).to(tl.int32)
+        e32 = tl.where(raw_e == 0, -126, raw_e - 127)
+        sig = ((bits & 0x7FFFFF) | tl.where(raw_e != 0, 0x800000, 0)).to(tl.int32)
+        e = tl.maximum(e32, FMT[1])
+        m = sig >> tl.minimum(e - e32 + (23 - FMT[0]), 31)
+        e = tl.where(m == 0, 0, e)  # as decode_f32 (an off-grid nonzero keeps exponent 0)
+        neg = (bits >> 31) != 0
+    if POW2:
+        s = _k_scale(S, rows, k, size, K, DESC)
+        sbits = s.to(tl.uint32, bitcast=True)
+        special |= (sbits & 0x7F800000) == 0x7F800000
+        _, es, _ = decode_f32(s, 0, -149, False, 0)
+        zero |= (sbits & 0x7FFFFFFF) == 0
+        if DESC[4]:
+            zero |= sbits == 0x00400000  # E8M0 field 0 (2^-127) contributes zero
+        e = e + es
+    e = tl.where(zero, _ZERO_E, e)
+    m = tl.where(zero, 0, m)
+    return neg, e, m, special
+
+
+@triton.jit
+def _aligned_sum(A, B, SA, SB, rm, rn, start, end, emax, total, M, N, K,
+                 AF: tl.constexpr, BF: tl.constexpr, AD: tl.constexpr, BD: tl.constexpr,
+                 RADIX: tl.constexpr, COUNT: tl.constexpr, POW2: tl.constexpr, ACC: tl.constexpr,
+                 SHIFT_MAX: tl.constexpr):
+    """Pass 2 of an FDA over COUNT products at radix RADIX: one variable shift per product."""
+    C: tl.constexpr = RADIX - AF[4] - BF[4]
+    for i in range(COUNT):  # a runtime loop: unrolled 32-product bodies spill registers
+        na, ea, ma, _ = _fast_side(A, SA, rm, start + i, end, M, K, AF, AD, POW2)
+        nb, eb, mb, _ = _fast_side(B, SB, rn, start + i, end, N, K, BF, BD, POW2)
+        m = ma.to(ACC)[:, None] * mb.to(ACC)[None, :]
+        s = (C - (emax - (ea[:, None] + eb[None, :]))).to(ACC)
+        # Both select arms are evaluated: keep every shift count inside [0, SHIFT_MAX].
+        left = m << tl.minimum(tl.maximum(s, 0), SHIFT_MAX)
+        right = m >> tl.minimum(tl.maximum(-s, 0), SHIFT_MAX)
+        v = tl.where(s >= 0, left, right)
+        total += tl.where(na[:, None] ^ nb[None, :], -v, v)
+    return total
+
+
+@triton.jit
+def _chunk_max(A, B, SA, SB, rm, rn, start, end, emax, M, N, K,
+               AF: tl.constexpr, BF: tl.constexpr, AD: tl.constexpr, BD: tl.constexpr,
+               COUNT: tl.constexpr, POW2: tl.constexpr):
+    """Pass 1: the maximum product exponent, and whether any operand in the span is Inf/NaN."""
+    xa = rm < 0
+    xb = rn < 0
+    for i in range(COUNT):
+        _, ea, _, sa = _fast_side(A, SA, rm, start + i, end, M, K, AF, AD, POW2)
+        _, eb, _, sb = _fast_side(B, SB, rn, start + i, end, N, K, BF, BD, POW2)
+        emax = tl.maximum(emax, ea[:, None] + eb[None, :])
+        xa |= sa
+        xb |= sb
+    return emax, tl.max(xa.to(tl.int32), 0) + tl.max(xb.to(tl.int32), 0)
+
+
+@triton.jit
+def _chunk_finite(A, B, SA, SB, rm, rn, start, end, c, cnz, emax, M, N, K,
+                  AF: tl.constexpr, BF: tl.constexpr, AD: tl.constexpr, BD: tl.constexpr,
+                  F: tl.constexpr, CS: tl.constexpr, RNE: tl.constexpr, POW2: tl.constexpr,
+                  ACC: tl.constexpr, SHIFT_MAX: tl.constexpr):
+    """Pass 2 and normalization of a chunk whose products are all finite."""
+    cneg, ce, cm, _, _, _ = c_operand(c, F)
+    v = cm.to(ACC) >> tl.minimum(tl.maximum(emax - ce, 0), SHIFT_MAX).to(ACC)
+    total = tl.where(cnz, tl.where(cneg, -v, v), 0)
+    total = _aligned_sum(A, B, SA, SB, rm, rn, start, end, emax, total, M, N, K,
+                         AF, BF, AD, BD, F, CS, POW2, ACC, SHIFT_MAX)
+    return finish(total.to(tl.int64), tl.where(emax > _REAL_TERM, emax, -1000000), c,
+                  False, False, False, F, RNE)
+
+
+@triton.jit
+def _chunk_fast(A, B, SA, SB, rm, rn, start, end, c,
+                M, N, K,
+                AF: tl.constexpr, BF: tl.constexpr, AD: tl.constexpr, BD: tl.constexpr,
+                F: tl.constexpr, CS: tl.constexpr, RNE: tl.constexpr, POW2: tl.constexpr,
+                ACC: tl.constexpr, SHIFT_MAX: tl.constexpr, FINITE: tl.constexpr):
+    """_chunk with int32/int64 arithmetic when no Inf/NaN is involved; bit-identical results.
+
+    FINITE (every operand value and scale finite, checked on the host) compiles no fallback: the
+    running value is then the only possible Inf/NaN (an fp32 overflow of an earlier chunk), which
+    the general path returns unchanged next to finite products."""
+    cbits = c.to(tl.uint32, bitcast=True)
+    _, ce, _, cnz, _, _ = c_operand(c, F)
+    emax = tl.where(cnz, ce, _NO_TERM)
+    emax, special = _chunk_max(A, B, SA, SB, rm, rn, start, end, emax, M, N, K, AF, BF, AD, BD, CS, POW2)
+    if FINITE:
+        out = _chunk_finite(A, B, SA, SB, rm, rn, start, end, c, cnz, emax, M, N, K,
+                            AF, BF, AD, BD, F, CS, RNE, POW2, ACC, SHIFT_MAX)
+        c_special = (cbits & 0x7F800000) == 0x7F800000
+        c_nan = c_special & ((cbits & 0x7FFFFF) != 0)
+        out = tl.where(c_special, tl.where(c_nan, float("nan"), c), out)
+    else:
+        special += tl.max(tl.max(((cbits & 0x7F800000) == 0x7F800000).to(tl.int32), 1), 0)
+        if special > 0:
+            out = _chunk(A, B, SA, SB, rm, rn, start, end, c, M, N, K, AF, BF, AD, BD, F, CS, RNE, POW2)
+        else:
+            out = _chunk_finite(A, B, SA, SB, rm, rn, start, end, c, cnz, emax, M, N, K,
+                                AF, BF, AD, BD, F, CS, RNE, POW2, ACC, SHIFT_MAX)
+    return out
+
+
+@triton.jit
+def _group_finite(A, B, SA, SB, rm, rn, start, emax, M, N, K,
+                  AF: tl.constexpr, BF: tl.constexpr, AD: tl.constexpr, BD: tl.constexpr,
+                  F: tl.constexpr, G: tl.constexpr, GS: tl.constexpr, GROUP_SCALE: tl.constexpr,
+                  ACC: tl.constexpr, SHIFT_MAX: tl.constexpr):
+    """The group operand of GS finite products (same tuple as _group)."""
+    total = tl.full(emax.shape, 0, ACC)
+    total = _aligned_sum(A, B, SA, SB, rm, rn, start, K, emax, total, M, N, K,
+                         AF, BF, AD, BD, G, GS, False, ACC, SHIFT_MAX)
+    nonzero = total != 0
+    negative = total < 0
+    mag = tl.where(negative, -total, total).to(tl.int64).to(tl.uint64)
+    e = tl.where(emax > _REAL_TERM, emax, -1000000)
+    nan = negative & False
+    term = negative, e, mag, nonzero, nan, nan
+    if GROUP_SCALE:
+        sa = _k_scale(SA, rm, start, M, K, AD)[:, None]
+        sb = _k_scale(SB, rn, start, N, K, BD)[None, :]
+        term = scale_term(term, sa, sb, tl.constexpr(AD[3]), tl.constexpr(BD[3]),
+                          G, F, AD[4], BD[4], True)
+    else:
+        term = negative, e, shift(mag, F - G), nonzero, nan, nan
+    tn, te, tm, tz, tnan, ti = term
+    valid = (start < K) & (rm[:, None] < M) & (rn[None, :] < N)
+    return tn, te, tm, tz & valid, tnan & valid, ti & valid
+
+
+@triton.jit
+def _group_fast(A, B, SA, SB, rm, rn, start, M, N, K,
+                AF: tl.constexpr, BF: tl.constexpr, AD: tl.constexpr, BD: tl.constexpr,
+                F: tl.constexpr, G: tl.constexpr, GS: tl.constexpr, GROUP_SCALE: tl.constexpr,
+                ACC: tl.constexpr, SHIFT_MAX: tl.constexpr, FINITE: tl.constexpr):
+    """_group with a narrow group sum when no Inf/NaN is involved; bit-identical results.
+    FINITE (operands and scales checked finite on the host) compiles no fallback."""
+    emax = tl.full((rm.shape[0], rn.shape[0]), _NO_TERM, tl.int32)
+    emax, special = _chunk_max(A, B, SA, SB, rm, rn, start, K, emax, M, N, K, AF, BF, AD, BD, GS, False)
+    if FINITE:
+        term = _group_finite(A, B, SA, SB, rm, rn, start, emax, M, N, K, AF, BF, AD, BD,
+                             F, G, GS, GROUP_SCALE, ACC, SHIFT_MAX)
+    else:
+        if special > 0:
+            term = _group(A, B, SA, SB, rm, rn, start, M, N, K, AF, BF, AD, BD, F, G, GS, GROUP_SCALE)
+        else:
+            term = _group_finite(A, B, SA, SB, rm, rn, start, emax, M, N, K, AF, BF, AD, BD,
+                                 F, G, GS, GROUP_SCALE, ACC, SHIFT_MAX)
+    return term
+
+
 @triton.jit
 def _gdfs_tile(A, B, SA, SB, rm, rn, start, c,
                M, N, K,
                AF: tl.constexpr, BF: tl.constexpr, AD: tl.constexpr, BD: tl.constexpr,
                F: tl.constexpr, G: tl.constexpr, GS: tl.constexpr, KT: tl.constexpr,
-               RNE: tl.constexpr, GROUP_SCALE: tl.constexpr):
+               RNE: tl.constexpr, GROUP_SCALE: tl.constexpr,
+               FAST: tl.constexpr, ACC: tl.constexpr, SHIFT_MAX: tl.constexpr, FINITE: tl.constexpr):
     ct = c_operand(c, F)
     e, nan, pos, neg = scan(tl.full(c.shape, -1000000, tl.int32), False, False, False, ct)
     # Compile-time indexing makes these S0..S7/E0..E7, with no dynamic register indexing.
     groups = ()
     for j in tl.static_range(KT // GS):
-        t = _group(A, B, SA, SB, rm, rn, start + j * GS, M, N, K, AF, BF, AD, BD, F, G, GS, GROUP_SCALE)
+        if FAST:
+            t = _group_fast(A, B, SA, SB, rm, rn, start + j * GS, M, N, K, AF, BF, AD, BD, F, G, GS,
+                            GROUP_SCALE, ACC, SHIFT_MAX, FINITE)
+        else:
+            t = _group(A, B, SA, SB, rm, rn, start + j * GS, M, N, K, AF, BF, AD, BD, F, G, GS, GROUP_SCALE)
         groups += (t,)
         e, nan, pos, neg = scan(e, nan, pos, neg, t)
     total = aligned(ct, e)
@@ -167,7 +347,8 @@ def _gemm(A, B, SA, SB, ALPHA_A, ALPHA_B, BIAS, OUT,
           G: tl.constexpr, GS: tl.constexpr, KT: tl.constexpr, RNE: tl.constexpr,
           PI: tl.constexpr, APPLY: tl.constexpr, DECOUPLED: tl.constexpr,
           HAS_ALPHA_A: tl.constexpr, HAS_ALPHA_B: tl.constexpr, HAS_BIAS: tl.constexpr,
-          OUT_FMT: tl.constexpr,
+          OUT_FMT: tl.constexpr, FAST: tl.constexpr, ACC: tl.constexpr, SHIFT_MAX: tl.constexpr,
+          POW2: tl.constexpr, FINITE: tl.constexpr,
           BM: tl.constexpr, BN: tl.constexpr):
     # A final partial chunk can step beyond K before its load mask is applied.
     K = tl.cast(K, tl.int64)
@@ -179,8 +360,12 @@ def _gemm(A, B, SA, SB, ALPHA_A, ALPHA_B, BIAS, OUT,
             for start in range(0, K, PI):
                 p = tl.full((BM, BN), 0, tl.float32)
                 for j in range(0, tl.minimum(PI, K - start), CS):
-                    p = _chunk(A, B, SA, SB, rm, rn, start + j, tl.minimum(start + PI, K), p,
-                               M, N, K, AF, BF, AD, BD, F, CS, RNE, APPLY == "product")
+                    if FAST:
+                        p = _chunk_fast(A, B, SA, SB, rm, rn, start + j, tl.minimum(start + PI, K), p,
+                                        M, N, K, AF, BF, AD, BD, F, CS, RNE, POW2, ACC, SHIFT_MAX, FINITE)
+                    else:
+                        p = _chunk(A, B, SA, SB, rm, rn, start + j, tl.minimum(start + PI, K), p,
+                                   M, N, K, AF, BF, AD, BD, F, CS, RNE, APPLY == "product")
                 if APPLY == "promote":
                     sa = _k_scale(SA, rm, start, M, K, AD)[:, None]
                     sb = _k_scale(SB, rn, start, N, K, BD)[None, :]
@@ -191,22 +376,42 @@ def _gemm(A, B, SA, SB, ALPHA_A, ALPHA_B, BIAS, OUT,
         else:
             for start in range(0, K, CS):
                 if DECOUPLED:
-                    p = _chunk(A, B, SA, SB, rm, rn, start, K, tl.full((BM, BN), 0, tl.float32),
-                               M, N, K, AF, BF, AD, BD, F, CS, RNE, APPLY == "product")
+                    if FAST:
+                        p = _chunk_fast(A, B, SA, SB, rm, rn, start, K, tl.full((BM, BN), 0, tl.float32),
+                                        M, N, K, AF, BF, AD, BD, F, CS, RNE, POW2, ACC, SHIFT_MAX, FINITE)
+                    else:
+                        p = _chunk(A, B, SA, SB, rm, rn, start, K, tl.full((BM, BN), 0, tl.float32),
+                                   M, N, K, AF, BF, AD, BD, F, CS, RNE, APPLY == "product")
                     c = merge(c, p, F2, RNE)
+                elif FAST:
+                    c = _chunk_fast(A, B, SA, SB, rm, rn, start, K, c,
+                                    M, N, K, AF, BF, AD, BD, F, CS, RNE, POW2, ACC, SHIFT_MAX, FINITE)
                 else:
                     c = _chunk(A, B, SA, SB, rm, rn, start, K, c,
                                M, N, K, AF, BF, AD, BD, F, CS, RNE, APPLY == "product")
     elif MODE == "gdfs":
         for start in range(0, K, KT):
             c = _gdfs_tile(A, B, SA, SB, rm, rn, start, c,
-                           M, N, K, AF, BF, AD, BD, F, G, GS, KT, RNE, APPLY == "group")
+                           M, N, K, AF, BF, AD, BD, F, G, GS, KT, RNE, APPLY == "group",
+                           FAST, ACC, SHIFT_MAX, FINITE)
     elif MODE == "int_exact":
-        total = tl.full((BM, BN), 0, tl.int64)
-        for k in range(K):
-            t = _term(A, B, SA, SB, rm, rn, k, K, M, N, K, AF, BF, AD, BD, AF[4] + BF[4], False)
-            total += tl.where(t[0], -t[2].to(tl.int64), t[2].to(tl.int64))
-        c = pack_f32(total, -AF[4] - BF[4], 23, True, True)
+        if FAST:  # finite integers (validated): signed products summed in ACC
+            total = tl.full((BM, BN), 0, ACC)
+            for k in range(K):
+                a = tl.load(A + k * M + rm, rm < M, other=0).to(tl.float32)
+                b = tl.load(B + k * N + rn, rn < N, other=0).to(tl.float32)
+                na, _, ma = decode_f32(a, AF[0], AF[1], AF[2], AF[3])
+                nb, _, mb = decode_f32(b, BF[0], BF[1], BF[2], BF[3])
+                ia = tl.where(na, -ma.to(ACC), ma.to(ACC))
+                ib = tl.where(nb, -mb.to(ACC), mb.to(ACC))
+                total += ia[:, None] * ib[None, :]
+            c = pack_f32(total.to(tl.int64), -AF[4] - BF[4], 23, True, True)
+        else:
+            total = tl.full((BM, BN), 0, tl.int64)
+            for k in range(K):
+                t = _term(A, B, SA, SB, rm, rn, k, K, M, N, K, AF, BF, AD, BD, AF[4] + BF[4], False)
+                total += tl.where(t[0], -t[2].to(tl.int64), t[2].to(tl.int64))
+            c = pack_f32(total, -AF[4] - BF[4], 23, True, True)
     else:
         if MODE == "fp64":
             acc = tl.full((BM, BN), 0, tl.float64)
@@ -294,6 +499,30 @@ def _headroom(a: Operand, b: Operand, spec: MMASpec, apply: str) -> None:
             raise ValueError("int_exact requires finite integer operands")
 
 
+def _fast_path(a: Operand, b: Operand, spec: MMASpec, apply: str) -> tuple[bool, object, int, bool]:
+    """(FAST, ACC dtype, SHIFT_MAX, POW2) for the finite-operand fast path of CoFDA and GDFS.
+
+    Products must fit int32 (significand radix plus integer bits of both operands); the aligned
+    sum uses int32 when F (G for GDFS) plus its headroom fits in 30 bits, else int64. Product-level
+    scales are supported only when they are powers of two (a pure exponent add)."""
+    ib = _integer_bits(a.fmt) + _integer_bits(b.fmt)
+    if _format(a.fmt)[4] + _format(b.fmt)[4] + ib > 31:
+        return False, tl.int64, 63, False
+    pow2 = apply == "product" and all(op.scale_kind != "k" or isinstance(op.scale_fmt, Pow2Format)
+                                      for op in (a, b))
+    if spec.algorithm == "int_exact":  # operands validated finite; no specials to route
+        narrow = ib + a.K.bit_length() <= 30
+        return True, tl.int32 if narrow else tl.int64, 31 if narrow else 63, False
+    if spec.algorithm == "cofda" and (apply != "product" or pow2):
+        radix, width = spec.f_bits, spec.chunk_size
+    elif spec.algorithm == "gdfs":
+        radix, width = spec.g_bits, spec.group_size
+    else:
+        return False, tl.int64, 63, False
+    narrow = radix + ib + (width + 1).bit_length() <= 30
+    return True, tl.int32 if narrow else tl.int64, 31 if narrow else 63, pow2
+
+
 def _validate_operand(op: Operand) -> None:
     if not op.values.is_cuda or not op.values.is_floating_point():
         raise ValueError("gemm_triton requires floating CUDA grid-value tensors")
@@ -335,6 +564,9 @@ def gemm_triton(a: Operand, b: Operand, spec: MMASpec, bias: torch.Tensor | None
     if spec.algorithm == "int_exact" and (a.scale_kind == "k" or b.scale_kind == "k"):
         raise ValueError("int_exact does not support K-varying scales")
     _headroom(a, b, spec, apply)
+    fast, acc, shift_max, pow2 = _fast_path(a, b, spec, apply)
+    # Finite operands (the normal case; cached for weights) get a kernel without Inf/NaN fallback.
+    finite = fast and a.all_finite() and b.all_finite()
     if bias is not None and (bias.shape != (b.rows,) or bias.device != a.values.device):
         raise ValueError("bias must have shape [N] on the operand device")
     out = torch.empty((a.rows, b.rows), device=a.values.device, dtype=dtype)
@@ -354,6 +586,6 @@ def gemm_triton(a: Operand, b: Operand, spec: MMASpec, bias: torch.Tensor | None
             spec.algorithm, spec.f_bits, spec.chunk_size, spec.f2_bits, spec.g_bits,
             spec.group_size, spec.k_tile, spec.norm_rounding == "rne", spec.promote_interval,
             apply, spec.c_mode == "decoupled", a.alpha is not None, b.alpha is not None,
-            bias is not None, out_fmt, enable_fp_fusion=False,
+            bias is not None, out_fmt, fast, acc, shift_max, pow2, finite, enable_fp_fusion=False,
         )
     return out

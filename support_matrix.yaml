@@ -14,10 +14,12 @@ backends:
     evidence: "pytest --ignore=tests/gpu (CPU, macOS arm64, torch 2.11) — full suite passing"
   triton_quantize:
     status: verified
-    evidence: "tests/gpu/test_triton_quantize.py 579/579 bit-exact vs reference (A100 sm_80, triton 3.4.0)"
+    evidence: "tests/gpu/test_triton_quantize.py bit-exact vs reference (A100 sm_80 and V100 sm_70, triton 3.4.0)"
   triton_mma:
-    status: implemented
-    evidence: "tests/gpu/test_triton_mma.py — parity run in progress"
+    status: verified
+    evidence: "tests/gpu/test_triton_mma.py bit-exact vs reference (A100 and V100; whole GPU suite 824 passed);
+      bench_mma_vs_nadpe.py bit-identical to NADPE on full-size GEMMs"
+    performance: "A100: CoFDA F=13 0.15 TMAC/s (NADPE 0.15), GDFS G=6 0.15, GDFS G=32 0.11 (NADPE 0.16)"
 
 formats:
   float: {status: verified, members: [fp32, tf32, bf16, fp16, fp8_e4m3, fp8_e5m2, fp8_e4m3fnuz,
@@ -58,13 +60,13 @@ qat: {status: implemented, note: "STE (clipped) through fake_quant and EmuLinear
 
 mma:
   algorithms:
-    cofda_fused: {reference: verified, triton: implemented}
-    cofda_decoupled: {reference: verified, triton: implemented}
-    cofda_promote: {reference: verified, triton: implemented, note: "DeepSeek-V3 style fp32 promotion"}
-    gdfs: {reference: verified, triton: implemented}
-    fp32_fma: {reference: verified, triton: implemented}
-    fp64: {reference: verified, triton: implemented}
-    int_exact: {reference: verified, triton: implemented}
+    cofda_fused: {reference: verified, triton: verified}
+    cofda_decoupled: {reference: verified, triton: verified}
+    cofda_promote: {reference: verified, triton: verified, note: "DeepSeek-V3 style fp32 promotion"}
+    gdfs: {reference: verified, triton: verified}
+    fp32_fma: {reference: verified, triton: verified}
+    fp64: {reference: verified, triton: verified}
+    int_exact: {reference: verified, triton: verified}
   scale_apply: [epilogue, product, group, promote, operand]
   presets:
     nvidia_hopper_fp8: {params: "cofda F=13 CS=32", source: NADPE, silicon_check: planned}
@@ -75,7 +77,7 @@ mma:
   nadpe_oracle:
     fp8:
       reference: verified
-      triton: pending
+      triton: verified
       evidence: "tests/data/nadpe/fp8_*.pt — 1200 cases (CoFDA fused 264, decoupled 264, GDFS 672 with
         k_tile 32) bit-exact vs NADPE MMA-Emu CUDA built standalone for sm_80 (scripts/nadpe_oracle)"
     fp4:

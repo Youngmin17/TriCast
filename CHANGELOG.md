@@ -21,3 +21,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   resume and environment capture, per-layer error report (`tricast report`).
 - `tricast agent`: natural-language request to a validated recipe (Claude API or offline parser).
 - NADPE golden vectors (1716 cases) and `scripts/nadpe_oracle/check_triton.py` for Triton-vs-NADPE checks.
+
+### Changed
+- MMA emulation kernel: integer fast path for finite operands (int32/int64 aligned sums, int32
+  operand decode, runtime pass loops, no register spills). On an A100 the Hopper FP8 accumulator
+  went from 0.011 to 0.15 TMAC/s (NADPE CUDA kernel: 0.15) and a Qwen3-0.6B 2048-token window
+  from 83 s to 6 s; results stay bit-identical.

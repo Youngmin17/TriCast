@@ -60,7 +60,8 @@ this repository.
 | reference casts vs PyTorch native conversions | fp8 ×4 formats, bf16, fp16 — bit-identical on 100k random values per format + edge cases |
 | reference MX quantization vs `microsoft/microxcaling` | bit-identical (even / nearest / floor), except inputs microxcaling misclassifies via fp32 `log2` |
 | reference MMA vs **NADPE** CUDA kernels (MICRO'26), built standalone | **1716 / 1716** cases bit-identical — FP8 CoFDA / C-decoupled / GDFS, NVFP4, MXFP4 |
-| Triton kernels vs reference | quantization 579 / 579, MMA 149 / 149 bit-identical on A100 |
+| Triton kernels vs reference | GPU suite (`tests/gpu`, quantization + MMA, random, adversarial and special values): 824 passed on A100 and on V100 |
+| Triton MMA vs NADPE on full GEMMs | bit-identical on 2048×1024×3072, 2048×3072×1024 and 4096³ for CoFDA, C-decoupled and GDFS (`scripts/bench/bench_mma_vs_nadpe.py`) |
 
 Triton links libdevice with flush-to-zero; the kernels use IEEE PTX for every fp32 operation that
 can meet a subnormal, and the reference computes each fp32 operation in fp64 and rounds once —
@@ -119,8 +120,9 @@ kv: {preset: kivi2, mode: cache}   # KIVI-2 KV cache in every block (kv.layers n
 - Attention `QKᵀ` / `PV` matmuls are not emulated yet; KV-cache quantization is.
 - Hardware presets come from published measurements (NADPE); TriCast has not yet compared them
   against silicon itself (`tricast.probe` is planned).
-- Emulation on CUDA cores is slower than the native tensor-core GEMM it models; first use of a new
-  configuration compiles Triton kernels.
+- Emulation on CUDA cores is slower than the native tensor-core GEMM it models: on an A100 the
+  Hopper FP8 accumulator runs at 0.15 TMAC/s (NADPE's CUDA kernel: 0.15), one 2048-token Qwen3-0.6B
+  window takes about 6 s. First use of a new configuration compiles Triton kernels.
 - The agent that turns a natural-language request into a recipe (`tricast agent`) is tested with
   a mocked model client. The live Claude API path needs `pip install -e ".[agent]"` and an
   `ANTHROPIC_API_KEY`; without them `--llm auto` uses the offline parser and prints which parser ran.

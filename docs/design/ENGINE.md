@@ -356,8 +356,20 @@ round_to_format(v, out_format, RNE, saturate=False)` stored in the torch dtype o
   constexpr-unrolled registers.
 - Every variable shift is clamped (`tl.where(d > 63, 0, x >> min(d, 63))`); LLVM
   treats over-wide shifts as poison.
-- fp32 division uses `tl.math.div_rn`; no rounding emulated by dtype round trips.
+- Triton links libdevice with flush-to-zero, so every fp32 operation that can meet a subnormal
+  (division, multiplication, addition, FMA, fp64→fp32) uses the IEEE PTX helpers of
+  `kernels/ieee.py`; no rounding is emulated by dtype round trips.
 - SR uses the caller's `noise` tensor when given, else `tl.randint(seed, offsets)`.
+- **Fast path** (CoFDA, GDFS groups, `int_exact`), bit-identical to the general path: when the
+  product of two significands fits int32 and `F` (or `G`) plus its headroom fits 30 bits, the
+  aligned sum is int32 (else int64), each product is one variable shift of `m_a·m_b`, and zero
+  operands carry a sentinel exponent instead of masks. Power-of-two product scales fold into the
+  exponent. Float formats whose grid lies inside fp32's range are decoded in int32. When every
+  operand value and scale is finite (checked on the host, cached for weights) the kernel is
+  compiled without Inf/NaN handling — the only special value left is an fp32 overflow of the
+  running sum, returned as the general path would; otherwise any chunk that meets an Inf/NaN
+  falls back to the general path. Pass loops are runtime loops (unrolled 32-product bodies
+  spilled registers).
 
 ## 6. Integration
 

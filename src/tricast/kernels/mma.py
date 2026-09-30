@@ -444,11 +444,19 @@ def _gemm(A, B, SA, SB, ALPHA_A, ALPHA_B, BIAS, OUT,
             c = f64_to_f32_rn(acc)
         else:
             c = acc
+    _epilogue(c, SA, SB, ALPHA_A, ALPHA_B, BIAS, OUT, rm, rn, M, N, K, AD, BD,
+              HAS_ALPHA_A, HAS_ALPHA_B, HAS_BIAS, OUT_FMT)
+
+
+@triton.jit
+def _epilogue(c, SA, SB, ALPHA_A, ALPHA_B, BIAS, OUT, rm, rn, M, N, K,
+              AD: tl.constexpr, BD: tl.constexpr, HAS_ALPHA_A: tl.constexpr, HAS_ALPHA_B: tl.constexpr,
+              HAS_BIAS: tl.constexpr, OUT_FMT: tl.constexpr):
     # Tensor and row scales remain in the epilogue even when the other side varies in K.
     if BD[0] == "tensor" or BD[0] == "row":
-        c = mul_rn(tl.broadcast_to(_load_scale(SB, rn, 0, N, K, BD)[None, :], (BM, BN)), c)
+        c = mul_rn(tl.broadcast_to(_load_scale(SB, rn, 0, N, K, BD)[None, :], c.shape), c)
     if AD[0] == "tensor" or AD[0] == "row":
-        c = mul_rn(tl.broadcast_to(_load_scale(SA, rm, 0, M, K, AD)[:, None], (BM, BN)), c)
+        c = mul_rn(tl.broadcast_to(_load_scale(SA, rm, 0, M, K, AD)[:, None], c.shape), c)
     if HAS_ALPHA_A or HAS_ALPHA_B:
         aa = tl.full((), 1, tl.float32)
         ab = tl.full((), 1, tl.float32)
@@ -456,14 +464,260 @@ def _gemm(A, B, SA, SB, ALPHA_A, ALPHA_B, BIAS, OUT,
             aa = tl.load(ALPHA_A).to(tl.float32)
         if HAS_ALPHA_B:
             ab = tl.load(ALPHA_B).to(tl.float32)
-        alpha = mul_rn(tl.broadcast_to(aa, (BM, BN)), tl.broadcast_to(ab, (BM, BN)))
+        alpha = mul_rn(tl.broadcast_to(aa, c.shape), tl.broadcast_to(ab, c.shape))
         c = mul_rn(alpha, c)
     if HAS_BIAS:
-        c = add_rn(c, tl.broadcast_to(tl.load(BIAS + rn, rn < N, other=0)[None, :].to(tl.float32), (BM, BN)))
+        c = add_rn(c, tl.broadcast_to(tl.load(BIAS + rn, rn < N, other=0)[None, :].to(tl.float32), c.shape))
     if OUT_FMT is not None:
         c = round_to_format(c, tl.full(c.shape, 0, tl.uint32), OUT_FMT, 0, False)
     tl.store(OUT + rm[:, None] * N + rn[None, :], c.to(OUT.dtype.element_ty),
              (rm[:, None] < M) & (rn[None, :] < N))
+
+
+# Small-M path (decode). _gemm steps through K one product per load, so at M=1 each GEMM waits on
+# thousands of dependent global loads. Here a program owns one output row and BN columns and loads
+# a whole chunk (CoFDA), group (GDFS) or span (exact integers) as one [span, BN] tile, reducing it
+# over K in registers. Integer sums are exact, so the reduction order cannot change a result;
+# chunks, tiles and promotions still follow K in order. The IEEE flags of every product are reduced
+# alongside the finite sum, so no host-side finiteness check (a device sync) is needed.
+_GEMV_MAX_M = 16
+_GEMV_MAX_SPAN = 64  # larger chunks or groups ([span, BN] register tiles) stay on _gemm
+_GEMV_INT_SPAN = 32  # K span per step of the exact-integer path
+
+
+@triton.jit
+def _v_side(P, S, rows, k, valid, size, K, FMT: tl.constexpr, DESC: tl.constexpr, POW2: tl.constexpr):
+    """_fast_side over a K span in one load (``rows`` and ``k`` broadcast, ``valid`` masks it).
+    Zero and Inf/NaN elements get e = _ZERO_E and m = 0; their IEEE flags come back separately as
+    (sign, zero, nan, inf) of the value and, under POW2, of its scale."""
+    v = tl.load(P + k * size + rows, valid, other=0).to(tl.float32)
+    bits = v.to(tl.uint32, bitcast=True)
+    mag = bits & 0x7FFFFFFF
+    zero = mag == 0
+    nan = mag > 0x7F800000
+    inf = mag == 0x7F800000
+    neg = (bits >> 31) != 0
+    if FMT[2] or FMT[1] < -126:
+        _, e, m = decode_f32(v, FMT[0], FMT[1], FMT[2], FMT[3])
+        m = m.to(tl.int32)
+    else:
+        raw_e = ((bits >> 23) & 255).to(tl.int32)
+        e32 = tl.where(raw_e == 0, -126, raw_e - 127)
+        sig = ((bits & 0x7FFFFF) | tl.where(raw_e != 0, 0x800000, 0)).to(tl.int32)
+        e = tl.maximum(e32, FMT[1])
+        m = sig >> tl.minimum(e - e32 + (23 - FMT[0]), 31)
+        e = tl.where(m == 0, 0, e)
+    dead = zero | nan | inf
+    s_neg = zero & False
+    s_zero = s_neg
+    s_nan = s_neg
+    s_inf = s_neg
+    if POW2:
+        s = _k_scale(S, rows, k, size, K, DESC)
+        sbits = s.to(tl.uint32, bitcast=True)
+        smag = sbits & 0x7FFFFFFF
+        _, es, _ = decode_f32(s, 0, -149, False, 0)
+        s_zero = smag == 0
+        if DESC[4]:
+            s_zero |= sbits == 0x00400000  # E8M0 field 0 (2^-127) contributes zero
+        s_nan = smag > 0x7F800000
+        s_inf = smag == 0x7F800000
+        s_neg = ((sbits >> 31) != 0) & (smag != 0)
+        e = e + es
+        dead |= s_zero | s_nan | s_inf
+    e = tl.where(dead, _ZERO_E, e)
+    m = tl.where(dead, 0, m)
+    return neg, e, m, (neg, zero, nan, inf, s_neg, s_zero, s_nan, s_inf)
+
+
+@triton.jit
+def _v_flags(fa, fb, POW2: tl.constexpr):
+    """(neg, nan, inf) of each product exactly as product() and, under POW2, scale_term() set them."""
+    na, za, nana, infa, sna, sza, snana, sinfa = fa
+    nb, zb, nanb, infb, snb, szb, snanb, sinfb = fb
+    zero = za | zb
+    nan = nana | nanb | ((infa | infb) & zero)
+    inf = (infa | infb) & ~zero & ~nan
+    neg = na ^ nb
+    if POW2:
+        gone = zero | nan | sza | szb
+        any_inf = inf | sinfa | sinfb
+        nan = nan | snana | snanb | (gone & any_inf)
+        inf = any_inf & ~gone & ~nan
+        neg = neg ^ sna ^ snb
+    return neg, nan, inf
+
+
+@triton.jit
+def _v_products(A, B, SA, SB, row, rn, k, kv, M, N, K,
+                AF: tl.constexpr, BF: tl.constexpr, AD: tl.constexpr, BD: tl.constexpr,
+                RADIX: tl.constexpr, POW2: tl.constexpr, ACC: tl.constexpr,
+                TERM: tl.constexpr, TERM_SHIFT_MAX: tl.constexpr, emax):
+    """Max product exponent (starting from ``emax``) and the aligned sum at RADIX of the [span, BN]
+    products of one row, with per-column (nan, +inf, -inf) flags of the valid (``kv``) products."""
+    na, ea, ma, fa = _v_side(A, SA, row, k[:, None], kv[:, None], M, K, AF, AD, POW2)
+    nb, eb, mb, fb = _v_side(B, SB, rn[None, :], k[:, None], kv[:, None] & (rn[None, :] < N), N, K,
+                             BF, BD, POW2)
+    e = ea + eb
+    emax = tl.maximum(emax, tl.max(e, 0))
+    C: tl.constexpr = RADIX - AF[4] - BF[4]
+    m = ma.to(TERM) * mb.to(TERM)
+    s = (C - (emax[None, :] - e)).to(TERM)
+    # Both select arms are evaluated: keep every shift count inside [0, TERM_SHIFT_MAX].
+    left = m << tl.minimum(tl.maximum(s, 0), TERM_SHIFT_MAX)
+    right = m >> tl.minimum(tl.maximum(-s, 0), TERM_SHIFT_MAX)
+    v = tl.where(s >= 0, left, right)
+    total = tl.sum(tl.where(na ^ nb, -v, v).to(ACC), 0)
+    pneg, pnan, pinf = _v_flags(fa, fb, POW2)
+    pnan &= kv[:, None]
+    pinf &= kv[:, None]
+    nan = tl.max(pnan.to(tl.int32), 0) > 0
+    pos = tl.max((pinf & ~pneg).to(tl.int32), 0) > 0
+    neg = tl.max((pinf & pneg).to(tl.int32), 0) > 0
+    return emax, total, nan, pos, neg
+
+
+@triton.jit
+def _v_chunk(A, B, SA, SB, row, rn, start, end, c, M, N, K,
+             AF: tl.constexpr, BF: tl.constexpr, AD: tl.constexpr, BD: tl.constexpr,
+             F: tl.constexpr, CS: tl.constexpr, CSP: tl.constexpr, RNE: tl.constexpr, POW2: tl.constexpr,
+             ACC: tl.constexpr, SHIFT_MAX: tl.constexpr, TERM: tl.constexpr, TERM_SHIFT_MAX: tl.constexpr):
+    """One CoFDA chunk of products [start, min(start + CS, end)) into running value ``c``: _chunk
+    bit for bit (the finite sum as _chunk_finite, Inf/NaN as scan and finish)."""
+    k = start + tl.arange(0, CSP)
+    kv = (k < start + CS) & (k < end) & (k < K)
+    cneg, ce, cm, cnz, cnan, cinf = c_operand(c, F)
+    emax, total, nan, pos, neg = _v_products(A, B, SA, SB, row, rn, k, kv, M, N, K, AF, BF, AD, BD,
+                                             F, POW2, ACC, TERM, TERM_SHIFT_MAX,
+                                             tl.where(cnz, ce, _NO_TERM))
+    v = cm.to(ACC) >> tl.minimum(tl.maximum(emax - ce, 0), SHIFT_MAX).to(ACC)
+    total += tl.where(cnz, tl.where(cneg, -v, v), 0)
+    return finish(total.to(tl.int64), tl.where(emax > _REAL_TERM, emax, -1000000), c,
+                  nan | cnan, pos | (cinf & ~cneg), neg | (cinf & cneg), F, RNE)
+
+
+@triton.jit
+def _v_group(A, B, SA, SB, row, rn, start, M, N, K,
+             AF: tl.constexpr, BF: tl.constexpr, AD: tl.constexpr, BD: tl.constexpr,
+             F: tl.constexpr, G: tl.constexpr, GS: tl.constexpr, GSP: tl.constexpr,
+             GROUP_SCALE: tl.constexpr, ACC: tl.constexpr, TERM: tl.constexpr,
+             TERM_SHIFT_MAX: tl.constexpr):
+    """The group operand of GS products (same tuple as _group)."""
+    k = start + tl.arange(0, GSP)
+    kv = (k < start + GS) & (k < K)
+    emax, total, gnan, gpos, gneg = _v_products(A, B, SA, SB, row, rn, k, kv, M, N, K, AF, BF, AD, BD,
+                                                G, False, ACC, TERM, TERM_SHIFT_MAX,
+                                                tl.full(rn.shape, _NO_TERM, tl.int32))
+    total = total.to(tl.int64)
+    nan = gnan | (gpos & gneg)
+    inf = (gpos | gneg) & ~nan
+    negative = tl.where(inf, gneg, total < 0)
+    mag = tl.where(total < 0, -total, total).to(tl.uint64)
+    e = tl.where(emax > _REAL_TERM, emax, -1000000)
+    nonzero = (total != 0) & ~nan & ~inf
+    if GROUP_SCALE:
+        sa = tl.broadcast_to(_k_scale(SA, row, start, M, K, AD), rn.shape)
+        sb = _k_scale(SB, rn, start, N, K, BD)
+        term = scale_term((negative, e, mag, nonzero, nan, inf), sa, sb, tl.constexpr(AD[3]),
+                          tl.constexpr(BD[3]), G, F, AD[4], BD[4], True)
+    else:
+        term = negative, e, shift(mag, F - G), nonzero, nan, inf
+    tn, te, tm, tz, tnan, ti = term
+    valid = (start < K) & (rn < N)
+    return tn, te, tm, tz & valid, tnan & valid, ti & valid
+
+
+@triton.jit
+def _v_gdfs_tile(A, B, SA, SB, row, rn, start, c, M, N, K,
+                 AF: tl.constexpr, BF: tl.constexpr, AD: tl.constexpr, BD: tl.constexpr,
+                 F: tl.constexpr, G: tl.constexpr, GS: tl.constexpr, GSP: tl.constexpr,
+                 KT: tl.constexpr, RNE: tl.constexpr, GROUP_SCALE: tl.constexpr,
+                 ACC: tl.constexpr, TERM: tl.constexpr, TERM_SHIFT_MAX: tl.constexpr):
+    """_gdfs_tile with vectorized groups."""
+    ct = c_operand(c, F)
+    e, nan, pos, neg = scan(tl.full(c.shape, -1000000, tl.int32), False, False, False, ct)
+    groups = ()
+    for j in tl.static_range(KT // GS):
+        t = _v_group(A, B, SA, SB, row, rn, start + j * GS, M, N, K, AF, BF, AD, BD,
+                     F, G, GS, GSP, GROUP_SCALE, ACC, TERM, TERM_SHIFT_MAX)
+        groups += (t,)
+        e, nan, pos, neg = scan(e, nan, pos, neg, t)
+    total = aligned(ct, e)
+    for j in tl.static_range(KT // GS):
+        total += aligned(groups[j], e)
+    return finish(total, e, c, nan, pos, neg, F, RNE)
+
+
+_GEMV_CONFIGS = [
+    triton.Config({"BN": 32}, num_warps=2),
+    triton.Config({"BN": 16}, num_warps=1),
+    triton.Config({"BN": 32}, num_warps=4),
+    triton.Config({"BN": 64}, num_warps=4),
+]
+if os.environ.get("TRICAST_AUTOTUNE", "1") == "0":
+    _GEMV_CONFIGS = _GEMV_CONFIGS[:1]
+
+
+@triton.autotune(configs=_GEMV_CONFIGS, key=["M_BUCKET", "N", "K", "MODE"])
+@triton.jit
+def _gemv(A, B, SA, SB, ALPHA_A, ALPHA_B, BIAS, OUT,
+          M, N, K, M_BUCKET,
+          AF: tl.constexpr, BF: tl.constexpr, AD: tl.constexpr, BD: tl.constexpr,
+          MODE: tl.constexpr, F: tl.constexpr, CS: tl.constexpr, CSP: tl.constexpr, F2: tl.constexpr,
+          G: tl.constexpr, GS: tl.constexpr, GSP: tl.constexpr, KT: tl.constexpr, RNE: tl.constexpr,
+          PI: tl.constexpr, APPLY: tl.constexpr, DECOUPLED: tl.constexpr,
+          HAS_ALPHA_A: tl.constexpr, HAS_ALPHA_B: tl.constexpr, HAS_BIAS: tl.constexpr,
+          OUT_FMT: tl.constexpr, ACC: tl.constexpr, SHIFT_MAX: tl.constexpr,
+          TERM: tl.constexpr, TERM_SHIFT_MAX: tl.constexpr, POW2: tl.constexpr, SPAN: tl.constexpr,
+          BN: tl.constexpr):
+    K = tl.cast(K, tl.int64)
+    row = tl.program_id(0)
+    rn = tl.program_id(1) * BN + tl.arange(0, BN)
+    c = tl.full((BN,), 0, tl.float32)
+    if MODE == "cofda":
+        if PI > 0:
+            for start in range(0, K, PI):
+                p = tl.full((BN,), 0, tl.float32)
+                for j in range(0, tl.minimum(PI, K - start), CS):
+                    p = _v_chunk(A, B, SA, SB, row, rn, start + j, tl.minimum(start + PI, K), p,
+                                 M, N, K, AF, BF, AD, BD, F, CS, CSP, RNE, POW2, ACC, SHIFT_MAX,
+                                 TERM, TERM_SHIFT_MAX)
+                if APPLY == "promote":
+                    sa = tl.broadcast_to(_k_scale(SA, row, start, M, K, AD), (BN,))
+                    w = mul_rn(sa, _k_scale(SB, rn, start, N, K, BD))
+                else:
+                    w = tl.full((BN,), 1, tl.float32)
+                c = fma_rn(p, w, c)
+        else:
+            for start in range(0, K, CS):
+                if DECOUPLED:
+                    p = _v_chunk(A, B, SA, SB, row, rn, start, K, tl.full((BN,), 0, tl.float32),
+                                 M, N, K, AF, BF, AD, BD, F, CS, CSP, RNE, POW2, ACC, SHIFT_MAX,
+                                 TERM, TERM_SHIFT_MAX)
+                    c = merge(c, p, F2, RNE)
+                else:
+                    c = _v_chunk(A, B, SA, SB, row, rn, start, K, c,
+                                 M, N, K, AF, BF, AD, BD, F, CS, CSP, RNE, POW2, ACC, SHIFT_MAX,
+                                 TERM, TERM_SHIFT_MAX)
+    elif MODE == "gdfs":
+        for start in range(0, K, KT):
+            c = _v_gdfs_tile(A, B, SA, SB, row, rn, start, c, M, N, K, AF, BF, AD, BD,
+                             F, G, GS, GSP, KT, RNE, APPLY == "group", ACC, TERM, TERM_SHIFT_MAX)
+    else:  # int_exact on finite integers (validated): signed products summed in ACC
+        total = tl.full((BN,), 0, ACC)
+        for start in range(0, K, SPAN):
+            k = start + tl.arange(0, SPAN)
+            a = tl.load(A + k * M + row, k < K, other=0).to(tl.float32)
+            b = tl.load(B + k[:, None] * N + rn[None, :], (k[:, None] < K) & (rn[None, :] < N),
+                        other=0).to(tl.float32)
+            na, _, ma = decode_f32(a, AF[0], AF[1], AF[2], AF[3])
+            nb, _, mb = decode_f32(b, BF[0], BF[1], BF[2], BF[3])
+            ia = tl.where(na, -ma.to(ACC), ma.to(ACC))
+            ib = tl.where(nb, -mb.to(ACC), mb.to(ACC))
+            total += tl.sum(ia[:, None] * ib, 0)
+        c = pack_f32(total.to(tl.int64), -AF[4] - BF[4], 23, True, True)
+    _epilogue(c[None, :], SA, SB, ALPHA_A, ALPHA_B, BIAS, OUT, row + tl.arange(0, 1), rn, M, N, K,
+              AD, BD, HAS_ALPHA_A, HAS_ALPHA_B, HAS_BIAS, OUT_FMT)
 
 
 def _format(fmt: Format) -> tuple[int, int, bool, int, int]:
@@ -587,8 +841,12 @@ def gemm_triton(a: Operand, b: Operand, spec: MMASpec, bias: torch.Tensor | None
     _headroom(a, b, spec, apply)
     fast, acc, shift_max, pow2 = _fast_path(a, b, spec, apply)
     term, term_shift_max = _term_width(a, b, spec)
+    span = {"cofda": spec.chunk_size, "gdfs": spec.group_size, "int_exact": _GEMV_INT_SPAN}
+    gemv = (fast and a.rows <= _GEMV_MAX_M and spec.algorithm in span
+            and triton.next_power_of_2(span[spec.algorithm]) <= _GEMV_MAX_SPAN)
     # Finite operands (the normal case; cached for weights) get a kernel without Inf/NaN fallback.
-    finite = fast and a.all_finite() and b.all_finite()
+    # _gemv reduces the Inf/NaN flags itself, so it skips this check and its device sync.
+    finite = fast and not gemv and a.all_finite() and b.all_finite()
     if bias is not None and (bias.shape != (b.rows,) or bias.device != a.values.device):
         raise ValueError("bias must have shape [N] on the operand device")
     out = torch.empty((a.rows, b.rows), device=a.values.device, dtype=dtype)
@@ -600,6 +858,20 @@ def gemm_triton(a: Operand, b: Operand, spec: MMASpec, bias: torch.Tensor | None
     aa = a.alpha.to(torch.float32).contiguous() if a.alpha is not None else at
     ab = b.alpha.to(torch.float32).contiguous() if b.alpha is not None else bt
     bias_arg = bias.to(torch.float32).contiguous() if bias is not None else at
+    if gemv:
+        with torch.cuda.device(a.values.device):
+            _gemv[lambda meta: (a.rows, triton.cdiv(b.rows, meta["BN"]))](
+                at, bt, sa, sb, aa, ab, bias_arg, out, a.rows, b.rows, a.K,
+                triton.next_power_of_2(a.rows),
+                _format(a.fmt), _format(b.fmt), _scale_desc(a), _scale_desc(b),
+                spec.algorithm, spec.f_bits, spec.chunk_size, triton.next_power_of_2(spec.chunk_size),
+                spec.f2_bits, spec.g_bits, spec.group_size, triton.next_power_of_2(spec.group_size),
+                spec.k_tile, spec.norm_rounding == "rne", spec.promote_interval,
+                apply, spec.c_mode == "decoupled", a.alpha is not None, b.alpha is not None,
+                bias is not None, out_fmt, acc, shift_max, term, term_shift_max, pow2, _GEMV_INT_SPAN,
+                enable_fp_fusion=False,
+            )
+        return out
     with torch.cuda.device(a.values.device):
         _gemm[lambda meta: (triton.cdiv(a.rows, meta["BM"]), triton.cdiv(b.rows, meta["BN"]))](
             at, bt, sa, sb, aa, ab, bias_arg, out, a.rows, b.rows, a.K,

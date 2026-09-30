@@ -375,6 +375,14 @@ round_to_format(v, out_format, RNE, saturate=False)` stored in the torch dtype o
   running sum, returned as the general path would; otherwise any chunk that meets an Inf/NaN
   falls back to the general path. Pass loops are runtime loops (unrolled 32-product bodies
   spilled registers).
+- **Small-M path** (`M ≤ 16` rows, e.g. one decoded token per sequence; fast-path CoFDA, GDFS and
+  `int_exact`, chunks or groups of at most 64 products): the `[BM, BN]` tiles above take one K
+  step per load and wait on each, which dominates when M is small. Instead one program owns one
+  output row and `BN` columns and loads a whole chunk, group or K span as one `[span, BN]` tile,
+  reducing it over K in registers. Integer sums are exact, so the reduction order cannot change a
+  result; chunks, tiles and promotion intervals still follow K in order. The Inf/NaN flags of the
+  products (and of power-of-two product scales) are reduced alongside by the general path's
+  rules, so this path needs no host-side finiteness check.
 
 ## 6. Integration
 

@@ -27,3 +27,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   operand decode, runtime pass loops, no register spills). On an A100 the Hopper FP8 accumulator
   went from 0.011 to 0.15 TMAC/s (NADPE CUDA kernel: 0.15) and a Qwen3-0.6B 2048-token window
   from 83 s to 6 s; results stay bit-identical.
+- MMA emulation kernel for small M (decoding, M ≤ 16; CoFDA, GDFS, exact integer): each chunk,
+  group or K span is loaded as one tile and reduced in registers, and Inf/NaN flags are reduced in
+  the kernel instead of a host finiteness check (a device sync per linear). A Qwen3-0.6B Hopper-FP8
+  decode step on a V100 went from 371 to 165 ms (GEMM kernel time 254 to 40 ms); results stay
+  bit-identical.

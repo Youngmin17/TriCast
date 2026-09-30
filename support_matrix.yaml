@@ -75,6 +75,8 @@ mma:
     nvidia_blackwell_fp4: {params: "gdfs G=6 F=35 GS=16 KT=64", source: NADPE, silicon_check: planned}
     deepseek_fp8_promote128: {params: "cofda F=13 CS=32 promote 128", source: "DeepSeek-V3 report"}
   nadpe_oracle:
+    triton_evidence: "scripts/nadpe_oracle/check_triton.py on A100: all 1716 cases bit-identical (FP8 1200,
+      NVFP4 172, MXFP4 344), 0 mismatches"
     fp8:
       reference: verified
       triton: verified
@@ -82,7 +84,7 @@ mma:
         k_tile 32) bit-exact vs NADPE MMA-Emu CUDA built standalone for sm_80 (scripts/nadpe_oracle)"
     fp4:
       reference: verified
-      triton: pending
+      triton: verified
       evidence: "tests/data/nadpe/fp4_*.pt — 516 cases (NVFP4 UE4M3 block 16, MXFP4 E8M0 block 32; GDFS k_tile 64)
         bit-exact vs the same standalone NADPE build (scripts/nadpe_oracle/gen_vectors_fp4.py)"
 

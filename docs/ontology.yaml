@@ -59,6 +59,7 @@ classes:
       include/exclude: {type: list, note: "적용할 레이어 이름 패턴", evidence: []}
       transform: {type: enum, values: [none, hadamard, random_hadamard, smoothquant, awq], evidence: []}
       weight_algo: {type: enum, values: [rtn, gptq], evidence: []}
+      kv: {type: dict, note: "KV 캐시 양자화 — preset (kivi2, kivi4, kv_fp8), mode (cache, fakequant), layers", evidence: []}
     relations:
       - quantizes_with: QuantSpec
         evidence: [관찰 A1]

@@ -21,7 +21,8 @@
   (fused / decoupled), `g_bits`, `group_size`, `k_tile`, `promote_interval`
 - Preset: MMASpec + `provenance` (출처·검증 상태 필수)
 - Recipe: `defaults` / `overrides` 의 `weight`·`activation` (QuantSpec), `mma` (MMASpec), `transform`,
-  `weight_algo`; `include` / `exclude`
+  `weight_algo`; `include` / `exclude`; override 선택자 `match` (이름 패턴) · `layers` (decoder 블록 번호,
+  `-1` = 마지막) · `modules` (leaf 이름) 와 `skip` (그 레이어는 양자화하지 않음); `kv` (`preset`, `mode`, `layers`)
 - EvalRun: `metrics` + `env` (git SHA, 모델 revision, 데이터셋 fingerprint, 레시피 해시)
 - EmulationRequest: 자연어 요청의 구조화 결과, `assumptions` (기본값으로 채운 항목)
 
@@ -37,7 +38,8 @@ Preset 수치는 `provenance` 에 적힌 출처까지만 믿는다. EvalRun 수�
 1. Triton 결과는 레퍼런스와 비트 단위로 같아야 한다 — 차이를 허용 오차로 덮지 않는다. (↔ AC1, AC7)
 2. 출처 없는 하드웨어 프리셋·파라미터를 만들지 않는다 — 모르면 "미검증"으로 표시한다. (↔ AC2)
 3. 평가 수치는 환경 캡처와 함께만 보고한다. (↔ AC3)
-4. 요청에 없는 정밀도·누산 파라미터를 지어내지 않는다 — 기본값은 `assumptions` 에 적는다. (↔ AC6)
+4. 요청에 없는 정밀도·누산 파라미터를 지어내지 않는다 — 기본값은 `assumptions` 에 적는다 (에이전트 파싱은
+   `EmulationRequest.assumptions`, 손으로 쓰는 레시피 파일은 주석). (↔ AC6)
 
 ## 4. 금지 사항 (위임 작업에 항상 적용)
 

@@ -109,15 +109,29 @@ kv: {preset: kivi2, mode: cache}   # KV 캐시는 모든 블록에서 KIVI-2 (kv
 
 ## 결과 — Qwen3-0.6B
 
-(`examples/demo_qwen3.py` 실행 결과로 채움; `docs/demo/DEMO.md` 참고)
+WikiText-2 test 전체 (2048 토큰 창 146개), bf16 모델, A100 한 장 (네이티브 perplexity 20.966). 모든 행에서
+가중치와 활성은 텐서당 스케일 하나의 FP8 E4M3 이고, 누산기만 바뀐다. 정확 누산으로도 FP8 양자화 자체가
++0.96% 를 만든다.
+
+| 누산기 | perplexity | 네이티브 대비 |
+| --- | ---: | ---: |
+| 정확 (fp64) | 21.167 | +0.96% |
+| Blackwell, F=25 | 21.184 | +1.04% |
+| Hopper, F=13, 32 개 묶음 | 21.204 | +1.13% |
+| F=7, 누산값을 23 비트 레지스터에 따로 | 21.275 | +1.47% |
+| F=7, 누산값도 묶음마다 함께 절단 | **29.158** | **+39.1%** |
+
+마지막 두 행은 진행 중인 누산값이 묶음의 절단에 함께 들어가는지만 다르다. 에뮬레이트한 bf16 passthrough 는
+네이티브 모델을 0.004% 이내로 재현하고, Hopper FP8 로 test 전체를 한 번 평가하는 데 14.8 분이 걸린다. 블록
+형식, GPTQ, KIVI(perplexity 와 CoQA) 결과와 각 실행의 환경: [docs/results/qwen3_0.6b.md](docs/results/qwen3_0.6b.md).
 
 ## 한계
 
 - attention 의 `QKᵀ` / `PV` 행렬곱은 아직 에뮬레이트하지 않는다. KV 캐시 양자화는 지원한다.
 - 하드웨어 프리셋은 공개된 측정(NADPE)에서 왔다. TriCast 가 실리콘과 직접 대조하는 도구(`tricast.probe`)는 계획 단계다.
 - CUDA core 에뮬레이션은 모델링 대상인 텐서코어 GEMM 보다 느리다. A100 에서 Hopper FP8 누산기는 0.15 TMAC/s
-  (NADPE CUDA 커널 0.15), Qwen3-0.6B 의 2048 토큰 창 하나에 약 6 초가 걸린다. 새 구성을 처음 쓸 때 Triton 커널을
-  컴파일한다.
+  (NADPE CUDA 커널 0.15), Qwen3-0.6B 의 2048 토큰 창 하나에 약 6 초, 토큰 하나를 디코딩하는 데 약 0.1 초(V100
+  0.17 초)가 걸리고, 그중 대부분은 호스트에서 커널을 띄우는 시간이다. 새 구성을 처음 쓸 때 Triton 커널을 컴파일한다.
 - 자연어 요청을 레시피로 바꾸는 에이전트(`tricast agent`)는 가짜 모델 client 로 테스트했다. 실제 Claude API 경로에는
   `pip install -e ".[agent]"` 와 `ANTHROPIC_API_KEY` 가 필요하다. 둘 중 하나가 없으면 `--llm auto` 는
   오프라인 파서를 쓰고, 어떤 파서가 돌았는지 출력한다.

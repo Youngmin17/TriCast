@@ -11,15 +11,21 @@ updated: 2026-09-30
 backends:
   reference:
     status: verified
-    evidence: "pytest --ignore=tests/gpu (CPU, macOS arm64, torch 2.11) — full suite passing"
+    evidence: "pytest --ignore=tests/gpu (CPU, macOS arm64, torch 2.11) — full suite passing. Linux x86_64
+      torch 2.8.0 (UCL cluster): 2254 passed, 6 failed; the same 6 fail at 032684b, before the small-M kernel.
+      They are bit-equality tests whose last bits depend on CPU BLAS/SDPA call patterns (test_analysis KV
+      report, test_eval nvfp4 batch size, test_kv_generation chunked sdpa, test_nn_patch STE); unresolved"
   triton_quantize:
     status: verified
     evidence: "tests/gpu/test_triton_quantize.py bit-exact vs reference (A100 sm_80 and V100 sm_70, triton 3.4.0)"
   triton_mma:
     status: verified
     evidence: "tests/gpu/test_triton_mma.py bit-exact vs reference (A100 and V100; whole GPU suite 824 passed);
-      bench_mma_vs_nadpe.py bit-identical to NADPE on full-size GEMMs"
-    performance: "A100: CoFDA F=13 0.15 TMAC/s (NADPE 0.15), GDFS G=6 0.15, GDFS G=32 0.11 (NADPE 0.16)"
+      bench_mma_vs_nadpe.py bit-identical to NADPE on full-size GEMMs; small-M kernel (b68addd): GPU suite and
+      all 1716 NADPE vectors on A100 and V100, tests/gpu/test_triton_gemv.py (Inf/NaN, V100), Qwen3-0.6B
+      decode logits of 9 recipes identical to the tiled kernel"
+    performance: "A100: CoFDA F=13 0.15 TMAC/s (NADPE 0.15), GDFS G=6 0.15, GDFS G=32 0.11 (NADPE 0.16);
+      Qwen3-0.6B Hopper-FP8 decode step (M=1): A100 102 ms, V100 165 ms (before the small-M kernel: 995, 371 ms)"
 
 formats:
   float: {status: verified, members: [fp32, tf32, bf16, fp16, fp8_e4m3, fp8_e5m2, fp8_e4m3fnuz,

@@ -113,7 +113,22 @@ kv: {preset: kivi2, mode: cache}   # KIVI-2 KV cache in every block (kv.layers n
 
 ## Results — Qwen3-0.6B
 
-(filled from `examples/demo_qwen3.py` runs; see `docs/demo/DEMO.md`)
+WikiText-2 test, all 146 windows of 2048 tokens, bf16 model on one A100 (native perplexity 20.966).
+Weights and activations are FP8 E4M3 with one scale per tensor in every row; only the accumulator
+changes. FP8 quantization with exact accumulation costs +0.96%.
+
+| accumulator | perplexity | vs native |
+| --- | ---: | ---: |
+| exact (fp64) | 21.167 | +0.96% |
+| Blackwell, F=25 | 21.184 | +1.04% |
+| Hopper, F=13, chunks of 32 | 21.204 | +1.13% |
+| F=7, running sum in a separate 23-bit register | 21.275 | +1.47% |
+| F=7, running sum truncated with every chunk | **29.158** | **+39.1%** |
+
+The last two rows differ only in whether the running sum joins each chunk's truncation. The emulated
+bf16 passthrough reproduces the native model to 0.004%, and one Hopper-FP8 pass over the test set
+takes 14.8 minutes. Block formats, GPTQ and KIVI (perplexity and CoQA), with the environment of
+every run: [docs/results/qwen3_0.6b.md](docs/results/qwen3_0.6b.md).
 
 ## Limitations
 
@@ -122,7 +137,8 @@ kv: {preset: kivi2, mode: cache}   # KIVI-2 KV cache in every block (kv.layers n
   against silicon itself (`tricast.probe` is planned).
 - Emulation on CUDA cores is slower than the native tensor-core GEMM it models: on an A100 the
   Hopper FP8 accumulator runs at 0.15 TMAC/s (NADPE's CUDA kernel: 0.15), one 2048-token Qwen3-0.6B
-  window takes about 6 s. First use of a new configuration compiles Triton kernels.
+  window takes about 6 s, and one decoded token about 0.1 s (V100: 0.17 s), most of it host-side
+  kernel launches. First use of a new configuration compiles Triton kernels.
 - The agent that turns a natural-language request into a recipe (`tricast agent`) is tested with
   a mocked model client. The live Claude API path needs `pip install -e ".[agent]"` and an
   `ANTHROPIC_API_KEY`; without them `--llm auto` uses the offline parser and prints which parser ran.

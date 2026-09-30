@@ -21,6 +21,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   resume and environment capture, per-layer error report (`tricast report`).
 - `tricast agent`: natural-language request to a validated recipe (Claude API or offline parser).
 - NADPE golden vectors (1716 cases) and `scripts/nadpe_oracle/check_triton.py` for Triton-vs-NADPE checks.
+- Qwen3-0.6B results (`docs/results/qwen3_0.6b.md`): WikiText-2 perplexity of 24 recipes on an A100
+  and KIVI perplexity and CoQA on a V100, each with its environment; `scripts/e2e/summarize.py` also
+  tabulates lm-eval records.
 
 ### Changed
 - MMA emulation kernel: integer fast path for finite operands (int32/int64 aligned sums, int32

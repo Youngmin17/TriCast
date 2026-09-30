@@ -1,0 +1,22 @@
+# fakequant on exactly the windows of qwen3_0.6b_kv_stream.yaml (the first 8): ENGINE.md §3.13 says
+# one fakequant forward equals token-by-token cache decoding up to the summation order of attention,
+# so these perplexities must match the streaming ones to that precision.
+model: Qwen/Qwen3-0.6B
+dtype: bfloat16
+device: cuda
+seed: 42
+native_baseline: true
+tasks:
+  ppl: {dataset: wikitext2, seqlen: 2048, max_windows: 8}
+recipes:
+  - name: kivi2_fakequant
+    description: KIVI 2-bit keys and values, residual 128, every token read as a decode step.
+    defaults: {}
+    include: []
+    kv: {preset: kivi2, mode: fakequant}
+  - name: kivi4_fakequant
+    description: KIVI 4-bit keys and values, residual 128, every token read as a decode step.
+    defaults: {}
+    include: []
+    kv: {preset: kivi4, mode: fakequant}
+output_dir: ../../runs/e2e/qwen3_0.6b_kv_check

@@ -1,11 +1,13 @@
-# Qwen3-0.6B on lm-eval: HellaSwag (acc_norm, 10042 items) and CoQA (generative, EM / F1).
+# Qwen3-0.6B on lm-eval: HellaSwag (acc_norm) on its first 2000 of 10042 items, and all 500 CoQA
+# dialogues (generative, EM / F1). The HellaSwag subset keeps one emulated recipe near an hour on an
+# A100 (the full set is ~40k scored continuations, ~3.6 h per recipe); report it as a subset.
 model: Qwen/Qwen3-0.6B
 dtype: bfloat16
 device: cuda
 seed: 42
 native_baseline: true
 tasks:
-  lm_eval: {tasks: [hellaswag, coqa], batch_size: 16}
+  lm_eval: {tasks: [hellaswag, coqa], batch_size: 16, limit: 2000}
 recipes:
   - hopper_fp8_w8a8
   - fp8_f7_lowacc

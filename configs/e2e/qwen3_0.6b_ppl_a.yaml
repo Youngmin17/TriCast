@@ -1,0 +1,14 @@
+# Qwen3-0.6B, full WikiText-2 test perplexity (GPTQ convention: 2048-token windows).
+# native is the unpatched model; bf16_passthrough must match it (SPEC AC4).
+# Part A of two (run in parallel on two GPUs): FP8/INT8 accumulators and the references.
+model: Qwen/Qwen3-0.6B
+dtype: bfloat16
+device: cuda
+seed: 42
+native_baseline: true
+tasks:
+  ppl: {dataset: wikitext2, seqlen: 2048}
+recipes: [bf16_passthrough, fp64_reference, hopper_fp8_w8a8, ada_fp8_w8a8, blackwell_fp8_w8a8,
+  fp8_f7_lowacc, fp8_f7_decoupled, deepseek_fp8_block, fp8_ema_static, fp8_delayed_history,
+  int8_row_w8a8]
+output_dir: ../../runs/e2e/qwen3_0.6b_ppl_a

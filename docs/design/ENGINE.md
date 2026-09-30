@@ -44,7 +44,8 @@ algorithms
 integration
   tricast.recipe         Recipe (YAML/JSON, schema src/tricast/schemas/recipe.schema.json)
   tricast.nn             EmuLinear, patch_model                             (§6)
-  tricast.calibrate      calibration pass (observers, transform stats, GPTQ Hessians)
+  tricast.calibration    calibration pass (observers, transform stats, GPTQ Hessians);
+                         the function is exported as tricast.calibrate
   tricast.eval           ppl, lm-eval model "tricast", runner + env capture
   tricast.cli            `tricast` command
 ```
@@ -134,13 +135,20 @@ Guards: `amax = 0` → `s = 1` for absmax-type methods; if a rounded absmax scal
 `d2 = amax_tensor / (M · SF.max_normal)` (fp32 RN; product `M·SF.max` exact; `d2 = 0 →
 1`). Per block: `t = (amax_b / M) / d2` (two fp32 RN divs), `s_b = round_to_format(t,
 SF, scale.rounding, saturate=True)`. Effective scale `s_b · d2` (fp32 RN). QTensor keeps
-`s_b` in `scale` and `d2` in `global_scale`.
+`s_b` in `scale` and `d2` in `global_scale`. A `pow2_*` method takes this same path (the block
+scale is `t` rounded onto `SF`; with an E8M0 `SF` that rounding makes it a power of two).
 
 ### 3.5 Zero points (integer formats, `mma_input="dequant"` only)
-`lo = min(0, min D)`, `hi = max(0, max D)`, `s* = (hi - lo) / (qmax - qmin)` → scale
-format as in absmax; `int`: `z = clamp(RNE(qmin - lo / s), qmin, qmax)`; `float`: `z =
-qmin - lo / s` (fp32). Elements `q = clamp(round(x / s) + z, qmin, qmax)` with the
-element rounding mode applied to `x / s` and the integer addition exact.
+`s* = (hi - lo) / (qmax - qmin)` → scale format as in absmax (fp32 RN div; `hi == lo` → `s = 1`).
+- `int` (GPTQ/AWQ style): `lo = min(0, min D)`, `hi = max(0, max D)` (zero stays exact);
+  `z = clamp(RNE(qmin - lo / s), qmin, qmax)` (integer); `q = clamp(round(x / s) + z, qmin, qmax)`
+  (rounding mode applied to `x / s`, integer add exact); `x̂ = (q - z) · s`.
+- The range is always `[min D, max D]` (with `-0` ordered below `+0`); `scale.method` applies
+  to symmetric scales only and is ignored here (a warning says so at spec construction).
+- `float` (KIVI / HQQ style, unsigned formats only): `lo = min D`, `hi = max D`; the stored offset is `z = lo`;
+  `q = clamp(round((x - lo) / s), qmin, qmax)` (fp32 RN subtract, fp32 RN divide, then the
+  rounding mode); `x̂ = q · s + z` (fp32 RN multiply, then fp32 RN add).
+Observers cannot drive zero points (they track amax only) — rejected at spec construction.
 
 ### 3.6 Elements
 `q = round_to_format(x / s_eff, elem, spec.rounding, saturate=spec.saturate,
@@ -157,8 +165,9 @@ zero_point    fp32 | None   same shape as scale
 global_scale  fp32 scalar | None  (d2)
 spec, shape   the QuantSpec and the original shape
 ```
-`dequantize()`: `x̂ = (q - z) · s` (fp32 RN, per-element broadcast of `s`), two-level
-`x̂ = (q · s_b) · d2`; reshaped to `shape`. `mma_operand()`: `scaled` → `(values, scale
+`dequantize()`: `int` zero points and symmetric specs `x̂ = (q - z) · s` (fp32 RN, per-element
+broadcast of `s`; `z = 0` without zero points), `float` zero points `x̂ = q · s + z`,
+two-level `x̂ = (q · s_b) · d2`; reshaped to `shape`. `mma_operand()`: `scaled` → `(values, scale
 layout)`; `dequant` → `round_to_format(x̂, dequant_format, RNE, saturate=False)`.
 
 ### 3.8 fake_quant and QAT
@@ -176,8 +185,11 @@ diag(1/s)`, `s_j = max|X_j|^α / max|W_j|^{1-α}` from calibration (`max|X_j|` o
 calibration tokens), `s_j` clamped to `[1e-5, 1e5]`, weights become `W diag(s)`.
 `awq`: same diagonal form with `s_j = mean|X_j|^α` normalised by `sqrt(max s · min
 s)`; `α` chosen from `linspace(0, 1, grid)` minimising `‖Q(W diag(s)) (X/s)ᵀ − W Xᵀ‖²`
-on calibration activations. Transformed activations/weights are fp32 values that
-are then quantized as usual.
+on calibration activations. `share_inputs=True` (default for smoothquant/awq): linears
+that consume the same activation tensor in the forward pass (q/k/v, gate/up) form one
+group and share one `s` (statistics pooled over the group, the AWQ α searched on the summed
+group error) — the deployable form where `1/s` folds into the preceding norm. Transformed
+activations/weights are fp32 values that are then quantized as usual.
 
 ### 3.10 Weight algorithms (`WeightAlgoSpec`)
 `rtn`: `quantize(W, spec)`. `gptq`: Frantar et al. with `H = 2XᵀX/n` from calibration
@@ -185,7 +197,10 @@ activations (after the transform), dampening `damp · mean(diag H)`, optional
 act-order, lazy batch updates of `block_size` columns, each column rounded with the
 QuantSpec (group scales are computed when a group's first column is reached, from
 the current partially-updated weights). Output is a regular QTensor, so every
-format/scale/granularity combination supports GPTQ.
+format/scale/granularity combination supports GPTQ. With `calibration.sequential: true`
+the calibrator processes decoder layers in order and feeds each layer the outputs of the
+already-quantized layers before it (the original GPTQ procedure); otherwise every layer
+sees full-precision inputs from one pass.
 
 ### 3.11 Observers (`ObserverSpec`, activations, tensor granularity)
 State per EmuLinear: `amax`, `count`, `history`, reservoir `samples` (≤ `max_samples`).
@@ -195,6 +210,53 @@ first call initialises. `history`: TE delayed scaling — the scale for a call u
 `reduce(history)` of *previous* calls (`max` or `most_recent`), the first call uses its
 own amax, then the current amax is appended (length ≤ `history_len`); history keeps
 updating in eval mode. `percentile`/`mse`: computed once from the reservoir at freeze.
+
+### 3.12 Reference quantization API (fixed signatures, `tricast.reference.quantize`)
+```python
+view_2d(x) -> Tensor                                  # fp32 [rows, K]
+compute_amax(x2d, spec) -> Tensor                     # amax in the §3.7 scale layout
+compute_scale(x2d, spec, amax=None) -> tuple[Tensor, Tensor | None, Tensor | None]
+    # (scale, zero_point, global_scale), each in the §3.7 layout; amax overrides the
+    # data amax (tensor granularity / observers); two-level → global_scale = d2
+expand_scale(t, spec, rows, K) -> Tensor              # [rows, K] per-element (scale or zero point)
+quantize_elements(x2d, spec, scale_pe, zp_pe=None, global_scale=None, noise=None) -> Tensor
+    # fp32 [rows, K] grid values given per-element scale (and zero point)
+quantize_reference(x, spec, *, amax=None, noise=None) -> QTensor
+```
+GPTQ (§3.10) calls `compute_scale` on column slices and `quantize_elements` per column.
+
+### 3.13 KV cache quantization (`KVSpec`, `tricast.kv`)
+Keys and values are `[batch, heads, tokens, head_dim]`. `key_axis`/`value_axis` choose the
+quantization domain: `token` → each token's head-dim vector is a row (group along
+head_dim); `channel` → each head-dim channel over tokens is a row (group along tokens).
+Scale domains never cross batch rows or heads. The presets follow KIVI (ICML 2024,
+Algorithm 1 and its reference implementation); `kv_fp8` follows vLLM's FP8 KV cache
+(`kv_cache_dtype=fp8`, static per-tensor scale 1.0 when uncalibrated, no residual).
+- **Stored state** after `n` real tokens of a sequence, independent of how the tokens were
+  split into updates:
+  - `channel`-axis specs (KIVI keys, group size `G`, residual `R`, `R % G == 0`): the first
+    `⌊n / R⌋ · R` tokens are quantized in groups of `G` consecutive tokens; the last
+    `n mod R` tokens are a full-precision buffer. (KIVI: the buffer is quantized as a whole
+    when it reaches `R` tokens.) `R = 0` is not allowed for channel-axis specs.
+  - `token`-axis specs (KIVI values, `kv_fp8`): every token except the most recent
+    `min(n, R)` is quantized on its own; the most recent `R` stay in full precision.
+  - Quantized tokens are stored dequantized on the `dequant_format` grid.
+- **Attention ordering (`cache` mode, as deployed):** the forward that appends tokens attends
+  with the state stored *before* the update plus the appended tokens in full precision, then
+  writes (quantizes). A prefilled prompt therefore attends in full precision; each decode step
+  reads the tokens quantized by earlier steps.
+- **`fakequant` mode:** one forward over all tokens reproduces token-by-token `cache`-mode
+  decoding (every token treated as a decode step): query `t` (0-based) reads key/value
+  `s < t` quantized exactly when `s` is quantized in the stored state of the first `t` tokens
+  (channel axis: `s < ⌊t / R⌋ · R`; token axis: `s < t − R`) and its own key/value in full
+  precision, via a per-(query, key) selector between the quantized and the original K/V. It is
+  causal (logits at `t` never depend on tokens after `t`) and equals streaming `cache`-mode
+  evaluation up to the summation order of attention. Masked (padding) tokens are excluded from
+  grouping. Deployment semantics differ for scored prompts: a prefill attends in full precision,
+  so KV quantization changes only generated tokens (`cache` mode + generation tasks).
+- Padded batches in `cache` mode, assisted/prompt-lookup generation and contrastive search are
+  rejected before the first forward. Keys and values use independent specs; either may be
+  `None` (left in full precision).
 
 ## 4. MMA — `gemm(a, b, mma) -> out`
 
@@ -248,8 +310,9 @@ radix `G + R_sa + R_sb`, exponent `E_g + e_sa + e_sb`, moved to radix F (shift l
 truncate right); zero if `S_g = 0` or a scale is zero, NaN if a scale is NaN (NADPE
 `apply_ue4m3_scales` / `apply_e8m0_scales`; without block scales the factors are 1).
 Then `c = fda(group operands of the tile, c, F)` — the tile's `KT/GS` groups form one FDA.
-**E8M0 field-0 rule:** an E8M0 scale equal to `2^−127` contributes zero (NADPE, matches
-hardware). **Headroom:** every call validates `F + int_bits + ⌈log2(n+1)⌉ ≤ 62` where
+**E8M0 field-0 rule:** an E8M0 scale equal to `2^−127` contributes zero wherever scales are
+applied inside the MMA — group level (GDFS, NADPE `apply_e8m0_scales`) and product level
+(CoFDA, NADPE `fp4_product_with_e8m0_scales`); the epilogue and `operand` paths use the value. **Headroom:** every call validates `F + int_bits + ⌈log2(n+1)⌉ ≤ 62` where
 `int_bits` bounds the integer part of an aligned term (2 for float×float, +1 per float
 scale factor, significand widths for ints) and `n` the FDA width.
 
@@ -311,11 +374,20 @@ defaults:
 include: ["*"]                            # fnmatch on model.named_modules() names
 exclude: ["lm_head"]
 overrides:                                # ordered, first match wins, merged over defaults
-  - match: "*.mlp.down_proj"
-    weight: {scheme: fp8_row}
-calibration: {dataset: wikitext2, split: train, samples: 128, seqlen: 2048, seed: 0}
+  - match: "*.mlp.down_proj"               # fnmatch on the module name (optional)
+    layers: "0-3,27"                       # decoder-layer indices from ".layers.<i>." (optional)
+    modules: [q_proj, k_proj, v_proj]      # leaf module names (optional)
+    weight: {scheme: fp8_row}              # fields merged over defaults
+  - layers: "0,27"
+    skip: true                             # leave matching layers unpatched (full precision)
+kv: {preset: kivi2, mode: cache}           # optional KV-cache quantization (§3.13)
+calibration: {dataset: wikitext2, split: train, samples: 128, seqlen: 2048, seed: 0,
+              sequential: false}
 backend: auto                             # auto | triton | reference
 ```
+An override matches when every selector it names matches (`match`, `layers`, `modules`);
+an override with no selector is an error. Merging a partial `mma` override onto a preset
+clears the preset's `name`/`provenance` (the result is no longer that hardware).
 QuantSpec fields: `format, granularity ("tensor" | "row" | "group:G" | "block:RxC"),
 scale {format, method, rounding, two_level, percentile, mse_grid, search},
 zero_point, rounding, sr_bits, saturate, mma_input, dequant_format, observer {kind,
@@ -327,23 +399,56 @@ with `EmuLinear` (weights quantized once, packed K-major, bias kept in fp32);
 `forward` quantizes the activation (dynamic or observer amax), calls `gemm`, returns
 the input dtype. Training mode: forward is the emulated GEMM, backward uses the
 dequantized operands with the STE of §3.8. `unpatch_model` restores the originals.
+A dynamic activation scale whose domain spans tokens — tensor granularity, a two-level
+tensor scale `d2`, blocks with more than one row, or a `history` observer — is computed per
+sequence: an input `[B, T, K]` with `B > 1` is quantized and multiplied one sequence at a time,
+so a sequence gets the same result whatever shares its batch (`EmuLinear.per_sequence`).
+lm-eval right-pads loglikelihood batches without a mask, so the `tricast` adapter evaluates such
+models, and models with a quantized KV cache, one request per forward and records the batch size
+it used. The quantized weight is rebuilt when the weight tensor is replaced or edited in place;
+edits PyTorch does not version (`.data`, inside `torch.inference_mode`) need
+`EmuLinear.refresh()`.
 
-### 6.3 Calibration (`tricast.calibrate`)
+### 6.3 Calibration (`tricast.calibrate`, module `tricast.calibration`)
 One pass over calibration tokens collects, per EmuLinear: observer state,
 per-channel `max|X|`/`mean|X|` (smoothquant/awq), `XᵀX` (gptq). Then transforms are
-fitted, weights re-quantized (GPTQ where requested; v1 uses full-precision inputs
-for every layer), observers frozen.
+fitted (shared-input groups for smoothquant/awq), weights re-quantized (GPTQ where
+requested), observers frozen, and the calibration-only state (Hessians, sample reservoirs)
+released. Linears that read the same input (q/k/v, gate/up) share one Hessian; the live
+Hessians must fit `hessian_max_bytes` (default 4 GiB) or calibration stops before allocating.
+A transform combined with GPTQ or a static observer replays the calibration windows instead of
+storing activation rows. `sequential` captures the block-0 inputs once and feeds each decoder
+block the output of the already-quantized blocks before it (a model whose blocks are not a
+plain chain falls back to full-model passes and records why).
+A patched model whose recipe needs calibration refuses to run a forward until
+`calibrate()` has completed — it never falls back to identity transforms, RTN weights or
+dynamic scales. Defaults: `wikitext2` train, 128 windows × 2048 tokens, seed 0.
 
 ### 6.4 Evaluation
 - `tricast.eval.ppl.perplexity(model, tokenizer, dataset="wikitext2", seqlen=2048)`:
   GPTQ convention — join the test split with `"\n\n"`, tokenize once, non-overlapping
-  `seqlen` windows, mean token NLL, `ppl = exp(nll)`.
-- lm-eval model **`tricast`** (`lm_eval --model tricast --model_args
-  pretrained=…,recipe=…`), a subclass of `HFLM` that patches (and calibrates) the model
-  after loading; `tricast.eval.lmeval.evaluate(model, tokenizer, tasks, …)` for Python.
-- `tricast.eval.runner`: config → runs (resume, per-run JSON) with `env.json`: git SHA +
+  `seqlen` windows, mean token NLL, `ppl = exp(nll)`. C4 follows GPTQ too: the first 1100
+  documents of validation shard 0 joined with a space, the first 256 windows.
+- lm-eval model **`tricast`**, a subclass of `HFLM` that patches (and calibrates) the model
+  after loading. The plain `lm_eval` CLI does not import TriCast, so the registered entry
+  point is `python -m tricast.eval.lmeval --model tricast --model_args
+  pretrained=…,recipe=… --tasks …` (lm-eval's own arguments after the registration);
+  `tricast eval --model … --recipe … --tasks …` wraps the same adapter with env capture, and
+  `tricast.eval.lmeval.evaluate(model, tokenizer, tasks, …)` is the Python form.
+- `tricast.eval.runner`: config → runs (resume, per-run JSON; `native_baseline: true` adds a
+  `native` run of the unpatched model first) with `env.json`: git SHA +
   dirty flag, versions (python/torch/triton/transformers/lm_eval/datasets), GPU name +
   driver + CUDA, model repo + commit SHA, dataset fingerprints, recipe hash, seeds.
+
+### 6.5 Error analysis (`tricast.analysis`, `tricast report`)
+`layer_report(model, recipe, texts=…|input_ids=…, tokenizer=…)` (`texts` needs `tokenizer`;
+`tricast report --model M --recipe R` on the CLI) runs the same inputs through the unpatched
+model and the patched model and records, per EmuLinear: weight error (`W` vs dequantized
+`Ŵ`), activation error (`x` vs `x̂` as fed to the MMA), and output error (the layer's
+emulated output vs its full-precision output on identical inputs) — each as MSE, SQNR (dB),
+max |err|, relative Frobenius error and cosine similarity. Model level: logits KL
+divergence `KL(p_ref ‖ p_emu)` per token (mean), top-1 agreement, and perplexity of both.
+Output: JSON + a markdown table sorted by output SQNR (worst first).
 
 ## 7. Verification ladder
 
@@ -367,4 +472,6 @@ for every layer), observers frozen.
 | KQ Triton quantize | `kernels/{__init__,cast_core,quantize}.py`, `tests/gpu/test_triton_quantize.py` |
 | KM Triton MMA | `kernels/{mma_core,mma}.py`, `tests/gpu/test_triton_mma.py` |
 | A algorithms | `transforms.py`, `weight_quant/*.py`, `tests/test_transforms.py`, `tests/test_gptq.py` |
-| I integration | `recipe.py`, `schemas/recipe.schema.json`, `nn/*.py`, `calibrate.py`, `eval/*.py`, `cli.py`, `configs/**`, `tests/test_{recipe,nn_patch,eval,cli}.py`, `tests/conftest.py` |
+| I integration | `recipe.py`, `schemas/recipe.schema.json`, `nn/*.py`, `calibration.py`, `eval/*.py`, `cli.py`, `configs/**`, `tests/test_{recipe,nn_patch,eval,cli}.py`, `tests/conftest.py` |
+| KV cache (wave 4) | `kv/*.py`, `tests/test_kv*.py` |
+| analysis (wave 4) | `analysis.py`, `tests/test_analysis.py` |

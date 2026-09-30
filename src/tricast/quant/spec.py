@@ -22,10 +22,11 @@ from __future__ import annotations
 
 import math
 import re
+import warnings
 from dataclasses import dataclass, field, replace
 from typing import Literal
 
-from ..formats import BF16, E8M0, FP4_E2M1, FP16, FP32, UE4M3, Format, FloatFormat, IntFormat, get_format
+from ..formats import BF16, E8M0, FP4_E2M1, FP16, FP32, UE4M3, FloatFormat, Format, IntFormat, get_format
 from ..rounding import Rounding
 
 Granularity = Literal["tensor", "row", "group", "block"]
@@ -122,10 +123,13 @@ class TransformSpec:
     ``y = x W^T = (x T)(W T^-T)^T``.
 
     ``hadamard``         T = block-diagonal normalised Hadamard of size ``block`` along K
-    ``random_hadamard``  T = H D with a seeded random ±1 diagonal D (RHT)
+    ``random_hadamard``  T = D H with a seeded random ±1 diagonal D (RHT)
     ``smoothquant``      T = diag(1/s), ``s_j = max|X_j|**alpha / max|W_j|**(1-alpha)``
     ``awq``              diag scaling with ``alpha`` searched on a ``grid`` to minimise output error
     ``block=0`` picks the largest power of two ≤ 128 that divides K.
+    ``share_inputs`` (smoothquant / awq): linears that read the same activation (q/k/v,
+    gate/up) share one scale vector — the deployable form, where ``1/s`` folds into the
+    preceding norm. ``False`` fits each linear on its own.
     """
 
     kind: TransformKind = "none"
@@ -133,6 +137,7 @@ class TransformSpec:
     seed: int = 0
     alpha: float = 0.5
     grid: int = 20
+    share_inputs: bool = True
 
     def __post_init__(self) -> None:
         if self.kind not in ("none", "hadamard", "random_hadamard", "smoothquant", "awq"):
@@ -215,6 +220,14 @@ class QuantSpec:
                 raise ValueError("zero points need mma_input='dequant'")
             if self.scale is None or self.scale.two_level:
                 raise ValueError("zero points need a single-level scale")
+            if self.zero_point == "float" and self.format.signed:
+                raise ValueError("float zero points (KIVI/HQQ offset = min) need an unsigned format")
+            if self.observer is not None:
+                # Observers track amax only; an affine scale needs min and max.
+                raise ValueError("static observers support symmetric scales only (zero_point='none')")
+            if self.scale.method != "absmax":
+                warnings.warn(f"zero-point quantization takes its range from [min, max]; "
+                              f"scale.method={self.scale.method!r} is not used (ENGINE §3.5)", stacklevel=3)
         if self.scale is None and self.granularity != "tensor":
             raise ValueError("a direct cast (scale=None) has no granularity")
         if not isinstance(self.dequant_format, FloatFormat):
@@ -246,6 +259,73 @@ class QuantSpec:
         if base is not None:
             return replace(base, scale=scale, **d)
         return cls(scale=scale, **d)
+
+
+KVAxis = Literal["channel", "token"]
+KVMode = Literal["cache", "fakequant"]
+
+
+@dataclass(frozen=True)
+class KVSpec:
+    """Quantization of the attention KV cache (KIVI and relatives), ENGINE.md §3.13.
+
+    ``channel`` groups each head-dim channel over complete groups of tokens;
+    dynamic channel specs therefore require ``group`` granularity. ``token``
+    groups head-dim channels independently for each token and head: ``tensor``
+    means a per-token scale here, and blocks may not span tokens. Scale domains
+    never cross batch rows or heads. ``scale=None`` is a static unit-scale cast.
+
+    After n real tokens, ``channel`` quantizes floor(n/R)*R tokens and keeps
+    n mod R tokens in full precision (R > 0, and R is a multiple of group size G).
+    ``token`` quantizes max(0, n-R) tokens and keeps the most recent min(n, R).
+    ``cache`` attends with the pre-update state plus new full-precision tokens,
+    then writes this state; a prompt prefill therefore attends in full precision.
+    ``fakequant`` reproduces token-by-token cache decoding: query t uses the
+    stored state of its t predecessors and its own full-precision key/value.
+    """
+
+    key: QuantSpec | None = None
+    value: QuantSpec | None = None
+    key_axis: KVAxis = "channel"
+    value_axis: KVAxis = "token"
+    residual: int = 128
+    mode: KVMode = "cache"
+
+    def __post_init__(self) -> None:
+        for name in ("key", "value"):
+            spec = getattr(self, name)
+            if isinstance(spec, (str, dict)):
+                object.__setattr__(self, name, get_scheme(spec) if isinstance(spec, str)
+                                   else QuantSpec.from_dict(spec))
+        if self.key is None and self.value is None:
+            raise ValueError("a KVSpec needs a key or a value spec")
+        if {self.key_axis, self.value_axis} - {"channel", "token"}:
+            raise ValueError("key_axis and value_axis must be 'channel' or 'token'")
+        if self.mode not in ("cache", "fakequant") or self.residual < 0:
+            raise ValueError("mode must be 'cache' or 'fakequant' and residual >= 0")
+        for name in ("key", "value"):
+            spec = getattr(self, name)
+            if spec is None:
+                continue
+            if spec.observer is not None or spec.mma_input != "dequant":
+                raise ValueError("KV specs require dynamic or unit scales and mma_input='dequant'")
+            if spec.rounding == Rounding.SR or (
+                spec.scale is not None and spec.scale.rounding == Rounding.SR
+            ):
+                raise ValueError("stochastic rounding is unsupported for chunk-invariant KV specs")
+            axis = getattr(self, f"{name}_axis")
+            if axis == "channel" and self.residual == 0:
+                raise ValueError("channel-axis KV specs require residual > 0")
+            if spec.scale is None:
+                continue
+            if spec.scale.two_level:
+                raise ValueError("two-level scales are unsupported for chunk-invariant KV specs")
+            if axis == "channel" and spec.granularity != "group":
+                raise ValueError("dynamic channel-axis KV specs require group granularity")
+            if axis == "channel" and self.residual % spec.group_size != 0:
+                raise ValueError("channel-axis KV residual must be a multiple of group_size")
+            if axis == "token" and spec.granularity == "block" and spec.block[0] != 1:
+                raise ValueError("token-axis KV blocks must have one row, not span tokens")
 
 
 def _parse_granularity(text: str) -> dict:
@@ -299,6 +379,11 @@ SCHEMES: dict[str, QuantSpec] = {
                            mma_input="dequant"),
     "int4_g128_zp": QuantSpec("uint4", "group", group_size=128, scale=ScaleSpec(FP16),
                               zero_point="int", mma_input="dequant"),
+    # KIVI KV cache elements: asymmetric min/max, fp16 scale and float offset, group 32
+    "kivi2": QuantSpec("uint2", "group", group_size=32, scale=ScaleSpec(FP16), zero_point="float",
+                       mma_input="dequant", dequant_format=FP16),
+    "kivi4": QuantSpec("uint4", "group", group_size=32, scale=ScaleSpec(FP16), zero_point="float",
+                       mma_input="dequant", dequant_format=FP16),
     # Direct casts (no scale)
     "bf16": QuantSpec(BF16, scale=None), "fp16": QuantSpec(FP16, scale=None),
     "fp32": QuantSpec(FP32, scale=None), "tf32": QuantSpec("tf32", scale=None),
@@ -318,3 +403,32 @@ def get_scheme(name: str | QuantSpec) -> QuantSpec:
     if m:
         return bfp(int(m.group(1)), int(m.group(2)))
     raise ValueError(f"unknown scheme {name!r}; known: {sorted(SCHEMES)} or bfp<m>_b<block>")
+
+
+KV_PRESETS: dict[str, KVSpec] = {
+    # KIVI (Liu et al., ICML 2024), Algorithm 1: channel keys flush at residual 128;
+    # token values retain the latest 128, both with group size 32 (ENGINE.md §3.13).
+    "kivi2": KVSpec(key="kivi2", value="kivi2", residual=128),
+    "kivi4": KVSpec(key="kivi4", value="kivi4", residual=128),
+    # vLLM v0.15.1 CacheConfig: fp8 (=E4M3), calculate_kv_scales=False and
+    # no checkpoint scales uses static k_scale=v_scale=1.0 (not dynamic amax).
+    # No residual: every appended token is quantized when stored (ENGINE.md §3.13).
+    # https://docs.vllm.ai/en/v0.15.1/api/vllm/config/cache/#vllm.config.cache.CacheConfig.calculate_kv_scales
+    "kv_fp8": KVSpec(key=QuantSpec("fp8_e4m3", scale=None, mma_input="dequant", dequant_format=FP32),
+                     value=QuantSpec("fp8_e4m3", scale=None, mma_input="dequant", dequant_format=FP32),
+                     key_axis="token", residual=0),
+}
+
+
+def get_kv_spec(spec: str | dict | KVSpec) -> KVSpec:
+    """KV preset name, KVSpec, or a mapping of KVSpec fields (key/value as scheme or dict)."""
+    if isinstance(spec, KVSpec):
+        return spec
+    if isinstance(spec, str):
+        try:
+            return KV_PRESETS[spec.strip().lower()]
+        except KeyError:
+            raise ValueError(f"unknown KV preset {spec!r}; known: {sorted(KV_PRESETS)}") from None
+    d = dict(spec)
+    base = KV_PRESETS[d.pop("preset")] if "preset" in d else None
+    return replace(base, **d) if base else KVSpec(**d)

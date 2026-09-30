@@ -8,12 +8,35 @@ everything that needs torch kernels, transformers or lm-eval loads on first use.
 from importlib import import_module
 
 from .formats import (
-    BF16, E8M0, FP4_E2M1, FP6_E2M3, FP6_E3M2, FP8_E4M3, FP8_E5M2, FP16, FP32, INT4, INT8,
-    MXINT8, TF32, UE4M3, FloatFormat, Format, IntFormat, Pow2Format, get_format,
+    BF16,
+    E8M0,
+    FP4_E2M1,
+    FP6_E2M3,
+    FP6_E3M2,
+    FP8_E4M3,
+    FP8_E5M2,
+    FP16,
+    FP32,
+    INT4,
+    INT8,
+    MXINT8,
+    TF32,
+    UE4M3,
+    FloatFormat,
+    Format,
+    IntFormat,
+    Pow2Format,
+    get_format,
 )
 from .mma.spec import MMASpec, get_preset
 from .quant.spec import (
-    ObserverSpec, QuantSpec, ScaleSpec, TransformSpec, WeightAlgoSpec, bfp, get_scheme,
+    ObserverSpec,
+    QuantSpec,
+    ScaleSpec,
+    TransformSpec,
+    WeightAlgoSpec,
+    bfp,
+    get_scheme,
 )
 from .rounding import Rounding
 
@@ -29,7 +52,7 @@ _LAZY = {
     "load_recipe": "tricast.recipe",
     "EmuLinear": "tricast.nn.linear",
     "patch_model": "tricast.nn.patch",
-    "calibrate": "tricast.calibrate",
+    "calibrate": "tricast.calibration",
 }
 
 

@@ -38,6 +38,7 @@ def round_to_format(
     ``u < discarded_fraction`` with ``u = floor(noise / 2**(32 - sr_bits)) / 2**sr_bits``;
     ``noise`` is a uint32-valued tensor (int64 accepted) broadcastable to ``x``.
     Passing the same ``noise`` makes every backend produce identical results.
+    Without ``noise``, SR requires an explicit ``generator``; the global RNG is never used.
     """
     fmt = get_format(fmt)
     rounding = Rounding.parse(rounding)
@@ -68,7 +69,8 @@ def round_to_format(
         if not fmt.signed:
             mag = torch.where(xd < 0, torch.zeros_like(mag), mag)
         mag = torch.where(finite, mag, torch.where(torch.isnan(xd), xd.abs(), _int_inf_bound(xd, fmt)))
-        return mag.copysign(xd).to(torch.float32).where(~torch.isnan(xd), xd.to(torch.float32))
+        out = mag.copysign(xd) if fmt.signed else mag  # unsigned grids have no -0
+        return torch.where(torch.isnan(xd), xd, out).to(torch.float32)
 
     over = (mag > fmt.max_normal) | torch.isinf(xd)
     mag = torch.where(over, _overflow_value(xd, fmt, rounding, saturate), mag)
@@ -84,7 +86,8 @@ def round_to_format(
 def _floor_log2(ax: torch.Tensor) -> torch.Tensor:
     """Exact ``floor(log2(ax))`` for positive finite fp64; 0 elsewhere."""
     _, e = torch.frexp(ax)
-    return torch.where((ax > 0) & torch.isfinite(ax), e.to(torch.int64) - 1, torch.zeros_like(e, dtype=torch.int64))
+    valid = (ax > 0) & torch.isfinite(ax)
+    return torch.where(valid, e.to(torch.int64) - 1, torch.zeros_like(e, dtype=torch.int64))
 
 
 def _round_up(frac, k, negative, rounding, noise, sr_bits, generator) -> torch.Tensor:
@@ -104,6 +107,8 @@ def _round_up(frac, k, negative, rounding, noise, sr_bits, generator) -> torch.T
         if not 1 <= sr_bits <= 32:
             raise ValueError("sr_bits must be in [1, 32]")
         if noise is None:
+            if generator is None:
+                raise ValueError("stochastic rounding requires explicit noise or generator")
             noise = torch.randint(0, 2**32, frac.shape, generator=generator, device="cpu",
                                   dtype=torch.int64).to(frac.device)
         u = torch.floor(noise.to(torch.float64) / 2.0 ** (32 - sr_bits)) / 2.0**sr_bits
@@ -137,7 +142,7 @@ def _round_pow2(xd, fmt: Pow2Format, rounding: Rounding, saturate: bool) -> torc
     ax = xd.abs()
     e = _floor_log2(ax)
     lower = torch.ldexp(torch.ones_like(ax), e)
-    frac = ax / lower - 1.0  # in [0, 1)
+    frac = torch.where(torch.isfinite(ax), ax / lower - 1.0, torch.zeros_like(ax))  # in [0, 1)
     if rounding in (Rounding.RNE, Rounding.RNA):
         up = frac >= 0.5
     elif rounding in (Rounding.RTZ, Rounding.RDN):
@@ -147,10 +152,11 @@ def _round_pow2(xd, fmt: Pow2Format, rounding: Rounding, saturate: bool) -> torc
     else:
         raise ValueError("stochastic rounding is not defined for power-of-two formats")
     e = (e + up.to(torch.int64)).clamp(min=fmt.emin)
-    out = torch.ldexp(torch.ones_like(ax), e)
-    bad = torch.isnan(xd) | (xd < 0) | ((e > fmt.emax) & ~torch.tensor(saturate))
-    out = torch.where(e > fmt.emax, torch.full_like(out, fmt.max_normal), out)
+    over = (e > fmt.emax) | torch.isinf(ax)
+    out = torch.ldexp(torch.ones_like(ax), e.clamp(max=fmt.emax))
+    out = torch.where(over, torch.full_like(out, fmt.max_normal), out)
     out = torch.where(ax == 0, torch.full_like(out, fmt.min_normal), out)
+    bad = torch.isnan(xd) | (xd < 0) | (over & (not saturate))
     return torch.where(bad, torch.full_like(out, float("nan")), out).to(torch.float32)
 
 
@@ -190,6 +196,22 @@ def decode(v: torch.Tensor, fmt: Format | str) -> tuple[torch.Tensor, torch.Tens
     sig_f = torch.ldexp(ax, radix - exp)
     if not torch.equal(sig_f, torch.floor(sig_f)):
         raise ValueError(f"values are not on the {fmt} grid")
+    if bool(_out_of_range(vd, ax, exp, sig_f, fmt).any()):
+        raise ValueError(f"values are outside the representable range of {fmt}")
     sig = sig_f.to(torch.int64)
     exp = torch.where(sig == 0, torch.zeros_like(exp), exp)
     return negative, exp, sig, radix
+
+
+def _out_of_range(vd, ax, exp, sig_f, fmt: Format) -> torch.Tensor:
+    """Grid-aligned values the format still cannot encode (beyond max, disabled
+    subnormals, negatives on unsigned grids, zero or non-powers on E8M0)."""
+    if isinstance(fmt, FloatFormat):
+        bad = ax > fmt.max_normal
+        if not fmt.subnormals:
+            bad |= (ax > 0) & (ax < fmt.min_normal)
+        return bad | ((vd < 0) & (not fmt.signed))
+    if isinstance(fmt, IntFormat):
+        k = torch.where(vd < 0, -sig_f, sig_f)
+        return (k < fmt.qmin) | (k > fmt.qmax)
+    return (vd <= 0) | (sig_f != 1) | (exp < fmt.emin) | (exp > fmt.emax)

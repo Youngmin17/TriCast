@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from typing import Literal, Union
+from typing import Literal
 
 Special = Literal["ieee", "fn", "fnuz", "none"]
 
@@ -201,7 +201,7 @@ class Pow2Format:
         return self.name
 
 
-Format = Union[FloatFormat, IntFormat, Pow2Format]
+Format = FloatFormat | IntFormat | Pow2Format
 
 # --------------------------------------------------------------------------
 # Registry
@@ -279,6 +279,9 @@ def get_format(spec: str | Format | dict) -> Format:
 
     m = _EXMY.match(head)
     if m:
+        _check_options(spec, flags, kv, {*_SPECIALS, "nosub"}, {"bias"})
+        if len(flags & set(_SPECIALS)) > 1:
+            raise ValueError(f"{spec!r}: choose one of {_SPECIALS}")
         unsigned, e, mb = m.group(1) is not None, int(m.group(2)), int(m.group(3))
         if e >= 1 and mb == 0 and not flags & set(_SPECIALS):
             return Pow2Format(name=spec, ebits=e, bias=int(kv.get("bias", 2 ** (e - 1) - 1)))
@@ -288,12 +291,20 @@ def get_format(spec: str | Format | dict) -> Format:
                            signed=not unsigned, subnormals="nosub" not in flags)
     m = _INTN.match(head)
     if m:
+        _check_options(spec, flags, kv, {"full"}, {"frac"})
         unsigned, bits = m.group(1) is not None, int(m.group(2))
         return IntFormat(spec, bits, signed=not unsigned, symmetric="full" not in flags,
                          frac_bits=int(kv.get("frac", 0)))
     if head in REGISTRY:
         raise ValueError(f"options {opts} are not supported on registered format {head!r}")
     raise ValueError(f"unknown format {spec!r}; registered: {sorted(REGISTRY)}")
+
+
+def _check_options(spec: str, flags: set, kv: dict, allowed_flags: set, allowed_keys: set) -> None:
+    unknown = sorted(flags - allowed_flags) + sorted(set(kv) - allowed_keys)
+    if unknown:
+        raise ValueError(f"{spec!r}: unsupported option(s) {unknown}; allowed: "
+                         f"{sorted(allowed_flags)} and {sorted(k + '=' for k in allowed_keys)}")
 
 
 def _from_dict(d: dict) -> Format:

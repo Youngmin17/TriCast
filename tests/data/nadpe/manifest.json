@@ -1,0 +1,480 @@
+{
+ "created_utc": "2026-09-30T09:37:40Z",
+ "env": {
+  "gpu": "NVIDIA A100-SXM4-80GB",
+  "gpu_capability": "8.0",
+  "gpu_uuid": "GPU-e251971c-9e7b-02f9-ddcc-ab5377e3f4fd",
+  "driver": "595.71.05",
+  "clocks_sm_mem_mhz": "210 MHz, 1593 MHz",
+  "host": "geneva.ee.ucl.ac.uk",
+  "torch": "2.8.0+cu128",
+  "cuda": "12.8",
+  "nvcc": "Cuda compilation tools, release 12.9, V12.9.86",
+  "ext_so_sha256": "84a4ec5dc75c43f6fe5bc9bcfef1f29139a906ab6ded4e5603274027a8c0aac5",
+  "build_flags": "-O2 -std=c++17 --expt-relaxed-constexpr -gencode=arch=compute_80,code=sm_80 + torch COMMON_NVCC_FLAGS",
+  "nadpe_src_origin": "micro26-ae-main (zip, no git metadata): csrc/quantization/mma_emu, compiled unmodified",
+  "nadpe_src_sha256": {
+   "fp8_gemm_kernels.cu": "9fdb124927d82f39c2db1fe67adefa60ec5af4ac94086a1079113baf2c05b8cf",
+   "gemm/scaled_fp8_mm.cuh": "286aae0fcf5a88a96a9c6cb6648f7fcebadb6fd9adbcf0b607dc59987e350e35",
+   "formats/fp8_e4m3.cuh": "044af133cf099c2940b81eba4ee09fd3e258a0338124fa09fb5f2ab8fdb1bc1d",
+   "core/accumulator.cuh": "547b8b799d5db8db590b0121a9629497c31a91e078818e208ba1d71e6f74b149",
+   "core/design_space.cuh": "b84e5127cf331e85ffa61ca4b5ed30e8946323fc63a77050220df8876eb18908",
+   "core/fp32_utils.cuh": "202ad4a4ce4934b08dbde32647b262ca76af1903e40767224de6fc2c26bd638d",
+   "core/gdfs_group.cuh": "6e00b968561facc8e1b0343b40b54992e19cc1035ffea9790211ffed17a5bf18",
+   "core/tiling.cuh": "6d82aa514f032d44c541a1c0b70606cdbf01d3208a676b04f732f74cf763e35a",
+   "core/types.cuh": "42678749b51fccf9bfb2d4adea0ca08e8e116bdf24179272a69fef52634f9cdc"
+  },
+  "nadpe_src_sha256_combined": "c86a0d54ad67e5d46a8491bd430185b43ff5b85855f3efd06215442708eb53c3"
+ },
+ "files": [
+  {
+   "file": "fp8_uniform-unit_33x17x96.pt",
+   "bytes": 149195,
+   "sha256": "f19f41fc296271bb6ddf43984f8687b3aedc605f5d0228d717b11b7cc06e7301",
+   "cases": 100,
+   "seed": 1234,
+   "M": 33,
+   "N": 17,
+   "K": 96,
+   "scale_a": 1.0,
+   "scale_b": 1.0
+  },
+  {
+   "file": "fp8_uniform-scaled_33x17x96.pt",
+   "bytes": 149411,
+   "sha256": "39e9689eb841cf3ca18ab33534ded1e79a27fc713ae0cfd28d417aa894f10d9f",
+   "cases": 100,
+   "seed": 1234,
+   "M": 33,
+   "N": 17,
+   "K": 96,
+   "scale_a": 0.3700000047683716,
+   "scale_b": 2.5
+  },
+  {
+   "file": "fp8_uniform-unit_64x40x256.pt",
+   "bytes": 574391,
+   "sha256": "09d3655f0718deeca3552e45c0348bec733438ae3f379d3bebfa29c6cc5d1492",
+   "cases": 100,
+   "seed": 1235,
+   "M": 64,
+   "N": 40,
+   "K": 256,
+   "scale_a": 1.0,
+   "scale_b": 1.0
+  },
+  {
+   "file": "fp8_uniform-scaled_64x40x256.pt",
+   "bytes": 574607,
+   "sha256": "4b4f865879ba898181a23c0c4a70d4223a2840cff753b4b622095d98736d6b72",
+   "cases": 100,
+   "seed": 1235,
+   "M": 64,
+   "N": 40,
+   "K": 256,
+   "scale_a": 0.3700000047683716,
+   "scale_b": 2.5
+  },
+  {
+   "file": "fp8_uniform-unit_5x8x77.pt",
+   "bytes": 42675,
+   "sha256": "9872a7de6a6b08a9d92e2cee88b956ba7ea61def9f3d48607a937e2c7af32423",
+   "cases": 100,
+   "seed": 1236,
+   "M": 5,
+   "N": 8,
+   "K": 77,
+   "scale_a": 1.0,
+   "scale_b": 1.0
+  },
+  {
+   "file": "fp8_uniform-scaled_5x8x77.pt",
+   "bytes": 42891,
+   "sha256": "bcacc3beaf2727372d98d6871b8641e48dc898f44c4cd96c65500df8036898af",
+   "cases": 100,
+   "seed": 1236,
+   "M": 5,
+   "N": 8,
+   "K": 77,
+   "scale_a": 0.3700000047683716,
+   "scale_b": 2.5
+  },
+  {
+   "file": "fp8_realistic-unit_33x17x96.pt",
+   "bytes": 149411,
+   "sha256": "321fdf87c989e24a74d579da1c2bbaba55cc745914c57fc31c96bdd0e2da4e6d",
+   "cases": 100,
+   "seed": 1237,
+   "M": 33,
+   "N": 17,
+   "K": 96,
+   "scale_a": 1.0,
+   "scale_b": 1.0
+  },
+  {
+   "file": "fp8_realistic-scaled_33x17x96.pt",
+   "bytes": 149627,
+   "sha256": "b3a8939d734aa9410e8a2d991c11291d0374998d6317fc74dcf14c596a9f1227",
+   "cases": 100,
+   "seed": 1237,
+   "M": 33,
+   "N": 17,
+   "K": 96,
+   "scale_a": 0.3700000047683716,
+   "scale_b": 2.5
+  },
+  {
+   "file": "fp8_realistic-unit_64x40x256.pt",
+   "bytes": 574607,
+   "sha256": "1c3b632d49179f403309aa3d09e2a094ecd8b38d6445271809bee10e82402d1f",
+   "cases": 100,
+   "seed": 1238,
+   "M": 64,
+   "N": 40,
+   "K": 256,
+   "scale_a": 1.0,
+   "scale_b": 1.0
+  },
+  {
+   "file": "fp8_realistic-scaled_64x40x256.pt",
+   "bytes": 574823,
+   "sha256": "d20375f8833677e9ddfa8ff78c089fac7ead9feb89ea6c9dee332132a3d6a640",
+   "cases": 100,
+   "seed": 1238,
+   "M": 64,
+   "N": 40,
+   "K": 256,
+   "scale_a": 0.3700000047683716,
+   "scale_b": 2.5
+  },
+  {
+   "file": "fp8_realistic-unit_5x8x77.pt",
+   "bytes": 42891,
+   "sha256": "e6cebb6d009fb1faae8f5a8ecc1c238604b9adeb8a635770530962c7b1b58311",
+   "cases": 100,
+   "seed": 1239,
+   "M": 5,
+   "N": 8,
+   "K": 77,
+   "scale_a": 1.0,
+   "scale_b": 1.0
+  },
+  {
+   "file": "fp8_realistic-scaled_5x8x77.pt",
+   "bytes": 43171,
+   "sha256": "93fcca082295a09f83817c5cda588458d4c04d795afda7e29af547699ec817f7",
+   "cases": 100,
+   "seed": 1239,
+   "M": 5,
+   "N": 8,
+   "K": 77,
+   "scale_a": 0.3700000047683716,
+   "scale_b": 2.5
+  }
+ ],
+ "cases_per_file": 100,
+ "total_cases": 1200,
+ "layout": "a: fp8 e4m3 [M,K] row-major; op b = w.t() with w [N,K] contiguous (b is [K,N] column-major, stride (1,K)); c: bf16 [M,N] row-major",
+ "epilogue": "fp32 val = scale_a * (scale_b * acc) (two RN multiplies, no FMA, no bias) -> bf16 via __float2bfloat16_rn",
+ "tiling": "FP8EmuConfig BM=32 BN=8 BK=32. CoFDA chunks are CS-aligned from k=0. GDFS: groups of GS inside each BK=32 tile, then one F-bit FDA over the BK/GS group operands plus the running accumulator per tile.",
+ "grid": {
+  "cofda_f": [
+   3,
+   5,
+   7,
+   9,
+   10,
+   11,
+   12,
+   13,
+   17,
+   21,
+   25
+  ],
+  "cofda_cs": [
+   16,
+   32
+  ],
+  "gdfs_f": [
+   7,
+   13,
+   25,
+   35
+  ],
+  "gdfs_g": [
+   3,
+   4,
+   5,
+   6,
+   8,
+   13,
+   32
+  ],
+  "gdfs_gs": [
+   8,
+   16
+  ],
+  "shapes": [
+   [
+    33,
+    17,
+    96
+   ],
+   [
+    64,
+    40,
+    256
+   ],
+   [
+    5,
+    8,
+    77
+   ]
+  ],
+  "scales": [
+   [
+    "unit",
+    1.0,
+    1.0
+   ],
+   [
+    "scaled",
+    0.37,
+    2.5
+   ]
+  ],
+  "input_sets": [
+   "uniform",
+   "realistic"
+  ]
+ },
+ "fp4": {
+  "created_utc": "2026-09-30T10:00:46Z",
+  "env": {
+   "gpu": "NVIDIA A100-SXM4-80GB",
+   "gpu_capability": "8.0",
+   "gpu_uuid": "GPU-c97d5892-9924-97b9-f712-bb4c764bfe2b",
+   "driver": "595.71.05",
+   "clocks_sm_mem_mhz": "210 MHz, 1593 MHz",
+   "torch": "2.8.0+cu128",
+   "cuda": "12.8",
+   "nvcc": "Cuda compilation tools, release 12.9, V12.9.86",
+   "ext_so_sha256": "4a0ee434272ba903e9f14bc03c366ca5184241af5f5a7f48876fb5a29093660a",
+   "build_flags": "-O2 -std=c++17 --expt-relaxed-constexpr -gencode=arch=compute_80,code=sm_80 -U__CUDA_NO_* x4 -DENABLE_FP8 + torch COMMON_NVCC_FLAGS",
+   "nadpe_src_origin": "micro26-ae-main (zip, no git metadata): csrc/quantization/mma_emu, compiled unmodified",
+   "nadpe_src_sha256": {
+    "nvfp4_gemm_kernels.cu": "56bdd010277aea67eb56a5d290debc804be47d5b76d6258635eb2162af047753",
+    "mxfp4_gemm_kernels.cu": "8205c6a280a7cacefcc552d06e33f56d1e62ec7a8034e4adad6b5de1f768ecca",
+    "gemm/scaled_nvfp4_mm.cuh": "80d746dcf8fc015cc00e77135657e71ffc61324857520c9d1ab7e29e55596b0c",
+    "gemm/scaled_mxfp4_mm.cuh": "b5a9b3552a6ec0147ea021209d5a2f4243463353955003fddd3a1a9cca93d1ab",
+    "formats/fp4_e2m1.cuh": "7808f946a45de18673a95a5da90e71c4667b9d98cb45041b2527faa33b2cf3dd",
+    "formats/nvfp4_ue4m3.cuh": "04e92fd14a21a0a8a8ac8de70f73f9f58a24879b7c65fc73112aad3113da31af",
+    "formats/mxfp4_e8m0.cuh": "79cea23873739bcf31b3097ce1c506517c9b79be377d3ca11bd560387f3f8b4b",
+    "formats/scale_swizzle.cuh": "ddd0705a027e726ab229a65679e8ce5631ff600dd8afd1e669f0aea10bf061f6",
+    "core/accumulator.cuh": "547b8b799d5db8db590b0121a9629497c31a91e078818e208ba1d71e6f74b149",
+    "core/design_space.cuh": "b84e5127cf331e85ffa61ca4b5ed30e8946323fc63a77050220df8876eb18908",
+    "core/fp32_utils.cuh": "202ad4a4ce4934b08dbde32647b262ca76af1903e40767224de6fc2c26bd638d",
+    "core/gdfs_group.cuh": "6e00b968561facc8e1b0343b40b54992e19cc1035ffea9790211ffed17a5bf18",
+    "core/tiling.cuh": "6d82aa514f032d44c541a1c0b70606cdbf01d3208a676b04f732f74cf763e35a",
+    "core/types.cuh": "42678749b51fccf9bfb2d4adea0ca08e8e116bdf24179272a69fef52634f9cdc"
+   },
+   "nadpe_src_sha256_combined": "bc3626672fe46fb13aa9718ddbf904ccdf1feb56fcfe5c39162bd2af44aea874"
+  },
+  "files": [
+   {
+    "file": "fp4_nvfp4_uniform_33x17x128.pt",
+    "bytes": 73402,
+    "sha256": "7917a9f2f180a72e9dd899834c2a5f476c30cde0d28b713e624ac519e9edd197",
+    "cases": 43,
+    "format": "nvfp4",
+    "set": "uniform",
+    "seed": 2234,
+    "M": 33,
+    "N": 17,
+    "K": 128,
+    "K_requested": 128,
+    "N_pad": 32,
+    "block_size": 16,
+    "alpha": 0.3700000047683716
+   },
+   {
+    "file": "fp4_nvfp4_uniform_5x8x96.pt",
+    "bytes": 23643,
+    "sha256": "2b24b03ec9c61ff795c37715975f89085ad7d93c55f55fc950e1f83eb89a56d6",
+    "cases": 43,
+    "format": "nvfp4",
+    "set": "uniform",
+    "seed": 2235,
+    "M": 5,
+    "N": 8,
+    "K": 96,
+    "K_requested": 96,
+    "N_pad": 32,
+    "block_size": 16,
+    "alpha": 0.3700000047683716
+   },
+   {
+    "file": "fp4_nvfp4_realistic_33x17x128.pt",
+    "bytes": 73508,
+    "sha256": "1a4f28969dea9a4445417fd455bfc200ac818d6652eb68ad26efac039ee9d9a8",
+    "cases": 43,
+    "format": "nvfp4",
+    "set": "realistic",
+    "seed": 2236,
+    "M": 33,
+    "N": 17,
+    "K": 128,
+    "K_requested": 128,
+    "N_pad": 32,
+    "block_size": 16,
+    "alpha": 1.971741767192725e-06
+   },
+   {
+    "file": "fp4_nvfp4_realistic_5x8x96.pt",
+    "bytes": 23813,
+    "sha256": "cd5c6db848fde95faa05159d7e38fdeca4544ac26bd6d1b3657e498d235fc1a4",
+    "cases": 43,
+    "format": "nvfp4",
+    "set": "realistic",
+    "seed": 2237,
+    "M": 5,
+    "N": 8,
+    "K": 96,
+    "K_requested": 96,
+    "N_pad": 32,
+    "block_size": 16,
+    "alpha": 1.2524825478976709e-06
+   },
+   {
+    "file": "fp4_mxfp4_uniform_33x17x128.pt",
+    "bytes": 133333,
+    "sha256": "f58910bffec5a4c779f1ccc8f100315d727d5542ab43de81265f74ac2e92c5f2",
+    "cases": 86,
+    "format": "mxfp4",
+    "set": "uniform",
+    "seed": 2238,
+    "M": 33,
+    "N": 17,
+    "K": 128,
+    "K_requested": 128,
+    "N_pad": 32,
+    "block_size": 32,
+    "alpha": 1.0
+   },
+   {
+    "file": "fp4_mxfp4_uniform_5x8x128.pt",
+    "bytes": 40085,
+    "sha256": "cc7ba5243add132ef43649e6c7dfeff6853d63b6b77ede76480eb9d4b6baaf03",
+    "cases": 86,
+    "format": "mxfp4",
+    "set": "uniform",
+    "seed": 2239,
+    "M": 5,
+    "N": 8,
+    "K": 128,
+    "K_requested": 96,
+    "N_pad": 32,
+    "block_size": 32,
+    "alpha": 1.0
+   },
+   {
+    "file": "fp4_mxfp4_realistic_33x17x128.pt",
+    "bytes": 133525,
+    "sha256": "cd5f7f9ac93bf5c2fdb7a47aa02e1fa504cfe0673f0487b6636396dab89bef72",
+    "cases": 86,
+    "format": "mxfp4",
+    "set": "realistic",
+    "seed": 2240,
+    "M": 33,
+    "N": 17,
+    "K": 128,
+    "K_requested": 128,
+    "N_pad": 32,
+    "block_size": 32,
+    "alpha": 1.0
+   },
+   {
+    "file": "fp4_mxfp4_realistic_5x8x128.pt",
+    "bytes": 40277,
+    "sha256": "30e1aa3cd402fc477564f57c92fef5b8eb39367094e42f5dc4e09641de76b184",
+    "cases": 86,
+    "format": "mxfp4",
+    "set": "realistic",
+    "seed": 2241,
+    "M": 5,
+    "N": 8,
+    "K": 128,
+    "K_requested": 96,
+    "N_pad": 32,
+    "block_size": 32,
+    "alpha": 1.0
+   }
+  ],
+  "cases_per_file": {
+   "nvfp4": 43,
+   "mxfp4": 86
+  },
+  "total_cases": 516,
+  "grid": {
+   "nvfp4": "GDFS F in GDFS_F x G in {3,4,5,6} (GS=16 fixed) + CoFDA F in COFDA_F (CS=16 fixed); no C-decoupled (entry rejects algorithm 3)",
+   "mxfp4": "GDFS GS in {16,32} x F in GDFS_F x G in {3,4,5,6} + CoFDA CS in {16,32} x F in COFDA_F; no C-decoupled (entry rejects algorithm 3)",
+   "gdfs_f": [
+    7,
+    9,
+    10,
+    11,
+    13,
+    15,
+    25,
+    35
+   ],
+   "cofda_f": [
+    3,
+    5,
+    7,
+    9,
+    10,
+    11,
+    12,
+    13,
+    17,
+    21,
+    25
+   ],
+   "fp4_g": [
+    3,
+    4,
+    5,
+    6
+   ],
+   "requested_shapes": [
+    [
+     33,
+     17,
+     128
+    ],
+    [
+     5,
+     8,
+     96
+    ]
+   ],
+   "k_rule": "K rounded up to the entry's multiple: nvfp4 32, mxfp4 64"
+  },
+  "packing": "A/B passed packed [R,K/2] uint8: low nibble = even k, high nibble = odd k",
+  "scale_swizzle": "kernel A_sf/B_sf = logical [R,K/B] codes padded to [round_up(R,128), round_up(K/B,4)] (pad = 1.0 code), then view [Rp/128,4,32,KBp/4,4] -> permute(0,3,2,1,4) -> contiguous (vLLM swizzle_blockscale); the kernel reads (r,kb) at kb%4 + 4*((r%128)//32 + 4*(r%32 + 32*(kb//4 + (KBp/4)*(r//128))))",
+  "n_padding": "op requires N%32==0: w rows N..N_pad-1 are zero codes with 1.0 scale codes; outputs are per-(m,n) independent, stored out_bits = first N columns",
+  "epilogue": {
+   "nvfp4": "fp32 acc * alpha (one RN multiply) -> bf16 __float2bfloat16_rn",
+   "mxfp4": "no alpha: fp32 acc -> bf16 __float2bfloat16_rn"
+  },
+  "tiling": {
+   "nvfp4": "BM=32 BN=8 BK=64. GDFS: 4 groups of GS=16 per BK tile (one UE4M3 block each) -> apply_ue4m3_scales -> one F-bit FDA over the 4 group operands + acc per tile. CoFDA: CS=16 chunks from k=0 (one block each), scales applied per product, chunked F-bit FDA with acc. GS/CS are fixed by the kernel.",
+   "mxfp4": "BM=32 BN=8 BK=64. GDFS: 64/GS groups per BK tile, group g uses block (64*kt+g*GS)//32 -> apply_e8m0_scales -> one F-bit FDA over the 64/GS group operands + acc per tile. CoFDA: CS chunks from k=0, E8M0 applied per product."
+  },
+  "scale_rules": {
+   "nvfp4": "UE4M3: MSB masked off (code & 0x7F); (code&0x7F)==0x7F is NaN; masked 0 is a zero scale; e=0 subnormal sig=m exp=-6, else sig=8+m exp=e-7 (value sig/8*2^exp)",
+   "mxfp4": "E8M0: 0xFF NaN; code 0 is a ZERO scale in NADPE (not 2^-127); else 2^(code-127)"
+  }
+ }
+}

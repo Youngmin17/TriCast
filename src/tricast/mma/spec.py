@@ -28,7 +28,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field, replace
 from typing import Literal
 
-from ..formats import BF16, Format, FloatFormat, get_format
+from ..formats import BF16, FloatFormat, Format, get_format
 
 Algorithm = Literal["cofda", "gdfs", "fp32_fma", "fp64", "int_exact"]
 
@@ -115,19 +115,23 @@ PRESETS: dict[str, MMASpec] = {
     "nvidia_hopper_fp8": MMASpec(
         "cofda", f_bits=13, chunk_size=32, name="nvidia_hopper_fp8",
         provenance=f"{_NADPE}: Hopper CS=32 F=13; NADPE Table 6 reports bit-exact scores and "
-                   "logprobs vs native H100. TriCast silicon check: tricast.probe."),
+                   "logprobs vs native H100. Not yet checked on silicon by TriCast."),
     "nvidia_blackwell_fp8": MMASpec(
         "cofda", f_bits=25, chunk_size=32, name="nvidia_blackwell_fp8",
-        provenance=f"{_NADPE}: Blackwell FP8 CS=32 F=25."),
+        provenance=f"{_NADPE}: Blackwell FP8 CS=32 F=25. Not yet checked on Blackwell silicon by TriCast."),
     "nvidia_blackwell_fp4": MMASpec(
         "gdfs", f_bits=35, g_bits=6, group_size=16, k_tile=64, name="nvidia_blackwell_fp4",
-        provenance=f"{_NADPE}: Blackwell MXFP4/NVFP4 GDFS G=6 F=35 GS=16 (tile 64)."),
+        provenance=f"{_NADPE}: Blackwell MXFP4/NVFP4 GDFS G=6 F=35 GS=16 (tile 64). "
+                   "Not yet checked on Blackwell silicon by TriCast."),
     "deepseek_fp8_promote128": MMASpec(
         "cofda", f_bits=13, chunk_size=32, promote_interval=128, name="deepseek_fp8_promote128",
         provenance="DeepSeek-V3 report §3.3.2: Hopper FP8 WGMMA partials (~14-bit accumulation) "
-                   "promoted to fp32 CUDA-core FMA every 128 K elements with block scales."),
-    "fp32_fma": MMASpec("fp32_fma", name="fp32_fma", provenance="IEEE fp32 FMA chain in K order."),
-    "fp64": MMASpec("fp64", name="fp64", provenance="fp64 FMA chain, one rounding to fp32."),
+                   "promoted to fp32 CUDA-core FMA every 128 K elements with block scales. "
+                   "Not checked on silicon by TriCast."),
+    "fp32_fma": MMASpec("fp32_fma", name="fp32_fma",
+                        provenance="IEEE fp32 FMA chain in K order (a definition, not a hardware claim)."),
+    "fp64": MMASpec("fp64", name="fp64",
+                    provenance="fp64 FMA chain, one rounding to fp32 (a definition, not a hardware claim)."),
     "int_exact": MMASpec("int_exact", name="int_exact", provenance="Exact integer accumulation."),
 }
 

@@ -1,0 +1,98 @@
+# TriCast 미니 도메인 온톨로지 (강의 2 산출물) — 후보 초안
+#
+# 상태 (2026-09-30): 인터뷰 로그 0건. 아래 항목은 코드 어휘(src/tricast)와 기존 작업물 관찰
+# (docs/research/interviews.md C절, 관찰 A1·A2)에서 뽑은 **후보**다. 대표어·경계·evidence 는 팀이 결정한다.
+# evidence: "로그 N" = interviews.md B절, "관찰 AN" = C절. evidence 가 [] 인 항목은 인터뷰 근거가 생기지 않으면
+# 확정 전에 삭제한다 (강의 2 규칙: 역추적되지 않는 항목은 두지 않는다).
+# 규칙: relations 의 대상은 이 파일에 정의된 클래스여야 한다. 대표어는 코드 식별자와 같다.
+version: 1
+classes:
+  Format:
+    description: 값의 격자를 정하는 수 형식 — float(ExMy), int(고정소수점 포함), power-of-two(E8M0)
+    evidence: [관찰 A2]
+    attributes:
+      name: {type: string, examples: [fp8_e4m3, fp6_e3m2, fp4_e2m1, bf16, mxint8, e8m0], evidence: [관찰 A2]}
+      kind: {type: enum, values: [float, int, pow2], evidence: [관찰 A2]}
+      max_normal: {type: float, note: "saturate 기준값. e4m3=448, e2m1=6", evidence: [관찰 A2]}
+      special: {type: enum, values: [ieee, fn, fnuz, none], note: "Inf/NaN 인코딩 방식", evidence: []}
+  QuantSpec:
+    description: 텐서 하나(가중치 또는 활성)를 Format 격자에 사상하는 방법
+    evidence: [관찰 A2]
+    attributes:
+      granularity: {type: enum, values: [tensor, row, group, block], evidence: [관찰 A2]}
+      group_size: {type: int, examples: [16, 32, 128], note: "MX=32, NVFP4=16", evidence: [관찰 A2]}
+      scale.method: {type: enum, values: [absmax, pow2_floor, pow2_ceil, mse, percentile], note: "ScaleSpec 필드", evidence: [관찰 A2]}
+      rounding: {type: enum, values: [rne, rna, rtz, rup, rdn, sr], evidence: [관찰 A2]}
+      zero_point: {type: enum, values: [none, int, float], evidence: []}
+      observer: {type: enum, values: [minmax, ema, history, percentile, mse], note: "정적 활성 스케일의 amax 출처. 없으면 호출마다 동적", evidence: []}
+      mma_input: {type: enum, values: [scaled, dequant], note: "MMA 에 스케일과 격자값을 따로 넘기는지, 역양자화 값을 넘기는지", evidence: [관찰 A1]}
+    relations:
+      - uses: Format
+        evidence: [관찰 A2]
+  MMASpec:
+    description: 행렬 곱셈 유닛이 내적을 누산하는 산술 — 정렬·절단·누산기 결합 방식
+    evidence: [관찰 A1]
+    attributes:
+      algorithm: {type: enum, values: [cofda, gdfs, fp32_fma, fp64, int_exact], evidence: [관찰 A1]}
+      f_bits: {type: int, note: "누산 데이터패스 소수 비트 F", evidence: [관찰 A1]}
+      chunk_size: {type: int, note: "CoFDA 한 번에 융합되는 곱의 수 CS", evidence: [관찰 A1]}
+      c_mode: {type: enum, values: [fused, decoupled], note: "누산기 C 가 절단 경로에 들어가는지", evidence: [관찰 A1]}
+      g_bits: {type: int, note: "GDFS 그룹 내부 비트 G — f_bits 와 다른 축", evidence: [관찰 A1]}
+      group_size: {type: int, note: "GDFS 그룹 크기 GS", evidence: [관찰 A1]}
+      k_tile: {type: int, note: "GDFS 가 K 를 자르는 타일 (NADPE FP8 32, FP4 64)", evidence: [관찰 A1]}
+      promote_interval: {type: int, note: "이 K 간격마다 부분합을 fp32 로 승격 (DeepSeek-V3 128)", evidence: []}
+  Preset:
+    description: 실제 하드웨어의 MMASpec 과 그 출처·검증 상태
+    evidence: [관찰 A1]
+    attributes:
+      name: {type: string, examples: [nvidia_hopper_fp8, nvidia_blackwell_fp4], evidence: [관찰 A1]}
+      provenance: {type: string, note: "출처 없는 프리셋은 두지 않는다", evidence: [관찰 A1]}
+    relations:
+      - is_a: MMASpec
+        evidence: [관찰 A1]
+  Recipe:
+    description: 한 번의 에뮬레이션 구성 — 레이어별 가중치·활성 QuantSpec 과 MMASpec, 변환, 가중치 알고리즘
+    evidence: [관찰 A1]
+    attributes:
+      name: {type: string, evidence: [관찰 A1]}
+      defaults/overrides: {type: dict, note: "모든 레이어 기본값 / 레이어 선택자(match, layers, modules)별 덮어쓰기·skip", evidence: []}
+      include/exclude: {type: list, note: "적용할 레이어 이름 패턴", evidence: []}
+      transform: {type: enum, values: [none, hadamard, random_hadamard, smoothquant, awq], evidence: []}
+      weight_algo: {type: enum, values: [rtn, gptq], evidence: []}
+    relations:
+      - quantizes_with: QuantSpec
+        evidence: [관찰 A1]
+      - accumulates_with: MMASpec
+        evidence: [관찰 A1]
+  Model:
+    description: 평가 대상 Hugging Face 모델 (저장소 id + commit SHA)
+    evidence: [관찰 A1]
+    attributes:
+      repo_id: {type: string, examples: [Qwen/Qwen3-0.6B], evidence: [관찰 A1]}
+      revision: {type: string, note: "재현성 — commit SHA", evidence: []}
+  EvalRun:
+    description: Recipe 를 Model 에 적용해 과제 하나를 평가한 기록 (지표 + 환경)
+    evidence: [관찰 A1]
+    attributes:
+      task: {type: string, examples: [wikitext2_ppl, hellaswag, coqa], evidence: [관찰 A1]}
+      metrics: {type: dict, evidence: [관찰 A1]}
+      env: {type: dict, note: "git SHA, 버전, GPU, 모델·데이터셋 식별자", evidence: []}
+    relations:
+      - applies: Recipe
+        evidence: [관찰 A1]
+      - evaluates: Model
+        evidence: [관찰 A1]
+  EmulationRequest:
+    description: 사용자의 자연어 요청을 파싱한 구조화 결과 (구조화 출력의 대상, 강의 3)
+    evidence: []
+    attributes:
+      intent: {type: enum, values: [evaluate, compare, sweep, explain, inspect, report], evidence: []}
+      assumptions: {type: list, note: "요청에 없어서 기본값으로 채운 항목 — 지어내지 않았음을 드러낸다", evidence: []}
+    relations:
+      - requests: Recipe
+        evidence: []
+      - targets: Model
+        evidence: []
+# 범위 밖(명시): RTL 생성, 면적·전력·타이밍 추정, 서빙 처리량 측정, attention·KV 캐시 matmul 에뮬레이션(현재),
+#               대규모 학습(QAT 는 STE 수준만)
+# 핵심 흐름: EmulationRequest --(파싱)--> Recipe --(적용)--> Model --(평가)--> EvalRun --(근거 인용)--> 답변

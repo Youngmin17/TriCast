@@ -24,6 +24,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 - Qwen3-0.6B results (`docs/results/qwen3_0.6b.md`): WikiText-2 perplexity of 24 recipes on an A100
   and KIVI perplexity and CoQA on a V100, each with its environment; `scripts/e2e/summarize.py` also
   tabulates lm-eval records.
+- `scripts/bench/bench_decode.py`: decode-step latency of a patched model (median / mean / p99), with
+  the host load, other processes on the GPU and the source commit recorded.
 
 ### Changed
 - MMA emulation kernel: integer fast path for finite operands (int32/int64 aligned sums, int32
@@ -31,7 +33,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   went from 0.011 to 0.15 TMAC/s (NADPE CUDA kernel: 0.15) and a Qwen3-0.6B 2048-token window
   from 83 s to 6 s; results stay bit-identical.
 - MMA emulation kernel for small M (decoding, M ≤ 16; CoFDA, GDFS, exact integer): each chunk,
-  group or K span is loaded as one tile and reduced in registers, and Inf/NaN flags are reduced in
-  the kernel instead of a host finiteness check (a device sync per linear). A Qwen3-0.6B Hopper-FP8
-  decode step on a V100 went from 371 to 165 ms (GEMM kernel time 254 to 40 ms); results stay
-  bit-identical.
+  group or K span is loaded as one tile and reduced in registers, and for CoFDA and GDFS the
+  Inf/NaN flags are reduced in the kernel instead of a host finiteness check (a device sync per
+  linear). A Qwen3-0.6B Hopper-FP8 decode step went from 375–401 to 168–170 ms on a V100 and from
+  292–294 to 101 ms on an A100 (`scripts/bench/bench_decode.py`); results and generated tokens stay
+  identical.

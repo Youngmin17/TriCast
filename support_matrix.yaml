@@ -21,11 +21,12 @@ backends:
   triton_mma:
     status: verified
     evidence: "tests/gpu/test_triton_mma.py bit-exact vs reference (A100 and V100; whole GPU suite 824 passed);
-      bench_mma_vs_nadpe.py bit-identical to NADPE on full-size GEMMs; small-M kernel (b68addd): GPU suite and
-      all 1716 NADPE vectors on A100 and V100, tests/gpu/test_triton_gemv.py (Inf/NaN, V100), Qwen3-0.6B
-      decode logits of 9 recipes identical to the tiled kernel"
+      bench_mma_vs_nadpe.py bit-identical to NADPE on full-size GEMMs; small-M kernel: GPU suite 845 passed at
+      cc0478b on A100 and V100 (incl. tests/gpu/test_triton_gemv.py), all 1716 NADPE vectors on A100 and V100,
+      Qwen3-0.6B decode logits of 9 recipes identical to the tiled kernel"
     performance: "A100: CoFDA F=13 0.15 TMAC/s (NADPE 0.15), GDFS G=6 0.15, GDFS G=32 0.11 (NADPE 0.16);
-      Qwen3-0.6B Hopper-FP8 decode step (M=1): A100 102 ms, V100 165 ms (before the small-M kernel: 995, 371 ms)"
+      Qwen3-0.6B Hopper-FP8 decode step (M=1, scripts/bench/bench_decode.py, 032684b and cc0478b alternated
+      twice on one GPU): V100 375-401 -> 168-170 ms; A100 292-294 -> 101 ms (host load ~95 on 128 CPUs)"
 
 formats:
   float: {status: verified, members: [fp32, tf32, bf16, fp16, fp8_e4m3, fp8_e5m2, fp8_e4m3fnuz,

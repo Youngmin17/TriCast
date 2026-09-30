@@ -2,9 +2,10 @@
 
 Prefills a WikiText-2 test prompt through the patched model, then decodes greedily through the KV
 cache. Protocol: WARMUP untimed steps, then STEPS timed steps (`torch.cuda.synchronize` +
-`perf_counter`), median / mean / p99 reported; the generated token ids are kept so that runs of
-two commits can be checked for identical output. The source commit is whichever `tricast` is on
-the import path, so the same script measures an older checkout through `PYTHONPATH`.
+`perf_counter`), median / mean / p99 reported with the host load and the number of other processes
+on the GPU (decode steps are host-bound, so both move the numbers); the generated token ids are kept
+so that runs of two commits can be checked for identical output. The source commit is whichever
+`tricast` is on the import path, so the same script measures an older checkout through `PYTHONPATH`.
 
     python scripts/bench/bench_decode.py --recipe hopper_fp8_w8a8 --out runs/bench_decode
 """
@@ -13,7 +14,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import statistics
+import subprocess
 import time
 from pathlib import Path
 
@@ -31,6 +34,21 @@ def percentile(samples: list[float], q: float) -> float:
     low = int(position)
     high = min(low + 1, len(ordered) - 1)
     return ordered[low] + (ordered[high] - ordered[low]) * (position - low)
+
+
+def contention() -> dict:
+    """Host load and other processes on this GPU: decode steps are host-bound, so both move them."""
+    uuid = str(getattr(torch.cuda.get_device_properties(torch.cuda.current_device()), "uuid", ""))
+    others = None  # unknown without a device UUID or nvidia-smi
+    try:
+        if uuid:
+            rows = subprocess.check_output(["nvidia-smi", "--query-compute-apps=gpu_uuid,pid",
+                                            "--format=csv,noheader"], text=True, timeout=10).splitlines()
+            pids = [row.split(",")[-1].strip() for row in rows if uuid in row]
+            others = sum(1 for pid in pids if pid != str(os.getpid()))
+    except (OSError, subprocess.SubprocessError):
+        pass
+    return {"loadavg_1_5_15": list(os.getloadavg()), "cpus": os.cpu_count(), "other_processes_on_gpu": others}
 
 
 def decode(model, ids: torch.Tensor, steps: int) -> tuple[float, list[float], list[int]]:
@@ -82,7 +100,7 @@ def main() -> None:
         prefill, times, tokens = decode(model, ids, args.warmup + args.steps)
         timed = [1e3 * t for t in times[args.warmup:]]
         result = {"recipe": name, "prompt_tokens": int(ids.shape[1]), "warmup": args.warmup,
-                  "steps": args.steps, "prefill_s": prefill,
+                  "steps": args.steps, "contention": contention(), "prefill_s": prefill,
                   "decode_ms": {"median": statistics.median(timed), "mean": statistics.fmean(timed),
                                 "p99": percentile(timed, 0.99), "min": min(timed), "max": max(timed)},
                   "tokens": tokens}

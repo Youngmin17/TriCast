@@ -1,9 +1,10 @@
 # Qwen3-0.6B under emulated number formats and accumulators
 
-Every number below comes from `tricast run` records (`configs/e2e/*.yaml`); the tables were joined
-with `scripts/e2e/summarize.py`. One run per row: the emulation is bit-exact and deterministic, so a
-rerun reproduces the same perplexity to the last bit (`mxfp8_w_a` run again at a later commit gave
-21.294279307019544 both times). `native` is the unpatched Hugging Face model.
+Perplexity and lm-eval numbers come from `tricast run` records (`configs/e2e/*.yaml`), joined with
+`scripts/e2e/summarize.py`; the per-layer error figures come from `tricast report`, and the KV path
+comparison from `scripts/e2e/check_kv_paths.py`. One run per row: the emulation is bit-exact and
+deterministic, so a rerun reproduces the same perplexity to the last bit (`mxfp8_w_a` run again at a
+later commit gave 21.294279307019544 both times). `native` is the unpatched Hugging Face model.
 
 ## Perplexity — WikiText-2 test, A100
 
@@ -76,8 +77,9 @@ output error is not established.
 
 ## KIVI KV cache — WikiText-2 test, V100
 
-Linear layers stay native, so only the KV cache changes. NVIDIA V100-PCIE-32GB; TriCast `5c09f47`.
-The V100 native perplexity (20.9651) differs from the A100 one in the fourth decimal: attention and
+Linear layers stay native, so only the KV cache changes. NVIDIA V100-PCIE-32GB, CUDA 12.8, torch
+2.8.0+cu128, triton 3.4.0, transformers 4.55.2, lm_eval 0.4.13; TriCast `5c09f47` (clean tree).
+The V100 native perplexity (20.9651) differs from the A100 one in the third decimal: attention and
 normalization run natively and their kernels differ between the two GPUs.
 
 `fakequant` scores every token as a decode step reading the quantized cache (ENGINE §3.13). Keys are
@@ -92,10 +94,10 @@ normalization run natively and their kernels differ between the two GPUs.
 
 The one-forward (`fakequant`) and token-by-token (`cache`) paths compute the same attention given the
 same K/V: `scripts/e2e/check_kv_paths.py` finds at most 6e-6 relative difference on Qwen3-0.6B layers
-0 and 14 (fp32, 2048 tokens). Whole-model perplexities of the two paths still differ slightly —
-0.1% on the same 8 windows in bf16, 1.6e-3 in fp32 — because a batched forward and token-by-token
-decoding round the K/V projections differently, and quantization can move a value across a rounding
-boundary.
+0 and 14 (fp32, 2048 tokens). Whole-model perplexities of the two paths still differ slightly: for
+KIVI-2 by 0.10% (bf16, the same 8 windows) and 0.16% (fp32, 2 windows), against 0.03% and 1e-7 for
+the native model. A batched forward and token-by-token decoding round the K/V projections
+differently, and a 2-bit grid can turn such last-bit differences into different quantized values.
 
 ### CoQA through the quantized cache
 

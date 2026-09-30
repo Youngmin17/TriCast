@@ -382,7 +382,8 @@ round_to_format(v, out_format, RNE, saturate=False)` stored in the torch dtype o
   reducing it over K in registers. Integer sums are exact, so the reduction order cannot change a
   result; chunks, tiles and promotion intervals still follow K in order. The Inf/NaN flags of the
   products (and of power-of-two product scales) are reduced alongside by the general path's
-  rules, so this path needs no host-side finiteness check.
+  rules, so CoFDA and GDFS calls on this path need no host-side finiteness check (`int_exact`
+  still validates its operands on the host).
 
 ## 6. Integration
 

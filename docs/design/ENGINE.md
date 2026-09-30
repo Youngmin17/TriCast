@@ -362,7 +362,8 @@ round_to_format(v, out_format, RNE, saturate=False)` stored in the torch dtype o
 - SR uses the caller's `noise` tensor when given, else `tl.randint(seed, offsets)`.
 - **Fast path** (CoFDA, GDFS groups, `int_exact`), bit-identical to the general path: when the
   product of two significands fits int32 and `F` (or `G`) plus its headroom fits 30 bits, the
-  aligned sum is int32 (else int64), each product is one variable shift of `m_a·m_b`, and zero
+  aligned sum is int32 (else int64; each aligned product itself stays int32 while `F` plus the
+  operands' integer bits fits 30 bits), each product is one variable shift of `m_a·m_b`, and zero
   operands carry a sentinel exponent instead of masks. Power-of-two product scales fold into the
   exponent. Float formats whose grid lies inside fp32's range are decoded in int32. When every
   operand value and scale is finite (checked on the host, cached for weights) the kernel is

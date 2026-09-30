@@ -250,9 +250,13 @@ Algorithm 1 and its reference implementation); `kv_fp8` follows vLLM's FP8 KV ca
   `s < t` quantized exactly when `s` is quantized in the stored state of the first `t` tokens
   (channel axis: `s < ⌊t / R⌋ · R`; token axis: `s < t − R`) and its own key/value in full
   precision, via a per-(query, key) selector between the quantized and the original K/V. It is
-  causal (logits at `t` never depend on tokens after `t`) and equals streaming `cache`-mode
-  evaluation up to the summation order of attention. Masked (padding) tokens are excluded from
-  grouping. Deployment semantics differ for scored prompts: a prefill attends in full precision,
+  causal (logits at `t` never depend on tokens after `t`). Given the same K/V it equals streaming
+  `cache`-mode decoding up to the summation order of attention (`scripts/e2e/check_kv_paths.py`:
+  Qwen3-0.6B, 2048 tokens, fp32, ≤ 6e-6 relative). A whole model does not feed both paths the
+  same K/V — a batched forward and token-by-token decoding round the projections differently, and
+  quantization can move such a value across a rounding boundary — so model perplexities differ
+  slightly (Qwen3-0.6B KIVI-2: 1.6e-3 relative in fp32, 0.1% in bf16). Masked (padding) tokens are
+  excluded from grouping. Deployment semantics differ for scored prompts: a prefill attends in full precision,
   so KV quantization changes only generated tokens (`cache` mode + generation tasks).
 - Padded batches in `cache` mode, assisted/prompt-lookup generation and contrastive search are
   rejected before the first forward. Keys and values use independent specs; either may be

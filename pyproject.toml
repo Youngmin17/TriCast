@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tricast"
+version = "0.1.0.dev0"
+description = "Triton emulation of arbitrary number formats, quantization schemes and MMA accumulation arithmetic, wired to Hugging Face models and lm-eval"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+authors = [{ name = "Youngmin17", email = "galateia2331@gmail.com" }]
+dependencies = ["torch>=2.4", "numpy", "pyyaml", "jsonschema"]
+
+[project.optional-dependencies]
+triton = ["triton>=3.0"]
+eval = ["transformers>=4.45", "lm_eval>=0.4.8", "datasets", "accelerate"]
+dev = ["pytest", "hypothesis", "ruff"]
+
+[project.scripts]
+tricast = "tricast.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+tricast = ["schemas/*.json", "prompts/*.md"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+markers = [
+  "gpu: needs a CUDA GPU with triton",
+  "slow: downloads models or runs full evaluations",
+  "oracle: needs an external oracle package (e.g. microxcaling)",
+]
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = ["E731"]

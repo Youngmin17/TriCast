@@ -1,0 +1,15 @@
+# OCP MXFP8_E4M3 operands with block-32 E8M0 scales.
+# Source: OCP MX v1.0 and NADPE accumulation presets; MXFP6 hardware parity unverified.
+name: mxfp8_w_a
+description: OCP MXFP8_E4M3 operands with block-32 E8M0 scales.
+defaults:
+  weight: mxfp8_e4m3
+  activation: mxfp8_e4m3
+  mma: nvidia_blackwell_fp8
+  transform: none
+  weight_algo: rtn
+include:
+- '*'
+exclude:
+- lm_head
+backend: auto

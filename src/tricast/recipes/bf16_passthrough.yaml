@@ -1,0 +1,17 @@
+# Unquantized operands with sequential IEEE fp32 FMA accumulation.
+# Source: ENGINE.md §4.7; input dtype is restored by EmuLinear.
+name: bf16_passthrough
+description: Unquantized operands with sequential IEEE fp32 FMA accumulation.
+defaults:
+  weight: null
+  activation: null
+  mma:
+    preset: fp32_fma
+    out_format: fp32
+  transform: none
+  weight_algo: rtn
+include:
+- '*'
+exclude:
+- lm_head
+backend: auto

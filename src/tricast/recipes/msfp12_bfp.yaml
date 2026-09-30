@@ -1,0 +1,15 @@
+# Block floating point with 4-bit mantissas and shared E8M0 per 16 values.
+# Source: MSFP-style BFP; GDFS accumulator is a design choice, not a silicon claim.
+name: msfp12_bfp
+description: Block floating point with 4-bit mantissas and shared E8M0 per 16 values.
+defaults:
+  weight: msfp12
+  activation: msfp12
+  mma: nvidia_blackwell_fp4
+  transform: none
+  weight_algo: rtn
+include:
+- '*'
+exclude:
+- lm_head
+backend: auto

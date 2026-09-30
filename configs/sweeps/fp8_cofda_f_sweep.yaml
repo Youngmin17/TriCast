@@ -1,0 +1,17 @@
+# NADPE Fig. 6(a): reduced F and C-mode sweep, CS=32.
+# Axis paths are relative to the base recipe defaults.
+base_recipe: fp8_f7_lowacc
+axes:
+  mma.f_bits:
+  - 25
+  - 21
+  - 17
+  - 13
+  - 11
+  - 9
+  - 7
+  - 5
+  - 3
+  mma.c_mode:
+  - fused
+  - decoupled

@@ -1,0 +1,14 @@
+# NADPE GDFS design space for NVFP4 group and final accumulation widths.
+# Axis paths are relative to the base recipe defaults.
+base_recipe: nvfp4_w_a
+axes:
+  mma.g_bits:
+  - 6
+  - 5
+  - 4
+  - 3
+  mma.f_bits:
+  - 35
+  - 25
+  - 13
+  - 10

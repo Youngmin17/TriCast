@@ -1,0 +1,15 @@
+# NVFP4 W4A4 with block-16 UE4M3 and tensor fp32 scales.
+# Source: NVIDIA NVFP4; TensorRT-Model-Optimizer scale ordering.
+name: nvfp4_w_a
+description: NVFP4 W4A4 with block-16 UE4M3 and tensor fp32 scales.
+defaults:
+  weight: nvfp4
+  activation: nvfp4
+  mma: nvidia_blackwell_fp4
+  transform: none
+  weight_algo: rtn
+include:
+- '*'
+exclude:
+- lm_head
+backend: auto

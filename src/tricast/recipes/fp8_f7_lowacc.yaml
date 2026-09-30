@@ -1,0 +1,20 @@
+# Per-tensor FP8 with F=7, CS=32, fused CoFDA accumulation.
+# Source: NADPE MICRO 2026 Fig. 6(a) accumulator design space.
+name: fp8_f7_lowacc
+description: Per-tensor FP8 with F=7, CS=32, fused CoFDA accumulation.
+defaults:
+  weight: fp8_tensor
+  activation: fp8_tensor
+  mma:
+    algorithm: cofda
+    f_bits: 7
+    chunk_size: 32
+    c_mode: fused
+    f2_bits: 23
+  transform: none
+  weight_algo: rtn
+include:
+- '*'
+exclude:
+- lm_head
+backend: auto

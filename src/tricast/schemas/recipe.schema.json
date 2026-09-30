@@ -1,0 +1,856 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tricast.dev/schemas/recipe.schema.json",
+  "title": "TriCast linear emulation recipe",
+  "description": "Operand quantization, preprocessing and accumulation arithmetic for matching model linears.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "description": {
+      "type": "string"
+    },
+    "defaults": {
+      "$ref": "#/$defs/linear"
+    },
+    "include": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "exclude": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "overrides": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/override"
+      }
+    },
+    "calibration": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/calibration"
+        }
+      ]
+    },
+    "backend": {
+      "type": "string",
+      "enum": [
+        "auto",
+        "triton",
+        "reference"
+      ],
+      "description": "Execution backend."
+    },
+    "kv": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/kv_preset"
+        },
+        {
+          "$ref": "#/$defs/kv"
+        }
+      ]
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "name",
+    "defaults"
+  ],
+  "$defs": {
+    "rounding": {
+      "type": "string",
+      "enum": [
+        "rne",
+        "rna",
+        "rtz",
+        "rup",
+        "rdn",
+        "sr"
+      ],
+      "description": "Element or scale rounding; rne is ties-to-even."
+    },
+    "granularity_kind": {
+      "type": "string",
+      "enum": [
+        "tensor",
+        "row",
+        "group",
+        "block"
+      ],
+      "description": "Scale domain. Synonyms of row (channel, token, per_channel, per_token, per_tensor for tensor) are normalized by load_recipe before validation."
+    },
+    "scale_method": {
+      "type": "string",
+      "enum": [
+        "absmax",
+        "pow2_floor",
+        "pow2_ceil",
+        "mse",
+        "percentile"
+      ],
+      "description": "How a domain selects its quantization scale."
+    },
+    "zero_point": {
+      "type": "string",
+      "enum": [
+        "none",
+        "int",
+        "float"
+      ],
+      "description": "Offset encoding; nonzero offsets require dequantized MMA inputs."
+    },
+    "mma_input": {
+      "type": "string",
+      "enum": [
+        "scaled",
+        "dequant"
+      ],
+      "description": "Pass grid values and scales, or dequantize before accumulation."
+    },
+    "observer_kind": {
+      "type": "string",
+      "enum": [
+        "minmax",
+        "ema",
+        "history",
+        "percentile",
+        "mse"
+      ],
+      "description": "Calibration or delayed-scaling state update rule."
+    },
+    "transform_kind": {
+      "type": "string",
+      "enum": [
+        "none",
+        "hadamard",
+        "random_hadamard",
+        "smoothquant",
+        "awq"
+      ],
+      "description": "Function-preserving rewrite before quantization."
+    },
+    "weight_algorithm": {
+      "type": "string",
+      "enum": [
+        "rtn",
+        "gptq"
+      ],
+      "description": "Independent rounding or Hessian-aware GPTQ."
+    },
+    "algorithm": {
+      "type": "string",
+      "enum": [
+        "cofda",
+        "gdfs",
+        "fp32_fma",
+        "fp64",
+        "int_exact"
+      ],
+      "description": "Dot-product accumulation arithmetic."
+    },
+    "scale_apply": {
+      "type": "string",
+      "enum": [
+        "auto",
+        "epilogue",
+        "product",
+        "group",
+        "promote",
+        "operand"
+      ],
+      "description": "Position at which operand scales enter the datapath."
+    },
+    "scheme_name": {
+      "type": "string",
+      "enum": [
+        "mxfp8_e4m3",
+        "mxfp8_e5m2",
+        "mxfp6_e3m2",
+        "mxfp6_e2m3",
+        "mxfp4",
+        "mxint8",
+        "mxint4",
+        "nvfp4",
+        "nvfp4_4o6",
+        "msfp12",
+        "msfp16",
+        "fp8_tensor",
+        "fp8_tensor_ema",
+        "fp8_tensor_delayed",
+        "fp8_row",
+        "fp8_group128",
+        "fp8_block128",
+        "int8_tensor",
+        "int8_row",
+        "int4_g128",
+        "int4_g128_zp",
+        "kivi2",
+        "kivi4",
+        "bf16",
+        "fp16",
+        "fp32",
+        "tf32"
+      ],
+      "description": "Named operand quantization schemes."
+    },
+    "preset_name": {
+      "type": "string",
+      "enum": [
+        "nvidia_ada_fp8",
+        "nvidia_hopper_fp8",
+        "nvidia_blackwell_fp8",
+        "nvidia_blackwell_fp4",
+        "deepseek_fp8_promote128",
+        "fp32_fma",
+        "fp64",
+        "int_exact"
+      ],
+      "description": "Named accumulator datapaths and reference algorithms."
+    },
+    "scheme": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/scheme_name"
+        },
+        {
+          "type": "string",
+          "pattern": "^bfp[0-9]+_b[0-9]+$"
+        }
+      ]
+    },
+    "float_format": {
+      "type": "object",
+      "description": "Custom floating-point format.",
+      "properties": {
+        "kind": {
+          "const": "float"
+        },
+        "name": {
+          "type": "string"
+        },
+        "ebits": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 8
+        },
+        "mbits": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 23
+        },
+        "bias": {
+          "type": "integer"
+        },
+        "special": {
+          "type": "string",
+          "enum": [
+            "ieee",
+            "fn",
+            "fnuz",
+            "none"
+          ],
+          "description": "Top-exponent encoding."
+        },
+        "signed": {
+          "type": "boolean"
+        },
+        "subnormals": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "ebits",
+        "mbits"
+      ]
+    },
+    "int_format": {
+      "type": "object",
+      "description": "Custom integer or fixed-point format.",
+      "properties": {
+        "kind": {
+          "const": "int"
+        },
+        "name": {
+          "type": "string"
+        },
+        "bits": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 24
+        },
+        "signed": {
+          "type": "boolean"
+        },
+        "symmetric": {
+          "type": "boolean"
+        },
+        "frac_bits": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "name",
+        "bits"
+      ]
+    },
+    "pow2_format": {
+      "type": "object",
+      "description": "Shared power-of-two scale format.",
+      "properties": {
+        "kind": {
+          "const": "pow2"
+        },
+        "name": {
+          "type": "string"
+        },
+        "ebits": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 8
+        },
+        "bias": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "name"
+      ]
+    },
+    "format": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "$ref": "#/$defs/float_format"
+        },
+        {
+          "$ref": "#/$defs/int_format"
+        },
+        {
+          "$ref": "#/$defs/pow2_format"
+        }
+      ],
+      "description": "Registered name, custom ExMy/int grammar, or an explicit format object."
+    },
+    "scale": {
+      "type": "object",
+      "description": "Scale storage and selection. two_level adds the NVFP4 global fp32 decode scale.",
+      "properties": {
+        "format": {
+          "$ref": "#/$defs/format"
+        },
+        "method": {
+          "$ref": "#/$defs/scale_method"
+        },
+        "rounding": {
+          "$ref": "#/$defs/rounding"
+        },
+        "two_level": {
+          "type": "boolean"
+        },
+        "percentile": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 100
+        },
+        "mse_grid": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "search": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "observer": {
+      "type": "object",
+      "description": "Per-linear activation statistics; supported only for scaled tensor granularity.",
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/observer_kind"
+        },
+        "decay": {
+          "type": "number",
+          "minimum": 0,
+          "exclusiveMaximum": 1
+        },
+        "history_len": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "reduce": {
+          "type": "string",
+          "enum": [
+            "max",
+            "most_recent"
+          ],
+          "description": "Reduction of previous amax observations."
+        },
+        "percentile": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 100
+        },
+        "max_samples": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "quant_object": {
+      "type": "object",
+      "description": "A named scheme plus overrides, or explicit QuantSpec fields; null means unquantized.",
+      "properties": {
+        "scheme": {
+          "$ref": "#/$defs/scheme"
+        },
+        "format": {
+          "$ref": "#/$defs/format"
+        },
+        "granularity": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/granularity_kind"
+            },
+            {
+              "type": "string",
+              "pattern": "^(group:[1-9][0-9]*|block:[1-9][0-9]*[xX][1-9][0-9]*)$"
+            }
+          ]
+        },
+        "group_size": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "block": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "integer",
+              "minimum": 0
+            }
+          ],
+          "items": false,
+          "minItems": 2
+        },
+        "scale": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/scale"
+            }
+          ]
+        },
+        "zero_point": {
+          "$ref": "#/$defs/zero_point"
+        },
+        "rounding": {
+          "$ref": "#/$defs/rounding"
+        },
+        "sr_bits": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 32
+        },
+        "saturate": {
+          "type": "boolean"
+        },
+        "mma_input": {
+          "$ref": "#/$defs/mma_input"
+        },
+        "dequant_format": {
+          "$ref": "#/$defs/format"
+        },
+        "observer": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/observer"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "quant": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/scheme"
+        },
+        {
+          "$ref": "#/$defs/quant_object"
+        }
+      ]
+    },
+    "mma_object": {
+      "type": "object",
+      "description": "A named hardware preset or explicit dot-product accumulator fields.",
+      "properties": {
+        "preset": {
+          "$ref": "#/$defs/preset_name"
+        },
+        "algorithm": {
+          "$ref": "#/$defs/algorithm"
+        },
+        "f_bits": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 48
+        },
+        "chunk_size": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "c_mode": {
+          "type": "string",
+          "enum": [
+            "fused",
+            "decoupled"
+          ],
+          "description": "Whether C joins the chunk FDA."
+        },
+        "f2_bits": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 48
+        },
+        "g_bits": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 48
+        },
+        "group_size": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "k_tile": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "norm_rounding": {
+          "type": "string",
+          "enum": [
+            "rtz",
+            "rne"
+          ],
+          "description": "Normalization rounding after exact aligned accumulation."
+        },
+        "scale_apply": {
+          "$ref": "#/$defs/scale_apply"
+        },
+        "promote_interval": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "out_format": {
+          "$ref": "#/$defs/format"
+        },
+        "name": {
+          "type": "string"
+        },
+        "provenance": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "mma": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/preset_name"
+        },
+        {
+          "$ref": "#/$defs/mma_object"
+        }
+      ]
+    },
+    "transform_object": {
+      "type": "object",
+      "description": "Activation/weight coordinate transform; block=0 selects a divisor of K.",
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/transform_kind"
+        },
+        "block": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "seed": {
+          "type": "integer"
+        },
+        "alpha": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "grid": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "share_inputs": {
+          "type": "boolean",
+          "description": "Fit one diagonal scale for linears consuming the same activation tensor."
+        }
+      },
+      "additionalProperties": false
+    },
+    "transform": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/transform_kind"
+        },
+        {
+          "$ref": "#/$defs/transform_object"
+        }
+      ]
+    },
+    "weight_algo_object": {
+      "type": "object",
+      "description": "Weight rounding algorithm and GPTQ solver parameters.",
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/weight_algorithm"
+        },
+        "block_size": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "damp": {
+          "type": "number",
+          "minimum": 0
+        },
+        "act_order": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "weight_algo": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/weight_algorithm"
+        },
+        {
+          "$ref": "#/$defs/weight_algo_object"
+        }
+      ]
+    },
+    "linear": {
+      "type": "object",
+      "description": "Default specification for each included linear module.",
+      "properties": {
+        "weight": {
+          "$ref": "#/$defs/quant"
+        },
+        "activation": {
+          "$ref": "#/$defs/quant"
+        },
+        "mma": {
+          "$ref": "#/$defs/mma"
+        },
+        "transform": {
+          "$ref": "#/$defs/transform"
+        },
+        "weight_algo": {
+          "$ref": "#/$defs/weight_algo"
+        }
+      },
+      "additionalProperties": false
+    },
+    "override": {
+      "type": "object",
+      "description": "All specified selectors must match; the first matching override wins.",
+      "properties": {
+        "match": {
+          "type": "string",
+          "minLength": 1
+        },
+        "weight": {
+          "$ref": "#/$defs/quant"
+        },
+        "activation": {
+          "$ref": "#/$defs/quant"
+        },
+        "mma": {
+          "$ref": "#/$defs/mma"
+        },
+        "transform": {
+          "$ref": "#/$defs/transform"
+        },
+        "weight_algo": {
+          "$ref": "#/$defs/weight_algo"
+        },
+        "layers": {
+          "$ref": "#/$defs/layers"
+        },
+        "modules": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "skip": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "required": [
+            "match"
+          ]
+        },
+        {
+          "required": [
+            "layers"
+          ]
+        },
+        {
+          "required": [
+            "modules"
+          ]
+        }
+      ]
+    },
+    "calibration": {
+      "type": "object",
+      "description": "Random token windows for activation observers, transforms and GPTQ.",
+      "properties": {
+        "dataset": {
+          "type": "string",
+          "enum": [
+            "wikitext2",
+            "c4",
+            "pile"
+          ],
+          "description": "Calibration text source."
+        },
+        "split": {
+          "type": "string"
+        },
+        "samples": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "seqlen": {
+          "type": "integer",
+          "minimum": 2
+        },
+        "seed": {
+          "type": "integer"
+        },
+        "sequential": {
+          "type": "boolean",
+          "description": "Collect statistics using previously quantized decoder layers."
+        }
+      },
+      "additionalProperties": false
+    },
+    "layers": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^\\s*(?:-1|[0-9]+(?:-[0-9]+)?)(?:\\s*,\\s*(?:-1|[0-9]+(?:-[0-9]+)?))*\\s*$",
+      "description": "Comma-separated decoder layer indices/ranges; -1 selects the last layer."
+    },
+    "kv_preset": {
+      "type": "string",
+      "enum": [
+        "kivi2",
+        "kivi4",
+        "kv_fp8"
+      ]
+    },
+    "kv": {
+      "type": "object",
+      "properties": {
+        "preset": {
+          "$ref": "#/$defs/kv_preset"
+        },
+        "key": {
+          "$ref": "#/$defs/quant"
+        },
+        "value": {
+          "$ref": "#/$defs/quant"
+        },
+        "key_axis": {
+          "type": "string",
+          "enum": [
+            "channel",
+            "token"
+          ]
+        },
+        "value_axis": {
+          "type": "string",
+          "enum": [
+            "channel",
+            "token"
+          ]
+        },
+        "residual": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "cache",
+            "fakequant"
+          ]
+        },
+        "layers": {
+          "$ref": "#/$defs/kv_layers"
+        }
+      },
+      "additionalProperties": false
+    },
+    "kv_layers": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^\\s*[0-9]+(?:-[0-9]+)?(?:\\s*,\\s*[0-9]+(?:-[0-9]+)?)*\\s*$",
+      "description": "Comma-separated absolute decoder layer indices or inclusive ranges."
+    }
+  }
+}

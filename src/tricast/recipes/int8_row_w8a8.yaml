@@ -1,0 +1,15 @@
+# INT8 per-row operands with exact integer dot products.
+# Source: ENGINE.md §4.7 int_exact.
+name: int8_row_w8a8
+description: INT8 per-row operands with exact integer dot products.
+defaults:
+  weight: int8_row
+  activation: int8_row
+  mma: int_exact
+  transform: none
+  weight_algo: rtn
+include:
+- '*'
+exclude:
+- lm_head
+backend: auto

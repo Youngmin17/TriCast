@@ -1,0 +1,17 @@
+# Unquantized operands with fp64 FMA and one final fp32 rounding.
+# Source: ENGINE.md §4.7 numerical reference.
+name: fp64_reference
+description: Unquantized operands with fp64 FMA and one final fp32 rounding.
+defaults:
+  weight: null
+  activation: null
+  mma:
+    preset: fp64
+    out_format: fp32
+  transform: none
+  weight_algo: rtn
+include:
+- '*'
+exclude:
+- lm_head
+backend: auto

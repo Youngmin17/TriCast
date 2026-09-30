@@ -14,17 +14,21 @@ dependencies = ["torch>=2.4", "numpy", "pyyaml", "jsonschema"]
 
 [project.optional-dependencies]
 triton = ["triton>=3.0"]
-eval = ["transformers>=4.45", "lm_eval>=0.4.8", "datasets", "accelerate"]
+eval = ["transformers>=4.55", "lm_eval>=0.4.13", "datasets>=4.0", "accelerate"]
+# transformers: KV cache API tested on 4.55.2. datasets>=4: hub cards of hellaswag/coqa use the
+# "List" feature type; lm_eval 0.4.9.1 pins datasets<4 (tested: lm_eval 0.4.13, datasets 4.8.5).
+agent = ["anthropic"]
 dev = ["pytest", "hypothesis", "ruff"]
 
 [project.scripts]
 tricast = "tricast.cli:main"
+tricast-lm-eval = "tricast.eval.lmeval:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.package-data]
-tricast = ["schemas/*.json", "prompts/*.md"]
+tricast = ["schemas/*.json", "prompts/*.md", "recipes/*.yaml"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

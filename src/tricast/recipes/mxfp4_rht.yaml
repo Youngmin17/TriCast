@@ -1,0 +1,17 @@
+# MXFP4 W4A4 after a seeded randomized Hadamard transform.
+# Source: QuaRot/RHT and OCP MX v1.0.
+name: mxfp4_rht
+description: MXFP4 W4A4 after a seeded randomized Hadamard transform.
+defaults:
+  weight: mxfp4
+  activation: mxfp4
+  mma: nvidia_blackwell_fp4
+  transform:
+    kind: random_hadamard
+    seed: 42
+  weight_algo: rtn
+include:
+- '*'
+exclude:
+- lm_head
+backend: auto

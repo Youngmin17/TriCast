@@ -1,0 +1,15 @@
+# FP8 group-128 activations and 128x128 weights; promote every 128 products.
+# Source: DeepSeek-V3 report §3.3.2.
+name: deepseek_fp8_block
+description: FP8 group-128 activations and 128x128 weights; promote every 128 products.
+defaults:
+  weight: fp8_block128
+  activation: fp8_group128
+  mma: deepseek_fp8_promote128
+  transform: none
+  weight_algo: rtn
+include:
+- '*'
+exclude:
+- lm_head
+backend: auto

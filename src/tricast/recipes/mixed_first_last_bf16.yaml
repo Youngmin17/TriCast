@@ -1,0 +1,12 @@
+# Keep first and last decoder layers in the original precision; MXFP4 elsewhere.
+# Use a BF16 model for BF16 endpoints; -1 resolves from the model's decoder-layer count.
+name: mixed_first_last_bf16
+description: Full-precision endpoint layers with MXFP4 interior layers.
+defaults:
+  weight: mxfp4
+  activation: mxfp4
+  mma: nvidia_blackwell_fp4
+overrides:
+  - layers: "0,-1"
+    skip: true
+exclude: [lm_head]

@@ -1,0 +1,15 @@
+# NVFP4 with adaptive block scaling to map amax to four or six.
+# Source: Four Over Six and NVIDIA NVFP4.
+name: nvfp4_4o6
+description: NVFP4 with adaptive block scaling to map amax to four or six.
+defaults:
+  weight: nvfp4_4o6
+  activation: nvfp4_4o6
+  mma: nvidia_blackwell_fp4
+  transform: none
+  weight_algo: rtn
+include:
+- '*'
+exclude:
+- lm_head
+backend: auto

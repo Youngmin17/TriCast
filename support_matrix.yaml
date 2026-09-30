@@ -1,0 +1,103 @@
+# TriCast support matrix — the single source of implementation status (AGENTS.md §7).
+#
+# status:
+#   verified     test evidence on the named backend (evidence names the test and the run)
+#   implemented  code + CPU tests; the named backend is not yet verified end to end
+#   planned      not implemented
+# Update this file in the same change that moves a cell; never mark "verified" without evidence.
+
+updated: 2026-09-30
+
+backends:
+  reference:
+    status: verified
+    evidence: "pytest --ignore=tests/gpu (CPU, macOS arm64, torch 2.11) — full suite passing"
+  triton_quantize:
+    status: verified
+    evidence: "tests/gpu/test_triton_quantize.py 579/579 bit-exact vs reference (A100 sm_80, triton 3.4.0)"
+  triton_mma:
+    status: implemented
+    evidence: "tests/gpu/test_triton_mma.py — parity run in progress"
+
+formats:
+  float: {status: verified, members: [fp32, tf32, bf16, fp16, fp8_e4m3, fp8_e5m2, fp8_e4m3fnuz,
+          fp8_e5m2fnuz, fp6_e3m2, fp6_e2m3, fp4_e2m1, ue4m3, "custom ExMy (ieee|fn|fnuz|none, bias, nosub)"],
+          evidence: "tests/test_cast_reference.py: torch-native parity (fp8 x4, bf16, fp16) + brute-force grid oracle"}
+  int: {status: verified, members: [int8, int4, int2, uint8, uint4, mxint8, mxint4, "intN[:full][:frac=F]"]}
+  pow2: {status: verified, members: [e8m0]}
+
+rounding: {status: verified, modes: [rne, rna, rtz, rup, rdn, sr], note: "SR takes explicit uint32 noise for cross-backend parity"}
+
+quantization:
+  granularity: {status: verified, values: [tensor, row, group, block]}
+  scale_method: {status: verified, values: [absmax, pow2_floor, pow2_ceil, mse, percentile, four_over_six]}
+  scale_format: {status: verified, values: [fp32, fp16, bf16, ue4m3, e8m0, "any float format"]}
+  two_level: {status: verified, note: "NVFP4, TensorRT-Model-Optimizer ordering"}
+  zero_point: {status: implemented, values: [none, int, float],
+               note: "dequant mma_input only; float = KIVI/HQQ offset (unsigned formats), int = GPTQ/AWQ style"}
+  observers: {status: implemented, values: [minmax, ema, history, percentile, mse], note: "tensor granularity; CPU tests"}
+  microxcaling_parity: {status: verified, evidence: "tests/test_microxcaling_parity.py (even/nearest/floor)"}
+  schemes: [mxfp8_e4m3, mxfp8_e5m2, mxfp6_e3m2, mxfp6_e2m3, mxfp4, mxint8, mxint4, nvfp4, nvfp4_4o6,
+            msfp12, msfp16, "bfp<m>_b<block>", fp8_tensor, fp8_tensor_ema, fp8_tensor_delayed, fp8_row,
+            fp8_group128, fp8_block128, int8_tensor, int8_row, int4_g128, int4_g128_zp, kivi2, kivi4,
+            bf16, fp16, fp32, tf32]
+
+transforms: {status: implemented, values: [hadamard, random_hadamard, smoothquant, awq],
+             note: "smoothquant/awq share one scale across linears reading the same input (q/k/v, gate/up)",
+             evidence: "tests/test_transforms.py, tests/test_calibrate.py (CPU)"}
+weight_algorithms: {status: implemented, values: [rtn, gptq], note: "gptq supports sequential calibration",
+                    evidence: "tests/test_gptq.py (CPU): GPTQ error < RTN"}
+kv_cache:
+  status: implemented
+  modes: [cache, fakequant]
+  presets: [kivi2, kivi4, kv_fp8]
+  note: "KIVI layout (keys per channel, values per token, residual window); HF transformers 4.55 cache API"
+  evidence: "tests/test_kv.py, tests/test_kv_generation.py (CPU, tiny models)"
+per_layer_rules: {status: implemented, selectors: [match, layers, modules], actions: [override fields, skip]}
+qat: {status: implemented, note: "STE (clipped) through fake_quant and EmuLinear backward; LSQ planned"}
+
+mma:
+  algorithms:
+    cofda_fused: {reference: verified, triton: implemented}
+    cofda_decoupled: {reference: verified, triton: implemented}
+    cofda_promote: {reference: verified, triton: implemented, note: "DeepSeek-V3 style fp32 promotion"}
+    gdfs: {reference: verified, triton: implemented}
+    fp32_fma: {reference: verified, triton: implemented}
+    fp64: {reference: verified, triton: implemented}
+    int_exact: {reference: verified, triton: implemented}
+  scale_apply: [epilogue, product, group, promote, operand]
+  presets:
+    nvidia_hopper_fp8: {params: "cofda F=13 CS=32", source: NADPE, silicon_check: planned}
+    nvidia_ada_fp8: {params: "cofda F=13 CS=16", source: NADPE, silicon_check: planned}
+    nvidia_blackwell_fp8: {params: "cofda F=25 CS=32", source: NADPE, silicon_check: planned}
+    nvidia_blackwell_fp4: {params: "gdfs G=6 F=35 GS=16 KT=64", source: NADPE, silicon_check: planned}
+    deepseek_fp8_promote128: {params: "cofda F=13 CS=32 promote 128", source: "DeepSeek-V3 report"}
+  nadpe_oracle:
+    fp8:
+      reference: verified
+      triton: pending
+      evidence: "tests/data/nadpe/fp8_*.pt — 1200 cases (CoFDA fused 264, decoupled 264, GDFS 672 with
+        k_tile 32) bit-exact vs NADPE MMA-Emu CUDA built standalone for sm_80 (scripts/nadpe_oracle)"
+    fp4:
+      reference: verified
+      triton: pending
+      evidence: "tests/data/nadpe/fp4_*.pt — 516 cases (NVFP4 UE4M3 block 16, MXFP4 E8M0 block 32; GDFS k_tile 64)
+        bit-exact vs the same standalone NADPE build (scripts/nadpe_oracle/gen_vectors_fp4.py)"
+
+integration:
+  hf_patch: {status: implemented, note: "nn.Linear -> EmuLinear; lm_head excluded by default"}
+  calibration: {status: implemented, datasets: [wikitext2, c4, pile], options: [samples, seqlen, seed, sequential],
+                note: "recipes that need calibration refuse to run until calibrate() completes"}
+  ppl: {status: implemented, note: "GPTQ convention, WikiText-2 test"}
+  lm_eval: {status: implemented, note: "model name 'tricast' (HFLM subclass)"}
+  runner: {status: implemented, note: "resume, env capture, sweeps, native_baseline (unpatched model run)"}
+  attention_matmul_emulation: {status: planned}
+  error_report: {status: implemented, metrics: [mse, sqnr_db, max_abs_error, relative_frobenius, cosine, logits_kl, top1_agreement]}
+  silicon_probe: {status: planned}
+
+agent:
+  structured_parse: {status: implemented, note: "Claude API (claude-opus-5-5, json_schema output) or offline
+                     parser; live API path untested here (no ANTHROPIC_API_KEY)",
+                     evidence: "tests/test_agent_parser.py, tests/test_agent_request.py (mocked client)"}
+  tools: {status: implemented, evidence: "tests/test_tools.py, tests/test_agent_loop.py (mocked client)"}
+  evals: {status: implemented, note: "criteria are a human-review draft", evidence: "evals/run_evals.py, tests/test_evals.py"}

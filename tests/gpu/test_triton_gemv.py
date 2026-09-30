@@ -3,7 +3,7 @@
 The special-value cases in test_triton_mma.py use FP32 operands, which never take the integer
 fast path and so never reach `_gemv`. These cases use BF16/FP16 operands (fast path) with
 Inf/NaN/zero values, Inf/NaN/zero scales, E8M0 field 0 and an fp32 overflow of the running sum,
-and check that `_gemv` is the kernel that ran.
+and check that `_gemv` is the kernel that ran; exact integers and the span limit are covered too.
 """
 
 from __future__ import annotations
@@ -14,7 +14,7 @@ import pytest
 import torch
 
 from tests.conftest import bit_equal
-from tricast.formats import BF16, E8M0, FP16, FP32, UE4M3
+from tricast.formats import BF16, E8M0, FP16, FP32, INT8, UE4M3
 from tricast.mma.operand import Operand
 from tricast.mma.spec import MMASpec
 from tricast.reference.cast import round_to_format
@@ -66,14 +66,8 @@ def _cuda(op: Operand) -> Operand:
     return replace(op, values=op.values.cuda(), scale=None if op.scale is None else op.scale.cuda())
 
 
-@pytest.mark.parametrize("m", [1, 5, 16])
-@pytest.mark.parametrize("case", sorted(CASES))
-def test_small_m_kernel_matches_reference_with_specials(backends, monkeypatch, case, m):
-    reference, kernel = backends
-    spec, fmt, scale_fmt, domain = CASES[case]
-    gen = torch.Generator().manual_seed(42 + m)
-    a, b = _operand(m, fmt, scale_fmt, domain, gen), _operand(9, fmt, scale_fmt, domain, gen)
-    expected = reference.gemm_reference(a, b, spec)
+def _record_gemv(kernel, monkeypatch) -> list:
+    """Replace `_gemv` with a wrapper that records the compiled kernels it launches."""
     launched = []
     original = kernel._gemv
 
@@ -86,7 +80,46 @@ def test_small_m_kernel_matches_reference_with_specials(backends, monkeypatch, c
             return run
 
     monkeypatch.setattr(kernel, "_gemv", Recorder())
+    return launched
+
+
+@pytest.mark.parametrize("m", [1, 5, 16])
+@pytest.mark.parametrize("case", sorted(CASES))
+def test_small_m_kernel_matches_reference_with_specials(backends, monkeypatch, case, m):
+    reference, kernel = backends
+    spec, fmt, scale_fmt, domain = CASES[case]
+    gen = torch.Generator().manual_seed(42 + m)
+    a, b = _operand(m, fmt, scale_fmt, domain, gen), _operand(9, fmt, scale_fmt, domain, gen)
+    expected = reference.gemm_reference(a, b, spec)
+    launched = _record_gemv(kernel, monkeypatch)
     actual = kernel.gemm_triton(_cuda(a), _cuda(b), spec).cpu()
     assert [compiled.name for compiled in launched] == ["_gemv"]
     assert not torch.isfinite(expected).all()  # the specials reached the output
     assert bit_equal(actual, expected), f"{case} m={m}:\nactual={actual}\nexpected={expected}"
+
+
+@pytest.mark.parametrize("m", [1, 16])
+def test_small_m_exact_integers_match_reference(backends, monkeypatch, m):
+    """int_exact takes finite integers only (validated on the host), so no specials here."""
+    reference, kernel = backends
+    gen = torch.Generator().manual_seed(42)
+    a = Operand(torch.randint(-127, 128, (m, 300), generator=gen).float(), INT8)
+    b = Operand(torch.randint(-127, 128, (9, 300), generator=gen).float(), INT8,
+                0.5 + torch.rand(9, 1, generator=gen), FP32, "row")
+    spec = MMASpec("int_exact", out_format=FP32)
+    expected = reference.gemm_reference(a, b, spec)
+    launched = _record_gemv(kernel, monkeypatch)
+    actual = kernel.gemm_triton(_cuda(a), _cuda(b), spec).cpu()
+    assert [compiled.name for compiled in launched] == ["_gemv"]
+    assert bit_equal(actual, expected)
+
+
+def test_chunks_beyond_the_span_limit_stay_on_the_tiled_kernel(backends, monkeypatch):
+    reference, kernel = backends
+    gen = torch.Generator().manual_seed(42)
+    spec = MMASpec("cofda", f_bits=13, chunk_size=2 * kernel._GEMV_MAX_SPAN, out_format=FP32)
+    a, b = (Operand(round_to_format(torch.randn(rows, 300, generator=gen), BF16), BF16) for rows in (1, 9))
+    launched = _record_gemv(kernel, monkeypatch)
+    actual = kernel.gemm_triton(_cuda(a), _cuda(b), spec).cpu()
+    assert launched == []
+    assert bit_equal(actual, reference.gemm_reference(a, b, spec))

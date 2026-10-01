@@ -1020,7 +1020,10 @@ def test_kv3_chunked_teacher_forcing_matches_single_token(
         baseline = model(ids, use_cache=False).logits
     assert (outputs[0] - baseline).abs().max().item() > 1e-5
     if mode == "cache" and len(chunks) == 1:
-        assert bit_equal(outputs[1], baseline)
+        if attention == "eager":
+            assert bit_equal(outputs[1], baseline)
+        else:  # SDPA picks its CPU kernel by mask and cache shape: last-bit differences on Linux
+            assert (outputs[1] - baseline).abs().max().item() <= 1e-6
     else:
         assert (outputs[1] - baseline).abs().max().item() > 1e-5
 

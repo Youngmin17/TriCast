@@ -116,8 +116,10 @@ def test_quantized_ste_uses_quantized_operands(api):
     a = fake_quant(x2, recipe.defaults.activation, backend="reference")
     b = fake_quant(w2, recipe.defaults.weight, backend="reference")
     (a @ b.T).sum().backward()
-    assert torch.equal(x.grad, x2.grad)
-    assert torch.equal(model[0].weight.grad, w2.grad)
+    # Same products, but CPU BLAS may sum them in another order for the transposed operand
+    # (last-bit differences on Linux); unquantized operands would differ by the fp8 error (~%).
+    torch.testing.assert_close(x.grad, x2.grad, rtol=1e-6, atol=0.0)
+    torch.testing.assert_close(model[0].weight.grad, w2.grad, rtol=1e-6, atol=0.0)
     assert as_operand(model[0]._weight_operand) is model[0]._weight_operand
 
 

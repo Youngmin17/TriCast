@@ -84,7 +84,13 @@ def test_perplexity_does_not_depend_on_batch_size(tiny_eval_model, tiny_eval_tok
         texts = [" ".join(f"t{(i * 7) % 250}" for i in range(40))]
         one = perplexity(tiny_eval_model, tiny_eval_tokenizer, texts=texts, seqlen=8, batch_size=1)
         many = perplexity(tiny_eval_model, tiny_eval_tokenizer, texts=texts, seqlen=8, batch_size=5)
-        assert many == one
+        # Batching changes only the order of the native (unemulated) reductions; Linux CPU BLAS
+        # rounds their last bit differently by batch shape (nvfp4: 256.5753119826756 vs ...758).
+        # A scale that spanned the batch would change the quantized operands, far beyond 1e-12.
+        floats = ("ppl", "nll")
+        assert {k: v for k, v in many.items() if k not in floats} == {
+            k: v for k, v in one.items() if k not in floats}
+        assert all(math.isclose(many[k], one[k], rel_tol=1e-12, abs_tol=0.0) for k in floats)
         per_sequence = {layer.per_sequence for _, layer in iter_emulinear(tiny_eval_model)}
         assert per_sequence == {activation != "mxfp4"}  # MX blocks lie along K within one token
     finally:

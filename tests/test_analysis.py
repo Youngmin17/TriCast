@@ -282,9 +282,12 @@ def test_report_kv_only_changes_logits_and_restores_attention(mode: str) -> None
     try:
         with torch.random.fork_rng():
             torch.manual_seed(42)
+            # initializer_range 0.5: with the default 0.02 the 2-bit cache moved the logits by
+            # ~1e-8 and the KL was rounding noise (2e-17 on macOS, 0.0 on Linux); here KIVI-2 moves
+            # the perplexity in the fourth digit and the KL is 2.7e-8 on both.
             model = transformers.LlamaForCausalLM(transformers.LlamaConfig(
                 hidden_size=8, intermediate_size=16, num_hidden_layers=1, num_attention_heads=2,
-                num_key_value_heads=1, vocab_size=8, max_position_embeddings=16,
+                num_key_value_heads=1, vocab_size=8, max_position_embeddings=16, initializer_range=0.5,
                 bos_token_id=1, eos_token_id=2, pad_token_id=0,
             )).eval()
         attention = model.model.layers[0].self_attn
@@ -296,7 +299,7 @@ def test_report_kv_only_changes_logits_and_restores_attention(mode: str) -> None
         result = layer_report(model, data, input_ids=[[0, 1, 2, 3]], samples=1, seqlen=4)
         assert result["layers"] == [] and result["patch_report"]["patched"] == []
         assert result["patch_report"]["kv"] == ["model.layers.0.self_attn"]
-        assert result["model"]["logits_kl"] > 0.0
+        assert result["model"]["logits_kl"] > 1e-9
         assert math.isfinite(result["model"]["ppl_emulated"])
         assert attention.config is config
         assert not hasattr(model, "_tricast_kv_patch") and not hasattr(model, "_tricast_kv_patched")

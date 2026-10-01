@@ -47,3 +47,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   linear). A Qwen3-0.6B Hopper-FP8 decode step went from 375–401 to 168–170 ms on a V100 and from
   292–294 to 101 ms on an A100 (`scripts/bench/bench_decode.py`); results and generated tokens stay
   identical.
+- Recipe overrides replace a `sparsity`, `format` or `dequant_format` mapping instead of merging
+  it field by field: a partial merge could combine two formats' fields into a third format.
+
+### Fixed
+- Reference backend on CUDA tensors: powers of two are built from their fp64 bit pattern instead of
+  `torch.ldexp`, whose `pow(2, e)` is inexact on CUDA. Before, a few casts differed from the CPU
+  (A100: 1 of ~500k bf16 values, up to 7 tf32) and decoding, hence every reference GEMM, raised on
+  CUDA.

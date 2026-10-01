@@ -78,8 +78,7 @@ def _ulp_format(fmt: Format | str) -> FloatFormat:
 
 def _on_grid(x: torch.Tensor, fmt: FloatFormat, name: str) -> torch.Tensor:
     """``x`` in fp64 on the CPU, after checking that the library cast leaves every value
-    unchanged. The reference decode that measures distances is exact on the CPU only: on CUDA
-    it rejects grid values (seen with bf16 outputs of Qwen3-0.6B on a V100)."""
+    unchanged. Distances and their statistics come back on the CPU whatever the input device."""
     values = x.detach().cpu().double()
     cast = round_to_format(values, fmt, "rne", saturate=False).double()
     if not bool(((cast == values) | (cast.isnan() & values.isnan())).all()):

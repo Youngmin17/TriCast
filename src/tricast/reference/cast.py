@@ -57,11 +57,11 @@ def round_to_format(
 
     ax = xd.abs()
     finite = torch.isfinite(xd)
-    y = torch.ldexp(torch.where(finite, ax, torch.zeros_like(ax)), -quantum)
+    y = _ldexp(torch.where(finite, ax, torch.zeros_like(ax)), -quantum)
     k = torch.floor(y)
     frac = y - k
     inc = _round_up(frac, k, xd < 0, rounding, noise, sr_bits, generator)
-    mag = torch.ldexp(k + inc.to(k.dtype), quantum)
+    mag = _ldexp(k + inc.to(k.dtype), quantum)
 
     if isinstance(fmt, IntFormat):
         lo = -fmt.qmin * 2.0**-fmt.frac_bits  # magnitude bound for negatives
@@ -88,6 +88,23 @@ def _floor_log2(ax: torch.Tensor) -> torch.Tensor:
     _, e = torch.frexp(ax)
     valid = (ax > 0) & torch.isfinite(ax)
     return torch.where(valid, e.to(torch.int64) - 1, torch.zeros_like(e, dtype=torch.int64))
+
+
+def _ldexp(x: torch.Tensor, e: torch.Tensor) -> torch.Tensor:
+    """``x * 2**e`` in fp64, exact whenever the result is representable.
+
+    ``torch.ldexp`` multiplies by ``pow(2, e)``, which is inexact on CUDA (1.3984375 * 2**7 gave
+    178.99999999999997 on an A100) and on the CPU once ``2**e`` is subnormal. Here each power of
+    two is built from its fp64 bit pattern; the second factor covers shifts beyond one exponent range.
+    """
+    e = e.to(torch.int64)
+    first = e.clamp(-1022, 1023)
+    return x.double() * _pow2(first) * _pow2((e - first).clamp(-1022, 1023))
+
+
+def _pow2(e: torch.Tensor) -> torch.Tensor:
+    """``2.0**e`` for int64 ``e`` in [-1022, 1023], from the fp64 encoding."""
+    return ((e + 1023) << 52).view(torch.float64)
 
 
 def _round_up(frac, k, negative, rounding, noise, sr_bits, generator) -> torch.Tensor:
@@ -141,7 +158,7 @@ def _round_pow2(xd, fmt: Pow2Format, rounding: Rounding, saturate: bool) -> torc
     overflow give NaN (E8M0 has no zero, sign or Inf)."""
     ax = xd.abs()
     e = _floor_log2(ax)
-    lower = torch.ldexp(torch.ones_like(ax), e)
+    lower = _ldexp(torch.ones_like(ax), e)
     frac = torch.where(torch.isfinite(ax), ax / lower - 1.0, torch.zeros_like(ax))  # in [0, 1)
     if rounding in (Rounding.RNE, Rounding.RNA):
         up = frac >= 0.5
@@ -153,7 +170,7 @@ def _round_pow2(xd, fmt: Pow2Format, rounding: Rounding, saturate: bool) -> torc
         raise ValueError("stochastic rounding is not defined for power-of-two formats")
     e = (e + up.to(torch.int64)).clamp(min=fmt.emin)
     over = (e > fmt.emax) | torch.isinf(ax)
-    out = torch.ldexp(torch.ones_like(ax), e.clamp(max=fmt.emax))
+    out = _ldexp(torch.ones_like(ax), e.clamp(max=fmt.emax))
     out = torch.where(over, torch.full_like(out, fmt.max_normal), out)
     out = torch.where(ax == 0, torch.full_like(out, fmt.min_normal), out)
     bad = torch.isnan(xd) | (xd < 0) | (over & (not saturate))
@@ -193,7 +210,7 @@ def decode(v: torch.Tensor, fmt: Format | str) -> tuple[torch.Tensor, torch.Tens
     else:
         exp = _floor_log2(ax)
         radix = 0
-    sig_f = torch.ldexp(ax, radix - exp)
+    sig_f = _ldexp(ax, radix - exp)
     if not torch.equal(sig_f, torch.floor(sig_f)):
         raise ValueError(f"values are not on the {fmt} grid")
     if bool(_out_of_range(vd, ax, exp, sig_f, fmt).any()):

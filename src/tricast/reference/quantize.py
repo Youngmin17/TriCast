@@ -11,7 +11,7 @@ from ..formats import container_dtype
 from ..quant.qtensor import QTensor
 from ..quant.spec import QuantSpec
 from ..rounding import Rounding
-from .cast import _round_up, round_to_format
+from .cast import _ldexp, _round_up, round_to_format
 
 
 def _div(a, b) -> torch.Tensor:
@@ -151,11 +151,11 @@ def _pow2_scale(amax: torch.Tensor, spec: QuantSpec) -> torch.Tensor:
     _, exponent = torch.frexp(a)
     e = exponent.to(torch.int64) - 1 - spec.emax_elem
     if sf.method == "pow2_ceil":
-        too_small = torch.ldexp(torch.full_like(a, spec.format.max_normal), e) < a
+        too_small = _ldexp(torch.full_like(a, spec.format.max_normal), e) < a
         e = e + too_small.to(torch.int64)
     overflow = (e > sf.format.emax) | ~torch.isfinite(a)
     e = e.clamp(min=sf.format.emin, max=sf.format.emax)
-    s = torch.ldexp(torch.ones_like(a), e).float()
+    s = _ldexp(torch.ones_like(a), e).float()
     return torch.where(overflow, float("nan"), s)
 
 

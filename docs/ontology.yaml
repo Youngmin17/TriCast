@@ -4,9 +4,9 @@
 # 대표어는 코드 식별자·AGENTS.md 용어집과 같다. 인터뷰에서 쓴 말(같은 문서 E절의 클래스 이름 포함)은
 # synonyms 에 적어 대표어 하나로 모은다. 세부 속성 가운데 인터뷰에 직접 나오지 않고 공개 작업물에서 온 것은
 # 관찰 번호를 근거로 쓴다.
-# evidence: [] = 코드에는 있지만 로그·관찰로 역추적되지 않는 항목 — Format.special, QuantSpec.zero_point·observer,
-# MMASpec.promote_interval, Recipe.transform·weight_algo·kv, EmulationRequest 전체. 강의 2 규칙(역추적되지 않는
-# 항목은 두지 않는다)에 따라 근거가 생기지 않으면 확정 전에 삭제한다 (팀 결정 대기).
+# 확정 (2026-10-01, 팀 승인): 로그·관찰로 역추적되지 않던 코드 개념 — Format.special, QuantSpec.zero_point·observer,
+# MMASpec.promote_interval, Recipe.transform·weight_algo·kv, EmulationRequest — 은 강의 2 규칙(역추적되지 않는
+# 항목은 두지 않는다)에 따라 뺐다. 이 용어들은 코드 어휘로 AGENTS.md 용어집에 남는다.
 # 규칙: relations 의 대상은 이 파일에 정의된 클래스여야 한다.
 version: 2
 classes:
@@ -30,7 +30,6 @@ classes:
       name: {type: string, examples: [fp8_e4m3, fp6_e3m2, fp4_e2m1, bf16, int8, e8m0], evidence: [로그 3, 관찰 A2]}
       kind: {type: enum, values: [float, int, pow2], evidence: [로그 3, 관찰 A2]}
       bits: {type: int, examples: [8, 6, 4], evidence: [로그 1, 로그 10]}
-      special: {type: enum, values: [ieee, fn, fnuz, none], note: "Inf/NaN 인코딩 방식", evidence: []}
   QuantSpec:
     description: 텐서 하나(가중치 또는 활성)를 Format 격자에 사상하는 방법
     synonyms: [양자화 설정, scaling 방법]
@@ -40,9 +39,6 @@ classes:
       group_size: {type: int, examples: [16, 32, 128], note: "MX 블록 32 (관찰 A2). 16·128 은 NVFP4·FP8 그룹 스킴", evidence: [관찰 A2]}
       scale.method: {type: enum, values: [absmax, pow2_floor, pow2_ceil, mse, percentile], evidence: [로그 1, 관찰 A2]}
       rounding: {type: enum, values: [rne, rna, rtz, rup, rdn, sr], evidence: [로그 9, 관찰 A2]}
-      zero_point: {type: enum, values: [none, int, float], evidence: []}
-      observer: {type: enum, values: [minmax, ema, history, percentile, mse], note: "정적 활성 스케일의 amax 출처",
-                 evidence: []}
     relations:
       - uses: Format
         evidence: [로그 1, 관찰 A2]
@@ -57,7 +53,6 @@ classes:
       c_mode: {type: enum, values: [fused, decoupled], note: "누산기 C 가 절단 경로에 들어가는지", evidence: [관찰 A1]}
       g_bits: {type: int, note: "GDFS 그룹 내부 비트 G — f_bits 와 다른 축", evidence: [관찰 A1]}
       norm_rounding: {type: enum, values: [rne, rtz], evidence: [로그 9, 관찰 A1]}
-      promote_interval: {type: int, note: "이 K 간격마다 부분합을 fp32 로 승격 (출처: DeepSeek-V3 보고서)", evidence: []}
   Preset:
     description: 실제 하드웨어(GPU 세대·NPU)의 MMASpec 과 그 출처·검증 상태
     synonyms: [HardwareEnvironment, GPU 세대, 하드웨어 지원]
@@ -69,16 +64,13 @@ classes:
       - is_a: MMASpec
         evidence: [관찰 A1]
   Recipe:
-    description: 한 번의 에뮬레이션 구성 — 레이어별 가중치·활성 QuantSpec, MMASpec, 희소성, 이상치 보존, 변환
+    description: 한 번의 에뮬레이션 구성 — 레이어별 가중치·활성 QuantSpec, MMASpec, 희소성, 이상치 보존
     synonyms: [EmulationConfig, 에뮬레이션 설정, 설계 조합]
     evidence: [로그 1, 로그 9, 로그 10, 관찰 A1]
     attributes:
       name: {type: string, evidence: [관찰 A1]}
       sparsity: {type: dict, note: "n:m 또는 비율(unstructured) — 가중치에 적용", evidence: [로그 10]}
       outliers: {type: dict, note: "크기 상위 비율의 가중치를 고정밀 형식으로 따로 보존", evidence: [로그 10]}
-      transform: {type: enum, values: [none, hadamard, random_hadamard, smoothquant, awq], evidence: []}
-      weight_algo: {type: enum, values: [rtn, gptq], evidence: []}
-      kv: {type: dict, note: "KV 캐시 양자화 — preset, mode, layers", evidence: []}
     relations:
       - quantizes_with: QuantSpec
         evidence: [로그 1, 관찰 A2]
@@ -106,18 +98,6 @@ classes:
         evidence: [로그 1, 로그 10]
       - evaluates: Model
         evidence: [로그 1, 로그 2]
-  EmulationRequest:
-    description: 사용자가 말로 적은 설정 변경을 구조화한 결과 (구조화 출력의 대상, 강의 3)
-    synonyms: [자연어 요청]
-    evidence: []
-    attributes:
-      intent: {type: enum, values: [evaluate, compare, sweep, explain, inspect, report], evidence: []}
-      assumptions: {type: list, note: "요청에 없어서 기본값으로 채운 항목", evidence: []}
-    relations:
-      - requests: Recipe
-        evidence: []
-      - targets: Model
-        evidence: []
 # 범위 밖(명시): ONNX 등 배포 형식 변환과 실제 디바이스 실행(로그 2 — 페인 2는 다루지 않는다),
 #               칩 면적·전력 추정(로그 9·10 의 목표지만 출처 없는 하드웨어 수치는 만들지 않는다 — AGENTS.md 규칙 2),
 #               클라우드·데이터센터 운영, 모델 서비스 배포, CUDA 커널 자동 생성 (interviews.md E절),

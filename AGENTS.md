@@ -3,7 +3,7 @@
 > 코딩 에이전트가 **작업 중 상시 준수할 규칙**. 도구와 무관하게 이 파일 한 벌이 원천이다 (Claude Code 는
 > `CLAUDE.md` 의 `@AGENTS.md` 로 읽는다). 무엇을 만드는가의 정본은 `docs/SPEC.md`, 도메인 구조는
 > `docs/ontology.yaml`, 수치 의미론은 `docs/design/ENGINE.md` — 여기서는 복제하지 않고 가리킨다.
-> ✍️ 절대 규칙과 완료의 정의는 팀 확정 전 초안이다.
+> 절대 규칙과 완료의 정의는 2026-10-01 팀이 확정했다.
 
 ## 1. 제품 맥락
 
@@ -13,7 +13,7 @@ TriCast 가 그 산술을 CUDA core 에서 **비트 단위로 정확하게** 에
 로그 1, 9, 10). 핵심 가치는 "믿을 수 있는 산술 + 빠른 LLM 수준 평가". 이 저장소는 AI캡스톤디자인 과제 저장소이기도
 하다.
 
-## 2. 도메인 용어집 (어휘 발췌 — 전체 구조는 `docs/ontology.yaml`)
+## 2. 도메인 용어집 (어휘 발췌 — 인터뷰로 역추적되는 구조는 `docs/ontology.yaml`, 나머지는 코드 어휘)
 
 - Format: `name`, `kind` (float / int / pow2), `max_normal`, `special` (ieee / fn / fnuz / none)
 - QuantSpec: `format`, `granularity` (tensor / row / group / block), `group_size`, `scale.method`
@@ -37,7 +37,7 @@ Preset 수치는 `provenance` 에 적힌 출처까지만 믿는다. EvalRun 수�
 `ScaleSpec.rounding` 은 스케일. microxcaling 의 `"nearest"` = `rna`, `"floor"` = `rtz`
 (`tricast.rounding.from_microxcaling`). granularity `channel`·`token` 은 `row` 의 동의어.
 
-## 3. 절대 규칙 ✍️ (위반한 결과물은 수용하지 않는다)
+## 3. 절대 규칙 (위반한 결과물은 수용하지 않는다)
 
 1. Triton 결과는 레퍼런스와 비트 단위로 같아야 한다 — 차이를 허용 오차로 덮지 않는다. (↔ AC1, AC7)
 2. 출처 없는 하드웨어 프리셋·파라미터를 만들지 않는다 — 모르면 "미검증"으로 표시한다. (↔ AC2)
@@ -64,7 +64,7 @@ Preset 수치는 `provenance` 에 적힌 출처까지만 믿는다. EvalRun 수�
 - 결정론: seed 고정, 순서를 내놓는 함수는 동률 규칙을 명시한다. 같은 입력에 결과가 흔들리면 완료가 아니다.
 - 새 기능은 레퍼런스 + 테스트부터, 그다음 커널.
 
-## 6. 완료의 정의 ✍️
+## 6. 완료의 정의
 
 `pytest -q` 통과 (CPU) + 커널·GPU 경로를 바꿨다면 `pytest tests/gpu -q` 통과 (A100/H100) + `ruff check .` 무경고
 + 변경을 근거(테스트·측정값)로 설명할 수 있음.

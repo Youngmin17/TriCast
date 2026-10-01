@@ -51,6 +51,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   it field by field: a partial merge could combine two formats' fields into a third format.
 - Interview log (`docs/research/interviews.md`): the respondents of logs 9 and 10 appear by role
   instead of by name.
+- Course deliverables approved by the team on 2026-10-01: AC1–AC10, the problem statement and its
+  falsification, the absolute rules and definition of done, the golden cases, the evaluation set and
+  judge rubric, and the spike's success conditions; ontology entries without interview or
+  observation evidence were removed.
+- Six CPU tests compared native (unemulated) results bit for bit and failed on Linux, where CPU
+  BLAS and SDPA round differently by shape. They now allow that rounding only where native ops are
+  involved (perplexity across batch sizes: relative 1e-12; STE gradients: relative 1e-6; SDPA
+  single-chunk cache logits: 1e-6), and the KV-only report test uses a model whose logits the 2-bit
+  cache measurably changes (KL 2.7e-8; it was rounding noise before).
 
 ### Fixed
 - Reference arithmetic on CUDA tensors: powers of two are built from their fp64 bit pattern instead of

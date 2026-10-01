@@ -1,4 +1,4 @@
-"""초안(AI 작성) — 팀 검토·확정 필요 ✍️
+"""AI 작성 초안 — 2026-10-01 팀 승인
 
 Score request parsing without running models or arithmetic evaluations.
 """
@@ -21,7 +21,7 @@ from jsonschema import Draft202012Validator
 ROOT = Path(__file__).resolve().parents[1]
 EVALSET = Path(__file__).with_name("evalset.jsonl")
 SCHEMA = ROOT / "src/tricast/schemas/emulation_request.schema.json"
-DRAFT = "초안(AI 작성) — 팀 검토·확정 필요 ✍️"
+DRAFT = "AI 작성 초안 — 2026-10-01 팀 승인"
 _MISSING = object()
 
 

@@ -1,4 +1,4 @@
-"""초안(AI 작성) — 팀 검토·확정 필요 ✍️
+"""AI 작성 초안 — 2026-10-01 팀 승인
 
 AC6 evaluation criteria are reviewable annotations, not parser-derived labels.
 """

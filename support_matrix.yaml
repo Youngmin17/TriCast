@@ -62,7 +62,6 @@ transforms: {status: implemented, values: [hadamard, random_hadamard, smoothquan
 weight_algorithms: {status: implemented, values: [rtn, gptq], note: "gptq supports sequential calibration",
                     evidence: "tests/test_gptq.py (CPU): GPTQ error < RTN"}
 weight_structure:
-  # weight_structure tests are new (2026-10-01) and await team review (AGENTS.md §4.1)
   sparsity: {status: verified, values: ["n:m", unstructured], source: "team interviews, log 10",
              note: "magnitude pruning after the transform, before quantization; dense K order in the accumulator
                (hardware that compresses N:M operands may chunk differently: not modeled); inference only, not with gptq",

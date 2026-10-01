@@ -91,11 +91,13 @@ def _floor_log2(ax: torch.Tensor) -> torch.Tensor:
 
 
 def _ldexp(x: torch.Tensor, e: torch.Tensor) -> torch.Tensor:
-    """``x * 2**e`` in fp64, exact whenever the result is representable.
+    """``x * 2**e`` in fp64, exact whenever the result is representable and ``|e| <= 2046``.
 
     ``torch.ldexp`` multiplies by ``pow(2, e)``, which is inexact on CUDA (1.3984375 * 2**7 gave
     178.99999999999997 on an A100) and on the CPU once ``2**e`` is subnormal. Here each power of
-    two is built from its fp64 bit pattern; the second factor covers shifts beyond one exponent range.
+    two is a normal fp64 built from its bit pattern, and the second factor covers shifts beyond one
+    exponent range. A result below the subnormal grid may be rounded twice; the callers here only
+    produce representable results.
     """
     e = e.to(torch.int64)
     first = e.clamp(-1022, 1023)

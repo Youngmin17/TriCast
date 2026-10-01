@@ -60,13 +60,15 @@
 | 전환(Handoff) | 허용 파라미터 값이 `core/design_space.cuh` 의 고정 집합이다 ("bounding these sets bounds the build") — 집합 밖의 F·G·CS 값은 C++ 수정과 재빌드가 필요 | 파라미터를 런타임 값으로 받는 커널 (재빌드 없음) |
 | 우회로(Workaround) | Hopper 누산을 Blackwell 에서 에뮬레이트해 H100 결과와 비교 (Table 6) — 두 종류의 GPU 가 필요 | 에뮬레이션과 실리콘을 비교하는 도구 |
 | 멈칫(Hesitation) | 전체 재현 약 65시간, FP8 CoFDA 36개 설정 스윕 약 30시간 (RTX PRO 6000 1장, README 표기) | 설정당 처리 시간이 탐색 루프의 병목 → Evals 지표 후보 |
+| 설정 항목 | `exp2_figure6a_fp8_cofda/config.yaml` 7–25행: `algorithm: [cofda, cofda_decoupled]` (C-fused·C-decoupled), `chunk_size: [32, 16]`, `f_bits: [25 … 3]`, `precision: fp8`, `eval.model: "nvidia/Llama-3.1-8B-Instruct-FP8"`, `eval.tasks: [wikitext]`. 정렬 뒤 F 비트로 자르는 절단은 round-to-zero (`kernels/README.md:25`) | 레시피의 누산 파라미터(algorithm·C 결합·chunk_size·f_bits·절단 라운딩)와 평가 대상(모델 id·과제) |
 
-**관찰 A2** — 대상: microsoft/microxcaling (MX 양자화 라이브러리) / 방법: 소스 역추적
+**관찰 A2** — 대상: microsoft/microxcaling (MX 양자화 라이브러리, 커밋 `7bc4195`) / 방법: 소스 역추적
 
 | 관찰 항목 | 관찰 내용 (본 것만 적는다) | 스펙 후보 |
 |---|---|---|
 | 단계와 도구 | `mx.Linear` 가 입력·가중치를 MX 형식으로 양자화한 뒤 `F.linear` 로 곱한다 (`mx/linear.py:86`) | 형식 양자화와 누산 산술을 한 레시피에서 함께 정의 |
 | 전환 | 누산은 PyTorch matmul 정밀도 설정(`set_matmul_precision`)에 맡긴다 — 누산기 비트 폭·정렬·절단은 모델링 대상이 아니다 | MMA 누산 알고리즘을 명시적 파라미터로 |
+| 설정 항목 | `mx/specs.py` 92–113행: `shared_exp_method: "max"`, `block_size`, 반올림 `round*: "nearest"`; `README.md:150` `mx_specs['block_size'] = 32`; 블록마다 공유 지수 (`mx/mx_ops.py:49` `_shared_exponents`, `:95` `_reshape_to_blocks`); 원소 반올림 `floor`·`nearest`·`even`·`dither` (`mx/elemwise_ops.py:51–64`); 원소 형식과 스케일 비트 `--w_elem_format "fp6_e3m2" … --scale_bits 8` (`examples/run_mxfp6.sh:2`) | 양자화 스펙의 블록 크기·스케일 방법·원소 반올림·형식 |
 | 우회로 | — | — |
 | 멈칫 | — | — |
 

@@ -51,7 +51,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   it field by field: a partial merge could combine two formats' fields into a third format.
 
 ### Fixed
-- Reference backend on CUDA tensors: powers of two are built from their fp64 bit pattern instead of
+- Reference arithmetic on CUDA tensors: powers of two are built from their fp64 bit pattern instead of
   `torch.ldexp`, whose `pow(2, e)` is inexact on CUDA. Before, a few casts differed from the CPU
   (A100: 1 of ~500k bf16 values, up to 7 tf32) and decoding, hence every reference GEMM, raised on
-  CUDA.
+  CUDA. The Triton path runs this code on the GPU for MSE/percentile scale search, zero points and
+  dequantized operands, and GPTQ and the AWQ search call it directly, so the Qwen3-0.6B rows of those
+  recipes were rerun: WikiText-2 PPL `nvfp4_4o6` 25.5801 → 25.5673, `w4a16_gptq_sequential`
+  24.4976 → 24.0839, KIVI-2 23.0081 → 22.9740 (8 windows streamed through the cache: 19.6035 →
+  19.5115), and the demo's 16-window `nvfp4_4o6` 24.3761 → 24.2218; the other rerun rows moved by at
+  most 0.15% or within lm-eval's standard error, and `nvfp4_awq_shared` did not change. A reference
+  cast on CUDA takes about 30% longer per call (idle V100).

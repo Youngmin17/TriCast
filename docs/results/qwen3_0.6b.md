@@ -4,15 +4,21 @@ Perplexity and lm-eval numbers come from `tricast run` records (`configs/e2e/*.y
 `scripts/e2e/summarize.py`; the per-layer error figures come from `tricast report`, and the KV path
 comparison from `scripts/e2e/check_kv_paths.py`. One run per row: the emulation is bit-exact and
 deterministic, so a rerun reproduces the same perplexity to the last bit (`mxfp8_w_a` run again at a
-later commit gave 21.294279307019544 both times). `native` is the unpatched Hugging Face model.
+later commit gave 21.294279307019544 both times). The exception was reference code that some recipes
+run on the GPU — MSE scale search, zero points, GPTQ and the AWQ search — which was not exact on CUDA
+until `9e9bfed` (CHANGELOG, Fixed); the rows of those recipes were rerun there and say so.
+`native` is the unpatched Hugging Face model.
 
 ## Perplexity — WikiText-2 test, A100
 
 146 windows of 2048 tokens (298,862 scored tokens, GPTQ convention), dataset fingerprint
 `a46124b21ac53738`. Model `Qwen/Qwen3-0.6B@c1899de289a0` in bf16; NVIDIA A100-SXM4-80GB, CUDA 12.8,
 torch 2.8.0+cu128, triton 3.4.0, transformers 4.55.2; TriCast `49a6a76` (clean tree), except the
-exact-accumulation row `fp8_w8a8_fp64acc`, run at `032684b`, and the two weight-structure rows, run at
-`f3d6fe6` (`configs/e2e/qwen3_0.6b_ppl_d.yaml`).
+exact-accumulation row `fp8_w8a8_fp64acc`, run at `032684b`, the two weight-structure rows, run at
+`f3d6fe6` (`configs/e2e/qwen3_0.6b_ppl_d.yaml`), and `nvfp4_4o6`, `nvfp4_awq_shared` and the two GPTQ
+rows, rerun at `9e9bfed`: `nvfp4_awq_shared` reproduced to the last digit, `nvfp4_4o6` moved from
+25.5801 to 25.5673, `w4a16_g128_zp_gptq` from 24.7228 to 24.7281 and `w4a16_gptq_sequential` from
+24.4976 to 24.0839.
 
 ### References
 
@@ -55,12 +61,12 @@ from +1.5% to +39%.
 | `mxfp4_rht` | MXFP4 after a seeded random Hadamard rotation (blocks of 128 along K) | GDFS G=6 F=35 | 43.3677 | +106.85% |
 | `msfp12_bfp` | block floating point, 4-bit mantissas, E8M0 per 16 | GDFS G=6 F=35 | 36.4076 | +73.65% |
 | `nvfp4_w_a` | NVFP4 E2M1, UE4M3 per 16 and one fp32 scale per tensor | GDFS G=6 F=35 | 26.2197 | +25.06% |
-| `nvfp4_4o6` | NVFP4, each block scaled so its amax maps to 4 or 6 (Four-over-Six) | GDFS G=6 F=35 | 25.5801 | +22.01% |
+| `nvfp4_4o6` | NVFP4, each block scaled so its amax maps to 4 or 6 (Four-over-Six) | GDFS G=6 F=35 | 25.5673 | +21.95% |
 | `nvfp4_smoothquant` | NVFP4 after SmoothQuant (α = 0.5) | GDFS G=6 F=35 | 25.7532 | +22.83% |
 | `nvfp4_awq_shared` | NVFP4 after AWQ scaling, one scale per group of projections sharing an input | GDFS G=6 F=35 | 24.3041 | +15.92% |
 | `mixed_first_last_bf16` | MXFP4 in decoder blocks 1–26; blocks 0 and 27 unquantized | GDFS G=6 F=35 | 29.6883 | +41.60% |
-| `w4a16_g128_zp_gptq` | GPTQ UINT4 weights, groups of 128 with zero points; bf16 activations | CoFDA F=23, chunks of 32 | 24.7228 | +17.92% |
-| `w4a16_gptq_sequential` | the same weight format, GPTQ fitted block by block on the quantized model's outputs | IEEE fp32 FMA chain | 24.4976 | +16.84% |
+| `w4a16_g128_zp_gptq` | GPTQ UINT4 weights, groups of 128 with zero points; bf16 activations | CoFDA F=23, chunks of 32 | 24.7281 | +17.94% |
+| `w4a16_gptq_sequential` | the same weight format, GPTQ fitted block by block on the quantized model's outputs | IEEE fp32 FMA chain | 24.0839 | +14.87% |
 | `nvfp4_outliers` | NVFP4; the 0.5% largest \|w\| kept in BF16 and added through an fp32 path | GDFS G=6 F=35 | 26.1794 | +24.86% |
 | `fp8_2of4_sparse` | FP8 per tensor; weights pruned to 2:4 by magnitude, no fine-tuning | Hopper | 65,188 | collapses |
 
@@ -68,7 +74,11 @@ SmoothQuant, AWQ and the two GPTQ rows calibrate on 128 windows of 2048 tokens f
 train (seed 42 for `nvfp4_smoothquant` and `w4a16_g128_zp_gptq`, 0 for the others, as their recipes
 set). Keeping the first and last of the 28 decoder blocks unquantized reduces MXFP4's increase from
 +61.9% to +41.6%. The two GPTQ rows differ in both calibration order and accumulator, so their gap
-cannot be assigned to either.
+cannot be assigned to either. `w4a16_gptq_sequential` moved the most when the reference arithmetic
+these recipes run on the GPU was made exact (24.4976 → 24.0839). On one V100 the code before and
+after that fix gives 24.4368 and 24.1584, and the fixed code gave 24.1584 to the last digit again on
+a second V100, so the change is the fix, not run-to-run noise. Each block is fitted on the outputs
+of the blocks already quantized, so a difference in an early block reaches every later fit.
 
 The last two rows change the weight structure — the sparsity ratio and the outlier-preservation
 scheme that log 10 names.
@@ -98,7 +108,7 @@ the bf16 output (`mma_ulp`, ENGINE §6.5); 196 layers each. NVIDIA V100-PCIE-16G
 | accumulator | mean ULP | median of the per-layer p99 | largest per-layer p99 | outputs within 0 ULP | logits KL | PPL |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | Blackwell, F=25 | 0.00 | 0 | 0 | 100.0% | 0.022 | 26.15 |
-| Hopper, F=13, chunks of 32 | 2.62 | 3 | 8 | 83.4% | 0.022 | 26.11 |
+| Hopper, F=13, chunks of 32 | 2.62 | 3 | 8 | 83.3% | 0.022 | 26.11 |
 | Ada, F=13, chunks of 16 | 2.63 | 3 | 8 | 83.2% | 0.021 | 26.20 |
 | F=7, C-decoupled | 60.54 | 76 | 143 | 23.4% | 0.024 | 26.05 |
 | F=7, C-fused | 319.52 | 8,092 | 31,423 | 2.7% | 0.297 | 35.25 |
@@ -113,7 +123,9 @@ logs 9 and 10).
 ## KIVI KV cache — WikiText-2 test, V100
 
 Linear layers stay native, so only the KV cache changes. NVIDIA V100-PCIE-32GB, CUDA 12.8, torch
-2.8.0+cu128, triton 3.4.0, transformers 4.55.2, lm_eval 0.4.13; TriCast `5c09f47` (clean tree).
+2.8.0+cu128, triton 3.4.0, transformers 4.55.2, lm_eval 0.4.13; TriCast `5c09f47` (clean tree) for the
+native rows. The KIVI rows were rerun at `9e9bfed` (clean tree), because KIVI's zero points and fp16
+dequantization ran reference code that was not exact on CUDA before; they moved by up to 0.5%.
 The V100 native perplexity (20.9651) differs from the A100 one in the third decimal: attention and
 normalization run natively and their kernels differ between the two GPUs.
 
@@ -124,13 +136,13 @@ normalization run natively and their kernels differ between the two GPUs.
 | run | all 146 windows | vs native | first 8 windows, streamed through the cache | vs native |
 | --- | ---: | ---: | ---: | ---: |
 | native | 20.9651 | | 17.8377 | |
-| KIVI-4 | 21.0041 | +0.19% | 17.8724 | +0.19% |
-| KIVI-2 | 23.0081 | +9.74% | 19.6035 | +9.90% |
+| KIVI-4 | 21.0119 | +0.22% | 17.8858 | +0.27% |
+| KIVI-2 | 22.9740 | +9.58% | 19.5115 | +9.38% |
 
 The one-forward (`fakequant`) and token-by-token (`cache`) paths compute the same attention given the
 same K/V: `scripts/e2e/check_kv_paths.py` finds at most 6e-6 relative difference on Qwen3-0.6B layers
 0 and 14 (fp32, 2048 tokens). Whole-model perplexities of the two paths still differ slightly: for
-KIVI-2 by 0.10% (bf16, the same 8 windows) and 0.16% (fp32, 2 windows), against 0.03% and 1e-7 for
+KIVI-2 by 0.42% (bf16, the same 8 windows) and 0.22% (fp32, 2 windows), against 0.03% and 1e-7 for
 the native model. A batched forward and token-by-token decoding round the K/V projections
 differently, and a 2-bit grid can turn such last-bit differences into different quantized values.
 
@@ -144,10 +156,10 @@ batch size 1 too; the same model at batch size 16 scores EM 0.5792 and F1 0.7071
 | run | CoQA EM | CoQA F1 |
 | --- | ---: | ---: |
 | native | 0.5770 ± 0.0194 | 0.7066 ± 0.0165 |
-| KIVI-4 | 0.5762 ± 0.0194 | 0.7037 ± 0.0166 |
-| KIVI-2 | 0.5713 ± 0.0195 | 0.6950 ± 0.0169 |
+| KIVI-4 | 0.5738 ± 0.0194 | 0.7041 ± 0.0165 |
+| KIVI-2 | 0.5733 ± 0.0195 | 0.6977 ± 0.0168 |
 
-KIVI-2 raises perplexity by 9.7% but lowers CoQA EM by only 0.6 points, within one standard error.
+KIVI-2 raises perplexity by 9.6% but lowers CoQA EM by only 0.4 points, within one standard error.
 The two evaluations quantize different things: perplexity scores every position against quantized
 keys and values, while in CoQA only the few generated answer tokens read the quantized cache, and
 the most recent values (128 tokens) and keys (the residual under 128) stay in full precision. Which
@@ -161,8 +173,9 @@ scale spans tokens (one scale per tensor, or NVFP4's two-level scale): lm-eval p
 attention mask, so they run one request at a time (ENGINE §6.4). At batch size 1 the native model
 scores CoQA EM 0.5770 instead of 0.5792, so batch-1 rows carry that much batch effect. NVIDIA
 V100-PCIE-32GB, except `w4a16_g128_zp_gptq` on a V100-PCIE-16GB; TriCast `5c09f47`, except
-`fp8_f7_lowacc` and `w4a16_g128_zp_gptq`, which ran at `b68addd` (the small-M kernel: faster
-decoding, bit-identical results).
+`fp8_f7_lowacc`, which ran at `b68addd` (the small-M kernel: faster decoding, bit-identical results),
+and `w4a16_g128_zp_gptq`, rerun at `9e9bfed` because GPTQ runs the reference code fixed there (at
+`b68addd` it scored 0.4465 / 0.5425 / 0.6605).
 
 | recipe | HellaSwag acc_norm | CoQA EM | CoQA F1 | batch | wall time |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -171,10 +184,10 @@ decoding, bit-identical results).
 | `fp8_f7_lowacc` | 0.4290 ± 0.0111 | 0.5215 ± 0.0203 | 0.6407 ± 0.0179 | 1 | 111 min |
 | `mxfp4_w_a` | 0.4290 ± 0.0111 | 0.4270 ± 0.0202 | 0.5569 ± 0.0188 | 16 | 134 min |
 | `nvfp4_w_a` | 0.4325 ± 0.0111 | 0.5040 ± 0.0202 | 0.6246 ± 0.0182 | 1 | 336 min |
-| `w4a16_g128_zp_gptq` | 0.4465 ± 0.0111 | 0.5425 ± 0.0198 | 0.6605 ± 0.0174 | 16 | 84 min |
+| `w4a16_g128_zp_gptq` | 0.4490 ± 0.0111 | 0.5418 ± 0.0198 | 0.6622 ± 0.0173 | 16 | 84 min |
 
 Hopper FP8 stays within lm-eval's standard error of the native scores on both tasks. The other rows
-lose 0.8–2.6 HellaSwag points but separate more on CoQA, which generates its answers: GPTQ W4A16
+lose 0.6–2.6 HellaSwag points but separate more on CoQA, which generates its answers: GPTQ W4A16
 −3.7 EM points, F=7 C-fused −5.8, NVFP4 −7.5, MXFP4 −15.2. CoQA does not follow perplexity across
 kinds of error: F=7 C-fused raises perplexity more than NVFP4 (+39% against +25%) yet loses fewer
 CoQA points.

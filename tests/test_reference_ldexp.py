@@ -1,7 +1,8 @@
-"""The reference's power-of-two scaling is exact over the whole fp64 range.
+"""The reference's power-of-two scaling agrees with C ``ldexp`` from underflow to overflow for
+integer significands, which is what the reference passes.
 
-``torch.ldexp`` is not: on CUDA it is off by an ulp for some exponents, and on the CPU it loses the
-result once ``2**e`` is subnormal. ``math.ldexp`` (C ``ldexp``) is the oracle.
+``torch.ldexp`` does not: on CUDA it is off by an ulp for some exponents, and on the CPU it loses
+the result once ``2**e`` is subnormal. ``math.ldexp`` (C ``ldexp``) is the oracle.
 """
 
 from __future__ import annotations

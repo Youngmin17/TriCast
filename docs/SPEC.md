@@ -36,7 +36,7 @@
 
 | 인터페이스 | 입력 | 출력 | 상태 |
 |---|---|---|---|
-| `tricast ppl --model M --recipe R` | 모델 id, 레시피 이름·경로 | `{ppl, nll, n_tokens, env}` | 구현됨 — Qwen3-0.6B 24개 레시피 (`docs/results/qwen3_0.6b.md`) |
+| `tricast ppl --model M --recipe R` | 모델 id, 레시피 이름·경로 | `{ppl, nll, n_tokens, env}` | 구현됨 — Qwen3-0.6B 26개 레시피 (`docs/results/qwen3_0.6b.md`) |
 | `tricast eval --model M --recipe R --tasks a,b` | + lm-eval 과제 | lm-eval 결과 + env | 구현됨 — HellaSwag·CoQA |
 | `python -m tricast.eval.lmeval --model tricast --model_args pretrained=M,recipe=R --tasks …` | lm-eval 표준 인자 | lm-eval 표준 | 구현됨 |
 | `tricast report --model M --recipe R` | 모델, 레시피 | 레이어별 MSE·SQNR·코사인·누산기 ULP + 모델 logits KL·top-1 일치 (JSON + md) | 구현됨 (ULP: 2026-10-01) |
@@ -65,7 +65,7 @@ defaults:
   ≤ 1e-3)을 보고한다. (측정: +0.004%)
 - AC5 [예외 대응]: 레시피가 잘못되면, TriCast 는 실행 전에 거부하고 오류가 난 필드 경로를 알려 준다.
 - AC6 [예외 대응]: 자연어 요청에 없는 정밀도·누산 파라미터가 필요하면, TriCast 에이전트는 값을 지어내지 않고
-  기본값을 `assumptions` 에 적거나 되묻는다.
+  기본값을 `assumptions` 에 적거나 되묻는다. (강의 3 구현 후 판정)
 - AC7 [이벤트 기반]: 독립 구현(NADPE CUDA 커널)의 골든 벡터로 검증하면, TriCast 는 모든 케이스에서 비트
   일치한다. (`tests/data/nadpe/` — 레퍼런스는 `tests/test_golden.py`, Triton 은 GPU 에서
   `scripts/nadpe_oracle/check_triton.py`)

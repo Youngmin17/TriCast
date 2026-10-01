@@ -37,7 +37,7 @@ classes:
     evidence: [로그 1, 관찰 A2]
     attributes:
       granularity: {type: enum, values: [tensor, row, group, block], evidence: [관찰 A2]}
-      group_size: {type: int, examples: [16, 32, 128], note: "MX=32, NVFP4=16", evidence: [관찰 A2]}
+      group_size: {type: int, examples: [16, 32, 128], note: "MX 블록 32 (관찰 A2). 16·128 은 NVFP4·FP8 그룹 스킴", evidence: [관찰 A2]}
       scale.method: {type: enum, values: [absmax, pow2_floor, pow2_ceil, mse, percentile], evidence: [로그 1, 관찰 A2]}
       rounding: {type: enum, values: [rne, rna, rtz, rup, rdn, sr], evidence: [로그 9, 관찰 A2]}
       zero_point: {type: enum, values: [none, int, float], evidence: []}
@@ -81,7 +81,7 @@ classes:
       kv: {type: dict, note: "KV 캐시 양자화 — preset, mode, layers", evidence: []}
     relations:
       - quantizes_with: QuantSpec
-        evidence: [로그 1, 관찰 A1]
+        evidence: [로그 1, 관찰 A2]
       - accumulates_with: MMASpec
         evidence: [로그 9, 관찰 A1]
   Model:
@@ -90,16 +90,17 @@ classes:
     evidence: [로그 1, 로그 2, 로그 3]
     attributes:
       repo_id: {type: string, examples: [Qwen/Qwen3-0.6B], evidence: [관찰 A1]}
-      revision: {type: string, note: "재현성 — commit SHA", evidence: [로그 1]}
+      revision: {type: string, note: "재현성 — commit SHA (D절 사회적 Job: 재현·검증할 수 있는 결과 공유)", evidence: [로그 1, 로그 2]}
   EvalRun:
     description: Recipe 를 Model 에 적용해 과제 하나를 평가한 기록 — 지표와 환경
     synonyms: [Experiment, Measurement, 실험, 측정 결과]
     evidence: [로그 1, 로그 2, 로그 3, 로그 9, 로그 10]
     attributes:
-      task: {type: string, examples: [wikitext2_ppl, hellaswag, coqa], evidence: [로그 2, 관찰 A1]}
+      task: {type: string, examples: [wikitext2_ppl, hellaswag, coqa], evidence: [관찰 A1]}
       metrics: {type: dict, note: "정확도(PPL·lm-eval), 레이어 오차(MSE·SQNR), 누산기 ULP 오차",
                 evidence: [로그 2, 로그 9, 로그 10]}
-      env: {type: dict, note: "git SHA, 버전, 실행한 GPU, 모델·데이터셋 식별자", evidence: [로그 1, 로그 9]}
+      env: {type: dict, note: "git SHA, 버전, 실행한 GPU, 모델·데이터셋 식별자 — 재현성은 D절 사회적 Job, GPU 는 로그 9",
+            evidence: [로그 1, 로그 2, 로그 9]}
     relations:
       - applies: Recipe
         evidence: [로그 1, 로그 10]

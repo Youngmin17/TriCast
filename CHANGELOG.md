@@ -51,6 +51,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   it field by field: a partial merge could combine two formats' fields into a third format.
 - Interview log (`docs/research/interviews.md`): the respondents of logs 9 and 10 appear by role
   instead of by name.
+- `README.md` is now the Korean README; the English one moved to `README.en.md`. Both gained a
+  command table, the three-minute demo outline, the repository layout and the verification of the CPU
+  suite; the Korean one also lists the course deliverables.
 - Course deliverables approved by the team on 2026-10-01: AC1–AC10, the problem statement and its
   falsification, the absolute rules and definition of done, the golden cases, the evaluation set and
   judge rubric, and the spike's success conditions; ontology entries without interview or

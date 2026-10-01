@@ -36,12 +36,12 @@ CASES = {
 }
 
 
-@pytest.fixture
 def _bits(x: torch.Tensor) -> torch.Tensor:
     x = x.contiguous()
     return x.view({8: torch.int64, 4: torch.int32, 2: torch.int16, 1: torch.int8}[x.element_size()])
 
 
+@pytest.fixture
 def recorded(monkeypatch) -> list[str]:
     """Names of the Triton entry points called (GEMM and quantize/cast)."""
     mma = pytest.importorskip("tricast.kernels.mma")

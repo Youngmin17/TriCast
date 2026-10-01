@@ -403,8 +403,8 @@ def calibrate(
             raise ValueError("the recipe selects no Linear modules for calibration")
         stages, mode, reason = _stages(model, layers, config["sequential"])
         training = [(module, module.training) for module in model.modules()]
-        state_fields = ("mode", "observer", "transform", "_fitted", "_weight_operand", "_weight_state",
-                        "_weight_noise", "_calibrated")
+        state_fields = ("mode", "observer", "transform", "_fitted", "_weight_operand", "_outlier_operand",
+                        "_weight_state", "_weight_noise", "_calibrated")
         states = [(layer, {key: getattr(layer, key) for key in state_fields}) for _, layer in layers]
         group_names = []
         model.eval()

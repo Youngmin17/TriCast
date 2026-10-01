@@ -20,6 +20,7 @@ from jsonschema import Draft202012Validator
 from .formats import FloatFormat, IntFormat, Pow2Format, get_format
 from .mma.spec import MMASpec
 from .quant.spec import _GRANULARITY_SYNONYMS, KVSpec, QuantSpec, TransformSpec, WeightAlgoSpec, get_kv_spec
+from .quant.structure import OutlierSpec, SparsitySpec
 
 CALIBRATION_DEFAULTS = {
     "dataset": "wikitext2", "split": "train", "samples": 128, "seqlen": 2048,
@@ -38,6 +39,18 @@ class LinearSpec:
     mma: MMASpec = field(default_factory=MMASpec)
     transform: TransformSpec = field(default_factory=TransformSpec)
     weight_algo: WeightAlgoSpec = field(default_factory=WeightAlgoSpec)
+    sparsity: SparsitySpec = field(default_factory=SparsitySpec)
+    outliers: OutlierSpec | None = None
+
+    def __post_init__(self) -> None:
+        # Errors name the field first; load_recipe prefixes the recipe path.
+        if self.outliers is not None and self.weight is None:
+            raise ValueError("outliers: requires a weight QuantSpec")
+        if self.weight_algo.kind == "gptq":
+            if self.sparsity.kind != "none":
+                raise ValueError("sparsity: not supported with gptq")
+            if self.outliers is not None:
+                raise ValueError("outliers: not supported with gptq")
 
 
 def _json_value(value: Any) -> Any:
@@ -45,6 +58,17 @@ def _json_value(value: Any) -> Any:
         return {"kind": value.kind, **{f.name: _json_value(getattr(value, f.name)) for f in fields(value)}}
     if isinstance(value, Enum):
         return value.value
+    if isinstance(value, SparsitySpec):
+        # The kind and the fields it uses; unused fields are 0.
+        return {f.name: getattr(value, f.name) for f in fields(value) if getattr(value, f.name)}
+    if isinstance(value, LinearSpec):
+        # Unset structure options are left out, so recipes without them keep their JSON and hash.
+        data = {f.name: _json_value(getattr(value, f.name)) for f in fields(value)}
+        if value.sparsity.kind == "none":
+            del data["sparsity"]
+        if value.outliers is None:
+            del data["outliers"]
+        return data
     if is_dataclass(value):
         return {f.name: _json_value(getattr(value, f.name)) for f in fields(value)}
     if isinstance(value, dict):
@@ -58,8 +82,10 @@ def _merge(base: dict, changes: dict) -> dict:
     result = copy.deepcopy(base)
     for key, value in changes.items():
         if isinstance(value, dict) and isinstance(result.get(key), dict):
-            # A new named scheme/preset supplies its own defaults, not the old one's.
-            if "scheme" in value or "preset" in value:
+            # A new named scheme/preset supplies its own defaults, not the old one's; a sparsity
+            # mapping is complete (its required kind decides which fields exist), and so is a
+            # format mapping (inheriting e.g. subnormals or bias would define another format).
+            if "scheme" in value or "preset" in value or key in ("sparsity", "format", "dequant_format"):
                 result[key] = copy.deepcopy(value)
             else:
                 result[key] = _merge(result[key], value)
@@ -294,7 +320,17 @@ def _linear_spec(data: dict, path: str) -> LinearSpec:
             result[key] = constructor(data.get(key, {}))
         except (ValueError, TypeError) as exc:
             raise ValueError(f"{path}.{key}: {exc}") from exc
-    return LinearSpec(weight=weight, activation=activation, **result)
+    # These specs name the failing field first ("n: ..."), so the path continues with it.
+    for key, constructor in (("sparsity", SparsitySpec), ("outliers", OutlierSpec)):
+        if data.get(key) is not None:
+            try:
+                result[key] = constructor(**data[key])
+            except ValueError as exc:
+                raise ValueError(f"{path}.{key}.{exc}") from exc
+    try:
+        return LinearSpec(weight=weight, activation=activation, **result)
+    except ValueError as exc:
+        raise ValueError(f"{path}.{exc}") from exc
 
 
 def list_recipes() -> list[str]:

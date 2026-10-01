@@ -28,7 +28,7 @@ SCHEMES = (
 )
 DEFAULT_RECIPES = (
     "bf16_passthrough", "hopper_fp8_w8a8", "fp8_f7_lowacc", "fp8_f7_decoupled", "mxfp8_w_a",
-    "mxfp4_w_a", "nvfp4_w_a", "nvfp4_4o6", "w4a16_g128_zp_gptq",
+    "mxfp4_w_a", "nvfp4_w_a", "nvfp4_4o6", "nvfp4_outliers", "fp8_2of4_sparse", "w4a16_g128_zp_gptq",
 )
 RECIPES = (*DEFAULT_RECIPES, "blackwell_fp8_w8a8", "fp8_ema_static", "mxfp4_rht")
 GENERATION_RECIPES = (None, "hopper_fp8_w8a8", "fp8_f7_lowacc", "mxfp4_w_a")
@@ -231,6 +231,7 @@ def accumulation_comparison(model: Any, tokenizer: Any, device: torch.device) ->
     import torch
 
     from tricast import gemm, get_preset, get_scheme, quantize
+    from tricast.analysis import ulp_error
 
     layers = [(name, layer) for name, layer in model.named_modules() if name.endswith("mlp.down_proj")]
     name, layer = layers[min(10, len(layers) - 1)]
@@ -277,9 +278,11 @@ def accumulation_comparison(model: Any, tokenizer: Any, device: torch.device) ->
         error = (output.double() - reference.double()).norm().item()
         relative = error / reference_norm if reference_norm else (0.0 if error == 0 else math.inf)
         bits = output.to(torch.bfloat16).contiguous().view(torch.int16)
+        ulp = ulp_error(output, reference, fmt="fp32")
         ordered = sorted(durations)
         return {"relative_frobenius": relative,
                 "bf16_bit_mismatch": (bits != reference_bits).double().mean().item(),
+                "max_ulp_fp32": ulp["max"], "mean_ulp_fp32": ulp["mean"],
                 "median_ms": statistics.median(durations), "mean_ms": statistics.mean(durations),
                 "p99_ms": ordered[3] + 0.96 * (ordered[4] - ordered[3]), "samples_ms": durations,
                 "mma": asdict(spec)}
@@ -353,7 +356,9 @@ def render_report(results: dict[str, Any]) -> str:
         "formats": [("Scheme", "name"), ("SQNR (dB)", "sqnr_db"), ("Max abs error", "max_abs_error"),
                     ("Logical bits/element", "bits_per_element")],
         "accumulation": [("MMA", "name"), ("Relative Frobenius", "relative_frobenius"),
-                         ("BF16 bit mismatch (fraction)", "bf16_bit_mismatch"), ("Median ms", "median_ms"),
+                         ("BF16 bit mismatch (fraction)", "bf16_bit_mismatch"),
+                         ("Max ULP (fp32)", "max_ulp_fp32"), ("Mean ULP (fp32)", "mean_ulp_fp32"),
+                         ("Median ms", "median_ms"),
                          ("Mean ms", "mean_ms"), ("p99 ms (5 samples)", "p99_ms")],
         "quality": [("Recipe", "name"), ("PPL", "ppl"), ("Windows", "n_windows"),
                     ("Scored tokens", "n_tokens"), ("Elapsed s (single run)", "elapsed_s")],

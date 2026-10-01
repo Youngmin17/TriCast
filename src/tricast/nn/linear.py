@@ -8,11 +8,14 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
+from ..formats import FP32
 from ..mma.api import as_operand, gemm
 from ..mma.operand import Operand, tensor_state
+from ..mma.spec import MMASpec
 from ..quant.api import fake_quant, quantize
 from ..quant.observer import ObserverState
-from ..quant.spec import ObserverSpec, TransformSpec
+from ..quant.spec import ObserverSpec, QuantSpec, TransformSpec
+from ..quant.structure import outlier_mask, sparsity_mask
 from ..recipe import LinearSpec
 from ..transforms import LinearTransform, StatsCollector, fit_transform
 from ..weight_quant import quantize_weight
@@ -155,6 +158,7 @@ class EmuLinear(nn.Module):
         self._weight_state = None
         self._weight_noise = None
         self._weight_operand = None
+        self._outlier_operand = None
         self._calibrated = not self.needs_calibration
         if self._calibrated:
             self.requantize()
@@ -181,6 +185,7 @@ class EmuLinear(nn.Module):
     def requantize(self, hessian: torch.Tensor | None = None) -> None:
         weight = (self.weight.detach() if self.spec.transform.kind == "none"
                   else self.transform.apply_weight(self.weight.detach()))
+        weight, outliers, zeros = self._structure(weight)
         self._weight_noise = self._noise(weight, self.spec.weight)
         if self.spec.weight is None:
             operand = as_operand(weight, compact=True)
@@ -194,8 +199,30 @@ class EmuLinear(nn.Module):
         else:
             qweight = quantize(weight, self.spec.weight, backend=self.backend, noise=self._weight_noise)
             operand = as_operand(qweight, compact=True)
+        if zeros is not None:
+            # Exact zeros even where 0 does not dequantize to 0 (float zero points).
+            operand = replace(operand, values=operand.values.masked_fill(zeros, 0))
         self._weight_operand = _pack(operand)
+        self._outlier_operand = None if outliers is None else _pack(as_operand(
+            quantize(outliers, QuantSpec(self.spec.outliers.format, scale=None), backend=self.backend),
+            compact=True))
         self._weight_state = tensor_state(self.weight)
+
+    def _structure(
+        self, weight: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor | None, torch.Tensor | None]:
+        """Prune, then split off outliers: the weight to quantize, the outlier weight (or ``None``)
+        and the positions that must be exact zeros in the quantized operand (or ``None``)."""
+        keep = zeros = None
+        if self.spec.sparsity.kind != "none":
+            keep = sparsity_mask(weight, self.spec.sparsity)
+            zeros = ~keep
+            weight = weight.masked_fill(zeros, 0)
+        if self.spec.outliers is None:
+            return weight, None, zeros
+        selected = outlier_mask(weight, self.spec.outliers, keep)
+        zeros = selected if zeros is None else zeros | selected
+        return weight.masked_fill(selected, 0), weight.masked_fill(~selected, 0), zeros
 
     @staticmethod
     def _noise(x, spec):
@@ -260,6 +287,10 @@ class EmuLinear(nn.Module):
 
     def _forward(self, input: torch.Tensor) -> torch.Tensor:
         x = input
+        if (self.training and torch.is_grad_enabled()
+                and (self.spec.sparsity.kind != "none" or self.spec.outliers is not None)):
+            raise NotImplementedError(f"{self.name}: sparsity and outliers are inference-only (no STE "
+                                      "backward yet); use model.eval() or torch.no_grad()")
         if not self._calibration_passthrough and not self._calibrated:
             raise RuntimeError(f"{self.name}: calibration is required; call tricast.calibrate(...)")
         if x.shape[-1] != self.in_features:
@@ -301,7 +332,7 @@ class EmuLinear(nn.Module):
                                          amax=amax, noise=noise))
         if not self._weight_current():
             self.requantize()
-        result = gemm(operand, self._weight_operand, self.spec.mma, bias=self.bias, backend=self.backend)
+        result = self._matmul(operand)
         if torch.is_grad_enabled() and self.training:
             activation_ste = activation
             if self.spec.activation is not None:
@@ -315,6 +346,30 @@ class EmuLinear(nn.Module):
             weight_ste = _UseValue.apply(weight_ste, _operand_value(self._weight_operand))
             result = _EmulatedLinear.apply(activation_ste, weight_ste, self.bias, result.detach())
         return result.reshape(*x.shape[:-1], self.out_features).to(x.dtype)
+
+    def _matmul(self, operand: Operand, mma: MMASpec | None = None, gemm_fn=None) -> torch.Tensor:
+        """The layer's GEMM on an activation operand. ``mma`` replaces the main path's spec (the
+        error report swaps in exact accumulation) while the outlier path stays as is; the report
+        also passes its own ``gemm_fn`` so its recomputation is not taken for the forward GEMM."""
+        mma = self.spec.mma if mma is None else mma
+        gemm_fn = gemm if gemm_fn is None else gemm_fn
+        if self._outlier_operand is None:
+            return gemm_fn(operand, self._weight_operand, mma, bias=self.bias, backend=self.backend)
+        return self._gemm_with_outliers(operand, mma, gemm_fn)
+
+    def _gemm_with_outliers(self, operand: Operand, mma: MMASpec, gemm_fn) -> torch.Tensor:
+        """Main and outlier GEMMs on one activation operand, each ending in fp32; their sum is
+        one IEEE add, rounded once to the MMA output format."""
+        main = gemm_fn(operand, self._weight_operand, replace(mma, out_format=FP32), bias=self.bias,
+                       backend=self.backend)
+        extra = gemm_fn(operand, self._outlier_operand, MMASpec("fp32_fma", out_format=FP32),
+                        backend=self.backend)
+        result = main + extra
+        if mma.out_format == FP32:
+            return result
+        # saturate=False: the overflow rule of the GEMM epilogue's out_format rounding.
+        cast = QuantSpec(mma.out_format, scale=None, saturate=False)
+        return quantize(result, cast, backend=self.backend).values
 
     def begin_calibration(
         self, *, hessian_accumulator: HessianAccumulator | None = None, hessian_owner: bool = True,
@@ -396,6 +451,13 @@ class EmuLinear(nn.Module):
     def extra_repr(self) -> str:
         w = "none" if self.spec.weight is None else str(self.spec.weight.format)
         a = "none" if self.spec.activation is None else str(self.spec.activation.format)
+        extra = ""
+        if self.spec.sparsity.kind != "none":
+            sparsity = self.spec.sparsity
+            extra += (f", sparsity={sparsity.n}:{sparsity.m}" if sparsity.kind == "n:m"
+                      else f", sparsity=unstructured {sparsity.ratio}")
+        if self.spec.outliers is not None:
+            extra += f", outliers={self.spec.outliers.fraction} in {self.spec.outliers.format}"
         return (f"in_features={self.in_features}, out_features={self.out_features}, "
                 f"weight={w}, activation={a}, mma={self.spec.mma.algorithm}, "
-                f"transform={self.spec.transform.kind}, backend={self.backend}, mode={self.mode}")
+                f"transform={self.spec.transform.kind}{extra}, backend={self.backend}, mode={self.mode}")

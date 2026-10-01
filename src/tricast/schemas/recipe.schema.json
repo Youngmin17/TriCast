@@ -675,6 +675,64 @@
         }
       ]
     },
+    "sparsity_kind": {
+      "type": "string",
+      "enum": [
+        "none",
+        "n:m",
+        "unstructured"
+      ],
+      "description": "Weight pruning pattern."
+    },
+    "sparsity": {
+      "type": "object",
+      "description": "Weight pruning after the transform and before quantization; pruned weights are exact zeros. n:m keeps the n largest |w| of every m consecutive weights along K in each row (ties: lower K index; a partial last group of length L keeps min(n, L)). unstructured zeros the floor(ratio * numel) smallest |w| of the tensor (ties: lower flat index first). An override's sparsity replaces the default's.",
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/sparsity_kind"
+        },
+        "n": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 63,
+          "description": "Kept weights per group (n:m only), n < m."
+        },
+        "m": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 64,
+          "description": "Group length along K (n:m only)."
+        },
+        "ratio": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "exclusiveMaximum": 1,
+          "description": "Pruned fraction of the tensor (unstructured only)."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "kind"
+      ]
+    },
+    "outliers": {
+      "type": "object",
+      "description": "Weight outliers kept apart from the quantized weight (needs a weight spec, not gptq). After sparsity, the ceil(fraction * numel) largest |w| of the kept weights (ties: lower flat index) are zeroed in the weight that gets quantized and rounded to format (RNE); their fp32 FMA-chain product on the same activation operand is added to the fp32 main result once, then rounded to the MMA out_format.",
+      "properties": {
+        "fraction": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "exclusiveMaximum": 1
+        },
+        "format": {
+          "$ref": "#/$defs/format"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "fraction"
+      ]
+    },
     "linear": {
       "type": "object",
       "description": "Default specification for each included linear module.",
@@ -693,6 +751,19 @@
         },
         "weight_algo": {
           "$ref": "#/$defs/weight_algo"
+        },
+        "sparsity": {
+          "$ref": "#/$defs/sparsity"
+        },
+        "outliers": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/outliers"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "additionalProperties": false
@@ -719,6 +790,19 @@
         },
         "weight_algo": {
           "$ref": "#/$defs/weight_algo"
+        },
+        "sparsity": {
+          "$ref": "#/$defs/sparsity"
+        },
+        "outliers": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/outliers"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "layers": {
           "$ref": "#/$defs/layers"

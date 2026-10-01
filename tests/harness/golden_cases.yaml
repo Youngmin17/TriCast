@@ -196,6 +196,20 @@
   expected: {path: defaults.mma.c_mode}
   note: "AC5: c_mode의 허용값 fused/decoupled에 invented가 없으므로 defaults.mma.c_mode에서 거부."
 
+- id: recipe_error_sparsity_n_not_below_m
+  ac: AC5
+  kind: recipe_error
+  input: {name: invalid-sparsity, defaults: {weight: fp8_tensor, sparsity: {kind: "n:m", n: 4, m: 4}}}
+  expected: {path: defaults.sparsity.n}
+  note: "AC5 (AC8 의 희소성 필드): n:m 은 m 개 중 n 개를 남기므로 n < m 이어야 한다. 4:4 는 희소성이 아니므로 defaults.sparsity.n 에서 실행 전 거부."
+
+- id: recipe_error_outliers_without_weight_spec
+  ac: AC5
+  kind: recipe_error
+  input: {name: invalid-outliers, defaults: {outliers: {fraction: 0.01}}}
+  expected: {path: defaults.outliers}
+  note: "AC5 (AC9 의 이상치 필드): 이상치 보존은 나머지 가중치를 양자화할 때만 뜻이 있다. weight QuantSpec 이 없으면 defaults.outliers 에서 거부."
+
 - id: presets_all_have_provenance
   ac: AC2
   kind: preset

@@ -16,11 +16,14 @@ from torch import nn
 from torch.nn import functional as F
 
 from .calibration import calibrate
-from .mma.api import as_operand
+from .formats import FP32, FloatFormat, Format, get_format
+from .mma.api import as_operand, gemm
 from .mma.operand import Operand
+from .mma.spec import MMASpec
 from .nn import EmuLinear, iter_emulinear, patch_model, unpatch_model
 from .quant.api import quantize
 from .recipe import Recipe, load_recipe
+from .reference.cast import decode, round_to_format
 
 
 @dataclass
@@ -66,6 +69,116 @@ def error_metrics(reference: torch.Tensor, emulated: torch.Tensor) -> dict:
     return stats.result()
 
 
+def _ulp_format(fmt: Format | str) -> FloatFormat:
+    fmt = get_format(fmt)
+    if not isinstance(fmt, FloatFormat):
+        raise ValueError(f"ULP distances need a float format, got {fmt}")
+    return fmt
+
+
+def _on_grid(x: torch.Tensor, fmt: FloatFormat, name: str) -> torch.Tensor:
+    """``x`` in fp64, after checking that the library cast leaves every value unchanged."""
+    values = x.detach().double()
+    cast = round_to_format(values, fmt, "rne", saturate=False).double()
+    if not bool(((cast == values) | (cast.isnan() & values.isnan())).all()):
+        raise ValueError(f"{name} has values that are not on the {fmt} grid")
+    return values
+
+
+def _ordinal(values: torch.Tensor, fmt: FloatFormat) -> torch.Tensor:
+    """Finite grid values as signed integers on a monotone line: the magnitude of the encoding
+    (biased exponent and fraction fields, from the reference decode) carrying the value's sign.
+    -0 and +0 are both 0, and neighbouring values are 1 apart, across zero too."""
+    negative, exponent, significand, _ = decode(values, fmt)
+    magnitude = (exponent - fmt.emin) * 2**fmt.mbits + significand
+    if not fmt.subnormals:
+        magnitude = magnitude - (2**fmt.mbits - 1)  # min_normal is the neighbour of zero
+    magnitude = torch.where(significand == 0, 0, magnitude)
+    return torch.where(negative, -magnitude, magnitude)
+
+
+def ulp_distance(actual: torch.Tensor, expected: torch.Tensor, fmt: Format | str = FP32) -> torch.Tensor:
+    """Exact int64 distance in units in the last place of ``fmt``, element by element.
+
+    Both tensors must already hold values of ``fmt``; this is checked with a round trip through
+    the library cast (:func:`tricast.reference.cast.round_to_format`), not through a dtype. The
+    distance counts representable values: adjacent values are 1 apart, also across zero
+    (``-min_subnormal`` to ``+min_subnormal`` is 2), and +0 and -0 are 0 apart. Inf and NaN
+    have no distance here; :func:`ulp_error` classifies them.
+    """
+    fmt = _ulp_format(fmt)
+    if actual.shape != expected.shape:
+        raise ValueError("ULP distances require matching tensor shapes")
+    a, e = _on_grid(actual, fmt, "actual"), _on_grid(expected, fmt, "expected")
+    if not bool(torch.isfinite(a).all() & torch.isfinite(e).all()):
+        raise ValueError("ulp_distance takes finite values; ulp_error classifies Inf and NaN")
+    return (_ordinal(a, fmt) - _ordinal(e, fmt)).abs()
+
+
+def _p99(distances: torch.Tensor) -> float:
+    """Linear interpolation between the order statistics around rank ``(n - 1) * 0.99`` (NumPy's
+    default ``linear`` method), with the rank split exactly in integers."""
+    ordered = distances.flatten().sort().values
+    rank, remainder = divmod((ordered.numel() - 1) * 99, 100)
+    low = int(ordered[rank])
+    high = int(ordered[min(rank + 1, ordered.numel() - 1)])
+    return (low * 100 + (high - low) * remainder) / 100
+
+
+@dataclass
+class _UlpStats:
+    fmt: FloatFormat
+    n: int = 0
+    finite: int = 0
+    exact: int = 0
+    total: int = 0
+    maximum: int = 0
+    p99: float = 0.0
+    nonfinite_mismatch: int = 0
+
+    def update(self, actual: torch.Tensor, expected: torch.Tensor) -> None:
+        if actual.shape != expected.shape or not actual.numel():
+            raise ValueError("ULP metrics require matching, nonempty tensor shapes")
+        a, e = _on_grid(actual, self.fmt, "actual"), _on_grid(expected, self.fmt, "expected")
+        finite = a.isfinite() & e.isfinite()
+        special = (a.isnan() & e.isnan()) | (a.isinf() & (a == e))
+        distances = (_ordinal(a[finite], self.fmt) - _ordinal(e[finite], self.fmt)).abs()
+        self.n += a.numel()
+        self.finite += distances.numel()
+        self.exact += int((distances == 0).sum()) + int(special.sum())
+        self.nonfinite_mismatch += int((~finite & ~special).sum())
+        if distances.numel():
+            self.total += int(distances.sum())
+            self.maximum = max(self.maximum, int(distances.max()))
+            self.p99 = max(self.p99, _p99(distances))
+
+    def result(self) -> dict:
+        if not self.n:
+            raise ValueError("no outputs were compared")
+        measured = self.finite > 0
+        return {"max": self.maximum if measured else None,
+                "mean": self.total / self.finite if measured else None,
+                "p99": self.p99 if measured else None,
+                "exact_fraction": self.exact / self.n, "n": self.n,
+                "nonfinite_mismatch": self.nonfinite_mismatch}
+
+
+def ulp_error(actual: torch.Tensor, expected: torch.Tensor, fmt: Format | str = FP32) -> dict:
+    """ULP statistics of ``actual`` against ``expected``, both on the ``fmt`` grid.
+
+    ``n`` counts every position. ``max``, ``mean`` and ``p99`` (:func:`ulp_distance`) cover the
+    positions where both values are finite, and are ``None`` when there are none; ``p99``
+    interpolates linearly between the order statistics around rank ``(count - 1) * 0.99``
+    (NumPy's default). ``exact_fraction`` is the share of all ``n`` positions that match: finite
+    pairs 0 ULP apart, NaN/NaN, and infinities of the same sign. ``nonfinite_mismatch`` counts
+    the other positions holding an Inf or NaN: finiteness or NaN-ness differs, or the
+    infinities have opposite signs.
+    """
+    stats = _UlpStats(_ulp_format(fmt))
+    stats.update(actual, expected)
+    return stats.result()
+
+
 def _operand_value(operand: Operand) -> torch.Tensor:
     value = operand.values.float()
     scale = operand.scale_per_element()
@@ -76,11 +189,11 @@ def _operand_value(operand: Operand) -> torch.Tensor:
     return value
 
 
-def _activation_pair(layer: EmuLinear, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+def _activation_pair(layer: EmuLinear, x: torch.Tensor) -> tuple[torch.Tensor, Operand]:
     rows = x.reshape(-1, layer.in_features)
     activation = rows if layer.spec.transform.kind == "none" else layer.transform.apply_activation(rows)
     if layer.spec.activation is None:
-        return activation, activation
+        return activation, as_operand(activation)
     # Reconstruct exactly the operand the upcoming forward consumes, without advancing
     # its delayed observer or stochastic-rounding RNG a second time.
     amax = None
@@ -93,7 +206,7 @@ def _activation_pair(layer: EmuLinear, x: torch.Tensor) -> tuple[torch.Tensor, t
         noise = layer._noise(activation, layer.spec.activation)
         operand = as_operand(quantize(activation, layer.spec.activation, backend=layer.backend,
                                      amax=amax, noise=noise))
-    return activation, _operand_value(operand)
+    return activation, operand
 
 
 def _report_windows(
@@ -135,18 +248,22 @@ def _markdown(layers: list[dict], model_metrics: dict) -> str:
 
     lines = ["# TriCast error report", "", "Layers sorted by output SQNR, worst first.", "",
              "| Layer | Weight SQNR (dB) | Activation SQNR (dB) | Output MSE | Output SQNR (dB) | "
-             "Max abs error | Relative Frobenius | Cosine |",
-             "|---|---:|---:|---:|---:|---:|---:|---:|"]
+             "Max abs error | Relative Frobenius | Cosine | MMA ULP max / mean |",
+             "|---|---:|---:|---:|---:|---:|---:|---:|---:|"]
     for layer in layers:
         if layer["output"] is None:
-            lines.append(f"| {layer['name']} (not observed) | - | - | - | - | - | - | - |")
+            lines.append(f"| {layer['name']} (not observed) | - | - | - | - | - | - | - | - |")
             continue
         output = layer["output"]
         values = [layer["weight"]["sqnr_db"], layer["activation"]["sqnr_db"], output["mse"],
                   output["sqnr_db"], output["max_abs_error"], output["relative_frobenius"], output["cosine"]]
+        ulp = layer["mma_ulp"]
+        ulp_cell = "-" if ulp["max"] is None else f"{ulp['max']} / {number(ulp['mean'])} ({ulp['format']})"
         name = layer["name"].replace("|", "\\|")
-        lines.append(f"| {name} | " + " | ".join(number(value) for value in values) + " |")
-    lines.extend(["", f"Logits KL(ref || emu): {number(model_metrics['logits_kl'])}; "
+        lines.append(f"| {name} | " + " | ".join(number(value) for value in values) + f" | {ulp_cell} |")
+    lines.extend(["", "MMA ULP: the layer's accumulation vs fp64 accumulation of the same quantized "
+                  "operands, in ULPs of its MMA output format.",
+                  "", f"Logits KL(ref || emu): {number(model_metrics['logits_kl'])}; "
                   f"top-1 agreement: {number(model_metrics['top1_agreement'])}.",
                   f"PPL reference: {number(model_metrics['ppl_reference'])}; "
                   f"PPL emulated: {number(model_metrics['ppl_emulated'])}."])
@@ -170,6 +287,9 @@ def layer_report(
     Weight/activation errors use transformed coordinates and the effective MMA
     operand, including dequant-format rounding. Output errors compare each actual
     patched-layer output with its original Linear on the identical hooked input.
+    ``mma_ulp`` isolates the accumulator: the same operands and bias go through the
+    layer's MMA and through fp64 accumulation with the same output format, and
+    :func:`ulp_error` between the two (in ULPs of that format) is pooled over the forward calls.
     Calibration uses its recipe/default dataset, never implicit evaluation tokens.
     ``texts`` requires an explicit tokenizer; this function does not load models.
     """
@@ -197,7 +317,13 @@ def layer_report(
     def before(layer: EmuLinear, args: tuple) -> None:
         x = args[0].detach()
         activation, operand = _activation_pair(layer, x)
-        stats[layer.name]["activation"].update(activation, operand)
+        stats[layer.name]["activation"].update(activation, _operand_value(operand))
+        # The forward's GEMM path (outlier path included) with the layer's MMA and with fp64
+        # accumulation on the main path; only the accumulator differs. Recomputed here because
+        # the forward output is cast to the model dtype, which can be coarser than out_format.
+        exact = MMASpec("fp64", out_format=layer.spec.mma.out_format)
+        stats[layer.name]["mma_ulp"].update(layer._matmul(operand, gemm_fn=gemm),
+                                            layer._matmul(operand, exact, gemm_fn=gemm))
 
     def after(layer: EmuLinear, args: tuple, output: torch.Tensor) -> None:
         x = args[0].detach()
@@ -227,8 +353,12 @@ def layer_report(
             for name, layer in iter_emulinear(model):
                 transformed = (layer.weight.detach() if layer.spec.transform.kind == "none"
                                else layer.transform.apply_weight(layer.weight.detach()))
-                stats[name] = {"weight": error_metrics(transformed, _operand_value(layer._weight_operand)),
-                               "activation": _ErrorStats(), "output": _ErrorStats()}
+                effective = _operand_value(layer._weight_operand)
+                if layer._outlier_operand is not None:  # disjoint supports: the sum is exact
+                    effective = effective + _operand_value(layer._outlier_operand)
+                stats[name] = {"weight": error_metrics(transformed, effective),
+                               "activation": _ErrorStats(), "output": _ErrorStats(),
+                               "mma_ulp": _UlpStats(layer.spec.mma.out_format)}
                 handles.append(layer.register_forward_pre_hook(before))
                 handles.append(layer.register_forward_hook(after))
             baseline.seek(0)
@@ -251,7 +381,9 @@ def layer_report(
     layers = [{"name": name, "weight": entry["weight"],
                "status": "measured" if entry["output"].count else "not_observed",
                "activation": entry["activation"].result() if entry["activation"].count else None,
-               "output": entry["output"].result() if entry["output"].count else None}
+               "output": entry["output"].result() if entry["output"].count else None,
+               "mma_ulp": ({**entry["mma_ulp"].result(), "format": str(entry["mma_ulp"].fmt)}
+                           if entry["mma_ulp"].n else None)}
               for name, entry in stats.items()]
     layers.sort(key=lambda entry: (entry["output"] is None,
                                   float(entry["output"]["sqnr_db"]) if entry["output"] else 0, entry["name"]))
@@ -270,4 +402,9 @@ def layer_report(
                              "sqnr_db": "10 log10(sum(reference^2) / sum(error^2)); inf for zero error",
                              "logits_kl": "mean over all positions; negative fp64 roundoff clamped to 0",
                              "zero_norm_cosine": "1 for two zero tensors; 0 for exactly one zero tensor",
+                             "mma_ulp": "the layer's GEMM vs MMASpec('fp64', out_format=its out_format) on "
+                                        "identical operands and bias, in ULPs of that format; mean and max "
+                                        "pooled over all forward calls, p99 = the largest p99 of a single "
+                                        "call (one window, or one token when the KV cache streams; linear "
+                                        "interpolation), not a pooled percentile",
                              "infinity_encoding": "inf and -inf are JSON strings"}}

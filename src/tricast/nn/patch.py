@@ -58,7 +58,18 @@ def _layer_summary(name: str, spec: LinearSpec | None, reason: str | None = None
             "mma": None if spec is None else {"algorithm": spec.mma.algorithm, "f_bits": spec.mma.f_bits,
                                               "g_bits": spec.mma.g_bits, "name": spec.mma.name},
             "transform": None if spec is None else spec.transform.kind,
-            "weight_algo": None if spec is None else spec.weight_algo.kind, "skipped": reason}
+            "weight_algo": None if spec is None else spec.weight_algo.kind,
+            "sparsity": None if spec is None else _sparsity_summary(spec),
+            "outliers": None if spec is None or spec.outliers is None else
+            {"fraction": spec.outliers.fraction, "format": str(spec.outliers.format)},
+            "skipped": reason}
+
+
+def _sparsity_summary(spec: LinearSpec) -> str:
+    sparsity = spec.sparsity
+    if sparsity.kind == "n:m":
+        return f"{sparsity.n}:{sparsity.m}"
+    return f"unstructured {sparsity.ratio}" if sparsity.kind == "unstructured" else "none"
 
 
 def patch_model(model: nn.Module, recipe: Recipe, *, backend: str | None = None) -> PatchReport:

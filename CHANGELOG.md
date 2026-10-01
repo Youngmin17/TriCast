@@ -26,6 +26,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   `scripts/e2e/summarize.py` also tabulates lm-eval records.
 - `scripts/bench/bench_decode.py`: decode-step latency of a patched model (median / mean / p99), with
   the host load, other processes on the GPU and the source commit recorded.
+- Weight structure in recipes: `sparsity` (N:M or unstructured magnitude pruning) and `outliers` (the
+  largest weights kept in a higher-precision format and added back through an fp32 path), with the
+  bundled recipes `fp8_2of4_sparse` and `nvfp4_outliers` (team interviews, log 10).
+- Accumulator ULP error: `tricast.analysis.ulp_distance` / `ulp_error`, the per-layer `mma_ulp` of
+  `tricast report` (against fp64 accumulation of the same operands) and ULP columns in the demo
+  (team interviews, log 9).
+- Course deliverables grounded in the team's ten interviews: `docs/research/interviews.md`,
+  `docs/ontology.yaml`, `docs/PROBLEM.md`, `docs/SPEC.md` (AC8–AC10).
 
 ### Changed
 - MMA emulation kernel: integer fast path for finite operands (int32/int64 aligned sums, int32

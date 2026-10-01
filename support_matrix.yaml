@@ -6,7 +6,7 @@
 #   planned      not implemented
 # Update this file in the same change that moves a cell; never mark "verified" without evidence.
 
-updated: 2026-09-30
+updated: 2026-10-01
 
 backends:
   reference:
@@ -57,6 +57,16 @@ transforms: {status: implemented, values: [hadamard, random_hadamard, smoothquan
              evidence: "tests/test_transforms.py, tests/test_calibrate.py (CPU)"}
 weight_algorithms: {status: implemented, values: [rtn, gptq], note: "gptq supports sequential calibration",
                     evidence: "tests/test_gptq.py (CPU): GPTQ error < RTN"}
+weight_structure:
+  sparsity: {status: verified, values: ["n:m", unstructured], source: "team interviews, log 10",
+             note: "magnitude pruning after the transform, before quantization; dense K order in the accumulator
+               (hardware that compresses N:M operands may chunk differently: not modeled); inference only, not with gptq",
+             evidence: "tests/test_sparsity_outliers.py (CPU); tests/gpu/test_triton_structure.py reference = Triton
+               bit for bit (A100, V100)"}
+  outliers: {status: verified, values: [fraction, format], source: "team interviews, log 10; SpQR arXiv:2306.03078",
+             note: "largest |w| kept in a float format beside the quantized weight, added through an fp32 FMA path
+               and rounded once; magnitude selection (not SpQR's sensitivity); inference only, not with gptq",
+             evidence: "tests/test_sparsity_outliers.py (CPU); tests/gpu/test_triton_structure.py (A100, V100)"}
 kv_cache:
   status: implemented
   modes: [cache, fakequant]
@@ -104,7 +114,9 @@ integration:
   lm_eval: {status: implemented, note: "model name 'tricast' (HFLM subclass)"}
   runner: {status: implemented, note: "resume, env capture, sweeps, native_baseline (unpatched model run)"}
   attention_matmul_emulation: {status: planned}
-  error_report: {status: implemented, metrics: [mse, sqnr_db, max_abs_error, relative_frobenius, cosine, logits_kl, top1_agreement]}
+  error_report: {status: implemented, metrics: [mse, sqnr_db, max_abs_error, relative_frobenius, cosine, logits_kl, top1_agreement,
+                 mma_ulp], note: "mma_ulp = layer GEMM vs fp64 MMA on identical operands, in ULPs of the out_format
+                 (team interviews, log 9); tests/test_analysis_ulp.py (CPU)"}
   silicon_probe: {status: planned}
 
 agent:

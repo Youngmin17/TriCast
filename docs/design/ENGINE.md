@@ -202,6 +202,26 @@ the calibrator processes decoder layers in order and feeds each layer the output
 already-quantized layers before it (the original GPTQ procedure); otherwise every layer
 sees full-precision inputs from one pass.
 
+**Weight structure (`sparsity`, `outliers` — `tricast.quant.structure`).** Applied to the
+weight after the transform and before quantization, in this order:
+1. `sparsity` — `n:m`: in each output row, every `m` consecutive weights along K keep their
+   `n` largest `|w|` (ties keep the lower K index; a partial last group of length `L` keeps
+   `min(n, L)`). `unstructured`: the `floor(ratio · numel)` smallest `|w|` of the tensor are
+   pruned (ties prune the lower flat index first). Counts read `ratio` and `fraction` as the
+   written decimal (`0.29 · 100 = 29`).
+2. `outliers` — among the unpruned weights, the `ceil(fraction · numel)` largest `|w|` (ties:
+   lower flat index; capped at the number left) are removed from the weight to quantize, so
+   its scales exclude them, and kept separately, rounded to `outliers.format` (RNE).
+Pruned and outlier positions are exact zeros in the quantized operand (forced after
+quantization, since a float zero point need not dequantize 0 to 0). With outliers the layer
+computes `main = gemm(x̂, Ŵ_main, mma with out_format fp32, bias)` and
+`extra = gemm(x̂, W_out, fp32_fma, fp32)` on the same activation operand, adds them once in
+fp32 (RNE) and rounds once to `mma.out_format` (`saturate=False`, as the GEMM epilogue).
+Both options are inference-only (no STE backward) and are rejected with GPTQ. Not modeled:
+hardware that compresses N:M operands may form accumulation chunks over the kept products
+only — here chunks count K positions, zero products included; transforms fitted from
+calibration (SmoothQuant, AWQ) see the dense weight.
+
 ### 3.11 Observers (`ObserverSpec`, activations, tensor granularity)
 State per EmuLinear: `amax`, `count`, `history`, reservoir `samples` (≤ `max_samples`).
 Calibration mode updates state and quantizes dynamically; eval mode uses the frozen
@@ -474,6 +494,16 @@ model and the patched model and records, per EmuLinear: weight error (`W` vs deq
 emulated output vs its full-precision output on identical inputs) — each as MSE, SQNR (dB),
 max |err|, relative Frobenius error and cosine similarity. Model level: logits KL
 divergence `KL(p_ref ‖ p_emu)` per token (mean), top-1 agreement, and perplexity of both.
+The weight error uses the effective weight (main operand plus kept outliers). `mma_ulp`
+isolates the accumulator: the layer's GEMM path (outlier path included) is run again on the
+same operands and bias with `MMASpec("fp64", out_format=<the layer's>)` on the main path, and
+the two outputs are compared in ULPs of that format (`ulp_error`: exact integer distances on
+the format grid, ±0 equal, adjacent values 1 apart across zero; max, mean, p99, exact
+fraction; Inf/NaN classified separately). Over several forward calls `max`, `mean` and the
+counts pool exactly; `p99` is the largest p99 of one call (a window, or a token when the KV cache
+streams). The fp64 reference is the library's `fp64` MMA (fp64 sum rounded once to fp32, then
+the same epilogue), not an infinitely precise sum. fp64-accumulated layers report 0. The report
+runs each patched layer's GEMM twice more per call (three times with outliers).
 Output: JSON + a markdown table sorted by output SQNR (worst first).
 
 ## 7. Verification ladder

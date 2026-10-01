@@ -44,9 +44,10 @@ p2  + 1.111 · 2^-1     | 0.0000000011 | 11     오른쪽으로 9칸; F 밖의 �
 | **스킴** | MXFP8/6/4, MXINT8/4, **NVFP4**, 블록 부동소수점 (MSFP12/16, `bfp<m>_b<block>`), FP8 텐서/행/그룹/블록 (DeepSeek), INT8, INT4 g128 ± zero point, **KIVI** 2/4비트 KV 캐시 |
 | **보정** | 정적 observer (min-max, **EMA**, Transformer-Engine delayed history, 백분위, MSE); WikiText-2 / C4 / Pile 표본 |
 | **알고리즘** | **GPTQ** (모든 형식, 그룹, act-order, 순차), **AWQ** · SmoothQuant (입력 공유 그룹), Hadamard · 랜덤 Hadamard 회전, QAT 용 STE |
+| **가중치 구조** | N:M (예: 2:4)·비율 기반 크기 희소성; 이상치를 고정밀 형식으로 따로 보존 (SpQR 방식, 별도 fp32 경로) |
 | **MMA 누산** | CoFDA (C-fused / C-decoupled), GDFS (2단계 그룹 합), DeepSeek 방식 FP32 승격, IEEE FP32 FMA 체인, FP64, 정확 정수; 블록 스케일은 곱·그룹·승격·epilogue 중 어디서 적용할지 선택 |
 | **하드웨어 프리셋** | Hopper FP8 (F=13, CS=32), Ada FP8, Blackwell FP8 (F=25), Blackwell FP4 (GDFS G=6 F=35), DeepSeek FP8 승격 — 모든 프리셋에 출처 기록 |
-| **모델과 과제** | Hugging Face causal LM 전반 (`nn.Linear` 레이어, 레이어별 규칙), WikiText-2 perplexity, lm-eval 전 과제, 레이어별 오차 리포트 (MSE, SQNR, 코사인, logits KL) |
+| **모델과 과제** | Hugging Face causal LM 전반 (`nn.Linear` 레이어, 레이어별 규칙), WikiText-2 perplexity, lm-eval 전 과제, 레이어별 오차 리포트 (MSE, SQNR, 코사인, logits KL, fp64 누산 대비 누산기 ULP 오차) |
 
 ## 어떻게 검증하나
 

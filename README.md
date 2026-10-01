@@ -46,9 +46,10 @@ each of them a number you can set.
 | **schemes** | MXFP8/6/4, MXINT8/4, **NVFP4**, block floating point (MSFP12/16, `bfp<m>_b<block>`), FP8 tensor/row/group/block (DeepSeek), INT8, INT4 g128 ± zero point, **KIVI** 2/4-bit KV cache |
 | **calibration** | static observers (min-max, **EMA**, Transformer-Engine delayed history, percentile, MSE); WikiText-2 / C4 / Pile samples |
 | **algorithms** | **GPTQ** (any format, groups, act-order, sequential), **AWQ** and SmoothQuant (shared-input groups), Hadamard and random Hadamard rotations, STE for QAT |
+| **weight structure** | N:M (e.g. 2:4) and unstructured magnitude sparsity; outliers kept in a higher-precision format beside the quantized weight (SpQR-style, separate fp32 path) |
 | **MMA accumulation** | CoFDA (C-fused / C-decoupled), GDFS (two-level group sums), DeepSeek-style FP32 promotion, IEEE FP32 FMA chain, FP64, exact integer; block scales applied per product, per group, at promotion or in the epilogue |
 | **hardware presets** | Hopper FP8 (F=13, CS=32), Ada FP8, Blackwell FP8 (F=25), Blackwell FP4 (GDFS G=6 F=35), DeepSeek FP8 promotion — every preset carries its source |
-| **models and tasks** | any Hugging Face causal LM (`nn.Linear` layers, per-layer rules), WikiText-2 perplexity, every lm-eval task, per-layer error reports (MSE, SQNR, cosine, logits KL) |
+| **models and tasks** | any Hugging Face causal LM (`nn.Linear` layers, per-layer rules), WikiText-2 perplexity, every lm-eval task, per-layer error reports (MSE, SQNR, cosine, logits KL, accumulator ULP error against fp64 accumulation) |
 
 ## How it is verified
 

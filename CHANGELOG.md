@@ -49,6 +49,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   identical.
 - Recipe overrides replace a `sparsity`, `format` or `dequant_format` mapping instead of merging
   it field by field: a partial merge could combine two formats' fields into a third format.
+- Interview log (`docs/research/interviews.md`): the respondents of logs 9 and 10 appear by role
+  instead of by name.
 
 ### Fixed
 - Reference arithmetic on CUDA tensors: powers of two are built from their fp64 bit pattern instead of

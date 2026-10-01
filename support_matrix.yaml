@@ -11,14 +11,12 @@ updated: 2026-10-01
 backends:
   reference:
     status: verified
-    evidence: "pytest --ignore=tests/gpu (CPU, macOS arm64, torch 2.11) — full suite passed at an earlier commit; at
-      9e9bfed a 932-test subset (reference, golden, analysis, structure) passed, full suite not rerun. Linux x86_64
-      torch 2.8.0 (UCL cluster): 2331 passed, 6 failed at 9e9bfed; the same 6 fail at f3d6fe6 and at 032684b,
-      before the small-M kernel. They are bit-equality tests whose last bits depend on CPU BLAS/SDPA call
-      patterns (test_analysis KV report, test_eval nvfp4 batch size, test_kv_generation chunked sdpa,
-      test_nn_patch STE); unresolved. On CUDA tensors the reference equals the CPU bit for bit since 9e9bfed
-      (tests/gpu/test_reference_cuda.py, A100 and V100); before, torch.ldexp made rare casts differ and
-      every reference GEMM raise on CUDA"
+    evidence: "pytest --ignore=tests/gpu: Linux x86_64 torch 2.8.0 (UCL cluster) 2337 passed at 82db449, after
+      six tests that compared native CPU results bit for bit (BLAS/SDPA rounding by shape) got tolerances
+      for those native parts only (9a2680b); macOS arm64 torch 2.11: the affected test files (483 tests)
+      passed at 82db449, the full suite at an earlier commit. On CUDA tensors the reference equals the CPU
+      bit for bit since 9e9bfed (tests/gpu/test_reference_cuda.py, A100 and V100); before, torch.ldexp
+      made rare casts differ and every reference GEMM raise on CUDA"
   triton_quantize:
     status: verified
     evidence: "tests/gpu/test_triton_quantize.py bit-exact vs reference (A100 sm_80 and V100 sm_70, triton 3.4.0)"

@@ -127,8 +127,8 @@ changes. FP8 quantization with exact accumulation costs +0.96%.
 
 The last two rows differ only in whether the running sum joins each chunk's truncation. The emulated
 bf16 passthrough reproduces the native model to 0.004%, and one Hopper-FP8 pass over the test set
-takes 14.8 minutes. Block formats, GPTQ and KIVI (perplexity and CoQA), with the environment of
-every run: [docs/results/qwen3_0.6b.md](docs/results/qwen3_0.6b.md).
+takes 14.8 minutes. Block formats, GPTQ, KIVI and lm-eval (HellaSwag, CoQA), with the environment
+of every run: [docs/results/qwen3_0.6b.md](docs/results/qwen3_0.6b.md).
 
 ## Limitations
 

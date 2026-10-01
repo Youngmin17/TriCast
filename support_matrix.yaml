@@ -23,7 +23,8 @@ backends:
     evidence: "tests/gpu/test_triton_mma.py bit-exact vs reference (A100 and V100; whole GPU suite 824 passed);
       bench_mma_vs_nadpe.py bit-identical to NADPE on full-size GEMMs; small-M kernel: GPU suite 845 passed at
       cc0478b on A100 and V100 (incl. tests/gpu/test_triton_gemv.py), all 1716 NADPE vectors on A100 and V100,
-      Qwen3-0.6B decode logits of 9 recipes identical to the tiled kernel"
+      Qwen3-0.6B decode logits of 9 recipes identical to the tiled kernel; lm-eval hopper_fp8_w8a8 (HellaSwag 2000,
+      CoQA 500) rerun at b68addd reproduces every metric of the 5c09f47 run"
     performance: "A100: CoFDA F=13 0.15 TMAC/s (NADPE 0.15), GDFS G=6 0.15, GDFS G=32 0.11 (NADPE 0.16);
       Qwen3-0.6B Hopper-FP8 decode step (M=1, scripts/bench/bench_decode.py, 032684b and cc0478b alternated
       twice on one GPU): V100 375-401 -> 168-170 ms; A100 292-294 -> 101 ms (host load ~95 on 128 CPUs)"

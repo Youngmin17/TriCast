@@ -123,7 +123,7 @@ WikiText-2 test 전체 (2048 토큰 창 146개), bf16 모델, A100 한 장 (네�
 
 마지막 두 행은 진행 중인 누산값이 묶음의 절단에 함께 들어가는지만 다르다. 에뮬레이트한 bf16 passthrough 는
 네이티브 모델을 0.004% 이내로 재현하고, Hopper FP8 로 test 전체를 한 번 평가하는 데 14.8 분이 걸린다. 블록
-형식, GPTQ, KIVI(perplexity 와 CoQA) 결과와 각 실행의 환경: [docs/results/qwen3_0.6b.md](docs/results/qwen3_0.6b.md).
+형식, GPTQ, KIVI, lm-eval(HellaSwag, CoQA) 결과와 각 실행의 환경: [docs/results/qwen3_0.6b.md](docs/results/qwen3_0.6b.md).
 
 ## 한계
 

@@ -118,6 +118,36 @@ keys and values, while in CoQA only the few generated answer tokens read the qua
 the most recent values (128 tokens) and keys (the residual under 128) stay in full precision. Which
 of these accounts for the gap was not measured.
 
+## lm-eval — V100
+
+HellaSwag (0-shot `acc_norm`) on its first 2000 of 10,042 items and CoQA (all 500 dialogues, EM /
+F1), lm-eval 0.4.13; ± is lm-eval's standard error. Batch size 16, except recipes whose activation
+scale spans tokens (one scale per tensor, or NVFP4's two-level scale): lm-eval pads without an
+attention mask, so they run one request at a time (ENGINE §6.4). At batch size 1 the native model
+scores CoQA EM 0.5770 instead of 0.5792, so batch-1 rows carry that much batch effect. NVIDIA
+V100-PCIE-32GB, except `w4a16_g128_zp_gptq` on a V100-PCIE-16GB; TriCast `5c09f47`, except
+`fp8_f7_lowacc` and `w4a16_g128_zp_gptq`, which ran at `b68addd` (the small-M kernel: faster
+decoding, bit-identical results).
+
+| recipe | HellaSwag acc_norm | CoQA EM | CoQA F1 | batch | wall time |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| native | 0.4545 ± 0.0111 | 0.5792 ± 0.0194 | 0.7071 ± 0.0165 | 16 | 15 min |
+| `hopper_fp8_w8a8` | 0.4500 ± 0.0111 | 0.5688 ± 0.0195 | 0.7025 ± 0.0165 | 1 | 273 min |
+| `fp8_f7_lowacc` | 0.4290 ± 0.0111 | 0.5215 ± 0.0203 | 0.6407 ± 0.0179 | 1 | 111 min |
+| `mxfp4_w_a` | 0.4290 ± 0.0111 | 0.4270 ± 0.0202 | 0.5569 ± 0.0188 | 16 | 134 min |
+| `nvfp4_w_a` | 0.4325 ± 0.0111 | 0.5040 ± 0.0202 | 0.6246 ± 0.0182 | 1 | 336 min |
+| `w4a16_g128_zp_gptq` | 0.4465 ± 0.0111 | 0.5425 ± 0.0198 | 0.6605 ± 0.0174 | 16 | 84 min |
+
+Hopper FP8 stays within lm-eval's standard error of the native scores on both tasks. The other rows
+lose 0.8–2.6 HellaSwag points but separate more on CoQA, which generates its answers: GPTQ W4A16
+−3.7 EM points, F=7 C-fused −5.8, NVFP4 −7.5, MXFP4 −15.2. CoQA does not follow perplexity across
+kinds of error: F=7 C-fused raises perplexity more than NVFP4 (+39% against +25%) yet loses fewer
+CoQA points.
+
+`hopper_fp8_w8a8` run again at `b68addd` on the same GPU model reproduced every metric and standard
+error above exactly; its wall time fell from 273 to 169 minutes with the kernel changes between
+the two commits (other jobs shared the host during both runs).
+
 ## Reproduce
 
 ```bash
@@ -127,6 +157,8 @@ tricast run configs/e2e/qwen3_0.6b_ppl_c.yaml      # FP8 operands with exact acc
 tricast run configs/e2e/qwen3_0.6b_kv.yaml         # KIVI, full test set (fakequant)
 tricast run configs/e2e/qwen3_0.6b_kv_stream.yaml  # KIVI, first 8 windows through the cache
 tricast run configs/e2e/qwen3_0.6b_kv_lmeval.yaml  # KIVI, CoQA through the cache
+tricast run configs/e2e/qwen3_0.6b_lmeval_a.yaml   # lm-eval: Hopper FP8, FP8 F=7 fused
+tricast run configs/e2e/qwen3_0.6b_lmeval_b.yaml   # lm-eval: MXFP4, NVFP4, GPTQ W4A16
 python scripts/e2e/summarize.py runs/e2e/qwen3_0.6b_ppl_a runs/e2e/qwen3_0.6b_ppl_b
 python scripts/e2e/check_kv_paths.py 14 2048       # fakequant vs cache attention, same K/V (layer, tokens)
 ```

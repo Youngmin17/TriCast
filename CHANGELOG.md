@@ -21,8 +21,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   resume and environment capture, per-layer error report (`tricast report`).
 - `tricast agent`: natural-language request to a validated recipe (Claude API or offline parser).
 - NADPE golden vectors (1716 cases) and `scripts/nadpe_oracle/check_triton.py` for Triton-vs-NADPE checks.
-- Qwen3-0.6B results (`docs/results/qwen3_0.6b.md`): WikiText-2 perplexity of 24 recipes on an A100,
-  KIVI perplexity and CoQA, and HellaSwag/CoQA of five recipes on a V100, each with its environment;
+- Qwen3-0.6B results (`docs/results/qwen3_0.6b.md`): WikiText-2 perplexity of 26 recipes on an A100,
+  KIVI perplexity and CoQA, HellaSwag/CoQA of five recipes and the accumulator ULP of five FP8
+  accumulators on a V100, each with its environment;
   `scripts/e2e/summarize.py` also tabulates lm-eval records.
 - `scripts/bench/bench_decode.py`: decode-step latency of a patched model (median / mean / p99), with
   the host load, other processes on the GPU and the source commit recorded.

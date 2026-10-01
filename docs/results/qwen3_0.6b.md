@@ -11,7 +11,8 @@ later commit gave 21.294279307019544 both times). `native` is the unpatched Hugg
 146 windows of 2048 tokens (298,862 scored tokens, GPTQ convention), dataset fingerprint
 `a46124b21ac53738`. Model `Qwen/Qwen3-0.6B@c1899de289a0` in bf16; NVIDIA A100-SXM4-80GB, CUDA 12.8,
 torch 2.8.0+cu128, triton 3.4.0, transformers 4.55.2; TriCast `49a6a76` (clean tree), except the
-exact-accumulation row `fp8_w8a8_fp64acc`, run at `032684b`.
+exact-accumulation row `fp8_w8a8_fp64acc`, run at `032684b`, and the two weight-structure rows, run at
+`f3d6fe6` (`configs/e2e/qwen3_0.6b_ppl_d.yaml`).
 
 ### References
 
@@ -60,12 +61,24 @@ from +1.5% to +39%.
 | `mixed_first_last_bf16` | MXFP4 in decoder blocks 1–26; blocks 0 and 27 unquantized | GDFS G=6 F=35 | 29.6883 | +41.60% |
 | `w4a16_g128_zp_gptq` | GPTQ UINT4 weights, groups of 128 with zero points; bf16 activations | CoFDA F=23, chunks of 32 | 24.7228 | +17.92% |
 | `w4a16_gptq_sequential` | the same weight format, GPTQ fitted block by block on the quantized model's outputs | IEEE fp32 FMA chain | 24.4976 | +16.84% |
+| `nvfp4_outliers` | NVFP4; the 0.5% largest \|w\| kept in BF16 and added through an fp32 path | GDFS G=6 F=35 | 26.1794 | +24.86% |
+| `fp8_2of4_sparse` | FP8 per tensor; weights pruned to 2:4 by magnitude, no fine-tuning | Hopper | 65,188 | collapses |
 
 SmoothQuant, AWQ and the two GPTQ rows calibrate on 128 windows of 2048 tokens from WikiText-2
 train (seed 42 for `nvfp4_smoothquant` and `w4a16_g128_zp_gptq`, 0 for the others, as their recipes
 set). Keeping the first and last of the 28 decoder blocks unquantized reduces MXFP4's increase from
 +61.9% to +41.6%. The two GPTQ rows differ in both calibration order and accumulator, so their gap
 cannot be assigned to either.
+
+The last two rows change the weight structure — the sparsity ratio and the outlier-preservation
+scheme that log 10 names.
+Keeping the 0.5% largest weights in BF16 moves NVFP4 from 26.22 to 26.18 — a small effect, and on
+the demo's first 16 windows it goes the other way (25.12 against 25.05). Pruning every linear to 2:4
+by magnitude without fine-tuning collapses the model. Pruning the same weights in plain PyTorch,
+without TriCast, gives the same perplexity on the first 4 windows (73,434.3212 both,
+`scripts/e2e/check_sparsity_pruning.py`), so the
+collapse is the pruning, not the emulation; the 2:4 workflow of Mishra et al. retrains after
+pruning, which TriCast does not model.
 
 The rotation makes MXFP4 worse here although it makes each operand easier to quantize.
 `tricast report` on 2 × 512 WikiText-2 tokens (V100) shows why the operand metrics mislead: with the
@@ -74,6 +87,27 @@ SQNR barely moves (18.7 → 18.7 dB), but the SQNR of the layer outputs does not
 16.4 → 16.3 dB, lower in 112 of 196 layers) and the logits KL divergence grows from 0.57 to 0.82. The
 rotation itself preserves `x·Wᵀ` exactly (fp64 test in `tests/test_nn_patch.py`); the cause of the
 output error is not established.
+
+### Accumulator error in ULPs
+
+`tricast report` on 2 × 512 WikiText-2 tokens (dataset fingerprint `5972d1f2…`) runs every linear's
+GEMM again with fp64 accumulation of the same FP8 operands and counts the difference in ULPs of
+the bf16 output (`mma_ulp`, ENGINE §6.5); 196 layers each. NVIDIA V100-PCIE-16GB, TriCast `a1b0ede`
+(clean tree). Perplexity here is over these 1024 tokens only (unpatched: 25.481).
+
+| accumulator | mean ULP | median of the per-layer p99 | largest per-layer p99 | outputs within 0 ULP | logits KL | PPL |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Blackwell, F=25 | 0.00 | 0 | 0 | 100.0% | 0.022 | 26.15 |
+| Hopper, F=13, chunks of 32 | 2.62 | 3 | 8 | 83.4% | 0.022 | 26.11 |
+| Ada, F=13, chunks of 16 | 2.63 | 3 | 8 | 83.2% | 0.021 | 26.20 |
+| F=7, C-decoupled | 60.54 | 76 | 143 | 23.4% | 0.024 | 26.05 |
+| F=7, C-fused | 319.52 | 8,092 | 31,423 | 2.7% | 0.297 | 35.25 |
+
+At F=25 the accumulator's truncation stays below the bf16 output's resolution. The F=7 decoupled
+datapath is tens of ULPs off yet leaves the logits nearly as close to the unpatched model as Hopper
+does (KL 0.024 against 0.022); only the fused variant, whose running sum is truncated with every
+chunk, moves the model. An ULP budget alone does not predict model quality, which is why the
+interviewed NPU engineer verifies every combination at model level (log 9, pain 6).
 
 ## KIVI KV cache — WikiText-2 test, V100
 
@@ -154,6 +188,8 @@ the two commits (other jobs shared the host during both runs).
 tricast run configs/e2e/qwen3_0.6b_ppl_a.yaml      # references and accumulators
 tricast run configs/e2e/qwen3_0.6b_ppl_b.yaml      # block-scaled formats, transforms, GPTQ
 tricast run configs/e2e/qwen3_0.6b_ppl_c.yaml      # FP8 operands with exact accumulation
+tricast run configs/e2e/qwen3_0.6b_ppl_d.yaml      # 2:4 sparsity and NVFP4 outliers
+tricast report --model Qwen/Qwen3-0.6B --recipe hopper_fp8_w8a8 --dataset wikitext2 --samples 2 --seqlen 512
 tricast run configs/e2e/qwen3_0.6b_kv.yaml         # KIVI, full test set (fakequant)
 tricast run configs/e2e/qwen3_0.6b_kv_stream.yaml  # KIVI, first 8 windows through the cache
 tricast run configs/e2e/qwen3_0.6b_kv_lmeval.yaml  # KIVI, CoQA through the cache

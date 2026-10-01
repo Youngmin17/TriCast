@@ -158,3 +158,14 @@ metrics, not in `env.json` itself; ENGINE §6.4's placement needs team reconcili
   LLM judging is advisory; disagreements require human review.
 - Team sign-off is needed for every golden value/note, every request annotation,
   exact-path attribution, dataset balance, and any future pass/fail threshold.
+
+## Results
+
+| Run | Parser | schema_valid_rate | field_accuracy | invention_rate | ambiguity_recall | Items |
+|---|---|---:|---:|---:|---:|---:|
+| [2026-10-01](results/2026-10-01.json) (TriCast `f3d6fe6`, clean tree) | offline | 1.0000 | 1.0000 (140/140) | 0.0000 (0/61) | 1.0000 (8/8) | 30 |
+
+Read these as a consistency check, not as generalization: the offline parser and these thirty
+requests were written in the same commit (`6b9894e`), so the parser was developed against them.
+The Claude API parser has not been run (no API key in this environment); its row stays empty
+until a paid run is recorded under `results/`.

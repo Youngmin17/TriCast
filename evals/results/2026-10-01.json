@@ -1,0 +1,2852 @@
+{
+  "draft": "초안(AI 작성) — 팀 검토·확정 필요 ✍️",
+  "git_sha": "f3d6fe615df141a349b80ae85a2c89861f2c324b",
+  "git_dirty": false,
+  "llm": "offline",
+  "model": "offline",
+  "model_is_requested": false,
+  "started_at": "2026-10-01T02:12:33.253612+00:00",
+  "finished_at": "2026-10-01T02:12:33.443593+00:00",
+  "evalset_sha256": "1f393c48e093c97906ea3ce7a3ce73f533b158538a9bcdaf5b835a83e2ba063f",
+  "schema_sha256": "159cdb4536805883d40068817b4d56dabd49c4c6a2e34ab7e6ad42d9a4e4790e",
+  "schema_valid_rate": 1.0,
+  "field_accuracy": 1.0,
+  "invention_rate": 0.0,
+  "ambiguity_recall": 1.0,
+  "counts": {
+    "items": 30,
+    "schema_valid": 30,
+    "field_correct": 140,
+    "field_total": 140,
+    "inventions": 0,
+    "null_total": 61,
+    "ambiguous": 8,
+    "ambiguity_detected": 8
+  },
+  "per_item": [
+    {
+      "id": "ko01",
+      "schema_valid": true,
+      "schema_errors": [],
+      "fields": {
+        "intent": {
+          "expected": "explain",
+          "actual": "explain",
+          "missing": false,
+          "match": true
+        }
+      },
+      "field_correct": 1,
+      "field_total": 1,
+      "inventions": [],
+      "null_total": 2,
+      "ambiguous": false,
+      "asked_question": false,
+      "source": "offline",
+      "parse_errors": [],
+      "request": {
+        "intent": "explain",
+        "model": "Qwen/Qwen3-0.6B",
+        "recipes": [],
+        "sweep": null,
+        "tasks": [],
+        "limits": {
+          "max_windows": null,
+          "limit": null
+        },
+        "assumptions": [
+          "model 미지정: Qwen/Qwen3-0.6B 기본값을 사용합니다."
+        ],
+        "questions": [],
+        "topic": "CoFDA 누산 알고리즘을 설명해 줘.",
+        "evaluation": null,
+        "report_inputs": null
+      }
+    },
+    {
+      "id": "ko02",
+      "schema_valid": true,
+      "schema_errors": [],
+      "fields": {
+        "intent": {
+          "expected": "evaluate",
+          "actual": "evaluate",
+          "missing": false,
+          "match": true
+        },
+        "model": {
+          "expected": "Qwen/Qwen3-0.6B",
+          "actual": "Qwen/Qwen3-0.6B",
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].weight.scheme": {
+          "expected": "bf16",
+          "actual": "bf16",
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].activation.scheme": {
+          "expected": "bf16",
+          "actual": "bf16",
+          "missing": false,
+          "match": true
+        },
+        "tasks": {
+          "expected": [
+            "wikitext2_ppl"
+          ],
+          "actual": [
+            "wikitext2_ppl"
+          ],
+          "missing": false,
+          "match": true
+        }
+      },
+      "field_correct": 5,
+      "field_total": 5,
+      "inventions": [],
+      "null_total": 2,
+      "ambiguous": false,
+      "asked_question": false,
+      "source": "offline",
+      "parse_errors": [],
+      "request": {
+        "intent": "evaluate",
+        "model": "Qwen/Qwen3-0.6B",
+        "recipes": [
+          {
+            "name": "request_1",
+            "base": null,
+            "weight": {
+              "scheme": "bf16",
+              "format": null,
+              "granularity": null,
+              "group_size": null,
+              "scale_format": null,
+              "scale_method": null,
+              "scale_rounding": null,
+              "rounding": null,
+              "zero_point": null,
+              "observer": null
+            },
+            "activation": {
+              "scheme": "bf16",
+              "format": null,
+              "granularity": null,
+              "group_size": null,
+              "scale_format": null,
+              "scale_method": null,
+              "scale_rounding": null,
+              "rounding": null,
+              "zero_point": null,
+              "observer": null
+            },
+            "mma": null,
+            "transform": null,
+            "weight_algo": null,
+            "kv": null,
+            "layers": null,
+            "modules": null,
+            "skip": null,
+            "calibration": null
+          }
+        ],
+        "sweep": null,
+        "tasks": [
+          "wikitext2_ppl"
+        ],
+        "limits": {
+          "max_windows": null,
+          "limit": null
+        },
+        "assumptions": [
+          "미지정 limits는 null입니다. runner 기본값은 평가량을 제한하지 않습니다.",
+          "recipes[0].weight: omitted options use spec/scheme/preset defaults: {\"block\": [0, 0], \"dequant_format\": {\"bias\": 127, \"ebits\": 8, \"kind\": \"float\", \"mbits\": 7, \"name\": \"bf16\", \"signed\": true, \"special\": \"ieee\", \"subnormals\": true}, \"format\": {\"bias\": 127, \"ebits\": 8, \"kind\": \"float\", \"mbits\": 7, \"name\": \"bf16\", \"signed\": true, \"special\": \"ieee\", \"subnormals\": true}, \"granularity\": \"tensor\", \"group_size\": 0, \"mma_input\": \"scaled\", \"observer\": null, \"rounding\": \"rne\", \"saturate\": true, \"scale\": null, \"sr_bits\": 32, \"zero_point\": \"none\"}.",
+          "recipes[0].activation: omitted options use spec/scheme/preset defaults: {\"block\": [0, 0], \"dequant_format\": {\"bias\": 127, \"ebits\": 8, \"kind\": \"float\", \"mbits\": 7, \"name\": \"bf16\", \"signed\": true, \"special\": \"ieee\", \"subnormals\": true}, \"format\": {\"bias\": 127, \"ebits\": 8, \"kind\": \"float\", \"mbits\": 7, \"name\": \"bf16\", \"signed\": true, \"special\": \"ieee\", \"subnormals\": true}, \"granularity\": \"tensor\", \"group_size\": 0, \"mma_input\": \"scaled\", \"observer\": null, \"rounding\": \"rne\", \"saturate\": true, \"scale\": null, \"sr_bits\": 32, \"zero_point\": \"none\"}.",
+          "recipes[0].mma: omitted options use spec/scheme/preset defaults: {\"algorithm\": \"cofda\", \"c_mode\": \"fused\", \"chunk_size\": 32, \"f2_bits\": 23, \"f_bits\": 23, \"g_bits\": 32, \"group_size\": 16, \"k_tile\": 64, \"norm_rounding\": \"rtz\", \"out_format\": {\"bias\": 127, \"ebits\": 8, \"kind\": \"float\", \"mbits\": 7, \"name\": \"bf16\", \"signed\": true, \"special\": \"ieee\", \"subnormals\": true}, \"promote_interval\": 0, \"scale_apply\": \"auto\"}.",
+          "recipes[0].transform: omitted options use spec/scheme/preset defaults: {\"alpha\": 0.5, \"block\": 0, \"grid\": 20, \"kind\": \"none\", \"seed\": 0, \"share_inputs\": true}.",
+          "recipes[0].weight_algo: omitted options use spec/scheme/preset defaults: {\"act_order\": false, \"block_size\": 128, \"damp\": 0.01, \"kind\": \"rtn\"}."
+        ],
+        "questions": [],
+        "topic": null,
+        "evaluation": null,
+        "report_inputs": null
+      }
+    },
+    {
+      "id": "ko03",
+      "schema_valid": true,
+      "schema_errors": [],
+      "fields": {
+        "intent": {
+          "expected": "evaluate",
+          "actual": "evaluate",
+          "missing": false,
+          "match": true
+        },
+        "model": {
+          "expected": "Qwen/Qwen3-0.6B",
+          "actual": "Qwen/Qwen3-0.6B",
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].weight.scheme": {
+          "expected": "mxfp4",
+          "actual": "mxfp4",
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].activation.scheme": {
+          "expected": "mxfp4",
+          "actual": "mxfp4",
+          "missing": false,
+          "match": true
+        },
+        "tasks": {
+          "expected": [
+            "hellaswag"
+          ],
+          "actual": [
+            "hellaswag"
+          ],
+          "missing": false,
+          "match": true
+        }
+      },
+      "field_correct": 5,
+      "field_total": 5,
+      "inventions": [],
+      "null_total": 2,
+      "ambiguous": false,
+      "asked_question": false,
+      "source": "offline",
+      "parse_errors": [],
+      "request": {
+        "intent": "evaluate",
+        "model": "Qwen/Qwen3-0.6B",
+        "recipes": [
+          {
+            "name": "request_1",
+            "base": null,
+            "weight": {
+              "scheme": "mxfp4",
+              "format": null,
+              "granularity": null,
+              "group_size": null,
+              "scale_format": null,
+              "scale_method": null,
+              "scale_rounding": null,
+              "rounding": null,
+              "zero_point": null,
+              "observer": null
+            },
+            "activation": {
+              "scheme": "mxfp4",
+              "format": null,
+              "granularity": null,
+              "group_size": null,
+              "scale_format": null,
+              "scale_method": null,
+              "scale_rounding": null,
+              "rounding": null,
+              "zero_point": null,
+              "observer": null
+            },
+            "mma": null,
+            "transform": null,
+            "weight_algo": null,
+            "kv": null,
+            "layers": null,
+            "modules": null,
+            "skip": null,
+            "calibration": null
+          }
+        ],
+        "sweep": null,
+        "tasks": [
+          "hellaswag"
+        ],
+        "limits": {
+          "max_windows": null,
+          "limit": null
+        },
+        "assumptions": [
+          "미지정 limits는 null입니다. runner 기본값은 평가량을 제한하지 않습니다.",
+          "recipes[0].weight: omitted options use spec/scheme/preset defaults: {\"block\": [0, 0], \"dequant_format\": {\"bias\": 127, \"ebits\": 8, \"kind\": \"float\", \"mbits\": 7, \"name\": \"bf16\", \"signed\": true, \"special\": \"ieee\", \"subnormals\": true}, \"format\": {\"bias\": 1, \"ebits\": 2, \"kind\": \"float\", \"mbits\": 1, \"name\": \"fp4_e2m1\", \"signed\": true, \"special\": \"none\", \"subnormals\": true}, \"granularity\": \"group\", \"group_size\": 32, \"mma_input\": \"scaled\", \"observer\": null, \"rounding\": \"rne\", \"saturate\": true, \"scale\": {\"format\": {\"bias\": 127, \"ebits\": 8, \"kind\": \"pow2\", \"name\": \"e8m0\"}, \"method\": \"pow2_floor\", \"mse_grid\": 20, \"percentile\": 99.99, \"rounding\": \"rne\", \"search\": [], \"two_level\": false}, \"sr_bits\": 32, \"zero_point\": \"none\"}.",
+          "recipes[0].activation: omitted options use spec/scheme/preset defaults: {\"block\": [0, 0], \"dequant_format\": {\"bias\": 127, \"ebits\": 8, \"kind\": \"float\", \"mbits\": 7, \"name\": \"bf16\", \"signed\": true, \"special\": \"ieee\", \"subnormals\": true}, \"format\": {\"bias\": 1, \"ebits\": 2, \"kind\": \"float\", \"mbits\": 1, \"name\": \"fp4_e2m1\", \"signed\": true, \"special\": \"none\", \"subnormals\": true}, \"granularity\": \"group\", \"group_size\": 32, \"mma_input\": \"scaled\", \"observer\": null, \"rounding\": \"rne\", \"saturate\": true, \"scale\": {\"format\": {\"bias\": 127, \"ebits\": 8, \"kind\": \"pow2\", \"name\": \"e8m0\"}, \"method\": \"pow2_floor\", \"mse_grid\": 20, \"percentile\": 99.99, \"rounding\": \"rne\", \"search\": [], \"two_level\": false}, \"sr_bits\": 32, \"zero_point\": \"none\"}.",
+          "recipes[0].mma: omitted options use spec/scheme/preset defaults: {\"algorithm\": \"cofda\", \"c_mode\": \"fused\", \"chunk_size\": 32, \"f2_bits\": 23, \"f_bits\": 23, \"g_bits\": 32, \"group_size\": 16, \"k_tile\": 64, \"norm_rounding\": \"rtz\", \"out_format\": {\"bias\": 127, \"ebits\": 8, \"kind\": \"float\", \"mbits\": 7, \"name\": \"bf16\", \"signed\": true, \"special\": \"ieee\", \"subnormals\": true}, \"promote_interval\": 0, \"scale_apply\": \"auto\"}.",
+          "recipes[0].transform: omitted options use spec/scheme/preset defaults: {\"alpha\": 0.5, \"block\": 0, \"grid\": 20, \"kind\": \"none\", \"seed\": 0, \"share_inputs\": true}.",
+          "recipes[0].weight_algo: omitted options use spec/scheme/preset defaults: {\"act_order\": false, \"block_size\": 128, \"damp\": 0.01, \"kind\": \"rtn\"}."
+        ],
+        "questions": [],
+        "topic": null,
+        "evaluation": null,
+        "report_inputs": null
+      }
+    },
+    {
+      "id": "ko04",
+      "schema_valid": true,
+      "schema_errors": [],
+      "fields": {
+        "intent": {
+          "expected": "evaluate",
+          "actual": "evaluate",
+          "missing": false,
+          "match": true
+        },
+        "model": {
+          "expected": "Qwen/Qwen3-0.6B",
+          "actual": "Qwen/Qwen3-0.6B",
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].weight.scheme": {
+          "expected": "nvfp4",
+          "actual": "nvfp4",
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].activation.scheme": {
+          "expected": "nvfp4",
+          "actual": "nvfp4",
+          "missing": false,
+          "match": true
+        },
+        "tasks": {
+          "expected": [
+            "coqa"
+          ],
+          "actual": [
+            "coqa"
+          ],
+          "missing": false,
+          "match": true
+        }
+      },
+      "field_correct": 5,
+      "field_total": 5,
+      "inventions": [],
+      "null_total": 2,
+      "ambiguous": false,
+      "asked_question": false,
+      "source": "offline",
+      "parse_errors": [],
+      "request": {
+        "intent": "evaluate",
+        "model": "Qwen/Qwen3-0.6B",
+        "recipes": [
+          {
+            "name": "request_1",
+            "base": null,
+            "weight": {
+              "scheme": "nvfp4",
+              "format": null,
+              "granularity": null,
+              "group_size": null,
+              "scale_format": null,
+              "scale_method": null,
+              "scale_rounding": null,
+              "rounding": null,
+              "zero_point": null,
+              "observer": null
+            },
+            "activation": {
+              "scheme": "nvfp4",
+              "format": null,
+              "granularity": null,
+              "group_size": null,
+              "scale_format": null,
+              "scale_method": null,
+              "scale_rounding": null,
+              "rounding": null,
+              "zero_point": null,
+              "observer": null
+            },
+            "mma": null,
+            "transform": null,
+            "weight_algo": null,
+            "kv": null,
+            "layers": null,
+            "modules": null,
+            "skip": null,
+            "calibration": null
+          }
+        ],
+        "sweep": null,
+        "tasks": [
+          "coqa"
+        ],
+        "limits": {
+          "max_windows": null,
+          "limit": null
+        },
+        "assumptions": [
+          "미지정 limits는 null입니다. runner 기본값은 평가량을 제한하지 않습니다.",
+          "recipes[0].weight: omitted options use spec/scheme/preset defaults: {\"block\": [0, 0], \"dequant_format\": {\"bias\": 127, \"ebits\": 8, \"kind\": \"float\", \"mbits\": 7, \"name\": \"bf16\", \"signed\": true, \"special\": \"ieee\", \"subnormals\": true}, \"format\": {\"bias\": 1, \"ebits\": 2, \"kind\": \"float\", \"mbits\": 1, \"name\": \"fp4_e2m1\", \"signed\": true, \"special\": \"none\", \"subnormals\": true}, \"granularity\": \"group\", \"group_size\": 16, \"mma_input\": \"scaled\", \"observer\": null, \"rounding\": \"rne\", \"saturate\": true, \"scale\": {\"format\": {\"bias\": 7, \"ebits\": 4, \"kind\": \"float\", \"mbits\": 3, \"name\": \"ue4m3\", \"signed\": false, \"special\": \"fn\", \"subnormals\": true}, \"method\": \"absmax\", \"mse_grid\": 20, \"percentile\": 99.99, \"rounding\": \"rne\", \"search\": [], \"two_level\": true}, \"sr_bits\": 32, \"zero_point\": \"none\"}.",
+          "recipes[0].activation: omitted options use spec/scheme/preset defaults: {\"block\": [0, 0], \"dequant_format\": {\"bias\": 127, \"ebits\": 8, \"kind\": \"float\", \"mbits\": 7, \"name\": \"bf16\", \"signed\": true, \"special\": \"ieee\", \"subnormals\": true}, \"format\": {\"bias\": 1, \"ebits\": 2, \"kind\": \"float\", \"mbits\": 1, \"name\": \"fp4_e2m1\", \"signed\": true, \"special\": \"none\", \"subnormals\": true}, \"granularity\": \"group\", \"group_size\": 16, \"mma_input\": \"scaled\", \"observer\": null, \"rounding\": \"rne\", \"saturate\": true, \"scale\": {\"format\": {\"bias\": 7, \"ebits\": 4, \"kind\": \"float\", \"mbits\": 3, \"name\": \"ue4m3\", \"signed\": false, \"special\": \"fn\", \"subnormals\": true}, \"method\": \"absmax\", \"mse_grid\": 20, \"percentile\": 99.99, \"rounding\": \"rne\", \"search\": [], \"two_level\": true}, \"sr_bits\": 32, \"zero_point\": \"none\"}.",
+          "recipes[0].mma: omitted options use spec/scheme/preset defaults: {\"algorithm\": \"cofda\", \"c_mode\": \"fused\", \"chunk_size\": 32, \"f2_bits\": 23, \"f_bits\": 23, \"g_bits\": 32, \"group_size\": 16, \"k_tile\": 64, \"norm_rounding\": \"rtz\", \"out_format\": {\"bias\": 127, \"ebits\": 8, \"kind\": \"float\", \"mbits\": 7, \"name\": \"bf16\", \"signed\": true, \"special\": \"ieee\", \"subnormals\": true}, \"promote_interval\": 0, \"scale_apply\": \"auto\"}.",
+          "recipes[0].transform: omitted options use spec/scheme/preset defaults: {\"alpha\": 0.5, \"block\": 0, \"grid\": 20, \"kind\": \"none\", \"seed\": 0, \"share_inputs\": true}.",
+          "recipes[0].weight_algo: omitted options use spec/scheme/preset defaults: {\"act_order\": false, \"block_size\": 128, \"damp\": 0.01, \"kind\": \"rtn\"}."
+        ],
+        "questions": [],
+        "topic": null,
+        "evaluation": null,
+        "report_inputs": null
+      }
+    },
+    {
+      "id": "ko05",
+      "schema_valid": true,
+      "schema_errors": [],
+      "fields": {
+        "intent": {
+          "expected": "evaluate",
+          "actual": "evaluate",
+          "missing": false,
+          "match": true
+        },
+        "model": {
+          "expected": "Qwen/Qwen3-0.6B",
+          "actual": "Qwen/Qwen3-0.6B",
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].mma.preset": {
+          "expected": "nvidia_hopper_fp8",
+          "actual": "nvidia_hopper_fp8",
+          "missing": false,
+          "match": true
+        },
+        "tasks": {
+          "expected": [
+            "hellaswag"
+          ],
+          "actual": [
+            "hellaswag"
+          ],
+          "missing": false,
+          "match": true
+        }
+      },
+      "field_correct": 4,
+      "field_total": 4,
+      "inventions": [],
+      "null_total": 2,
+      "ambiguous": false,
+      "asked_question": true,
+      "source": "offline",
+      "parse_errors": [],
+      "request": {
+        "intent": "evaluate",
+        "model": "Qwen/Qwen3-0.6B",
+        "recipes": [
+          {
+            "name": "request_1",
+            "base": null,
+            "weight": null,
+            "activation": null,
+            "mma": {
+              "preset": "nvidia_hopper_fp8",
+              "algorithm": null,
+              "f_bits": null,
+              "chunk_size": null,
+              "c_mode": null,
+              "g_bits": null,
+              "group_size": null,
+              "promote_interval": null
+            },
+            "transform": null,
+            "weight_algo": null,
+            "kv": null,
+            "layers": null,
+            "modules": null,
+            "skip": null,
+            "calibration": null
+          }
+        ],
+        "sweep": null,
+        "tasks": [
+          "hellaswag"
+        ],
+        "limits": {
+          "max_windows": null,
+          "limit": null
+        },
+        "assumptions": [
+          "미지정 limits는 null입니다. runner 기본값은 평가량을 제한하지 않습니다.",
+          "mma 미지정 필드는 preset nvidia_hopper_fp8 정의를 상속합니다."
+        ],
+        "questions": [
+          "weight/activation: 입력 형식 또는 기존 레시피를 지정해 주세요."
+        ],
+        "topic": null,
+        "evaluation": null,
+        "report_inputs": null
+      }
+    },
+    {
+      "id": "ko06",
+      "schema_valid": true,
+      "schema_errors": [],
+      "fields": {
+        "intent": {
+          "expected": "explain",
+          "actual": "explain",
+          "missing": false,
+          "match": true
+        }
+      },
+      "field_correct": 1,
+      "field_total": 1,
+      "inventions": [],
+      "null_total": 3,
+      "ambiguous": false,
+      "asked_question": false,
+      "source": "offline",
+      "parse_errors": [],
+      "request": {
+        "intent": "explain",
+        "model": "Qwen/Qwen3-0.6B",
+        "recipes": [],
+        "sweep": null,
+        "tasks": [],
+        "limits": {
+          "max_windows": null,
+          "limit": null
+        },
+        "assumptions": [
+          "model 미지정: Qwen/Qwen3-0.6B 기본값을 사용합니다."
+        ],
+        "questions": [],
+        "topic": "bf16과 fp16의 수 형식 차이를 설명해 줘.",
+        "evaluation": null,
+        "report_inputs": null
+      }
+    },
+    {
+      "id": "en01",
+      "schema_valid": true,
+      "schema_errors": [],
+      "fields": {
+        "intent": {
+          "expected": "explain",
+          "actual": "explain",
+          "missing": false,
+          "match": true
+        }
+      },
+      "field_correct": 1,
+      "field_total": 1,
+      "inventions": [],
+      "null_total": 2,
+      "ambiguous": false,
+      "asked_question": false,
+      "source": "offline",
+      "parse_errors": [],
+      "request": {
+        "intent": "explain",
+        "model": "Qwen/Qwen3-0.6B",
+        "recipes": [],
+        "sweep": null,
+        "tasks": [],
+        "limits": {
+          "max_windows": null,
+          "limit": null
+        },
+        "assumptions": [
+          "model 미지정: Qwen/Qwen3-0.6B 기본값을 사용합니다."
+        ],
+        "questions": [],
+        "topic": "Explain GDFS accumulation.",
+        "evaluation": null,
+        "report_inputs": null
+      }
+    },
+    {
+      "id": "en02",
+      "schema_valid": true,
+      "schema_errors": [],
+      "fields": {
+        "intent": {
+          "expected": "evaluate",
+          "actual": "evaluate",
+          "missing": false,
+          "match": true
+        },
+        "model": {
+          "expected": "Qwen/Qwen3-0.6B",
+          "actual": "Qwen/Qwen3-0.6B",
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].weight.scheme": {
+          "expected": "bf16",
+          "actual": "bf16",
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].activation.scheme": {
+          "expected": "bf16",
+          "actual": "bf16",
+          "missing": false,
+          "match": true
+        },
+        "tasks": {
+          "expected": [
+            "hellaswag"
+          ],
+          "actual": [
+            "hellaswag"
+          ],
+          "missing": false,
+          "match": true
+        }
+      },
+      "field_correct": 5,
+      "field_total": 5,
+      "inventions": [],
+      "null_total": 2,
+      "ambiguous": false,
+      "asked_question": false,
+      "source": "offline",
+      "parse_errors": [],
+      "request": {
+        "intent": "evaluate",
+        "model": "Qwen/Qwen3-0.6B",
+        "recipes": [
+          {
+            "name": "request_1",
+            "base": null,
+            "weight": {
+              "scheme": "bf16",
+              "format": null,
+              "granularity": null,
+              "group_size": null,
+              "scale_format": null,
+              "scale_method": null,
+              "scale_rounding": null,
+              "rounding": null,
+              "zero_point": null,
+              "observer": null
+            },
+            "activation": {
+              "scheme": "bf16",
+              "format": null,
+              "granularity": null,
+              "group_size": null,
+              "scale_format": null,
+              "scale_method": null,
+              "scale_rounding": null,
+              "rounding": null,
+              "zero_point": null,
+              "observer": null
+            },
+            "mma": null,
+            "transform": null,
+            "weight_algo": null,
+            "kv": null,
+            "layers": null,
+            "modules": null,
+            "skip": null,
+            "calibration": null
+          }
+        ],
+        "sweep": null,
+        "tasks": [
+          "hellaswag"
+        ],
+        "limits": {
+          "max_windows": null,
+          "limit": null
+        },
+        "assumptions": [
+          "미지정 limits는 null입니다. runner 기본값은 평가량을 제한하지 않습니다.",
+          "recipes[0].weight: omitted options use spec/scheme/preset defaults: {\"block\": [0, 0], \"dequant_format\": {\"bias\": 127, \"ebits\": 8, \"kind\": \"float\", \"mbits\": 7, \"name\": \"bf16\", \"signed\": true, \"special\": \"ieee\", \"subnormals\": true}, \"format\": {\"bias\": 127, \"ebits\": 8, \"kind\": \"float\", \"mbits\": 7, \"name\": \"bf16\", \"signed\": true, \"special\": \"ieee\", \"subnormals\": true}, \"granularity\": \"tensor\", \"group_size\": 0, \"mma_input\": \"scaled\", \"observer\": null, \"rounding\": \"rne\", \"saturate\": true, \"scale\": null, \"sr_bits\": 32, \"zero_point\": \"none\"}.",
+          "recipes[0].activation: omitted options use spec/scheme/preset defaults: {\"block\": [0, 0], \"dequant_format\": {\"bias\": 127, \"ebits\": 8, \"kind\": \"float\", \"mbits\": 7, \"name\": \"bf16\", \"signed\": true, \"special\": \"ieee\", \"subnormals\": true}, \"format\": {\"bias\": 127, \"ebits\": 8, \"kind\": \"float\", \"mbits\": 7, \"name\": \"bf16\", \"signed\": true, \"special\": \"ieee\", \"subnormals\": true}, \"granularity\": \"tensor\", \"group_size\": 0, \"mma_input\": \"scaled\", \"observer\": null, \"rounding\": \"rne\", \"saturate\": true, \"scale\": null, \"sr_bits\": 32, \"zero_point\": \"none\"}.",
+          "recipes[0].mma: omitted options use spec/scheme/preset defaults: {\"algorithm\": \"cofda\", \"c_mode\": \"fused\", \"chunk_size\": 32, \"f2_bits\": 23, \"f_bits\": 23, \"g_bits\": 32, \"group_size\": 16, \"k_tile\": 64, \"norm_rounding\": \"rtz\", \"out_format\": {\"bias\": 127, \"ebits\": 8, \"kind\": \"float\", \"mbits\": 7, \"name\": \"bf16\", \"signed\": true, \"special\": \"ieee\", \"subnormals\": true}, \"promote_interval\": 0, \"scale_apply\": \"auto\"}.",
+          "recipes[0].transform: omitted options use spec/scheme/preset defaults: {\"alpha\": 0.5, \"block\": 0, \"grid\": 20, \"kind\": \"none\", \"seed\": 0, \"share_inputs\": true}.",
+          "recipes[0].weight_algo: omitted options use spec/scheme/preset defaults: {\"act_order\": false, \"block_size\": 128, \"damp\": 0.01, \"kind\": \"rtn\"}."
+        ],
+        "questions": [],
+        "topic": null,
+        "evaluation": null,
+        "report_inputs": null
+      }
+    },
+    {
+      "id": "en03",
+      "schema_valid": true,
+      "schema_errors": [],
+      "fields": {
+        "intent": {
+          "expected": "evaluate",
+          "actual": "evaluate",
+          "missing": false,
+          "match": true
+        },
+        "model": {
+          "expected": "Qwen/Qwen3-0.6B",
+          "actual": "Qwen/Qwen3-0.6B",
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].mma.preset": {
+          "expected": "nvidia_ada_fp8",
+          "actual": "nvidia_ada_fp8",
+          "missing": false,
+          "match": true
+        },
+        "tasks": {
+          "expected": [
+            "piqa"
+          ],
+          "actual": [
+            "piqa"
+          ],
+          "missing": false,
+          "match": true
+        }
+      },
+      "field_correct": 4,
+      "field_total": 4,
+      "inventions": [],
+      "null_total": 2,
+      "ambiguous": false,
+      "asked_question": true,
+      "source": "offline",
+      "parse_errors": [],
+      "request": {
+        "intent": "evaluate",
+        "model": "Qwen/Qwen3-0.6B",
+        "recipes": [
+          {
+            "name": "request_1",
+            "base": null,
+            "weight": null,
+            "activation": null,
+            "mma": {
+              "preset": "nvidia_ada_fp8",
+              "algorithm": null,
+              "f_bits": null,
+              "chunk_size": null,
+              "c_mode": null,
+              "g_bits": null,
+              "group_size": null,
+              "promote_interval": null
+            },
+            "transform": null,
+            "weight_algo": null,
+            "kv": null,
+            "layers": null,
+            "modules": null,
+            "skip": null,
+            "calibration": null
+          }
+        ],
+        "sweep": null,
+        "tasks": [
+          "piqa"
+        ],
+        "limits": {
+          "max_windows": null,
+          "limit": null
+        },
+        "assumptions": [
+          "미지정 limits는 null입니다. runner 기본값은 평가량을 제한하지 않습니다.",
+          "mma 미지정 필드는 preset nvidia_ada_fp8 정의를 상속합니다."
+        ],
+        "questions": [
+          "weight/activation: 입력 형식 또는 기존 레시피를 지정해 주세요."
+        ],
+        "topic": null,
+        "evaluation": null,
+        "report_inputs": null
+      }
+    },
+    {
+      "id": "en04",
+      "schema_valid": true,
+      "schema_errors": [],
+      "fields": {
+        "intent": {
+          "expected": "explain",
+          "actual": "explain",
+          "missing": false,
+          "match": true
+        }
+      },
+      "field_correct": 1,
+      "field_total": 1,
+      "inventions": [],
+      "null_total": 2,
+      "ambiguous": false,
+      "asked_question": false,
+      "source": "offline",
+      "parse_errors": [],
+      "request": {
+        "intent": "explain",
+        "model": "Qwen/Qwen3-0.6B",
+        "recipes": [],
+        "sweep": null,
+        "tasks": [],
+        "limits": {
+          "max_windows": null,
+          "limit": null
+        },
+        "assumptions": [
+          "model 미지정: Qwen/Qwen3-0.6B 기본값을 사용합니다."
+        ],
+        "questions": [],
+        "topic": "Explain stochastic rounding without running a model.",
+        "evaluation": null,
+        "report_inputs": null
+      }
+    },
+    {
+      "id": "ko07",
+      "schema_valid": true,
+      "schema_errors": [],
+      "fields": {
+        "intent": {
+          "expected": "evaluate",
+          "actual": "evaluate",
+          "missing": false,
+          "match": true
+        },
+        "model": {
+          "expected": "Qwen/Qwen3-0.6B",
+          "actual": "Qwen/Qwen3-0.6B",
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].mma.algorithm": {
+          "expected": "cofda",
+          "actual": "cofda",
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].mma.f_bits": {
+          "expected": 13,
+          "actual": 13,
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].mma.chunk_size": {
+          "expected": 32,
+          "actual": 32,
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].mma.c_mode": {
+          "expected": "fused",
+          "actual": "fused",
+          "missing": false,
+          "match": true
+        },
+        "tasks": {
+          "expected": [
+            "wikitext2_ppl"
+          ],
+          "actual": [
+            "wikitext2_ppl"
+          ],
+          "missing": false,
+          "match": true
+        }
+      },
+      "field_correct": 7,
+      "field_total": 7,
+      "inventions": [],
+      "null_total": 2,
+      "ambiguous": false,
+      "asked_question": true,
+      "source": "offline",
+      "parse_errors": [],
+      "request": {
+        "intent": "evaluate",
+        "model": "Qwen/Qwen3-0.6B",
+        "recipes": [
+          {
+            "name": "request_1",
+            "base": null,
+            "weight": null,
+            "activation": null,
+            "mma": {
+              "preset": null,
+              "algorithm": "cofda",
+              "f_bits": 13,
+              "chunk_size": 32,
+              "c_mode": "fused",
+              "g_bits": null,
+              "group_size": null,
+              "promote_interval": null
+            },
+            "transform": null,
+            "weight_algo": null,
+            "kv": null,
+            "layers": null,
+            "modules": null,
+            "skip": null,
+            "calibration": null
+          }
+        ],
+        "sweep": null,
+        "tasks": [
+          "wikitext2_ppl"
+        ],
+        "limits": {
+          "max_windows": null,
+          "limit": null
+        },
+        "assumptions": [
+          "미지정 limits는 null입니다. runner 기본값은 평가량을 제한하지 않습니다."
+        ],
+        "questions": [
+          "weight/activation: 입력 형식 또는 기존 레시피를 지정해 주세요."
+        ],
+        "topic": null,
+        "evaluation": null,
+        "report_inputs": null
+      }
+    },
+    {
+      "id": "ko08",
+      "schema_valid": true,
+      "schema_errors": [],
+      "fields": {
+        "intent": {
+          "expected": "evaluate",
+          "actual": "evaluate",
+          "missing": false,
+          "match": true
+        },
+        "model": {
+          "expected": "Qwen/Qwen3-0.6B",
+          "actual": "Qwen/Qwen3-0.6B",
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].mma.algorithm": {
+          "expected": "cofda",
+          "actual": "cofda",
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].mma.f_bits": {
+          "expected": 3,
+          "actual": 3,
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].mma.chunk_size": {
+          "expected": 2,
+          "actual": 2,
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].mma.c_mode": {
+          "expected": "decoupled",
+          "actual": "decoupled",
+          "missing": false,
+          "match": true
+        },
+        "tasks": {
+          "expected": [
+            "hellaswag"
+          ],
+          "actual": [
+            "hellaswag"
+          ],
+          "missing": false,
+          "match": true
+        }
+      },
+      "field_correct": 7,
+      "field_total": 7,
+      "inventions": [],
+      "null_total": 2,
+      "ambiguous": false,
+      "asked_question": true,
+      "source": "offline",
+      "parse_errors": [],
+      "request": {
+        "intent": "evaluate",
+        "model": "Qwen/Qwen3-0.6B",
+        "recipes": [
+          {
+            "name": "request_1",
+            "base": null,
+            "weight": null,
+            "activation": null,
+            "mma": {
+              "preset": null,
+              "algorithm": "cofda",
+              "f_bits": 3,
+              "chunk_size": 2,
+              "c_mode": "decoupled",
+              "g_bits": null,
+              "group_size": null,
+              "promote_interval": null
+            },
+            "transform": null,
+            "weight_algo": null,
+            "kv": null,
+            "layers": null,
+            "modules": null,
+            "skip": null,
+            "calibration": null
+          }
+        ],
+        "sweep": null,
+        "tasks": [
+          "hellaswag"
+        ],
+        "limits": {
+          "max_windows": null,
+          "limit": null
+        },
+        "assumptions": [
+          "미지정 limits는 null입니다. runner 기본값은 평가량을 제한하지 않습니다."
+        ],
+        "questions": [
+          "weight/activation: 입력 형식 또는 기존 레시피를 지정해 주세요."
+        ],
+        "topic": null,
+        "evaluation": null,
+        "report_inputs": null
+      }
+    },
+    {
+      "id": "ko09",
+      "schema_valid": true,
+      "schema_errors": [],
+      "fields": {
+        "intent": {
+          "expected": "evaluate",
+          "actual": "evaluate",
+          "missing": false,
+          "match": true
+        },
+        "model": {
+          "expected": "Qwen/Qwen3-0.6B",
+          "actual": "Qwen/Qwen3-0.6B",
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].mma.algorithm": {
+          "expected": "gdfs",
+          "actual": "gdfs",
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].mma.f_bits": {
+          "expected": 35,
+          "actual": 35,
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].mma.g_bits": {
+          "expected": 6,
+          "actual": 6,
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].mma.group_size": {
+          "expected": 16,
+          "actual": 16,
+          "missing": false,
+          "match": true
+        },
+        "tasks": {
+          "expected": [
+            "wikitext2_ppl"
+          ],
+          "actual": [
+            "wikitext2_ppl"
+          ],
+          "missing": false,
+          "match": true
+        }
+      },
+      "field_correct": 7,
+      "field_total": 7,
+      "inventions": [],
+      "null_total": 2,
+      "ambiguous": false,
+      "asked_question": true,
+      "source": "offline",
+      "parse_errors": [],
+      "request": {
+        "intent": "evaluate",
+        "model": "Qwen/Qwen3-0.6B",
+        "recipes": [
+          {
+            "name": "request_1",
+            "base": null,
+            "weight": null,
+            "activation": null,
+            "mma": {
+              "preset": null,
+              "algorithm": "gdfs",
+              "f_bits": 35,
+              "chunk_size": null,
+              "c_mode": null,
+              "g_bits": 6,
+              "group_size": 16,
+              "promote_interval": null
+            },
+            "transform": null,
+            "weight_algo": null,
+            "kv": null,
+            "layers": null,
+            "modules": null,
+            "skip": null,
+            "calibration": null
+          }
+        ],
+        "sweep": null,
+        "tasks": [
+          "wikitext2_ppl"
+        ],
+        "limits": {
+          "max_windows": null,
+          "limit": null
+        },
+        "assumptions": [
+          "미지정 limits는 null입니다. runner 기본값은 평가량을 제한하지 않습니다."
+        ],
+        "questions": [
+          "weight/activation: 입력 형식 또는 기존 레시피를 지정해 주세요."
+        ],
+        "topic": null,
+        "evaluation": null,
+        "report_inputs": null
+      }
+    },
+    {
+      "id": "ko10",
+      "schema_valid": true,
+      "schema_errors": [],
+      "fields": {
+        "intent": {
+          "expected": "evaluate",
+          "actual": "evaluate",
+          "missing": false,
+          "match": true
+        },
+        "model": {
+          "expected": "Qwen/Qwen3-0.6B",
+          "actual": "Qwen/Qwen3-0.6B",
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].weight.scheme": {
+          "expected": "int4_g128",
+          "actual": "int4_g128",
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].activation.scheme": {
+          "expected": "bf16",
+          "actual": "bf16",
+          "missing": false,
+          "match": true
+        },
+        "tasks": {
+          "expected": [
+            "piqa"
+          ],
+          "actual": [
+            "piqa"
+          ],
+          "missing": false,
+          "match": true
+        }
+      },
+      "field_correct": 5,
+      "field_total": 5,
+      "inventions": [],
+      "null_total": 2,
+      "ambiguous": false,
+      "asked_question": false,
+      "source": "offline",
+      "parse_errors": [],
+      "request": {
+        "intent": "evaluate",
+        "model": "Qwen/Qwen3-0.6B",
+        "recipes": [
+          {
+            "name": "request_1",
+            "base": null,
+            "weight": {
+              "scheme": "int4_g128",
+              "format": null,
+              "granularity": null,
+              "group_size": null,
+              "scale_format": null,
+              "scale_method": null,
+              "scale_rounding": null,
+              "rounding": null,
+              "zero_point": null,
+              "observer": null
+            },
+            "activation": {
+              "scheme": "bf16",
+              "format": null,
+              "granularity": null,
+              "group_size": null,
+              "scale_format": null,
+              "scale_method": null,
+              "scale_rounding": null,
+              "rounding": null,
+              "zero_point": null,
+              "observer": null
+            },
+            "mma": null,
+            "transform": null,
+            "weight_algo": null,
+            "kv": null,
+            "layers": null,
+            "modules": null,
+            "skip": null,
+            "calibration": null
+          }
+        ],
+        "sweep": null,
+        "tasks": [
+          "piqa"
+        ],
+        "limits": {
+          "max_windows": null,
+          "limit": null
+        },
+        "assumptions": [
+          "미지정 limits는 null입니다. runner 기본값은 평가량을 제한하지 않습니다.",
+          "recipes[0].weight: omitted options use spec/scheme/preset defaults: {\"block\": [0, 0], \"dequant_format\": {\"bias\": 127, \"ebits\": 8, \"kind\": \"float\", \"mbits\": 7, \"name\": \"bf16\", \"signed\": true, \"special\": \"ieee\", \"subnormals\": true}, \"format\": {\"bits\": 4, \"frac_bits\": 0, \"kind\": \"int\", \"name\": \"int4\", \"signed\": true, \"symmetric\": true}, \"granularity\": \"group\", \"group_size\": 128, \"mma_input\": \"dequant\", \"observer\": null, \"rounding\": \"rne\", \"saturate\": true, \"scale\": {\"format\": {\"bias\": 15, \"ebits\": 5, \"kind\": \"float\", \"mbits\": 10, \"name\": \"fp16\", \"signed\": true, \"special\": \"ieee\", \"subnormals\": true}, \"method\": \"absmax\", \"mse_grid\": 20, \"percentile\": 99.99, \"rounding\": \"rne\", \"search\": [], \"two_level\": false}, \"sr_bits\": 32, \"zero_point\": \"none\"}.",
+          "recipes[0].activation: omitted options use spec/scheme/preset defaults: {\"block\": [0, 0], \"dequant_format\": {\"bias\": 127, \"ebits\": 8, \"kind\": \"float\", \"mbits\": 7, \"name\": \"bf16\", \"signed\": true, \"special\": \"ieee\", \"subnormals\": true}, \"format\": {\"bias\": 127, \"ebits\": 8, \"kind\": \"float\", \"mbits\": 7, \"name\": \"bf16\", \"signed\": true, \"special\": \"ieee\", \"subnormals\": true}, \"granularity\": \"tensor\", \"group_size\": 0, \"mma_input\": \"scaled\", \"observer\": null, \"rounding\": \"rne\", \"saturate\": true, \"scale\": null, \"sr_bits\": 32, \"zero_point\": \"none\"}.",
+          "recipes[0].mma: omitted options use spec/scheme/preset defaults: {\"algorithm\": \"cofda\", \"c_mode\": \"fused\", \"chunk_size\": 32, \"f2_bits\": 23, \"f_bits\": 23, \"g_bits\": 32, \"group_size\": 16, \"k_tile\": 64, \"norm_rounding\": \"rtz\", \"out_format\": {\"bias\": 127, \"ebits\": 8, \"kind\": \"float\", \"mbits\": 7, \"name\": \"bf16\", \"signed\": true, \"special\": \"ieee\", \"subnormals\": true}, \"promote_interval\": 0, \"scale_apply\": \"auto\"}.",
+          "recipes[0].transform: omitted options use spec/scheme/preset defaults: {\"alpha\": 0.5, \"block\": 0, \"grid\": 20, \"kind\": \"none\", \"seed\": 0, \"share_inputs\": true}.",
+          "recipes[0].weight_algo: omitted options use spec/scheme/preset defaults: {\"act_order\": false, \"block_size\": 128, \"damp\": 0.01, \"kind\": \"rtn\"}."
+        ],
+        "questions": [],
+        "topic": null,
+        "evaluation": null,
+        "report_inputs": null
+      }
+    },
+    {
+      "id": "ko11",
+      "schema_valid": true,
+      "schema_errors": [],
+      "fields": {
+        "intent": {
+          "expected": "evaluate",
+          "actual": "evaluate",
+          "missing": false,
+          "match": true
+        },
+        "model": {
+          "expected": "Qwen/Qwen3-0.6B",
+          "actual": "Qwen/Qwen3-0.6B",
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].weight.scheme": {
+          "expected": "fp8_row",
+          "actual": "fp8_row",
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].activation.scheme": {
+          "expected": "fp8_tensor",
+          "actual": "fp8_tensor",
+          "missing": false,
+          "match": true
+        },
+        "tasks": {
+          "expected": [
+            "hellaswag",
+            "coqa"
+          ],
+          "actual": [
+            "hellaswag",
+            "coqa"
+          ],
+          "missing": false,
+          "match": true
+        }
+      },
+      "field_correct": 5,
+      "field_total": 5,
+      "inventions": [],
+      "null_total": 2,
+      "ambiguous": false,
+      "asked_question": false,
+      "source": "offline",
+      "parse_errors": [],
+      "request": {
+        "intent": "evaluate",
+        "model": "Qwen/Qwen3-0.6B",
+        "recipes": [
+          {
+            "name": "request_1",
+            "base": null,
+            "weight": {
+              "scheme": "fp8_row",
+              "format": null,
+              "granularity": null,
+              "group_size": null,
+              "scale_format": null,
+              "scale_method": null,
+              "scale_rounding": null,
+              "rounding": null,
+              "zero_point": null,
+              "observer": null
+            },
+            "activation": {
+              "scheme": "fp8_tensor",
+              "format": null,
+              "granularity": null,
+              "group_size": null,
+              "scale_format": null,
+              "scale_method": null,
+              "scale_rounding": null,
+              "rounding": null,
+              "zero_point": null,
+              "observer": null
+            },
+            "mma": null,
+            "transform": null,
+            "weight_algo": null,
+            "kv": null,
+            "layers": null,
+            "modules": null,
+            "skip": null,
+            "calibration": null
+          }
+        ],
+        "sweep": null,
+        "tasks": [
+          "hellaswag",
+          "coqa"
+        ],
+        "limits": {
+          "max_windows": null,
+          "limit": null
+        },
+        "assumptions": [
+          "미지정 limits는 null입니다. runner 기본값은 평가량을 제한하지 않습니다.",
+          "recipes[0].weight: omitted options use spec/scheme/preset defaults: {\"block\": [0, 0], \"dequant_format\": {\"bias\": 127, \"ebits\": 8, \"kind\": \"float\", \"mbits\": 7, \"name\": \"bf16\", \"signed\": true, \"special\": \"ieee\", \"subnormals\": true}, \"format\": {\"bias\": 7, \"ebits\": 4, \"kind\": \"float\", \"mbits\": 3, \"name\": \"fp8_e4m3\", \"signed\": true, \"special\": \"fn\", \"subnormals\": true}, \"granularity\": \"row\", \"group_size\": 0, \"mma_input\": \"scaled\", \"observer\": null, \"rounding\": \"rne\", \"saturate\": true, \"scale\": {\"format\": {\"bias\": 127, \"ebits\": 8, \"kind\": \"float\", \"mbits\": 23, \"name\": \"fp32\", \"signed\": true, \"special\": \"ieee\", \"subnormals\": true}, \"method\": \"absmax\", \"mse_grid\": 20, \"percentile\": 99.99, \"rounding\": \"rne\", \"search\": [], \"two_level\": false}, \"sr_bits\": 32, \"zero_point\": \"none\"}.",
+          "recipes[0].activation: omitted options use spec/scheme/preset defaults: {\"block\": [0, 0], \"dequant_format\": {\"bias\": 127, \"ebits\": 8, \"kind\": \"float\", \"mbits\": 7, \"name\": \"bf16\", \"signed\": true, \"special\": \"ieee\", \"subnormals\": true}, \"format\": {\"bias\": 7, \"ebits\": 4, \"kind\": \"float\", \"mbits\": 3, \"name\": \"fp8_e4m3\", \"signed\": true, \"special\": \"fn\", \"subnormals\": true}, \"granularity\": \"tensor\", \"group_size\": 0, \"mma_input\": \"scaled\", \"observer\": null, \"rounding\": \"rne\", \"saturate\": true, \"scale\": {\"format\": {\"bias\": 127, \"ebits\": 8, \"kind\": \"float\", \"mbits\": 23, \"name\": \"fp32\", \"signed\": true, \"special\": \"ieee\", \"subnormals\": true}, \"method\": \"absmax\", \"mse_grid\": 20, \"percentile\": 99.99, \"rounding\": \"rne\", \"search\": [], \"two_level\": false}, \"sr_bits\": 32, \"zero_point\": \"none\"}.",
+          "recipes[0].mma: omitted options use spec/scheme/preset defaults: {\"algorithm\": \"cofda\", \"c_mode\": \"fused\", \"chunk_size\": 32, \"f2_bits\": 23, \"f_bits\": 23, \"g_bits\": 32, \"group_size\": 16, \"k_tile\": 64, \"norm_rounding\": \"rtz\", \"out_format\": {\"bias\": 127, \"ebits\": 8, \"kind\": \"float\", \"mbits\": 7, \"name\": \"bf16\", \"signed\": true, \"special\": \"ieee\", \"subnormals\": true}, \"promote_interval\": 0, \"scale_apply\": \"auto\"}.",
+          "recipes[0].transform: omitted options use spec/scheme/preset defaults: {\"alpha\": 0.5, \"block\": 0, \"grid\": 20, \"kind\": \"none\", \"seed\": 0, \"share_inputs\": true}.",
+          "recipes[0].weight_algo: omitted options use spec/scheme/preset defaults: {\"act_order\": false, \"block_size\": 128, \"damp\": 0.01, \"kind\": \"rtn\"}."
+        ],
+        "questions": [],
+        "topic": null,
+        "evaluation": null,
+        "report_inputs": null
+      }
+    },
+    {
+      "id": "ko12",
+      "schema_valid": true,
+      "schema_errors": [],
+      "fields": {
+        "intent": {
+          "expected": "evaluate",
+          "actual": "evaluate",
+          "missing": false,
+          "match": true
+        },
+        "model": {
+          "expected": "Qwen/Qwen3-0.6B",
+          "actual": "Qwen/Qwen3-0.6B",
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].weight.scheme": {
+          "expected": "mxfp4",
+          "actual": "mxfp4",
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].activation.scheme": {
+          "expected": "mxfp4",
+          "actual": "mxfp4",
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].mma.algorithm": {
+          "expected": "gdfs",
+          "actual": "gdfs",
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].mma.g_bits": {
+          "expected": 6,
+          "actual": 6,
+          "missing": false,
+          "match": true
+        },
+        "tasks": {
+          "expected": [
+            "wikitext2_ppl"
+          ],
+          "actual": [
+            "wikitext2_ppl"
+          ],
+          "missing": false,
+          "match": true
+        }
+      },
+      "field_correct": 7,
+      "field_total": 7,
+      "inventions": [],
+      "null_total": 2,
+      "ambiguous": false,
+      "asked_question": false,
+      "source": "offline",
+      "parse_errors": [],
+      "request": {
+        "intent": "evaluate",
+        "model": "Qwen/Qwen3-0.6B",
+        "recipes": [
+          {
+            "name": "request_1",
+            "base": null,
+            "weight": {
+              "scheme": "mxfp4",
+              "format": null,
+              "granularity": null,
+              "group_size": null,
+              "scale_format": null,
+              "scale_method": null,
+              "scale_rounding": null,
+              "rounding": null,
+              "zero_point": null,
+              "observer": null
+            },
+            "activation": {
+              "scheme": "mxfp4",
+              "format": null,
+              "granularity": null,
+              "group_size": null,
+              "scale_format": null,
+              "scale_method": null,
+              "scale_rounding": null,
+              "rounding": null,
+              "zero_point": null,
+              "observer": null
+            },
+            "mma": {
+              "preset": null,
+              "algorithm": "gdfs",
+              "f_bits": null,
+              "chunk_size": null,
+              "c_mode": null,
+              "g_bits": 6,
+              "group_size": null,
+              "promote_interval": null
+            },
+            "transform": null,
+            "weight_algo": null,
+            "kv": null,
+            "layers": null,
+            "modules": null,
+            "skip": null,
+            "calibration": null
+          }
+        ],
+        "sweep": null,
+        "tasks": [
+          "wikitext2_ppl"
+        ],
+        "limits": {
+          "max_windows": null,
+          "limit": null
+        },
+        "assumptions": [
+          "미지정 limits는 null입니다. runner 기본값은 평가량을 제한하지 않습니다.",
+          "recipes[0].weight: omitted options use spec/scheme/preset defaults: {\"block\": [0, 0], \"dequant_format\": {\"bias\": 127, \"ebits\": 8, \"kind\": \"float\", \"mbits\": 7, \"name\": \"bf16\", \"signed\": true, \"special\": \"ieee\", \"subnormals\": true}, \"format\": {\"bias\": 1, \"ebits\": 2, \"kind\": \"float\", \"mbits\": 1, \"name\": \"fp4_e2m1\", \"signed\": true, \"special\": \"none\", \"subnormals\": true}, \"granularity\": \"group\", \"group_size\": 32, \"mma_input\": \"scaled\", \"observer\": null, \"rounding\": \"rne\", \"saturate\": true, \"scale\": {\"format\": {\"bias\": 127, \"ebits\": 8, \"kind\": \"pow2\", \"name\": \"e8m0\"}, \"method\": \"pow2_floor\", \"mse_grid\": 20, \"percentile\": 99.99, \"rounding\": \"rne\", \"search\": [], \"two_level\": false}, \"sr_bits\": 32, \"zero_point\": \"none\"}.",
+          "recipes[0].activation: omitted options use spec/scheme/preset defaults: {\"block\": [0, 0], \"dequant_format\": {\"bias\": 127, \"ebits\": 8, \"kind\": \"float\", \"mbits\": 7, \"name\": \"bf16\", \"signed\": true, \"special\": \"ieee\", \"subnormals\": true}, \"format\": {\"bias\": 1, \"ebits\": 2, \"kind\": \"float\", \"mbits\": 1, \"name\": \"fp4_e2m1\", \"signed\": true, \"special\": \"none\", \"subnormals\": true}, \"granularity\": \"group\", \"group_size\": 32, \"mma_input\": \"scaled\", \"observer\": null, \"rounding\": \"rne\", \"saturate\": true, \"scale\": {\"format\": {\"bias\": 127, \"ebits\": 8, \"kind\": \"pow2\", \"name\": \"e8m0\"}, \"method\": \"pow2_floor\", \"mse_grid\": 20, \"percentile\": 99.99, \"rounding\": \"rne\", \"search\": [], \"two_level\": false}, \"sr_bits\": 32, \"zero_point\": \"none\"}.",
+          "recipes[0].mma: omitted options use spec/scheme/preset defaults: {\"c_mode\": \"fused\", \"chunk_size\": 32, \"f2_bits\": 23, \"f_bits\": 23, \"group_size\": 16, \"k_tile\": 64, \"norm_rounding\": \"rtz\", \"out_format\": {\"bias\": 127, \"ebits\": 8, \"kind\": \"float\", \"mbits\": 7, \"name\": \"bf16\", \"signed\": true, \"special\": \"ieee\", \"subnormals\": true}, \"promote_interval\": 0, \"scale_apply\": \"auto\"}.",
+          "recipes[0].transform: omitted options use spec/scheme/preset defaults: {\"alpha\": 0.5, \"block\": 0, \"grid\": 20, \"kind\": \"none\", \"seed\": 0, \"share_inputs\": true}.",
+          "recipes[0].weight_algo: omitted options use spec/scheme/preset defaults: {\"act_order\": false, \"block_size\": 128, \"damp\": 0.01, \"kind\": \"rtn\"}."
+        ],
+        "questions": [],
+        "topic": null,
+        "evaluation": null,
+        "report_inputs": null
+      }
+    },
+    {
+      "id": "ko13",
+      "schema_valid": true,
+      "schema_errors": [],
+      "fields": {
+        "intent": {
+          "expected": "compare",
+          "actual": "compare",
+          "missing": false,
+          "match": true
+        },
+        "model": {
+          "expected": "Qwen/Qwen3-0.6B",
+          "actual": "Qwen/Qwen3-0.6B",
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].base": {
+          "expected": "bf16_passthrough",
+          "actual": "bf16_passthrough",
+          "missing": false,
+          "match": true
+        },
+        "recipes[1].base": {
+          "expected": "hopper_fp8_w8a8",
+          "actual": "hopper_fp8_w8a8",
+          "missing": false,
+          "match": true
+        },
+        "tasks": {
+          "expected": [
+            "wikitext2_ppl"
+          ],
+          "actual": [
+            "wikitext2_ppl"
+          ],
+          "missing": false,
+          "match": true
+        }
+      },
+      "field_correct": 5,
+      "field_total": 5,
+      "inventions": [],
+      "null_total": 1,
+      "ambiguous": false,
+      "asked_question": false,
+      "source": "offline",
+      "parse_errors": [],
+      "request": {
+        "intent": "compare",
+        "model": "Qwen/Qwen3-0.6B",
+        "recipes": [
+          {
+            "name": "bf16_passthrough",
+            "base": "bf16_passthrough",
+            "weight": null,
+            "activation": null,
+            "mma": null,
+            "transform": null,
+            "weight_algo": null,
+            "kv": null,
+            "layers": null,
+            "modules": null,
+            "skip": null,
+            "calibration": null
+          },
+          {
+            "name": "hopper_fp8_w8a8",
+            "base": "hopper_fp8_w8a8",
+            "weight": null,
+            "activation": null,
+            "mma": null,
+            "transform": null,
+            "weight_algo": null,
+            "kv": null,
+            "layers": null,
+            "modules": null,
+            "skip": null,
+            "calibration": null
+          }
+        ],
+        "sweep": null,
+        "tasks": [
+          "wikitext2_ppl"
+        ],
+        "limits": {
+          "max_windows": null,
+          "limit": null
+        },
+        "assumptions": [
+          "미지정 limits는 null입니다. runner 기본값은 평가량을 제한하지 않습니다.",
+          "미지정 레시피 필드는 base bf16_passthrough 정의를 상속합니다.",
+          "미지정 레시피 필드는 base hopper_fp8_w8a8 정의를 상속합니다.",
+          "recipes[0].weight: inherited from base recipe bf16_passthrough.",
+          "recipes[0].activation: inherited from base recipe bf16_passthrough.",
+          "recipes[0].mma: inherited from base recipe bf16_passthrough.",
+          "recipes[0].transform: inherited from base recipe bf16_passthrough.",
+          "recipes[0].weight_algo: inherited from base recipe bf16_passthrough.",
+          "recipes[1].weight: inherited from base recipe hopper_fp8_w8a8.",
+          "recipes[1].activation: inherited from base recipe hopper_fp8_w8a8.",
+          "recipes[1].mma: inherited from base recipe hopper_fp8_w8a8.",
+          "recipes[1].transform: inherited from base recipe hopper_fp8_w8a8.",
+          "recipes[1].weight_algo: inherited from base recipe hopper_fp8_w8a8."
+        ],
+        "questions": [],
+        "topic": null,
+        "evaluation": null,
+        "report_inputs": null
+      }
+    },
+    {
+      "id": "ko14",
+      "schema_valid": true,
+      "schema_errors": [],
+      "fields": {
+        "intent": {
+          "expected": "sweep",
+          "actual": "sweep",
+          "missing": false,
+          "match": true
+        },
+        "model": {
+          "expected": "Qwen/Qwen3-0.6B",
+          "actual": "Qwen/Qwen3-0.6B",
+          "missing": false,
+          "match": true
+        },
+        "sweep.axis": {
+          "expected": "f_bits",
+          "actual": "f_bits",
+          "missing": false,
+          "match": true
+        },
+        "sweep.values": {
+          "expected": [
+            3,
+            13,
+            23
+          ],
+          "actual": [
+            3,
+            13,
+            23
+          ],
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].mma.algorithm": {
+          "expected": "cofda",
+          "actual": "cofda",
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].mma.chunk_size": {
+          "expected": 32,
+          "actual": 32,
+          "missing": false,
+          "match": true
+        },
+        "tasks": {
+          "expected": [
+            "wikitext2_ppl"
+          ],
+          "actual": [
+            "wikitext2_ppl"
+          ],
+          "missing": false,
+          "match": true
+        }
+      },
+      "field_correct": 7,
+      "field_total": 7,
+      "inventions": [],
+      "null_total": 1,
+      "ambiguous": false,
+      "asked_question": true,
+      "source": "offline",
+      "parse_errors": [],
+      "request": {
+        "intent": "sweep",
+        "model": "Qwen/Qwen3-0.6B",
+        "recipes": [
+          {
+            "name": "request_1",
+            "base": null,
+            "weight": null,
+            "activation": null,
+            "mma": {
+              "preset": null,
+              "algorithm": "cofda",
+              "f_bits": null,
+              "chunk_size": 32,
+              "c_mode": null,
+              "g_bits": null,
+              "group_size": null,
+              "promote_interval": null
+            },
+            "transform": null,
+            "weight_algo": null,
+            "kv": null,
+            "layers": null,
+            "modules": null,
+            "skip": null,
+            "calibration": null
+          }
+        ],
+        "sweep": {
+          "axis": "f_bits",
+          "values": [
+            3,
+            13,
+            23
+          ]
+        },
+        "tasks": [
+          "wikitext2_ppl"
+        ],
+        "limits": {
+          "max_windows": null,
+          "limit": null
+        },
+        "assumptions": [
+          "미지정 limits는 null입니다. runner 기본값은 평가량을 제한하지 않습니다."
+        ],
+        "questions": [
+          "weight/activation: 입력 형식 또는 기존 레시피를 지정해 주세요."
+        ],
+        "topic": null,
+        "evaluation": null,
+        "report_inputs": null
+      }
+    },
+    {
+      "id": "en05",
+      "schema_valid": true,
+      "schema_errors": [],
+      "fields": {
+        "intent": {
+          "expected": "evaluate",
+          "actual": "evaluate",
+          "missing": false,
+          "match": true
+        },
+        "model": {
+          "expected": "Qwen/Qwen3-0.6B",
+          "actual": "Qwen/Qwen3-0.6B",
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].mma.algorithm": {
+          "expected": "cofda",
+          "actual": "cofda",
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].mma.f_bits": {
+          "expected": 13,
+          "actual": 13,
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].mma.chunk_size": {
+          "expected": 16,
+          "actual": 16,
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].mma.c_mode": {
+          "expected": "fused",
+          "actual": "fused",
+          "missing": false,
+          "match": true
+        },
+        "tasks": {
+          "expected": [
+            "coqa"
+          ],
+          "actual": [
+            "coqa"
+          ],
+          "missing": false,
+          "match": true
+        }
+      },
+      "field_correct": 7,
+      "field_total": 7,
+      "inventions": [],
+      "null_total": 2,
+      "ambiguous": false,
+      "asked_question": true,
+      "source": "offline",
+      "parse_errors": [],
+      "request": {
+        "intent": "evaluate",
+        "model": "Qwen/Qwen3-0.6B",
+        "recipes": [
+          {
+            "name": "request_1",
+            "base": null,
+            "weight": null,
+            "activation": null,
+            "mma": {
+              "preset": null,
+              "algorithm": "cofda",
+              "f_bits": 13,
+              "chunk_size": 16,
+              "c_mode": "fused",
+              "g_bits": null,
+              "group_size": null,
+              "promote_interval": null
+            },
+            "transform": null,
+            "weight_algo": null,
+            "kv": null,
+            "layers": null,
+            "modules": null,
+            "skip": null,
+            "calibration": null
+          }
+        ],
+        "sweep": null,
+        "tasks": [
+          "coqa"
+        ],
+        "limits": {
+          "max_windows": null,
+          "limit": null
+        },
+        "assumptions": [
+          "미지정 limits는 null입니다. runner 기본값은 평가량을 제한하지 않습니다."
+        ],
+        "questions": [
+          "weight/activation: 입력 형식 또는 기존 레시피를 지정해 주세요."
+        ],
+        "topic": null,
+        "evaluation": null,
+        "report_inputs": null
+      }
+    },
+    {
+      "id": "en06",
+      "schema_valid": true,
+      "schema_errors": [],
+      "fields": {
+        "intent": {
+          "expected": "evaluate",
+          "actual": "evaluate",
+          "missing": false,
+          "match": true
+        },
+        "model": {
+          "expected": "Qwen/Qwen3-0.6B",
+          "actual": "Qwen/Qwen3-0.6B",
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].mma.algorithm": {
+          "expected": "gdfs",
+          "actual": "gdfs",
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].mma.f_bits": {
+          "expected": 35,
+          "actual": 35,
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].mma.g_bits": {
+          "expected": 6,
+          "actual": 6,
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].mma.group_size": {
+          "expected": 16,
+          "actual": 16,
+          "missing": false,
+          "match": true
+        },
+        "tasks": {
+          "expected": [
+            "hellaswag"
+          ],
+          "actual": [
+            "hellaswag"
+          ],
+          "missing": false,
+          "match": true
+        }
+      },
+      "field_correct": 7,
+      "field_total": 7,
+      "inventions": [],
+      "null_total": 2,
+      "ambiguous": false,
+      "asked_question": true,
+      "source": "offline",
+      "parse_errors": [],
+      "request": {
+        "intent": "evaluate",
+        "model": "Qwen/Qwen3-0.6B",
+        "recipes": [
+          {
+            "name": "request_1",
+            "base": null,
+            "weight": null,
+            "activation": null,
+            "mma": {
+              "preset": null,
+              "algorithm": "gdfs",
+              "f_bits": 35,
+              "chunk_size": null,
+              "c_mode": null,
+              "g_bits": 6,
+              "group_size": 16,
+              "promote_interval": null
+            },
+            "transform": null,
+            "weight_algo": null,
+            "kv": null,
+            "layers": null,
+            "modules": null,
+            "skip": null,
+            "calibration": null
+          }
+        ],
+        "sweep": null,
+        "tasks": [
+          "hellaswag"
+        ],
+        "limits": {
+          "max_windows": null,
+          "limit": null
+        },
+        "assumptions": [
+          "미지정 limits는 null입니다. runner 기본값은 평가량을 제한하지 않습니다."
+        ],
+        "questions": [
+          "weight/activation: 입력 형식 또는 기존 레시피를 지정해 주세요."
+        ],
+        "topic": null,
+        "evaluation": null,
+        "report_inputs": null
+      }
+    },
+    {
+      "id": "en07",
+      "schema_valid": true,
+      "schema_errors": [],
+      "fields": {
+        "intent": {
+          "expected": "compare",
+          "actual": "compare",
+          "missing": false,
+          "match": true
+        },
+        "model": {
+          "expected": "Qwen/Qwen3-0.6B",
+          "actual": "Qwen/Qwen3-0.6B",
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].base": {
+          "expected": "bf16_passthrough",
+          "actual": "bf16_passthrough",
+          "missing": false,
+          "match": true
+        },
+        "recipes[1].base": {
+          "expected": "hopper_fp8_w8a8",
+          "actual": "hopper_fp8_w8a8",
+          "missing": false,
+          "match": true
+        },
+        "tasks": {
+          "expected": [
+            "wikitext2_ppl"
+          ],
+          "actual": [
+            "wikitext2_ppl"
+          ],
+          "missing": false,
+          "match": true
+        }
+      },
+      "field_correct": 5,
+      "field_total": 5,
+      "inventions": [],
+      "null_total": 1,
+      "ambiguous": false,
+      "asked_question": false,
+      "source": "offline",
+      "parse_errors": [],
+      "request": {
+        "intent": "compare",
+        "model": "Qwen/Qwen3-0.6B",
+        "recipes": [
+          {
+            "name": "bf16_passthrough",
+            "base": "bf16_passthrough",
+            "weight": null,
+            "activation": null,
+            "mma": null,
+            "transform": null,
+            "weight_algo": null,
+            "kv": null,
+            "layers": null,
+            "modules": null,
+            "skip": null,
+            "calibration": null
+          },
+          {
+            "name": "hopper_fp8_w8a8",
+            "base": "hopper_fp8_w8a8",
+            "weight": null,
+            "activation": null,
+            "mma": null,
+            "transform": null,
+            "weight_algo": null,
+            "kv": null,
+            "layers": null,
+            "modules": null,
+            "skip": null,
+            "calibration": null
+          }
+        ],
+        "sweep": null,
+        "tasks": [
+          "wikitext2_ppl"
+        ],
+        "limits": {
+          "max_windows": null,
+          "limit": null
+        },
+        "assumptions": [
+          "미지정 limits는 null입니다. runner 기본값은 평가량을 제한하지 않습니다.",
+          "미지정 레시피 필드는 base bf16_passthrough 정의를 상속합니다.",
+          "미지정 레시피 필드는 base hopper_fp8_w8a8 정의를 상속합니다.",
+          "recipes[0].weight: inherited from base recipe bf16_passthrough.",
+          "recipes[0].activation: inherited from base recipe bf16_passthrough.",
+          "recipes[0].mma: inherited from base recipe bf16_passthrough.",
+          "recipes[0].transform: inherited from base recipe bf16_passthrough.",
+          "recipes[0].weight_algo: inherited from base recipe bf16_passthrough.",
+          "recipes[1].weight: inherited from base recipe hopper_fp8_w8a8.",
+          "recipes[1].activation: inherited from base recipe hopper_fp8_w8a8.",
+          "recipes[1].mma: inherited from base recipe hopper_fp8_w8a8.",
+          "recipes[1].transform: inherited from base recipe hopper_fp8_w8a8.",
+          "recipes[1].weight_algo: inherited from base recipe hopper_fp8_w8a8."
+        ],
+        "questions": [],
+        "topic": null,
+        "evaluation": null,
+        "report_inputs": null
+      }
+    },
+    {
+      "id": "en08",
+      "schema_valid": true,
+      "schema_errors": [],
+      "fields": {
+        "intent": {
+          "expected": "sweep",
+          "actual": "sweep",
+          "missing": false,
+          "match": true
+        },
+        "model": {
+          "expected": "Qwen/Qwen3-0.6B",
+          "actual": "Qwen/Qwen3-0.6B",
+          "missing": false,
+          "match": true
+        },
+        "sweep.axis": {
+          "expected": "f_bits",
+          "actual": "f_bits",
+          "missing": false,
+          "match": true
+        },
+        "sweep.values": {
+          "expected": [
+            3,
+            13,
+            23
+          ],
+          "actual": [
+            3,
+            13,
+            23
+          ],
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].mma.algorithm": {
+          "expected": "cofda",
+          "actual": "cofda",
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].mma.chunk_size": {
+          "expected": 32,
+          "actual": 32,
+          "missing": false,
+          "match": true
+        },
+        "tasks": {
+          "expected": [
+            "wikitext2_ppl"
+          ],
+          "actual": [
+            "wikitext2_ppl"
+          ],
+          "missing": false,
+          "match": true
+        }
+      },
+      "field_correct": 7,
+      "field_total": 7,
+      "inventions": [],
+      "null_total": 1,
+      "ambiguous": false,
+      "asked_question": true,
+      "source": "offline",
+      "parse_errors": [],
+      "request": {
+        "intent": "sweep",
+        "model": "Qwen/Qwen3-0.6B",
+        "recipes": [
+          {
+            "name": "request_1",
+            "base": null,
+            "weight": null,
+            "activation": null,
+            "mma": {
+              "preset": null,
+              "algorithm": "cofda",
+              "f_bits": null,
+              "chunk_size": 32,
+              "c_mode": null,
+              "g_bits": null,
+              "group_size": null,
+              "promote_interval": null
+            },
+            "transform": null,
+            "weight_algo": null,
+            "kv": null,
+            "layers": null,
+            "modules": null,
+            "skip": null,
+            "calibration": null
+          }
+        ],
+        "sweep": {
+          "axis": "f_bits",
+          "values": [
+            3,
+            13,
+            23
+          ]
+        },
+        "tasks": [
+          "wikitext2_ppl"
+        ],
+        "limits": {
+          "max_windows": null,
+          "limit": null
+        },
+        "assumptions": [
+          "미지정 limits는 null입니다. runner 기본값은 평가량을 제한하지 않습니다."
+        ],
+        "questions": [
+          "weight/activation: 입력 형식 또는 기존 레시피를 지정해 주세요."
+        ],
+        "topic": null,
+        "evaluation": null,
+        "report_inputs": null
+      }
+    },
+    {
+      "id": "ko15",
+      "schema_valid": true,
+      "schema_errors": [],
+      "fields": {
+        "intent": {
+          "expected": "evaluate",
+          "actual": "evaluate",
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].weight.scheme": {
+          "expected": "nvfp4",
+          "actual": "nvfp4",
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].activation.scheme": {
+          "expected": "nvfp4",
+          "actual": "nvfp4",
+          "missing": false,
+          "match": true
+        },
+        "tasks": {
+          "expected": [
+            "wikitext2_ppl"
+          ],
+          "actual": [
+            "wikitext2_ppl"
+          ],
+          "missing": false,
+          "match": true
+        }
+      },
+      "field_correct": 4,
+      "field_total": 4,
+      "inventions": [],
+      "null_total": 3,
+      "ambiguous": true,
+      "asked_question": true,
+      "source": "offline",
+      "parse_errors": [],
+      "request": {
+        "intent": "evaluate",
+        "model": null,
+        "recipes": [
+          {
+            "name": "request_1",
+            "base": null,
+            "weight": {
+              "scheme": "nvfp4",
+              "format": null,
+              "granularity": null,
+              "group_size": null,
+              "scale_format": null,
+              "scale_method": null,
+              "scale_rounding": null,
+              "rounding": null,
+              "zero_point": null,
+              "observer": null
+            },
+            "activation": {
+              "scheme": "nvfp4",
+              "format": null,
+              "granularity": null,
+              "group_size": null,
+              "scale_format": null,
+              "scale_method": null,
+              "scale_rounding": null,
+              "rounding": null,
+              "zero_point": null,
+              "observer": null
+            },
+            "mma": null,
+            "transform": null,
+            "weight_algo": null,
+            "kv": null,
+            "layers": null,
+            "modules": null,
+            "skip": null,
+            "calibration": null
+          }
+        ],
+        "sweep": null,
+        "tasks": [
+          "wikitext2_ppl"
+        ],
+        "limits": {
+          "max_windows": null,
+          "limit": null
+        },
+        "assumptions": [
+          "미지정 limits는 null입니다. runner 기본값은 평가량을 제한하지 않습니다."
+        ],
+        "questions": [
+          "model: 평가할 Hugging Face 모델을 지정해 주세요."
+        ],
+        "topic": null,
+        "evaluation": null,
+        "report_inputs": null
+      }
+    },
+    {
+      "id": "ko16",
+      "schema_valid": true,
+      "schema_errors": [],
+      "fields": {
+        "intent": {
+          "expected": "evaluate",
+          "actual": "evaluate",
+          "missing": false,
+          "match": true
+        },
+        "model": {
+          "expected": "Qwen/Qwen3-0.6B",
+          "actual": "Qwen/Qwen3-0.6B",
+          "missing": false,
+          "match": true
+        }
+      },
+      "field_correct": 2,
+      "field_total": 2,
+      "inventions": [],
+      "null_total": 3,
+      "ambiguous": true,
+      "asked_question": true,
+      "source": "offline",
+      "parse_errors": [],
+      "request": {
+        "intent": "evaluate",
+        "model": "Qwen/Qwen3-0.6B",
+        "recipes": [],
+        "sweep": null,
+        "tasks": [
+          "wikitext2_ppl"
+        ],
+        "limits": {
+          "max_windows": null,
+          "limit": null
+        },
+        "assumptions": [
+          "tasks 미지정: wikitext2_ppl 기본값을 사용합니다.",
+          "미지정 limits는 null입니다. runner 기본값은 평가량을 제한하지 않습니다."
+        ],
+        "questions": [
+          "recipes: 평가할 형식, 스킴 또는 기존 레시피를 지정해 주세요."
+        ],
+        "topic": null,
+        "evaluation": null,
+        "report_inputs": null
+      }
+    },
+    {
+      "id": "ko17",
+      "schema_valid": true,
+      "schema_errors": [],
+      "fields": {
+        "intent": {
+          "expected": "evaluate",
+          "actual": "evaluate",
+          "missing": false,
+          "match": true
+        },
+        "model": {
+          "expected": "Qwen/Qwen3-0.6B",
+          "actual": "Qwen/Qwen3-0.6B",
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].mma.algorithm": {
+          "expected": "cofda",
+          "actual": "cofda",
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].mma.f_bits": {
+          "expected": 13,
+          "actual": 13,
+          "missing": false,
+          "match": true
+        },
+        "tasks": {
+          "expected": [
+            "wikitext2_ppl"
+          ],
+          "actual": [
+            "wikitext2_ppl"
+          ],
+          "missing": false,
+          "match": true
+        }
+      },
+      "field_correct": 5,
+      "field_total": 5,
+      "inventions": [],
+      "null_total": 2,
+      "ambiguous": true,
+      "asked_question": true,
+      "source": "offline",
+      "parse_errors": [],
+      "request": {
+        "intent": "evaluate",
+        "model": "Qwen/Qwen3-0.6B",
+        "recipes": [
+          {
+            "name": "request_1",
+            "base": null,
+            "weight": null,
+            "activation": null,
+            "mma": {
+              "preset": null,
+              "algorithm": "cofda",
+              "f_bits": 13,
+              "chunk_size": null,
+              "c_mode": null,
+              "g_bits": null,
+              "group_size": null,
+              "promote_interval": null
+            },
+            "transform": null,
+            "weight_algo": null,
+            "kv": null,
+            "layers": null,
+            "modules": null,
+            "skip": null,
+            "calibration": null
+          }
+        ],
+        "sweep": null,
+        "tasks": [
+          "wikitext2_ppl"
+        ],
+        "limits": {
+          "max_windows": null,
+          "limit": null
+        },
+        "assumptions": [
+          "미지정 limits는 null입니다. runner 기본값은 평가량을 제한하지 않습니다."
+        ],
+        "questions": [
+          "mma.chunk_size: 명시한 값 '는'을 유효한 숫자로 지정해 주세요.",
+          "weight/activation: 입력 형식 또는 기존 레시피를 지정해 주세요."
+        ],
+        "topic": null,
+        "evaluation": null,
+        "report_inputs": null
+      }
+    },
+    {
+      "id": "ko18",
+      "schema_valid": true,
+      "schema_errors": [],
+      "fields": {
+        "intent": {
+          "expected": "evaluate",
+          "actual": "evaluate",
+          "missing": false,
+          "match": true
+        },
+        "model": {
+          "expected": "Qwen/Qwen3-0.6B",
+          "actual": "Qwen/Qwen3-0.6B",
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].mma.algorithm": {
+          "expected": "gdfs",
+          "actual": "gdfs",
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].mma.g_bits": {
+          "expected": 6,
+          "actual": 6,
+          "missing": false,
+          "match": true
+        },
+        "tasks": {
+          "expected": [
+            "wikitext2_ppl"
+          ],
+          "actual": [
+            "wikitext2_ppl"
+          ],
+          "missing": false,
+          "match": true
+        }
+      },
+      "field_correct": 5,
+      "field_total": 5,
+      "inventions": [],
+      "null_total": 2,
+      "ambiguous": true,
+      "asked_question": true,
+      "source": "offline",
+      "parse_errors": [],
+      "request": {
+        "intent": "evaluate",
+        "model": "Qwen/Qwen3-0.6B",
+        "recipes": [
+          {
+            "name": "request_1",
+            "base": null,
+            "weight": null,
+            "activation": null,
+            "mma": {
+              "preset": null,
+              "algorithm": "gdfs",
+              "f_bits": null,
+              "chunk_size": null,
+              "c_mode": null,
+              "g_bits": 6,
+              "group_size": null,
+              "promote_interval": null
+            },
+            "transform": null,
+            "weight_algo": null,
+            "kv": null,
+            "layers": null,
+            "modules": null,
+            "skip": null,
+            "calibration": null
+          }
+        ],
+        "sweep": null,
+        "tasks": [
+          "wikitext2_ppl"
+        ],
+        "limits": {
+          "max_windows": null,
+          "limit": null
+        },
+        "assumptions": [
+          "미지정 limits는 null입니다. runner 기본값은 평가량을 제한하지 않습니다."
+        ],
+        "questions": [
+          "mma.f_bits: 명시한 값 '는'을 유효한 숫자로 지정해 주세요.",
+          "weight/activation: 입력 형식 또는 기존 레시피를 지정해 주세요."
+        ],
+        "topic": null,
+        "evaluation": null,
+        "report_inputs": null
+      }
+    },
+    {
+      "id": "en09",
+      "schema_valid": true,
+      "schema_errors": [],
+      "fields": {
+        "intent": {
+          "expected": "evaluate",
+          "actual": "evaluate",
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].weight.scheme": {
+          "expected": "nvfp4",
+          "actual": "nvfp4",
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].activation.scheme": {
+          "expected": "nvfp4",
+          "actual": "nvfp4",
+          "missing": false,
+          "match": true
+        },
+        "tasks": {
+          "expected": [
+            "wikitext2_ppl"
+          ],
+          "actual": [
+            "wikitext2_ppl"
+          ],
+          "missing": false,
+          "match": true
+        }
+      },
+      "field_correct": 4,
+      "field_total": 4,
+      "inventions": [],
+      "null_total": 3,
+      "ambiguous": true,
+      "asked_question": true,
+      "source": "offline",
+      "parse_errors": [],
+      "request": {
+        "intent": "evaluate",
+        "model": null,
+        "recipes": [
+          {
+            "name": "request_1",
+            "base": null,
+            "weight": {
+              "scheme": "nvfp4",
+              "format": null,
+              "granularity": null,
+              "group_size": null,
+              "scale_format": null,
+              "scale_method": null,
+              "scale_rounding": null,
+              "rounding": null,
+              "zero_point": null,
+              "observer": null
+            },
+            "activation": {
+              "scheme": "nvfp4",
+              "format": null,
+              "granularity": null,
+              "group_size": null,
+              "scale_format": null,
+              "scale_method": null,
+              "scale_rounding": null,
+              "rounding": null,
+              "zero_point": null,
+              "observer": null
+            },
+            "mma": null,
+            "transform": null,
+            "weight_algo": null,
+            "kv": null,
+            "layers": null,
+            "modules": null,
+            "skip": null,
+            "calibration": null
+          }
+        ],
+        "sweep": null,
+        "tasks": [
+          "wikitext2_ppl"
+        ],
+        "limits": {
+          "max_windows": null,
+          "limit": null
+        },
+        "assumptions": [
+          "미지정 limits는 null입니다. runner 기본값은 평가량을 제한하지 않습니다."
+        ],
+        "questions": [
+          "model: 평가할 Hugging Face 모델을 지정해 주세요."
+        ],
+        "topic": null,
+        "evaluation": null,
+        "report_inputs": null
+      }
+    },
+    {
+      "id": "en10",
+      "schema_valid": true,
+      "schema_errors": [],
+      "fields": {
+        "intent": {
+          "expected": "evaluate",
+          "actual": "evaluate",
+          "missing": false,
+          "match": true
+        },
+        "model": {
+          "expected": "Qwen/Qwen3-0.6B",
+          "actual": "Qwen/Qwen3-0.6B",
+          "missing": false,
+          "match": true
+        }
+      },
+      "field_correct": 2,
+      "field_total": 2,
+      "inventions": [],
+      "null_total": 3,
+      "ambiguous": true,
+      "asked_question": true,
+      "source": "offline",
+      "parse_errors": [],
+      "request": {
+        "intent": "evaluate",
+        "model": "Qwen/Qwen3-0.6B",
+        "recipes": [],
+        "sweep": null,
+        "tasks": [
+          "wikitext2_ppl"
+        ],
+        "limits": {
+          "max_windows": null,
+          "limit": null
+        },
+        "assumptions": [
+          "tasks 미지정: wikitext2_ppl 기본값을 사용합니다.",
+          "미지정 limits는 null입니다. runner 기본값은 평가량을 제한하지 않습니다."
+        ],
+        "questions": [
+          "recipes: 평가할 형식, 스킴 또는 기존 레시피를 지정해 주세요."
+        ],
+        "topic": null,
+        "evaluation": null,
+        "report_inputs": null
+      }
+    },
+    {
+      "id": "en11",
+      "schema_valid": true,
+      "schema_errors": [],
+      "fields": {
+        "intent": {
+          "expected": "evaluate",
+          "actual": "evaluate",
+          "missing": false,
+          "match": true
+        },
+        "model": {
+          "expected": "Qwen/Qwen3-0.6B",
+          "actual": "Qwen/Qwen3-0.6B",
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].mma.algorithm": {
+          "expected": "cofda",
+          "actual": "cofda",
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].mma.f_bits": {
+          "expected": 13,
+          "actual": 13,
+          "missing": false,
+          "match": true
+        },
+        "tasks": {
+          "expected": [
+            "wikitext2_ppl"
+          ],
+          "actual": [
+            "wikitext2_ppl"
+          ],
+          "missing": false,
+          "match": true
+        }
+      },
+      "field_correct": 5,
+      "field_total": 5,
+      "inventions": [],
+      "null_total": 2,
+      "ambiguous": true,
+      "asked_question": true,
+      "source": "offline",
+      "parse_errors": [],
+      "request": {
+        "intent": "evaluate",
+        "model": "Qwen/Qwen3-0.6B",
+        "recipes": [
+          {
+            "name": "request_1",
+            "base": null,
+            "weight": null,
+            "activation": null,
+            "mma": {
+              "preset": null,
+              "algorithm": "cofda",
+              "f_bits": 13,
+              "chunk_size": null,
+              "c_mode": null,
+              "g_bits": null,
+              "group_size": null,
+              "promote_interval": null
+            },
+            "transform": null,
+            "weight_algo": null,
+            "kv": null,
+            "layers": null,
+            "modules": null,
+            "skip": null,
+            "calibration": null
+          }
+        ],
+        "sweep": null,
+        "tasks": [
+          "wikitext2_ppl"
+        ],
+        "limits": {
+          "max_windows": null,
+          "limit": null
+        },
+        "assumptions": [
+          "미지정 limits는 null입니다. runner 기본값은 평가량을 제한하지 않습니다."
+        ],
+        "questions": [
+          "mma.chunk_size: 명시한 값 'is'을 유효한 숫자로 지정해 주세요.",
+          "weight/activation: 입력 형식 또는 기존 레시피를 지정해 주세요."
+        ],
+        "topic": null,
+        "evaluation": null,
+        "report_inputs": null
+      }
+    },
+    {
+      "id": "en12",
+      "schema_valid": true,
+      "schema_errors": [],
+      "fields": {
+        "intent": {
+          "expected": "evaluate",
+          "actual": "evaluate",
+          "missing": false,
+          "match": true
+        },
+        "model": {
+          "expected": "Qwen/Qwen3-0.6B",
+          "actual": "Qwen/Qwen3-0.6B",
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].mma.algorithm": {
+          "expected": "gdfs",
+          "actual": "gdfs",
+          "missing": false,
+          "match": true
+        },
+        "recipes[0].mma.g_bits": {
+          "expected": 6,
+          "actual": 6,
+          "missing": false,
+          "match": true
+        },
+        "tasks": {
+          "expected": [
+            "wikitext2_ppl"
+          ],
+          "actual": [
+            "wikitext2_ppl"
+          ],
+          "missing": false,
+          "match": true
+        }
+      },
+      "field_correct": 5,
+      "field_total": 5,
+      "inventions": [],
+      "null_total": 2,
+      "ambiguous": true,
+      "asked_question": true,
+      "source": "offline",
+      "parse_errors": [],
+      "request": {
+        "intent": "evaluate",
+        "model": "Qwen/Qwen3-0.6B",
+        "recipes": [
+          {
+            "name": "request_1",
+            "base": null,
+            "weight": null,
+            "activation": null,
+            "mma": {
+              "preset": null,
+              "algorithm": "gdfs",
+              "f_bits": null,
+              "chunk_size": null,
+              "c_mode": null,
+              "g_bits": 6,
+              "group_size": null,
+              "promote_interval": null
+            },
+            "transform": null,
+            "weight_algo": null,
+            "kv": null,
+            "layers": null,
+            "modules": null,
+            "skip": null,
+            "calibration": null
+          }
+        ],
+        "sweep": null,
+        "tasks": [
+          "wikitext2_ppl"
+        ],
+        "limits": {
+          "max_windows": null,
+          "limit": null
+        },
+        "assumptions": [
+          "미지정 limits는 null입니다. runner 기본값은 평가량을 제한하지 않습니다."
+        ],
+        "questions": [
+          "mma.f_bits: 명시한 값 'is'을 유효한 숫자로 지정해 주세요.",
+          "weight/activation: 입력 형식 또는 기존 레시피를 지정해 주세요."
+        ],
+        "topic": null,
+        "evaluation": null,
+        "report_inputs": null
+      }
+    }
+  ]
+}

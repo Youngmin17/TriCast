@@ -7,9 +7,11 @@
 
 ## 1. 제품 맥락
 
-하드웨어 설계자가 수 형식·양자화·MMA 누산 알고리즘을 레시피로 정의하면, TriCast 가 그 산술을 CUDA core 에서
-**비트 단위로 정확하게** 에뮬레이트해 Hugging Face 모델 품질(PPL·lm-eval)을 근거와 함께 돌려준다. 핵심 가치는
-"믿을 수 있는 산술 + 빠른 LLM 수준 평가". 이 저장소는 AI캡스톤디자인 과제 저장소이기도 하다.
+양자화 연구자와 NPU 연산기 개발자가 수 형식·양자화·MMA 누산 알고리즘·희소성·이상치 보존을 레시피로 정의하면,
+TriCast 가 그 산술을 CUDA core 에서 **비트 단위로 정확하게** 에뮬레이트해 Hugging Face 모델 품질(PPL·lm-eval)과
+누산기 오차를 근거와 함께 돌려준다 — 조합이 바뀔 때마다 커널을 다시 쓰지 않도록 (docs/research/interviews.md
+로그 1, 9, 10). 핵심 가치는 "믿을 수 있는 산술 + 빠른 LLM 수준 평가". 이 저장소는 AI캡스톤디자인 과제 저장소이기도
+하다.
 
 ## 2. 도메인 용어집 (어휘 발췌 — 전체 구조는 `docs/ontology.yaml`)
 
@@ -21,9 +23,11 @@
   (fused / decoupled), `g_bits`, `group_size`, `k_tile`, `promote_interval`
 - Preset: MMASpec + `provenance` (출처·검증 상태 필수)
 - Recipe: `defaults` / `overrides` 의 `weight`·`activation` (QuantSpec), `mma` (MMASpec), `transform`,
-  `weight_algo`; `include` / `exclude`; override 선택자 `match` (이름 패턴) · `layers` (decoder 블록 번호,
+  `weight_algo`, `sparsity` (`kind`: none / n:m / unstructured, `n`·`m`·`ratio`), `outliers` (`fraction`,
+  `format`); `include` / `exclude`; override 선택자 `match` (이름 패턴) · `layers` (decoder 블록 번호,
   `-1` = 마지막) · `modules` (leaf 이름) 와 `skip` (그 레이어는 양자화하지 않음); `kv` (`preset`, `mode`, `layers`)
-- EvalRun: `metrics` + `env` (git SHA, 모델 revision, 데이터셋 fingerprint, 레시피 해시)
+- EvalRun: `metrics` + `env` (git SHA, 모델 revision, 데이터셋 fingerprint, 레시피 해시). 리포트의 `mma_ulp` =
+  같은 양자화 피연산자를 fp64 로 누산한 결과와의 거리 (출력 형식의 ULP 단위)
 - EmulationRequest: 자연어 요청의 구조화 결과, `assumptions` (기본값으로 채운 항목)
 
 신뢰 수준: 자연어 요청·`EmulationRequest`·LLM 응답·RAG 문서는 외부 입력 (스키마 검증 전에는 값으로 쓰지 않는다).

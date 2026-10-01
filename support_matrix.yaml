@@ -12,15 +12,18 @@ backends:
   reference:
     status: verified
     evidence: "pytest --ignore=tests/gpu (CPU, macOS arm64, torch 2.11) — full suite passing. Linux x86_64
-      torch 2.8.0 (UCL cluster): 2254 passed, 6 failed; the same 6 fail at 032684b, before the small-M kernel.
-      They are bit-equality tests whose last bits depend on CPU BLAS/SDPA call patterns (test_analysis KV
-      report, test_eval nvfp4 batch size, test_kv_generation chunked sdpa, test_nn_patch STE); unresolved"
+      torch 2.8.0 (UCL cluster): 2331 passed, 6 failed at 9e9bfed; the same 6 fail at f3d6fe6 and at 032684b,
+      before the small-M kernel. They are bit-equality tests whose last bits depend on CPU BLAS/SDPA call
+      patterns (test_analysis KV report, test_eval nvfp4 batch size, test_kv_generation chunked sdpa,
+      test_nn_patch STE); unresolved. On CUDA tensors the reference equals the CPU bit for bit since 9e9bfed
+      (tests/gpu/test_reference_cuda.py, A100 and V100); before, torch.ldexp made rare casts differ and
+      every reference GEMM raise on CUDA"
   triton_quantize:
     status: verified
     evidence: "tests/gpu/test_triton_quantize.py bit-exact vs reference (A100 sm_80 and V100 sm_70, triton 3.4.0)"
   triton_mma:
     status: verified
-    evidence: "tests/gpu/test_triton_mma.py bit-exact vs reference (A100 and V100; whole GPU suite 824 passed);
+    evidence: "tests/gpu/test_triton_mma.py bit-exact vs reference (A100 and V100; whole GPU suite 896 passed at 9e9bfed);
       bench_mma_vs_nadpe.py bit-identical to NADPE on full-size GEMMs; small-M kernel: GPU suite 845 passed at
       cc0478b on A100 and V100 (incl. tests/gpu/test_triton_gemv.py), all 1716 NADPE vectors on A100 and V100,
       Qwen3-0.6B decode logits of 9 recipes identical to the tiled kernel; lm-eval hopper_fp8_w8a8 (HellaSwag 2000,

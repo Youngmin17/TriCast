@@ -423,7 +423,7 @@ overrides:                                # ordered, first match wins, merged ov
   - match: "*.mlp.down_proj"               # fnmatch on the module name (optional)
     layers: "0-3,27"                       # decoder-layer indices from ".layers.<i>." (optional)
     modules: [q_proj, k_proj, v_proj]      # leaf module names (optional)
-    weight: {scheme: fp8_row}              # fields merged over defaults
+    weight: {scheme: fp8_row}              # a scheme replaces the default weight spec
   - layers: "0,27"
     skip: true                             # leave matching layers unpatched (full precision)
 kv: {preset: kivi2, mode: cache}           # optional KV-cache quantization (§3.13)
@@ -432,8 +432,11 @@ calibration: {dataset: wikitext2, split: train, samples: 128, seqlen: 2048, seed
 backend: auto                             # auto | triton | reference
 ```
 An override matches when every selector it names matches (`match`, `layers`, `modules`);
-an override with no selector is an error. Merging a partial `mma` override onto a preset
-clears the preset's `name`/`provenance` (the result is no longer that hardware).
+an override with no selector is an error. Override fields merge into the defaults key by key,
+except that a mapping naming a `scheme` or `preset`, and a `sparsity`, `format` or `dequant_format`
+mapping, replaces the default mapping whole (a partly inherited format would be another format).
+Merging a partial `mma` override onto a preset clears the preset's `name`/`provenance` (the result
+is no longer that hardware).
 QuantSpec fields: `format, granularity ("tensor" | "row" | "group:G" | "block:RxC"),
 scale {format, method, rounding, two_level, percentile, mse_grid, search},
 zero_point, rounding, sr_bits, saturate, mma_input, dequant_format, observer {kind,

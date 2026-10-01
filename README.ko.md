@@ -58,7 +58,7 @@ p2  + 1.111 · 2^-1     | 0.0000000011 | 11     오른쪽으로 9칸; F 밖의 �
 | 레퍼런스 캐스트 vs PyTorch 네이티브 변환 | fp8 4종, bf16, fp16 — 형식마다 무작위 값 10만 개 + 경계값에서 비트 일치 |
 | 레퍼런스 MX 양자화 vs `microsoft/microxcaling` | 비트 일치 (even / nearest / floor). 단, microxcaling 이 fp32 `log2` 로 잘못 분류하는 입력은 제외 |
 | 레퍼런스 MMA vs **NADPE** CUDA 커널 (MICRO'26, 단독 빌드) | **1716 / 1716** 케이스 비트 일치 — FP8 CoFDA / C-decoupled / GDFS, NVFP4, MXFP4 |
-| Triton 커널 vs 레퍼런스 | GPU 테스트 (`tests/gpu`: 양자화 + MMA, 무작위·경계·특수값) A100 과 V100 에서 각각 824 개 통과 |
+| Triton 커널 vs 레퍼런스 | GPU 테스트 (`tests/gpu`: 양자화 + MMA, 무작위·경계·특수값) A100 과 V100 에서 각각 896 개 통과 (`9e9bfed`) |
 | 실제 크기 GEMM 에서 Triton MMA vs NADPE | 2048×1024×3072, 2048×3072×1024, 4096³ 에서 CoFDA·C-decoupled·GDFS 모두 비트 일치 (`scripts/bench/bench_mma_vs_nadpe.py`) |
 
 Triton 은 libdevice 를 flush-to-zero 로 링크한다. 그래서 서브노멀을 만날 수 있는 모든 fp32 연산은 IEEE PTX 로

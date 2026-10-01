@@ -61,7 +61,7 @@ this repository.
 | reference casts vs PyTorch native conversions | fp8 ×4 formats, bf16, fp16 — bit-identical on 100k random values per format + edge cases |
 | reference MX quantization vs `microsoft/microxcaling` | bit-identical (even / nearest / floor), except inputs microxcaling misclassifies via fp32 `log2` |
 | reference MMA vs **NADPE** CUDA kernels (MICRO'26), built standalone | **1716 / 1716** cases bit-identical — FP8 CoFDA / C-decoupled / GDFS, NVFP4, MXFP4 |
-| Triton kernels vs reference | GPU suite (`tests/gpu`, quantization + MMA, random, adversarial and special values): 824 passed on A100 and on V100 |
+| Triton kernels vs reference | GPU suite (`tests/gpu`, quantization + MMA, random, adversarial and special values): 896 passed on A100 and on V100 at `9e9bfed` |
 | Triton MMA vs NADPE on full GEMMs | bit-identical on 2048×1024×3072, 2048×3072×1024 and 4096³ for CoFDA, C-decoupled and GDFS (`scripts/bench/bench_mma_vs_nadpe.py`) |
 
 Triton links libdevice with flush-to-zero; the kernels use IEEE PTX for every fp32 operation that

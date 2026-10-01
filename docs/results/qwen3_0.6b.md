@@ -75,10 +75,10 @@ scheme that log 10 names.
 Keeping the 0.5% largest weights in BF16 moves NVFP4 from 26.22 to 26.18 — a small effect, and on
 the demo's first 16 windows it goes the other way (25.12 against 25.05). Pruning every linear to 2:4
 by magnitude without fine-tuning collapses the model. Pruning the same weights in plain PyTorch,
-without TriCast, gives the same perplexity on the first 4 windows (73,434.3212 both,
-`scripts/e2e/check_sparsity_pruning.py`), so the
-collapse is the pruning, not the emulation; the 2:4 workflow of Mishra et al. retrains after
-pruning, which TriCast does not model.
+without TriCast, gives the same perplexity on the first 4 windows (73,434.3212 both, dense 23.3331;
+`scripts/e2e/check_sparsity_pruning.py` at `9e9bfed` on a V100-PCIE-16GB, which also writes
+`env.json`), so the collapse is the pruning, not the emulation; the 2:4 workflow of Mishra et al.
+retrains after pruning, which TriCast does not model.
 
 The rotation makes MXFP4 worse here although it makes each operand easier to quantize.
 `tricast report` on 2 × 512 WikiText-2 tokens (V100) shows why the operand metrics mislead: with the
@@ -106,8 +106,9 @@ the bf16 output (`mma_ulp`, ENGINE §6.5); 196 layers each. NVIDIA V100-PCIE-16G
 At F=25 the accumulator's truncation stays below the bf16 output's resolution. The F=7 decoupled
 datapath is tens of ULPs off yet leaves the logits nearly as close to the unpatched model as Hopper
 does (KL 0.024 against 0.022); only the fused variant, whose running sum is truncated with every
-chunk, moves the model. An ULP budget alone does not predict model quality, which is why the
-interviewed NPU engineer verifies every combination at model level (log 9, pain 6).
+chunk, moves the model. An ULP budget alone does not predict model quality, so the report gives
+both; the interviews list ULP error and model accuracy among what each combination affects (pain 6,
+logs 9 and 10).
 
 ## KIVI KV cache — WikiText-2 test, V100
 

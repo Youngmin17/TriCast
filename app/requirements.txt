@@ -1,0 +1,9 @@
+fastapi
+pillow
+uvicorn
+# Compute (live mode, python -m app.demo). Run pip from the repository root so "-e ." installs this TriCast.
+-e .
+triton>=3.4; sys_platform == "linux"
+transformers==4.55.2
+torchvision==0.23.0
+ultralytics==8.3.221

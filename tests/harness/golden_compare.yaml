@@ -1,0 +1,325 @@
+# PPL 비교 판정 골든 케이스 — docs/SPEC.md AC13 (판정) · AC14 (거부) (2026-10-09 Youngmin17 확정)
+# 대상: tricast.eval.compare.compare_ppl(base, emu, limit=1e-3)
+#   base, emu: 평가 기록 {env: {model_id, model_sha}, metrics: {ppl: {ppl, n_tokens, dataset_fingerprint}}}
+# 판정 키 (케이스마다 하나 이상):
+#   pass     : 반환값 "pass" 가 이 값과 같다
+#   relative : 반환값 "relative" 가 이 값과 같다 (상대 오차 1e-12 이내, .inf 는 정확히 inf) — 계산식
+#              |emu - base| / base 를 고정하려는 허용치다 (|emu/base - 1| 같은 동치식도 이 정밀도에서는 다를 수 있음)
+#   error    : ValueError 가 나고 메시지가 "<이 경로>:" 로 시작한다 (AC5 와 같은 필드 경로 규약)
+# input: base, emu, (선택) limit. limit 을 주지 않으면 기본값 1e-3 (SPEC AC4 의 0.1%); 주면 반환 "limit" 도 같아야 한다.
+_records:
+  qwen_base: &qwen_base
+    env: {model_id: Qwen/Qwen3-0.6B, model_sha: c1899de289a0}
+    metrics: {ppl: {ppl: 20.9662, n_tokens: 298862, dataset_fingerprint: a46124b21ac53738}}
+  plain_base: &plain_base
+    env: {model_id: tiny, model_sha: aaa}
+    metrics: {ppl: {ppl: 1000.0, n_tokens: 64, dataset_fingerprint: fp}}
+
+cases:
+  - id: compare_passthrough_within_limit
+    ac: AC13
+    kind: normal
+    input:
+      base: *qwen_base
+      emu:
+        env: {model_id: Qwen/Qwen3-0.6B, model_sha: c1899de289a0}
+        metrics: {ppl: {ppl: 20.9669, n_tokens: 298862, dataset_fingerprint: a46124b21ac53738}}
+    expected: {pass: true, relative: 3.338707061834613e-05}
+    note: "AC13 정상: Qwen3-0.6B native 20.9662 vs bf16_passthrough 20.9669 (support_matrix 기록) — 같은 조건, 0.0033% 로 한계 안."
+
+  - id: compare_lowacc_fails
+    ac: AC13
+    kind: normal
+    input:
+      base:
+        env: {model_id: meta-llama/Llama-3.2-1B, model_sha: rev-a}
+        metrics: {ppl: {ppl: 9.7564, n_tokens: 288627, dataset_fingerprint: wikitext2-test}}
+      emu:
+        env: {model_id: meta-llama/Llama-3.2-1B, model_sha: rev-a}
+        metrics: {ppl: {ppl: 141.25, n_tokens: 288627, dataset_fingerprint: wikitext2-test}}
+    expected: {pass: false, relative: 13.47767619203805}
+    note: "AC13 정상: Llama-3.2-1B native 9.7564 vs fp8_f7_lowacc 141.25 (docs/PROBLEM.md §3-5 · SPEC AC4 기록, revision 은 같은 값이면 충분해 라벨로 둠) — 비교는 하되 한계를 크게 넘어 불합격."
+
+  - id: compare_exact_limit_passes
+    ac: AC13
+    kind: boundary
+    input:
+      base: *plain_base
+      emu:
+        env: {model_id: tiny, model_sha: aaa}
+        metrics: {ppl: {ppl: 1001.0, n_tokens: 64, dataset_fingerprint: fp}}
+    expected: {pass: true, relative: 0.001}
+    note: "AC13 경계: (1001 - 1000) / 1000 = 0.001 은 한계와 같다 — 경계는 합격에 포함."
+
+  - id: compare_just_above_limit_fails
+    ac: AC13
+    kind: boundary
+    input:
+      base: *plain_base
+      emu:
+        env: {model_id: tiny, model_sha: aaa}
+        metrics: {ppl: {ppl: 1001.0000001, n_tokens: 64, dataset_fingerprint: fp}}
+    expected: {pass: false}
+    note: "AC13 경계: 한계를 1e-10 넘으면 불합격."
+
+  - id: compare_lower_ppl_is_still_a_change
+    ac: AC13
+    kind: boundary
+    input:
+      base: *plain_base
+      emu:
+        env: {model_id: tiny, model_sha: aaa}
+        metrics: {ppl: {ppl: 995.0, n_tokens: 64, dataset_fingerprint: fp}}
+    expected: {pass: false, relative: 0.005}
+    note: "AC13 경계: 상대 차이는 절댓값이다 — PPL 이 낮아져도 산술이 원본과 다르다는 뜻이라 0.5% 는 불합격."
+
+  - id: compare_nan_emulation_fails
+    ac: AC13
+    kind: boundary
+    input:
+      base: *plain_base
+      emu:
+        env: {model_id: tiny, model_sha: aaa}
+        metrics: {ppl: {ppl: .nan, n_tokens: 64, dataset_fingerprint: fp}}
+    expected: {pass: false, relative: .inf}
+    note: "AC13 경계: 에뮬레이션 PPL 이 NaN 이면 비교 오류가 아니라 불합격 결과다 (상대 차이 inf)."
+
+  - id: compare_rejects_model_revision_mismatch
+    ac: AC14
+    kind: forbidden
+    input:
+      base: *plain_base
+      emu:
+        env: {model_id: tiny, model_sha: bbb}
+        metrics: {ppl: {ppl: 1000.0, n_tokens: 64, dataset_fingerprint: fp}}
+    expected: {error: env.model_sha}
+    note: "AC14 금지: 모델 revision 이 다르면 같은 PPL 이라도 비교하지 않는다 (로그 15·16: 무엇이 바뀌었는지 모르는 새 파일)."
+
+  - id: compare_rejects_dataset_mismatch
+    ac: AC14
+    kind: forbidden
+    input:
+      base: *plain_base
+      emu:
+        env: {model_id: tiny, model_sha: aaa}
+        metrics: {ppl: {ppl: 1000.0, n_tokens: 64, dataset_fingerprint: other}}
+    expected: {error: metrics.ppl.dataset_fingerprint}
+    note: "AC14 금지: 데이터셋 지문이 다르면 비교를 거부한다."
+
+  - id: compare_rejects_token_count_mismatch
+    ac: AC14
+    kind: forbidden
+    input:
+      base: *plain_base
+      emu:
+        env: {model_id: tiny, model_sha: aaa}
+        metrics: {ppl: {ppl: 1000.0, n_tokens: 63, dataset_fingerprint: fp}}
+    expected: {error: metrics.ppl.n_tokens}
+    note: "AC14 금지: 평가한 토큰 수가 다르면 같은 데이터라도 창 구성이 다르므로 비교를 거부한다."
+
+  - id: compare_rejects_invalid_baseline
+    ac: AC14
+    kind: forbidden
+    input:
+      base:
+        env: {model_id: tiny, model_sha: aaa}
+        metrics: {ppl: {ppl: 0.0, n_tokens: 64, dataset_fingerprint: fp}}
+      emu: *plain_base
+    expected: {error: base.metrics.ppl.ppl}
+    note: "AC14 금지: 기준 PPL 이 유한한 양수가 아니면 상대 차이를 정의할 수 없으므로 판정하지 않는다."
+
+  - id: compare_rejects_missing_metric
+    ac: AC14
+    kind: forbidden
+    input:
+      base: *plain_base
+      emu:
+        env: {model_id: tiny, model_sha: aaa}
+        metrics: {}
+    expected: {error: emu.metrics.ppl}
+    note: "AC14 금지: 비교할 PPL 지표가 없는 기록은 거부한다."
+
+  # 2026-10-09 Youngmin17 확정 — 위임 회차 1 에서 드러난 미명세 항목 (docs/prompts/delegation_compare.md §6)
+  - id: compare_rejects_missing_model_revision
+    ac: AC14
+    kind: forbidden
+    input:
+      base:
+        env: {model_id: tiny}
+        metrics: {ppl: {ppl: 1000.0, n_tokens: 64, dataset_fingerprint: fp}}
+      emu:
+        env: {model_id: tiny}
+        metrics: {ppl: {ppl: 1000.0, n_tokens: 64, dataset_fingerprint: fp}}
+    expected: {error: env.model_sha}
+    note: "AC14 금지: 두 기록 모두 revision 이 없으면 같은 모델인지 알 수 없다 — 없는 값끼리 같다고 보지 않는다."
+
+  - id: compare_rejects_non_numeric_emulation
+    ac: AC14
+    kind: forbidden
+    input:
+      base: *plain_base
+      emu:
+        env: {model_id: tiny, model_sha: aaa}
+        metrics: {ppl: {ppl: "n/a", n_tokens: 64, dataset_fingerprint: fp}}
+    expected: {error: emu.metrics.ppl.ppl}
+    note: "AC14 금지: NaN · inf 는 측정 결과지만 숫자가 아닌 값은 기록 오류다."
+
+  - id: compare_rejects_invalid_limit
+    ac: AC14
+    kind: forbidden
+    input:
+      base: *plain_base
+      emu: *plain_base
+      limit: -0.001
+    expected: {error: limit}
+    note: "AC14 금지: 한계가 유한한 0 이상의 수가 아니면 판정을 정의할 수 없다."
+
+  # 2026-10-09 Youngmin17 확정 — 회차 3: 적대적 검토가 찾은 AC13 · AC14 조건의 공백
+  - id: compare_custom_limit_passes
+    ac: AC13
+    kind: normal
+    input:
+      base: *plain_base
+      emu:
+        env: {model_id: tiny, model_sha: aaa}
+        metrics: {ppl: {ppl: 1005.0, n_tokens: 64, dataset_fingerprint: fp}}
+      limit: 0.01
+    expected: {pass: true, relative: 0.005}
+    note: "AC13 정상: 사용자가 한계를 1% 로 주면 0.5% 차이는 합격이고, 반환 limit 도 0.01 이다."
+
+  - id: compare_zero_limit_accepts_identical
+    ac: AC13
+    kind: boundary
+    input:
+      base: *plain_base
+      emu: *plain_base
+      limit: 0.0
+    expected: {pass: true, relative: 0.0}
+    note: "AC13 경계: 한계 0 에서 같은 PPL 은 합격 — 계산식과 무관하게 경계 포함 규칙을 확인한다."
+
+  - id: compare_infinite_emulation_fails
+    ac: AC13
+    kind: boundary
+    input:
+      base: *plain_base
+      emu:
+        env: {model_id: tiny, model_sha: aaa}
+        metrics: {ppl: {ppl: .inf, n_tokens: 64, dataset_fingerprint: fp}}
+    expected: {pass: false, relative: .inf}
+    note: "AC13 경계: 에뮬레이션 PPL 이 inf 여도 NaN 과 같이 불합격 결과다 (오류 아님)."
+
+  - id: compare_rejects_infinite_baseline
+    ac: AC14
+    kind: forbidden
+    input:
+      base:
+        env: {model_id: tiny, model_sha: aaa}
+        metrics: {ppl: {ppl: .inf, n_tokens: 64, dataset_fingerprint: fp}}
+      emu: *plain_base
+    expected: {error: base.metrics.ppl.ppl}
+    note: "AC14 금지: 기준 PPL 이 inf 면 유한한 양수가 아니므로 거부한다."
+
+  - id: compare_rejects_negative_baseline
+    ac: AC14
+    kind: forbidden
+    input:
+      base:
+        env: {model_id: tiny, model_sha: aaa}
+        metrics: {ppl: {ppl: -1.0, n_tokens: 64, dataset_fingerprint: fp}}
+      emu: *plain_base
+    expected: {error: base.metrics.ppl.ppl}
+    note: "AC14 금지: 음수 기준 PPL 은 거부한다."
+
+  - id: compare_rejects_nan_limit
+    ac: AC14
+    kind: forbidden
+    input:
+      base: *plain_base
+      emu: *plain_base
+      limit: .nan
+    expected: {error: limit}
+    note: "AC14 금지: 한계가 NaN 이면 판정을 정의할 수 없다."
+
+  - id: compare_rejects_empty_model_revision
+    ac: AC14
+    kind: forbidden
+    input:
+      base:
+        env: {model_id: tiny, model_sha: ""}
+        metrics: {ppl: {ppl: 1000.0, n_tokens: 64, dataset_fingerprint: fp}}
+      emu:
+        env: {model_id: tiny, model_sha: ""}
+        metrics: {ppl: {ppl: 1000.0, n_tokens: 64, dataset_fingerprint: fp}}
+    expected: {error: env.model_sha}
+    note: "AC14 금지: 빈 revision 은 없는 것과 같다 — 러너가 env 를 무효로 보는 규칙과 같다."
+
+  - id: compare_rejects_zero_token_count
+    ac: AC14
+    kind: forbidden
+    input:
+      base:
+        env: {model_id: tiny, model_sha: aaa}
+        metrics: {ppl: {ppl: 1000.0, n_tokens: 0, dataset_fingerprint: fp}}
+      emu:
+        env: {model_id: tiny, model_sha: aaa}
+        metrics: {ppl: {ppl: 1000.0, n_tokens: 0, dataset_fingerprint: fp}}
+    expected: {error: metrics.ppl.n_tokens}
+    note: "AC14 금지: 평가 토큰 수는 0 보다 큰 정수여야 한다 — 러너의 PPL 지표 유효성 규칙과 같다."
+
+  - id: compare_rejects_missing_baseline_metric
+    ac: AC14
+    kind: forbidden
+    input:
+      base:
+        env: {model_id: tiny, model_sha: aaa}
+        metrics: {}
+      emu: *plain_base
+    expected: {error: base.metrics.ppl}
+    note: "AC14 금지: 기준 기록에 PPL 지표가 없으면 거부한다."
+
+  - id: compare_rejects_boolean_emulation
+    ac: AC14
+    kind: forbidden
+    input:
+      base: *plain_base
+      emu:
+        env: {model_id: tiny, model_sha: aaa}
+        metrics: {ppl: {ppl: true, n_tokens: 64, dataset_fingerprint: fp}}
+    expected: {error: emu.metrics.ppl.ppl}
+    note: "AC14 금지: bool 은 PPL 값이 아니다."
+
+  # 2026-10-09 Youngmin17 확정 — 회차 4: 재채점이 찾은 미고정 경계 (현재 구현 동작을 기준으로 고정)
+  - id: compare_model_id_alone_is_not_a_condition
+    ac: AC13
+    kind: boundary
+    input:
+      base: *plain_base
+      emu:
+        env: {model_id: tiny-renamed, model_sha: aaa}
+        metrics: {ppl: {ppl: 1000.0, n_tokens: 64, dataset_fingerprint: fp}}
+    expected: {pass: true, relative: 0.0}
+    note: "AC13 경계: revision(model_sha)이 모델을 특정하므로 이름(model_id)만 다른 기록은 비교한다."
+
+  - id: compare_negative_emulation_fails
+    ac: AC13
+    kind: boundary
+    input:
+      base: *plain_base
+      emu:
+        env: {model_id: tiny, model_sha: aaa}
+        metrics: {ppl: {ppl: -5.0, n_tokens: 64, dataset_fingerprint: fp}}
+    expected: {pass: false, relative: 1.005}
+    note: "AC13 경계: 숫자인 에뮬레이션 PPL 은 음수라도 판정한다 — |−5 − 1000| / 1000 = 1.005 로 불합격."
+
+  - id: compare_rejects_boolean_token_count
+    ac: AC14
+    kind: forbidden
+    input:
+      base:
+        env: {model_id: tiny, model_sha: aaa}
+        metrics: {ppl: {ppl: 1000.0, n_tokens: true, dataset_fingerprint: fp}}
+      emu:
+        env: {model_id: tiny, model_sha: aaa}
+        metrics: {ppl: {ppl: 1000.0, n_tokens: true, dataset_fingerprint: fp}}
+    expected: {error: metrics.ppl.n_tokens}
+    note: "AC14 금지: bool 은 평가 토큰 수가 아니다."

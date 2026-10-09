@@ -1,0 +1,12 @@
+# GPTQ UINT4 group-128 weights with sequential decoder-layer calibration.
+# Source: GPTQ; accumulation is an explicit FP32 FMA reference, not a hardware claim.
+name: w4a16_gptq_sequential
+description: GPTQ weights calibrated on outputs of previously quantized decoder layers.
+defaults:
+  weight: int4_g128_zp
+  activation: null
+  mma: fp32_fma
+  weight_algo: gptq
+calibration:
+  sequential: true
+exclude: [lm_head]

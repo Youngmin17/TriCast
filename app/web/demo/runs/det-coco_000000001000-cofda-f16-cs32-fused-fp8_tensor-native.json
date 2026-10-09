@@ -1,0 +1,615 @@
+{
+ "id": "det-coco_000000001000-cofda-f16-cs32-fused-fp8_tensor-native",
+ "status": "done",
+ "stage": null,
+ "progress": 1.0,
+ "request": {
+  "task": "vision.detect",
+  "model": "yolo11n",
+  "mma": {
+   "algorithm": "cofda",
+   "f_bits": 16,
+   "chunk_size": 32,
+   "c_mode": "fused",
+   "promote_interval": 0,
+   "norm_rounding": "rtz"
+  },
+  "format": "fp8_tensor",
+  "baseline": "native",
+  "input": {
+   "image": "coco_000000001000.jpg"
+  }
+ },
+ "mma_label": "CoFDA · F16 · CS32 · fused",
+ "preset": null,
+ "recipe": {
+  "name": "studio:cofda-f16-cs32-fused:fp8_tensor",
+  "bundled": null,
+  "yaml": "name: studio:cofda-f16-cs32-fused:fp8_tensor\ndescription: CoFDA · F16 · CS32 · fused · FP8 E4M3 · 텐서 스케일\ndefaults:\n  weight: fp8_tensor\n  activation: fp8_tensor\n  mma:\n    algorithm: cofda\n    f_bits: 16\n    chunk_size: 32\n    c_mode: fused\n    promote_interval: 0\n    norm_rounding: rtz\n  transform: none\n  weight_algo: rtn\ninclude:\n- '*'\nexclude:\n- lm_head\nbackend: auto\n"
+ },
+ "env": {
+  "utc": "2026-10-07T09:59:14.239631+00:00",
+  "hostname": "geneva.ee.ucl.ac.uk",
+  "git_sha": "625d5090b7b601fd05fd252fd96de6b439582d8d",
+  "git_dirty": false,
+  "src_sha256": null,
+  "versions": {
+   "python": "3.12.14",
+   "torch": "2.8.0+cu128",
+   "triton": "3.4.0",
+   "transformers": "4.55.2",
+   "lm_eval": "0.4.13",
+   "datasets": "4.8.5"
+  },
+  "gpu_names": [
+   "NVIDIA A100-SXM4-80GB"
+  ],
+  "gpu_driver": "595.71.05\n595.71.05\n595.71.05\n595.71.05",
+  "cuda": "12.8",
+  "model_id": "yolo11n",
+  "model_sha": "0ebbc80d4a7680d14987a577cd21342b65ecfd94632bd9a8da63ae6417644ee1",
+  "model_kind": "local",
+  "environment": {
+   "CUDA_VISIBLE_DEVICES": "0",
+   "PYTHONNOUSERSITE": "1",
+   "CUBLAS_WORKSPACE_CONFIG": ":4096:8",
+   "CONDA_DEFAULT_ENV": "/scratch/uceeeee/conda_envs/tricast"
+  },
+  "app": "tricast-studio",
+  "app_sha256": "55fc8ad1b38174de2d9e608c38070960d2c3682f00698e430a84e2a29bd92425",
+  "task": "vision.detect",
+  "device": "cuda",
+  "seed": 42,
+  "deterministic_algorithms": true,
+  "tf32": {
+   "matmul": false,
+   "cudnn": false
+  },
+  "recipe_sha256": "4c739a82e09fad6fe52ddd18b0f9db930d20dc9a2f44ec911f74cf62add14446",
+  "baseline_recipe_sha256": null,
+  "model_revision": "0ebbc80d4a7680d14987a577cd21342b65ecfd94632bd9a8da63ae6417644ee1",
+  "checkpoint": {
+   "path": "/scratch/uceeeee/tricast/quality_20261005/checkpoints/yolo11n.pt",
+   "sha256": "0ebbc80d4a7680d14987a577cd21342b65ecfd94632bd9a8da63ae6417644ee1"
+  },
+  "dtype": "float32",
+  "optional_versions": {
+   "ultralytics": "8.3.221",
+   "torchvision": "0.23.0",
+   "opencv-python": null,
+   "opencv-python-headless": "4.11.0.86",
+   "pillow": "11.3.0"
+  },
+  "detection": {
+   "conf": 0.25,
+   "iou": 0.7,
+   "imgsz": 640,
+   "max_det": 100,
+   "multi_label": true,
+   "agnostic": false,
+   "nms_time_limit": "disabled",
+   "preprocessing": "Ultralytics 8.3.221 rectangular validation letterbox (pad 0.5, no upscaling), /255"
+  }
+ },
+ "baseline": {
+  "label": "원본 (native)",
+  "image": {
+   "media": "coco_000000001000.jpg",
+   "width": 640,
+   "height": 480
+  },
+  "boxes": [
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.9040786623954773,
+    "xyxy": [
+     117.41595458984375,
+     150.65423583984375,
+     197.301513671875,
+     384.11102294921875
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.8934065103530884,
+    "xyxy": [
+     506.78662109375,
+     189.67431640625,
+     639.8304443359375,
+     476.47509765625
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.8605781197547913,
+    "xyxy": [
+     406.31146240234375,
+     211.40582275390625,
+     522.5717163085938,
+     476.90679931640625
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.8545422554016113,
+    "xyxy": [
+     264.1678466796875,
+     97.5048828125,
+     355.6412353515625,
+     413.66632080078125
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.8354507684707642,
+    "xyxy": [
+     331.4285888671875,
+     155.30606079101562,
+     417.1943359375,
+     471.1546325683594
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.7577118873596191,
+    "xyxy": [
+     205.73660278320312,
+     173.79949951171875,
+     289.1359558105469,
+     419.4791259765625
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.7412900924682617,
+    "xyxy": [
+     46.43793487548828,
+     184.8203125,
+     109.98465728759766,
+     393.88482666015625
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.7340578436851501,
+    "xyxy": [
+     436.41400146484375,
+     108.20575714111328,
+     497.7921142578125,
+     221.75274658203125
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.725268542766571,
+    "xyxy": [
+     191.23342895507812,
+     121.18283081054688,
+     280.7488708496094,
+     418.2034606933594
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.6209050416946411,
+    "xyxy": [
+     390.928466796875,
+     158.84982299804688,
+     465.305908203125,
+     464.1548767089844
+    ]
+   },
+   {
+    "cls": "tennis racket",
+    "cls_id": 38,
+    "conf": 0.5803671479225159,
+    "xyxy": [
+     46.86724853515625,
+     227.47930908203125,
+     91.69230651855469,
+     397.36468505859375
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.5464818477630615,
+    "xyxy": [
+     399.0873107910156,
+     119.77316284179688,
+     443.4836730957031,
+     219.12149047851562
+    ]
+   },
+   {
+    "cls": "tennis racket",
+    "cls_id": 38,
+    "conf": 0.4567161500453949,
+    "xyxy": [
+     201.30734252929688,
+     226.6209716796875,
+     269.25909423828125,
+     334.61083984375
+    ]
+   },
+   {
+    "cls": "tennis racket",
+    "cls_id": 38,
+    "conf": 0.409494012594223,
+    "xyxy": [
+     47.52223205566406,
+     290.2017822265625,
+     92.46635437011719,
+     397.0018310546875
+    ]
+   },
+   {
+    "cls": "truck",
+    "cls_id": 7,
+    "conf": 0.3294549286365509,
+    "xyxy": [
+     345.28387451171875,
+     38.66304016113281,
+     597.2166137695312,
+     238.4875946044922
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.32906949520111084,
+    "xyxy": [
+     405.6919860839844,
+     119.60885620117188,
+     443.2990417480469,
+     170.09280395507812
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.3192550539970398,
+    "xyxy": [
+     352.10015869140625,
+     122.0284423828125,
+     401.39276123046875,
+     189.95635986328125
+    ]
+   },
+   {
+    "cls": "tennis racket",
+    "cls_id": 38,
+    "conf": 0.3073783218860626,
+    "xyxy": [
+     220.1660919189453,
+     222.84152221679688,
+     270.22174072265625,
+     300.2774353027344
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.2965051233768463,
+    "xyxy": [
+     359.3575439453125,
+     122.37957763671875,
+     401.3232421875,
+     165.25885009765625
+    ]
+   }
+  ]
+ },
+ "emulated": {
+  "label": "CoFDA · F16 · CS32 · fused · FP8 E4M3 · 텐서 스케일",
+  "image": {
+   "media": "coco_000000001000.jpg",
+   "width": 640,
+   "height": 480
+  },
+  "boxes": [
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.8856314420700073,
+    "xyxy": [
+     115.5,
+     148.5,
+     195.0,
+     375.0
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.8783142566680908,
+    "xyxy": [
+     513.0,
+     198.0,
+     639.875,
+     478.0
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.8606036305427551,
+    "xyxy": [
+     402.5,
+     212.0,
+     520.75,
+     480.0
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.837619960308075,
+    "xyxy": [
+     329.125,
+     155.0,
+     416.0,
+     464.0
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.8344069123268127,
+    "xyxy": [
+     263.0,
+     98.5,
+     356.25,
+     414.0
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.7662936449050903,
+    "xyxy": [
+     201.0,
+     180.0,
+     287.75,
+     420.0
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.7310585379600525,
+    "xyxy": [
+     43.25,
+     182.0,
+     114.0,
+     398.0
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.6749081611633301,
+    "xyxy": [
+     437.0,
+     108.0,
+     496.5,
+     220.0
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.6566582322120667,
+    "xyxy": [
+     189.75,
+     117.0,
+     274.0,
+     404.0
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.5496405959129333,
+    "xyxy": [
+     390.375,
+     160.5,
+     465.25,
+     463.0
+    ]
+   },
+   {
+    "cls": "tennis racket",
+    "cls_id": 38,
+    "conf": 0.4380638897418976,
+    "xyxy": [
+     48.125,
+     289.5,
+     87.6875,
+     396.75
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.4378235340118408,
+    "xyxy": [
+     398.375,
+     119.5,
+     442.375,
+     218.25
+    ]
+   },
+   {
+    "cls": "tennis racket",
+    "cls_id": 38,
+    "conf": 0.4248892068862915,
+    "xyxy": [
+     47.25,
+     240.0,
+     86.125,
+     397.25
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.36296918988227844,
+    "xyxy": [
+     405.375,
+     119.875,
+     443.625,
+     167.125
+    ]
+   },
+   {
+    "cls": "tennis racket",
+    "cls_id": 38,
+    "conf": 0.35488009452819824,
+    "xyxy": [
+     220.625,
+     225.75,
+     270.25,
+     299.25
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.26740819215774536,
+    "xyxy": [
+     352.25,
+     121.0625,
+     401.4375,
+     190.25
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.2658804655075073,
+    "xyxy": [
+     360.75,
+     121.625,
+     401.625,
+     164.375
+    ]
+   }
+  ]
+ },
+ "metrics": {
+  "matched": 17,
+  "baseline_only": 2,
+  "emulated_only": 0,
+  "mean_iou": 0.9197263744098629,
+  "mean_abs_conf_delta": 0.04295802291701822,
+  "pairs": [
+   {
+    "baseline": 0,
+    "emulated": 0,
+    "iou": 0.9041463126216849
+   },
+   {
+    "baseline": 1,
+    "emulated": 1,
+    "iou": 0.9206570001183803
+   },
+   {
+    "baseline": 2,
+    "emulated": 2,
+    "iou": 0.9402308225327521
+   },
+   {
+    "baseline": 3,
+    "emulated": 4,
+    "iou": 0.9768879029077837
+   },
+   {
+    "baseline": 4,
+    "emulated": 3,
+    "iou": 0.9381888345252285
+   },
+   {
+    "baseline": 5,
+    "emulated": 5,
+    "iou": 0.9063857967159993
+   },
+   {
+    "baseline": 6,
+    "emulated": 6,
+    "iou": 0.8693472482370082
+   },
+   {
+    "baseline": 7,
+    "emulated": 7,
+    "iou": 0.9527633003487079
+   },
+   {
+    "baseline": 8,
+    "emulated": 8,
+    "iou": 0.8555524031139188
+   },
+   {
+    "baseline": 9,
+    "emulated": 9,
+    "iou": 0.9828212169474279
+   },
+   {
+    "baseline": 10,
+    "emulated": 12,
+    "iou": 0.8027571833422592
+   },
+   {
+    "baseline": 11,
+    "emulated": 11,
+    "iou": 0.9488000042624667
+   },
+   {
+    "baseline": 13,
+    "emulated": 10,
+    "iou": 0.8731337225735328
+   },
+   {
+    "baseline": 15,
+    "emulated": 13,
+    "iou": 0.9212007512359933
+   },
+   {
+    "baseline": 16,
+    "emulated": 15,
+    "iou": 0.9779766544532096
+   },
+   {
+    "baseline": 17,
+    "emulated": 14,
+    "iou": 0.939966332583203
+   },
+   {
+    "baseline": 18,
+    "emulated": 16,
+    "iou": 0.9245328784481148
+   }
+  ]
+ },
+ "timing": {
+  "baseline_s": 0.011770247016102076,
+  "emulated_s": 1.263763118069619
+ },
+ "evidence": {
+  "patched_linear": 0,
+  "patched_conv2d": 88,
+  "emulated_calls": 88,
+  "backend": "triton"
+ },
+ "cached_baseline": true
+}

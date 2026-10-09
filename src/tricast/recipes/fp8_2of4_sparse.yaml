@@ -1,0 +1,26 @@
+# Per-tensor FP8 E4M3 W8A8 with Hopper accumulation and 2:4 magnitude-pruned weights.
+# Source: NVIDIA A100 Tensor Core GPU Architecture whitepaper (2:4 fine-grained structured
+# sparsity: at most 2 nonzeros in every 4 consecutive weights along K); Mishra et al. 2021,
+# arXiv:2104.08378 (magnitude pruning to 2:4); accumulator as hopper_fp8_w8a8 (NADPE MICRO 2026).
+# Assumed: the 2 largest |w| of each group are kept (ties: lower K index), after the transform and
+# before quantization, so the fp8 tensor scale is computed on the pruned weight.
+# Not modeled (unverified): the accumulator sees the dense K order with zero products (chunks
+# count K positions); hardware that compresses 2:4 operands may group products differently.
+# Not modeled: fine-tuning after pruning (the 2:4 workflow of Mishra et al. retrains the model).
+name: fp8_2of4_sparse
+description: Per-tensor FP8 E4M3 W8A8 with Hopper accumulation and 2:4 magnitude-pruned weights.
+defaults:
+  weight: fp8_tensor
+  activation: fp8_tensor
+  mma: nvidia_hopper_fp8
+  transform: none
+  weight_algo: rtn
+  sparsity:
+    kind: "n:m"
+    n: 2
+    m: 4
+include:
+- '*'
+exclude:
+- lm_head
+backend: auto

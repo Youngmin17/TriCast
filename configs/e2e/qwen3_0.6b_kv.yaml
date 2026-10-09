@@ -1,0 +1,23 @@
+# Qwen3-0.6B, KIVI KV-cache quantization on the full WikiText-2 test set. fakequant mode reproduces
+# token-by-token cache decoding in one causal forward (tricast.kv), so every window is scored
+# as if each token had been generated; native linears keep the unpatched model as the baseline.
+# KIVI (ICML 2024), Algorithm 1: https://proceedings.mlr.press/v235/liu24bz.html
+model: Qwen/Qwen3-0.6B
+dtype: bfloat16
+device: cuda
+seed: 42
+native_baseline: true
+tasks:
+  ppl: {dataset: wikitext2, seqlen: 2048}
+recipes:
+  - name: kivi2_fakequant
+    description: KIVI 2-bit keys and values, residual 128, every token read as a decode step.
+    defaults: {}
+    include: []
+    kv: {preset: kivi2, mode: fakequant}
+  - name: kivi4_fakequant
+    description: KIVI 4-bit keys and values, residual 128, every token read as a decode step.
+    defaults: {}
+    include: []
+    kv: {preset: kivi4, mode: fakequant}
+output_dir: ../../runs/e2e/qwen3_0.6b_kv

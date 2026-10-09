@@ -1,0 +1,237 @@
+{
+ "id": "det-coco_000000008021-fp64-fp8_tensor-native",
+ "status": "done",
+ "stage": null,
+ "progress": 1.0,
+ "request": {
+  "task": "vision.detect",
+  "model": "yolo11n",
+  "mma": {
+   "algorithm": "fp64"
+  },
+  "format": "fp8_tensor",
+  "baseline": "native",
+  "input": {
+   "image": "coco_000000008021.jpg"
+  }
+ },
+ "mma_label": "FP64 정확 누산",
+ "preset": "fp64",
+ "recipe": {
+  "name": "studio:fp64:fp8_tensor",
+  "bundled": null,
+  "yaml": "name: studio:fp64:fp8_tensor\ndescription: FP64 정확 누산 · FP8 E4M3 · 텐서 스케일\ndefaults:\n  weight: fp8_tensor\n  activation: fp8_tensor\n  mma:\n    algorithm: fp64\n  transform: none\n  weight_algo: rtn\ninclude:\n- '*'\nexclude:\n- lm_head\nbackend: auto\n"
+ },
+ "env": {
+  "utc": "2026-10-07T09:59:42.302352+00:00",
+  "hostname": "geneva.ee.ucl.ac.uk",
+  "git_sha": "625d5090b7b601fd05fd252fd96de6b439582d8d",
+  "git_dirty": false,
+  "src_sha256": null,
+  "versions": {
+   "python": "3.12.14",
+   "torch": "2.8.0+cu128",
+   "triton": "3.4.0",
+   "transformers": "4.55.2",
+   "lm_eval": "0.4.13",
+   "datasets": "4.8.5"
+  },
+  "gpu_names": [
+   "NVIDIA A100-SXM4-80GB"
+  ],
+  "gpu_driver": "595.71.05\n595.71.05\n595.71.05\n595.71.05",
+  "cuda": "12.8",
+  "model_id": "yolo11n",
+  "model_sha": "0ebbc80d4a7680d14987a577cd21342b65ecfd94632bd9a8da63ae6417644ee1",
+  "model_kind": "local",
+  "environment": {
+   "CUDA_VISIBLE_DEVICES": "0",
+   "PYTHONNOUSERSITE": "1",
+   "CUBLAS_WORKSPACE_CONFIG": ":4096:8",
+   "CONDA_DEFAULT_ENV": "/scratch/uceeeee/conda_envs/tricast"
+  },
+  "app": "tricast-studio",
+  "app_sha256": "55fc8ad1b38174de2d9e608c38070960d2c3682f00698e430a84e2a29bd92425",
+  "task": "vision.detect",
+  "device": "cuda",
+  "seed": 42,
+  "deterministic_algorithms": true,
+  "tf32": {
+   "matmul": false,
+   "cudnn": false
+  },
+  "recipe_sha256": "d6e6a8d4fde535e7bc45ff65a25337dd8d2bd3d60516034a1a50bfd51b18d40f",
+  "baseline_recipe_sha256": null,
+  "model_revision": "0ebbc80d4a7680d14987a577cd21342b65ecfd94632bd9a8da63ae6417644ee1",
+  "checkpoint": {
+   "path": "/scratch/uceeeee/tricast/quality_20261005/checkpoints/yolo11n.pt",
+   "sha256": "0ebbc80d4a7680d14987a577cd21342b65ecfd94632bd9a8da63ae6417644ee1"
+  },
+  "dtype": "float32",
+  "optional_versions": {
+   "ultralytics": "8.3.221",
+   "torchvision": "0.23.0",
+   "opencv-python": null,
+   "opencv-python-headless": "4.11.0.86",
+   "pillow": "11.3.0"
+  },
+  "detection": {
+   "conf": 0.25,
+   "iou": 0.7,
+   "imgsz": 640,
+   "max_det": 100,
+   "multi_label": true,
+   "agnostic": false,
+   "nms_time_limit": "disabled",
+   "preprocessing": "Ultralytics 8.3.221 rectangular validation letterbox (pad 0.5, no upscaling), /255"
+  }
+ },
+ "baseline": {
+  "label": "원본 (native)",
+  "image": {
+   "media": "coco_000000008021.jpg",
+   "width": 640,
+   "height": 480
+  },
+  "boxes": [
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.9282936453819275,
+    "xyxy": [
+     245.0870361328125,
+     99.64501953125,
+     438.63525390625,
+     366.25189208984375
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.9063242077827454,
+    "xyxy": [
+     1.4254150390625,
+     257.11407470703125,
+     310.15850830078125,
+     476.02557373046875
+    ]
+   },
+   {
+    "cls": "tie",
+    "cls_id": 27,
+    "conf": 0.705138623714447,
+    "xyxy": [
+     316.2885437011719,
+     199.56802368164062,
+     339.8074645996094,
+     303.6209411621094
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.700756847858429,
+    "xyxy": [
+     467.9993591308594,
+     286.2196044921875,
+     639.8978271484375,
+     476.77880859375
+    ]
+   }
+  ]
+ },
+ "emulated": {
+  "label": "FP64 정확 누산 · FP8 E4M3 · 텐서 스케일",
+  "image": {
+   "media": "coco_000000008021.jpg",
+   "width": 640,
+   "height": 480
+  },
+  "boxes": [
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.929440438747406,
+    "xyxy": [
+     243.5,
+     107.0,
+     440.5,
+     366.0
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.9046505093574524,
+    "xyxy": [
+     9.0,
+     256.0,
+     310.0,
+     477.0
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.7994422912597656,
+    "xyxy": [
+     472.0,
+     284.0,
+     640.0,
+     479.5
+    ]
+   },
+   {
+    "cls": "tie",
+    "cls_id": 27,
+    "conf": 0.7310585379600525,
+    "xyxy": [
+     316.75,
+     198.375,
+     339.375,
+     297.0
+    ]
+   }
+  ]
+ },
+ "metrics": {
+  "matched": 4,
+  "baseline_only": 0,
+  "emulated_only": 0,
+  "mean_iou": 0.940969879465994,
+  "mean_abs_conf_delta": 0.031856462359428406,
+  "pairs": [
+   {
+    "baseline": 0,
+    "emulated": 0,
+    "iou": 0.95492342409151
+   },
+   {
+    "baseline": 1,
+    "emulated": 1,
+    "iou": 0.9659673015342557
+   },
+   {
+    "baseline": 2,
+    "emulated": 3,
+    "iou": 0.8909524121892242
+   },
+   {
+    "baseline": 3,
+    "emulated": 2,
+    "iou": 0.9520363800489863
+   }
+  ]
+ },
+ "timing": {
+  "baseline_s": 0.01013490604236722,
+  "emulated_s": 0.9029306569136679
+ },
+ "evidence": {
+  "patched_linear": 0,
+  "patched_conv2d": 88,
+  "emulated_calls": 88,
+  "backend": "triton"
+ },
+ "cached_baseline": true
+}

@@ -1,0 +1,478 @@
+{
+ "tricast": {
+  "version": "0.1.0.dev0",
+  "git_sha": "625d5090b7b601fd05fd252fd96de6b439582d8d"
+ },
+ "mode": "demo",
+ "device": {
+  "kind": "none",
+  "name": null,
+  "backend": null
+ },
+ "tasks": [
+  {
+   "id": "llm.generate",
+   "kind": "llm",
+   "label": "텍스트 생성",
+   "description": "같은 프롬프트를 greedy 로 생성해 처음 갈라지는 위치를 찾고, baseline 생성열을 두 모델에 똑같이 넣어 위치별 다음 토큰 분포(KL·top-1)를 비교한다"
+  },
+  {
+   "id": "vision.detect",
+   "kind": "vision",
+   "label": "객체 검출",
+   "description": "YOLO11n 검출 상자를 같은 클래스·IoU ≥ 0.5 로 짝지어 비교한다"
+  },
+  {
+   "id": "vision.classify",
+   "kind": "vision",
+   "label": "이미지 분류",
+   "description": "ResNet18 상위 5 클래스와 1,000 클래스 확률 분포의 KL 을 비교한다"
+  }
+ ],
+ "models": [
+  {
+   "id": "Qwen/Qwen3-0.6B",
+   "label": "Qwen3-0.6B",
+   "tasks": [
+    "llm.generate"
+   ],
+   "revision": "c1899de289a04d12100db370d81485cdf75e47ca",
+   "support": "full_eval",
+   "note": "채팅 모델. 채팅 템플릿(생각 모드 끔)으로 생성한다. 전체 PPL·lm-eval 기록: support_matrix.yaml model_families.qwen.pretrained_quality"
+  },
+  {
+   "id": "meta-llama/Llama-3.2-1B",
+   "label": "Llama-3.2-1B",
+   "tasks": [
+    "llm.generate"
+   ],
+   "revision": "4e20de362430cd3b72f300e6b0f18e50e7166e08",
+   "support": "full_eval",
+   "note": "베이스 모델. 채팅 템플릿 없이 프롬프트를 그대로 이어 쓴다. WikiText-2·Winogrande 전체 평가 기록: support_matrix.yaml model_families.llama.pretrained_quality"
+  },
+  {
+   "id": "yolo11n",
+   "label": "YOLO11n",
+   "tasks": [
+    "vision.detect"
+   ],
+   "revision": "0ebbc80d4a7680d14987a577cd21342b65ecfd94632bd9a8da63ae6417644ee1",
+   "support": "full_eval",
+   "note": "Ultralytics 8.3.221 공식 yolo11n.pt (revision 은 체크포인트 SHA256). COCO val2017 5,000장 전체 평가 기록 (fp8_f7_lowacc): support_matrix.yaml model_families.yolo.pretrained_quality"
+  },
+  {
+   "id": "resnet18",
+   "label": "ResNet18",
+   "tasks": [
+    "vision.classify"
+   ],
+   "revision": "f37072fd47e89c5e827621c5baffa7500819f7896bbacec160b1a16c560e07ec",
+   "support": "operator",
+   "note": "torchvision IMAGENET1K_V1 (revision 은 체크포인트 SHA256). 연산자 통합만 검증했고 ImageNet 정확도는 측정하지 않았다 (미검증)"
+  }
+ ],
+ "algorithms": [
+  {
+   "id": "cofda",
+   "label": "CoFDA",
+   "description": "CS 개 곱마다 최대 지수에 맞춰 F 비트로 자른 뒤 정확히 더하고 FP32 누산기에 합친다 (NADPE, src/tricast/reference/mma.py)",
+   "formats": [
+    null,
+    "fp8_tensor",
+    "fp8_block128",
+    "mxfp8_e4m3",
+    "mxfp6_e3m2",
+    "mxfp4",
+    "nvfp4",
+    "mxfp4_rht"
+   ],
+   "params": [
+    {
+     "key": "f_bits",
+     "label": "F",
+     "kind": "int",
+     "default": 13,
+     "help": "청크 합과 누산값에 남기는 소수 비트 수. NADPE 기준 Hopper FP8 13, Blackwell FP8 25",
+     "min": 1,
+     "max": 48,
+     "ui_min": 3,
+     "ui_max": 28,
+     "unit": "bit"
+    },
+    {
+     "key": "chunk_size",
+     "label": "CS",
+     "kind": "choice",
+     "default": 32,
+     "help": "한 번에 같은 지수로 정렬해 더하는 곱의 개수",
+     "options": [
+      4,
+      8,
+      16,
+      32,
+      64,
+      128
+     ]
+    },
+    {
+     "key": "c_mode",
+     "label": "C 결합",
+     "kind": "choice",
+     "default": "fused",
+     "help": "fused: 누산기가 청크와 함께 정렬된다. decoupled: 청크 합을 따로 구해 F2 비트로 누산기에 더한다",
+     "options": [
+      "fused",
+      "decoupled"
+     ]
+    },
+    {
+     "key": "f2_bits",
+     "label": "F2",
+     "kind": "int",
+     "default": 23,
+     "help": "decoupled 결합에서 청크 합을 누산기에 더할 때의 소수 비트 수 (NADPE 는 23)",
+     "min": 1,
+     "max": 48,
+     "ui_min": 8,
+     "ui_max": 28,
+     "when": {
+      "c_mode": "decoupled"
+     },
+     "unit": "bit"
+    },
+    {
+     "key": "promote_interval",
+     "label": "FP32 승격 주기",
+     "kind": "choice",
+     "default": 0,
+     "help": "0 이 아니면 이 개수의 곱마다 부분합을 CUDA core FP32 FMA 로 옮긴다 (DeepSeek-V3). CS 의 배수여야 한다",
+     "options": [
+      0,
+      64,
+      128,
+      256
+     ]
+    },
+    {
+     "key": "norm_rounding",
+     "label": "정규화 반올림",
+     "kind": "choice",
+     "default": "rtz",
+     "help": "F 비트로 줄일 때 rtz 는 버림 (NADPE), rne 는 최근접 짝수 (TriCast 확장)",
+     "options": [
+      "rtz",
+      "rne"
+     ],
+     "advanced": true
+    }
+   ]
+  },
+  {
+   "id": "gdfs",
+   "label": "GDFS",
+   "description": "GS 개 곱을 G 비트로 더한 그룹 합들을 K 타일마다 F 비트로 한 번에 합친다 (NADPE, src/tricast/reference/mma.py)",
+   "formats": [
+    null,
+    "fp8_tensor",
+    "fp8_block128",
+    "mxfp8_e4m3",
+    "mxfp6_e3m2",
+    "mxfp4",
+    "nvfp4",
+    "mxfp4_rht"
+   ],
+   "params": [
+    {
+     "key": "f_bits",
+     "label": "F",
+     "kind": "int",
+     "default": 35,
+     "help": "타일 합에 남기는 소수 비트 수. NADPE 기준 Blackwell FP4 35",
+     "min": 1,
+     "max": 48,
+     "ui_min": 8,
+     "ui_max": 40,
+     "unit": "bit"
+    },
+    {
+     "key": "g_bits",
+     "label": "G",
+     "kind": "int",
+     "default": 6,
+     "help": "그룹 안에서 곱을 정렬해 더할 때의 소수 비트 수. NADPE 기준 Blackwell FP4 6",
+     "min": 1,
+     "max": 48,
+     "ui_min": 2,
+     "ui_max": 16,
+     "unit": "bit"
+    },
+    {
+     "key": "group_size",
+     "label": "GS",
+     "kind": "choice",
+     "default": 16,
+     "help": "한 그룹의 곱 개수",
+     "options": [
+      8,
+      16,
+      32
+     ]
+    },
+    {
+     "key": "k_tile",
+     "label": "KT",
+     "kind": "choice",
+     "default": 64,
+     "help": "그룹 합들을 한 번에 합치는 K 구간. KT / GS 는 1~8",
+     "options": [
+      16,
+      32,
+      64,
+      128,
+      256
+     ]
+    },
+    {
+     "key": "norm_rounding",
+     "label": "정규화 반올림",
+     "kind": "choice",
+     "default": "rtz",
+     "help": "F 비트로 줄일 때 rtz 는 버림 (NADPE), rne 는 최근접 짝수 (TriCast 확장)",
+     "options": [
+      "rtz",
+      "rne"
+     ],
+     "advanced": true
+    }
+   ]
+  },
+  {
+   "id": "fp32_fma",
+   "label": "FP32 FMA",
+   "description": "IEEE fp32 FMA 를 K 순서로 이어 누산한다 (CUDA core SGEMM 의 정의)",
+   "formats": [
+    null,
+    "fp8_tensor",
+    "fp8_block128",
+    "mxfp8_e4m3",
+    "mxfp6_e3m2",
+    "mxfp4",
+    "nvfp4",
+    "mxfp4_rht"
+   ],
+   "params": []
+  },
+  {
+   "id": "fp64",
+   "label": "FP64",
+   "description": "fp64 FMA 로 누산하고 마지막에 fp32 로 한 번 반올림한다 (수치 기준)",
+   "formats": [
+    null,
+    "fp8_tensor",
+    "fp8_block128",
+    "mxfp8_e4m3",
+    "mxfp6_e3m2",
+    "mxfp4",
+    "nvfp4",
+    "mxfp4_rht"
+   ],
+   "params": []
+  }
+ ],
+ "presets": [
+  {
+   "id": "hopper",
+   "label": "Hopper FP8",
+   "source": "NVIDIA Hopper 모델링 (NADPE)",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 13,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "status": "partial_mismatch",
+   "provenance": "NADPE (MICRO'26, doi:10.5281/zenodo.21505180) micro26-ae csrc/quantization/mma_emu/core/design_space.cuh: Hopper CS=32 F=13; NADPE Table 6 reports bit-exact scores and logprobs vs native H100. Not yet checked on silicon by TriCast.",
+   "status_note": "H200 WGMMA 실리콘 대조 140/141 통과, FP32-C 직접 입력 1건 불일치. native 비트 일치는 검증되지 않았다 (support_matrix.yaml integration.silicon_probe.wgmma)"
+  },
+  {
+   "id": "ada",
+   "label": "Ada FP8",
+   "source": "NVIDIA Ada 모델링 (NADPE)",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 13,
+    "chunk_size": 16,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "status": "modeled",
+   "provenance": "NADPE (MICRO'26, doi:10.5281/zenodo.21505180) micro26-ae csrc/quantization/mma_emu/core/design_space.cuh: Ada CoFDA CS=16 F=13. Not yet checked on Ada silicon by TriCast.",
+   "status_note": "Ada 실리콘에서 대조하지 않았다 (미검증)"
+  },
+  {
+   "id": "blackwell_fp8",
+   "label": "Blackwell FP8",
+   "source": "NVIDIA Blackwell 모델링 (NADPE)",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 25,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "status": "modeled",
+   "provenance": "NADPE (MICRO'26, doi:10.5281/zenodo.21505180) micro26-ae csrc/quantization/mma_emu/core/design_space.cuh: Blackwell FP8 CS=32 F=25. Not yet checked on Blackwell silicon by TriCast.",
+   "status_note": "Blackwell 실리콘에서 대조하지 않았다 (미검증)"
+  },
+  {
+   "id": "blackwell_fp4",
+   "label": "Blackwell FP4",
+   "source": "NVIDIA Blackwell 모델링 (NADPE)",
+   "mma": {
+    "algorithm": "gdfs",
+    "f_bits": 35,
+    "g_bits": 6,
+    "group_size": 16,
+    "k_tile": 64,
+    "norm_rounding": "rtz"
+   },
+   "format": "nvfp4",
+   "status": "modeled",
+   "provenance": "NADPE (MICRO'26, doi:10.5281/zenodo.21505180) micro26-ae csrc/quantization/mma_emu/core/design_space.cuh: Blackwell MXFP4/NVFP4 GDFS G=6 F=35 GS=16; K tile 64 is the NVFP4 emulator BK in micro26-ae core/tiling.cuh, not a hardware figure. Not yet checked on Blackwell silicon by TriCast.",
+   "status_note": "Blackwell 실리콘에서 대조하지 않았다 (미검증)"
+  },
+  {
+   "id": "deepseek_promote",
+   "label": "DeepSeek-V3 FP8 승격",
+   "source": "DeepSeek-V3 보고서 §3.3.2",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 13,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 128,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_block128",
+   "status": "modeled",
+   "provenance": "DeepSeek-V3 report (arXiv:2412.19437) §3.3.2: H800 FP8 WGMMA partials (~14-bit accumulation) promoted to fp32 CUDA-core FMA every 128 K elements with block scales; F=13 and CS=32 inside each interval are the NADPE Hopper values. Not checked on silicon by TriCast.",
+   "status_note": "실리콘 대조 안 함. 가중치 128×128 블록·활성 1×128 그룹 스케일 (번들 레시피 deepseek_fp8_block 과 같은 조합)"
+  },
+  {
+   "id": "f7_fused",
+   "label": "F7 fused 설계점",
+   "source": "NADPE MICRO'26 Fig. 6(a) 설계 공간",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 7,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "status": "design_point",
+   "provenance": "NADPE MICRO 2026 Fig. 6(a) accumulator design space. (TriCast 번들 레시피 fp8_f7_lowacc)",
+   "status_note": "실제 칩이 아닌 누산기 설계 공간의 한 점"
+  },
+  {
+   "id": "f7_decoupled",
+   "label": "F7 decoupled 설계점",
+   "source": "NADPE MICRO'26 Fig. 6(a) 설계 공간",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 7,
+    "chunk_size": 32,
+    "c_mode": "decoupled",
+    "f2_bits": 23,
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "status": "design_point",
+   "provenance": "NADPE MICRO 2026 Fig. 6(a) accumulator design space. (TriCast 번들 레시피 fp8_f7_decoupled)",
+   "status_note": "실제 칩이 아닌 누산기 설계 공간의 한 점"
+  },
+  {
+   "id": "fp64",
+   "label": "FP64 정확 누산",
+   "source": "TriCast 수치 기준 (정의)",
+   "mma": {
+    "algorithm": "fp64"
+   },
+   "format": "fp8_tensor",
+   "status": "reference",
+   "provenance": "fp64 FMA chain, one rounding to fp32 (a definition, not a hardware claim).",
+   "status_note": "하드웨어가 아닌 정의. 같은 형식의 누산 오차를 재는 기준점"
+  }
+ ],
+ "formats": [
+  {
+   "id": null,
+   "label": "양자화 없음",
+   "bits": null,
+   "note": "가중치·활성을 모델 dtype 그대로 쓴다 (LLM bf16, 비전 fp32)"
+  },
+  {
+   "id": "fp8_tensor",
+   "label": "FP8 E4M3 · 텐서 스케일",
+   "bits": 8,
+   "note": "텐서마다 fp32 스케일 하나 (W8A8)"
+  },
+  {
+   "id": "fp8_block128",
+   "label": "FP8 E4M3 · 블록 스케일",
+   "bits": 8,
+   "note": "가중치 128×128 블록, 활성 1×128 그룹마다 fp32 스케일 (DeepSeek-V3 §3.3.2)"
+  },
+  {
+   "id": "mxfp8_e4m3",
+   "label": "MXFP8 (E4M3)",
+   "bits": 8,
+   "note": "32개마다 E8M0 공유 스케일 (OCP MX v1.0)"
+  },
+  {
+   "id": "mxfp6_e3m2",
+   "label": "MXFP6 (E3M2)",
+   "bits": 6,
+   "note": "32개마다 E8M0 공유 스케일 (OCP MX v1.0)"
+  },
+  {
+   "id": "mxfp4",
+   "label": "MXFP4 (E2M1)",
+   "bits": 4,
+   "note": "32개마다 E8M0 공유 스케일 (OCP MX v1.0)"
+  },
+  {
+   "id": "nvfp4",
+   "label": "NVFP4 (E2M1)",
+   "bits": 4,
+   "note": "16개마다 UE4M3 스케일과 텐서마다 fp32 스케일 (NVIDIA NVFP4)"
+  },
+  {
+   "id": "mxfp4_rht",
+   "label": "MXFP4 + RHT",
+   "bits": 4,
+   "note": "seed 42 무작위 Hadamard 변환 뒤 MXFP4 (QuaRot·RHT). LLM 전용: Conv2d 는 변환을 지원하지 않는다"
+  }
+ ],
+ "baselines": [
+  {
+   "id": "native",
+   "label": "원본 (native)",
+   "description": "패치하지 않은 모델. 차이는 양자화와 누산을 함께 바꾼 결과다"
+  },
+  {
+   "id": "same_quant_fp64",
+   "label": "같은 형식 + FP64 누산",
+   "description": "같은 입력 형식으로 양자화하고 FP64 로 누산한다. 차이는 누산만의 효과다"
+  }
+ ]
+}

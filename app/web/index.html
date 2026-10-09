@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TriCast Studio</title>
+<link rel="icon" type="image/png" href="assets/tricast-mark-64.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <img class="brand-mark" src="assets/tricast-mark.png" alt="" width="32" height="32">
+    <span class="wordmark">TriCast Studio</span>
+    <span class="tagline">텐서코어 산술에 따라 모델 출력이 어떻게 달라지는지 비교합니다</span>
+  </div>
+  <div class="status" id="status"></div>
+</header>
+<div class="studio">
+  <aside class="rail" id="rail" aria-label="실험 구성"></aside>
+  <main class="scope" id="scope" aria-live="polite"></main>
+</div>
+<div class="tip" id="tip" role="tooltip" hidden></div>
+<script>
+  if (location.protocol === "file:") {
+    document.getElementById("scope").textContent = "이 페이지는 파일을 직접 열면 동작하지 않습니다. "
+      + "python -m app.server --demo 또는 python -m http.server -d app/web 로 띄운 주소에서 여세요.";
+  }
+</script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

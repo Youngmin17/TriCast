@@ -1,0 +1,26 @@
+# NVFP4 W4A4 with SpQR-style weight outliers kept in BF16 beside the NVFP4 weight.
+# Source: SpQR (Dettmers et al. 2023, arXiv:2306.03078) weight outlier preservation; NVFP4
+# operands and Blackwell FP4 accumulation as nvfp4_w_a.
+# Assumed: the 0.5% largest |w| of each weight tensor are the outliers (ties: lower flat index;
+# 0.5% is a chosen setting, not a SpQR value; SpQR picks outliers by quantization sensitivity).
+# They are zeroed before NVFP4 quantization (its scales exclude them) and rounded to BF16 (RNE).
+# Assumed: the separate high-precision path is an fp32 FMA chain in K order on the same NVFP4
+# activation operand, added once to the fp32 main result before one rounding to the MMA output.
+# Not modeled: the rest of SpQR (small-group quantization of the base weights, sparse outlier
+# encoding).
+name: nvfp4_outliers
+description: NVFP4 W4A4 with the 0.5% largest-magnitude weights kept in BF16 through an fp32 path.
+defaults:
+  weight: nvfp4
+  activation: nvfp4
+  mma: nvidia_blackwell_fp4
+  transform: none
+  weight_algo: rtn
+  outliers:
+    fraction: 0.005
+    format: bf16
+include:
+- '*'
+exclude:
+- lm_head
+backend: auto

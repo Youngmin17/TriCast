@@ -1,0 +1,594 @@
+{
+ "id": "det-coco_000000005001-fp64-fp8_tensor-native",
+ "status": "done",
+ "stage": null,
+ "progress": 1.0,
+ "request": {
+  "task": "vision.detect",
+  "model": "yolo11n",
+  "mma": {
+   "algorithm": "fp64"
+  },
+  "format": "fp8_tensor",
+  "baseline": "native",
+  "input": {
+   "image": "coco_000000005001.jpg"
+  }
+ },
+ "mma_label": "FP64 정확 누산",
+ "preset": "fp64",
+ "recipe": {
+  "name": "studio:fp64:fp8_tensor",
+  "bundled": null,
+  "yaml": "name: studio:fp64:fp8_tensor\ndescription: FP64 정확 누산 · FP8 E4M3 · 텐서 스케일\ndefaults:\n  weight: fp8_tensor\n  activation: fp8_tensor\n  mma:\n    algorithm: fp64\n  transform: none\n  weight_algo: rtn\ninclude:\n- '*'\nexclude:\n- lm_head\nbackend: auto\n"
+ },
+ "env": {
+  "utc": "2026-10-07T09:59:06.664980+00:00",
+  "hostname": "geneva.ee.ucl.ac.uk",
+  "git_sha": "625d5090b7b601fd05fd252fd96de6b439582d8d",
+  "git_dirty": false,
+  "src_sha256": null,
+  "versions": {
+   "python": "3.12.14",
+   "torch": "2.8.0+cu128",
+   "triton": "3.4.0",
+   "transformers": "4.55.2",
+   "lm_eval": "0.4.13",
+   "datasets": "4.8.5"
+  },
+  "gpu_names": [
+   "NVIDIA A100-SXM4-80GB"
+  ],
+  "gpu_driver": "595.71.05\n595.71.05\n595.71.05\n595.71.05",
+  "cuda": "12.8",
+  "model_id": "yolo11n",
+  "model_sha": "0ebbc80d4a7680d14987a577cd21342b65ecfd94632bd9a8da63ae6417644ee1",
+  "model_kind": "local",
+  "environment": {
+   "CUDA_VISIBLE_DEVICES": "0",
+   "PYTHONNOUSERSITE": "1",
+   "CUBLAS_WORKSPACE_CONFIG": ":4096:8",
+   "CONDA_DEFAULT_ENV": "/scratch/uceeeee/conda_envs/tricast"
+  },
+  "app": "tricast-studio",
+  "app_sha256": "55fc8ad1b38174de2d9e608c38070960d2c3682f00698e430a84e2a29bd92425",
+  "task": "vision.detect",
+  "device": "cuda",
+  "seed": 42,
+  "deterministic_algorithms": true,
+  "tf32": {
+   "matmul": false,
+   "cudnn": false
+  },
+  "recipe_sha256": "d6e6a8d4fde535e7bc45ff65a25337dd8d2bd3d60516034a1a50bfd51b18d40f",
+  "baseline_recipe_sha256": null,
+  "model_revision": "0ebbc80d4a7680d14987a577cd21342b65ecfd94632bd9a8da63ae6417644ee1",
+  "checkpoint": {
+   "path": "/scratch/uceeeee/tricast/quality_20261005/checkpoints/yolo11n.pt",
+   "sha256": "0ebbc80d4a7680d14987a577cd21342b65ecfd94632bd9a8da63ae6417644ee1"
+  },
+  "dtype": "float32",
+  "optional_versions": {
+   "ultralytics": "8.3.221",
+   "torchvision": "0.23.0",
+   "opencv-python": null,
+   "opencv-python-headless": "4.11.0.86",
+   "pillow": "11.3.0"
+  },
+  "detection": {
+   "conf": 0.25,
+   "iou": 0.7,
+   "imgsz": 640,
+   "max_det": 100,
+   "multi_label": true,
+   "agnostic": false,
+   "nms_time_limit": "disabled",
+   "preprocessing": "Ultralytics 8.3.221 rectangular validation letterbox (pad 0.5, no upscaling), /255"
+  }
+ },
+ "baseline": {
+  "label": "원본 (native)",
+  "image": {
+   "media": "coco_000000005001.jpg",
+   "width": 640,
+   "height": 480
+  },
+  "boxes": [
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.8033834099769592,
+    "xyxy": [
+     361.82373046875,
+     93.98809814453125,
+     523.7351684570312,
+     469.94757080078125
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.7782904505729675,
+    "xyxy": [
+     297.82745361328125,
+     53.25630187988281,
+     356.20989990234375,
+     138.20201110839844
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.7059321403503418,
+    "xyxy": [
+     203.1451416015625,
+     255.89627075195312,
+     349.0771484375,
+     477.7825622558594
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.6279456615447998,
+    "xyxy": [
+     342.3307189941406,
+     54.3487548828125,
+     406.3583679199219,
+     157.97434997558594
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.5883954167366028,
+    "xyxy": [
+     81.01527404785156,
+     224.9507598876953,
+     190.19374084472656,
+     470.45343017578125
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.5865078568458557,
+    "xyxy": [
+     429.0281982421875,
+     28.7689208984375,
+     506.91766357421875,
+     162.18577575683594
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.5086401104927063,
+    "xyxy": [
+     211.98707580566406,
+     86.80059814453125,
+     334.4937744140625,
+     315.6106872558594
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.4877684712409973,
+    "xyxy": [
+     42.51029968261719,
+     86.47113037109375,
+     160.13250732421875,
+     351.72857666015625
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.4379703402519226,
+    "xyxy": [
+     124.648193359375,
+     81.636474609375,
+     215.22021484375,
+     288.4184875488281
+    ]
+   },
+   {
+    "cls": "sports ball",
+    "cls_id": 32,
+    "conf": 0.4223082661628723,
+    "xyxy": [
+     303.70123291015625,
+     132.45770263671875,
+     387.40313720703125,
+     232.902099609375
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.4134230315685272,
+    "xyxy": [
+     10.461275100708008,
+     34.19932556152344,
+     68.31193542480469,
+     182.92393493652344
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.3841876983642578,
+    "xyxy": [
+     554.5513305664062,
+     141.23873901367188,
+     639.9102172851562,
+     468.9797668457031
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.3543848395347595,
+    "xyxy": [
+     42.298744201660156,
+     90.172607421875,
+     205.99465942382812,
+     356.14434814453125
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.34667670726776123,
+    "xyxy": [
+     171.42425537109375,
+     30.97479248046875,
+     248.03558349609375,
+     193.85549926757812
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.3438646197319031,
+    "xyxy": [
+     527.3742065429688,
+     53.465911865234375,
+     564.9397583007812,
+     125.23709106445312
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.34203338623046875,
+    "xyxy": [
+     11.32861328125,
+     49.994964599609375,
+     101.23397827148438,
+     182.34402465820312
+    ]
+   },
+   {
+    "cls": "bench",
+    "cls_id": 13,
+    "conf": 0.3256826400756836,
+    "xyxy": [
+     24.2205810546875,
+     333.0260009765625,
+     601.4091186523438,
+     475.0830078125
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.2905716896057129,
+    "xyxy": [
+     464.856689453125,
+     44.13017654418945,
+     506.30126953125,
+     103.56047058105469
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.2728268802165985,
+    "xyxy": [
+     172.6192626953125,
+     52.45709228515625,
+     295.27825927734375,
+     302.875244140625
+    ]
+   }
+  ]
+ },
+ "emulated": {
+  "label": "FP64 정확 누산 · FP8 E4M3 · 텐서 스케일",
+  "image": {
+   "media": "coco_000000005001.jpg",
+   "width": 640,
+   "height": 480
+  },
+  "boxes": [
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.7606506943702698,
+    "xyxy": [
+     297.75,
+     52.5,
+     356.0,
+     138.0
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.7577943801879883,
+    "xyxy": [
+     363.5,
+     102.0,
+     520.0,
+     473.0
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.724090576171875,
+    "xyxy": [
+     41.0,
+     91.0,
+     202.0,
+     351.5
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.685949444770813,
+    "xyxy": [
+     205.5,
+     256.75,
+     349.75,
+     473.0
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.6233768463134766,
+    "xyxy": [
+     212.0,
+     89.0,
+     335.0,
+     314.0
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.5054624080657959,
+    "xyxy": [
+     341.875,
+     54.5,
+     406.25,
+     157.0
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.4987945556640625,
+    "xyxy": [
+     430.25,
+     26.5,
+     505.25,
+     160.5
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.44987592101097107,
+    "xyxy": [
+     79.75,
+     228.0,
+     188.0,
+     447.0
+    ]
+   },
+   {
+    "cls": "sports ball",
+    "cls_id": 32,
+    "conf": 0.4390257000923157,
+    "xyxy": [
+     304.625,
+     130.25,
+     389.25,
+     231.75
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.4248892068862915,
+    "xyxy": [
+     10.25,
+     33.0,
+     67.5,
+     183.0
+    ]
+   },
+   {
+    "cls": "bench",
+    "cls_id": 13,
+    "conf": 0.3886180520057678,
+    "xyxy": [
+     58.0,
+     331.0,
+     597.0,
+     474.25
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.34687307476997375,
+    "xyxy": [
+     128.0,
+     83.0,
+     212.75,
+     279.0
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.34510529041290283,
+    "xyxy": [
+     558.25,
+     141.5,
+     639.875,
+     464.0
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.3242354094982147,
+    "xyxy": [
+     173.25,
+     30.5,
+     260.75,
+     203.0
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.28537195920944214,
+    "xyxy": [
+     526.875,
+     54.75,
+     565.25,
+     127.5
+    ]
+   },
+   {
+    "cls": "person",
+    "cls_id": 0,
+    "conf": 0.2658804655075073,
+    "xyxy": [
+     11.0,
+     51.25,
+     98.75,
+     178.0
+    ]
+   }
+  ]
+ },
+ "metrics": {
+  "matched": 16,
+  "baseline_only": 3,
+  "emulated_only": 0,
+  "mean_iou": 0.9165574200703177,
+  "mean_abs_conf_delta": 0.07258574664592743,
+  "pairs": [
+   {
+    "baseline": 0,
+    "emulated": 1,
+    "iou": 0.9386135491777112
+   },
+   {
+    "baseline": 1,
+    "emulated": 0,
+    "iou": 0.9839918998849975
+   },
+   {
+    "baseline": 2,
+    "emulated": 3,
+    "iou": 0.9545819969222293
+   },
+   {
+    "baseline": 3,
+    "emulated": 5,
+    "iou": 0.9805603693995921
+   },
+   {
+    "baseline": 4,
+    "emulated": 7,
+    "iou": 0.865179070374337
+   },
+   {
+    "baseline": 5,
+    "emulated": 6,
+    "iou": 0.935418507564024
+   },
+   {
+    "baseline": 6,
+    "emulated": 4,
+    "iou": 0.9792653404070868
+   },
+   {
+    "baseline": 7,
+    "emulated": 2,
+    "iou": 0.7209535635692856
+   },
+   {
+    "baseline": 8,
+    "emulated": 11,
+    "iou": 0.8869292110384893
+   },
+   {
+    "baseline": 9,
+    "emulated": 8,
+    "iou": 0.9363878060404256
+   },
+   {
+    "baseline": 10,
+    "emulated": 9,
+    "iou": 0.9741403180414099
+   },
+   {
+    "baseline": 11,
+    "emulated": 12,
+    "iou": 0.9409647614108652
+   },
+   {
+    "baseline": 13,
+    "emulated": 13,
+    "iou": 0.7914383040543074
+   },
+   {
+    "baseline": 14,
+    "emulated": 14,
+    "iou": 0.9323482413452487
+   },
+   {
+    "baseline": 15,
+    "emulated": 15,
+    "iou": 0.9279863931619254
+   },
+   {
+    "baseline": 16,
+    "emulated": 10,
+    "iou": 0.9161593887331492
+   }
+  ]
+ },
+ "timing": {
+  "baseline_s": 0.010740811005234718,
+  "emulated_s": 16.957221650052816
+ },
+ "evidence": {
+  "patched_linear": 0,
+  "patched_conv2d": 88,
+  "emulated_calls": 88,
+  "backend": "triton"
+ },
+ "cached_baseline": true
+}

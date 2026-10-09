@@ -1,0 +1,173 @@
+{
+ "id": "cls-coco_000000001000-cofda-f5-cs32-fused-fp8_tensor-native",
+ "status": "done",
+ "stage": null,
+ "progress": 1.0,
+ "request": {
+  "task": "vision.classify",
+  "model": "resnet18",
+  "mma": {
+   "algorithm": "cofda",
+   "f_bits": 5,
+   "chunk_size": 32,
+   "c_mode": "fused",
+   "promote_interval": 0,
+   "norm_rounding": "rtz"
+  },
+  "format": "fp8_tensor",
+  "baseline": "native",
+  "input": {
+   "image": "coco_000000001000.jpg"
+  }
+ },
+ "mma_label": "CoFDA · F5 · CS32 · fused",
+ "preset": null,
+ "recipe": {
+  "name": "studio:cofda-f5-cs32-fused:fp8_tensor",
+  "bundled": null,
+  "yaml": "name: studio:cofda-f5-cs32-fused:fp8_tensor\ndescription: CoFDA · F5 · CS32 · fused · FP8 E4M3 · 텐서 스케일\ndefaults:\n  weight: fp8_tensor\n  activation: fp8_tensor\n  mma:\n    algorithm: cofda\n    f_bits: 5\n    chunk_size: 32\n    c_mode: fused\n    promote_interval: 0\n    norm_rounding: rtz\n  transform: none\n  weight_algo: rtn\ninclude:\n- '*'\nexclude:\n- lm_head\nbackend: auto\n"
+ },
+ "env": {
+  "utc": "2026-10-07T09:59:51.821087+00:00",
+  "hostname": "geneva.ee.ucl.ac.uk",
+  "git_sha": "625d5090b7b601fd05fd252fd96de6b439582d8d",
+  "git_dirty": false,
+  "src_sha256": null,
+  "versions": {
+   "python": "3.12.14",
+   "torch": "2.8.0+cu128",
+   "triton": "3.4.0",
+   "transformers": "4.55.2",
+   "lm_eval": "0.4.13",
+   "datasets": "4.8.5"
+  },
+  "gpu_names": [
+   "NVIDIA A100-SXM4-80GB"
+  ],
+  "gpu_driver": "595.71.05\n595.71.05\n595.71.05\n595.71.05",
+  "cuda": "12.8",
+  "model_id": "resnet18",
+  "model_sha": "f37072fd47e89c5e827621c5baffa7500819f7896bbacec160b1a16c560e07ec",
+  "model_kind": "local",
+  "environment": {
+   "CUDA_VISIBLE_DEVICES": "0",
+   "PYTHONNOUSERSITE": "1",
+   "CUBLAS_WORKSPACE_CONFIG": ":4096:8",
+   "CONDA_DEFAULT_ENV": "/scratch/uceeeee/conda_envs/tricast"
+  },
+  "app": "tricast-studio",
+  "app_sha256": "55fc8ad1b38174de2d9e608c38070960d2c3682f00698e430a84e2a29bd92425",
+  "task": "vision.classify",
+  "device": "cuda",
+  "seed": 42,
+  "deterministic_algorithms": true,
+  "tf32": {
+   "matmul": false,
+   "cudnn": false
+  },
+  "recipe_sha256": "411ddcfea425d24214f2c1fc9cc63a37428e1f6edda29141f5c755965374f3b5",
+  "baseline_recipe_sha256": null,
+  "model_revision": "f37072fd47e89c5e827621c5baffa7500819f7896bbacec160b1a16c560e07ec",
+  "checkpoint": {
+   "path": "/scratch/uceeeee/tricast/quality_20261005/checkpoints/resnet18-f37072fd.pth",
+   "sha256": "f37072fd47e89c5e827621c5baffa7500819f7896bbacec160b1a16c560e07ec"
+  },
+  "dtype": "float32",
+  "optional_versions": {
+   "ultralytics": "8.3.221",
+   "torchvision": "0.23.0",
+   "opencv-python": null,
+   "opencv-python-headless": "4.11.0.86",
+   "pillow": "11.3.0"
+  },
+  "preprocessing": "torchvision ResNet18_Weights.IMAGENET1K_V1.transforms()"
+ },
+ "baseline": {
+  "label": "원본 (native)",
+  "image": {
+   "media": "coco_000000001000.jpg",
+   "width": 640,
+   "height": 480
+  },
+  "top": [
+   {
+    "label": "volleyball",
+    "class_id": 890,
+    "p": 0.07155838244062243
+   },
+   {
+    "label": "swimming trunks",
+    "class_id": 842,
+    "p": 0.04335116088313225
+   },
+   {
+    "label": "bathing cap",
+    "class_id": 433,
+    "p": 0.03712077811257523
+   },
+   {
+    "label": "whistle",
+    "class_id": 902,
+    "p": 0.029311666095879034
+   },
+   {
+    "label": "basketball",
+    "class_id": 430,
+    "p": 0.02920779262542598
+   }
+  ]
+ },
+ "emulated": {
+  "label": "CoFDA · F5 · CS32 · fused · FP8 E4M3 · 텐서 스케일",
+  "image": {
+   "media": "coco_000000001000.jpg",
+   "width": 640,
+   "height": 480
+  },
+  "top": [
+   {
+    "label": "volleyball",
+    "class_id": 890,
+    "p": 0.488070465910629
+   },
+   {
+    "label": "basketball",
+    "class_id": 430,
+    "p": 0.14885308201952033
+   },
+   {
+    "label": "racket",
+    "class_id": 752,
+    "p": 0.037635953092106295
+   },
+   {
+    "label": "puck",
+    "class_id": 746,
+    "p": 0.035355705966159875
+   },
+   {
+    "label": "soccer ball",
+    "class_id": 805,
+    "p": 0.027535051492487656
+   }
+  ]
+ },
+ "metrics": {
+  "top1_same": true,
+  "top5_overlap": 2,
+  "kl": 2.369082340771195,
+  "baseline_top1_p": 0.07155838244062243,
+  "emulated_top1_p": 0.488070465910629
+ },
+ "timing": {
+  "baseline_s": 0.0027386359870433807,
+  "emulated_s": 0.06848616804927588
+ },
+ "evidence": {
+  "patched_linear": 1,
+  "patched_conv2d": 20,
+  "emulated_calls": 21,
+  "backend": "triton"
+ },
+ "cached_baseline": false
+}

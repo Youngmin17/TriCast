@@ -1,0 +1,265 @@
+# TriCast 미니 도메인 온톨로지 (인터뷰 산출물)
+# evidence: docs/research/interviews.md B-3 인터뷰 로그의 번호 (tests/test_ontology.py 가 검사). 근거로 역추적되지 않는 항목은 두지 않는다.
+# code: 이 개념이 구현된 TriCast 코드 위치. 코드에만 있고 인터뷰 근거가 없는 어휘는 ontology.md §7에 따로 둔다.
+# 규칙: relations의 대상은 반드시 이 파일에 정의된 클래스여야 한다 (미정의 클래스 참조 금지).
+version: 1
+classes:
+  Engineer:
+    description: 양자화 모델을 칩에 올리거나 칩의 연산기를 설계하며 TriCast를 쓰는 사람
+    evidence: [로그 01, 로그 03, 로그 07, 로그 09, 로그 24]
+    code: null   # 사용자 — 코드 객체 없음
+    attributes:
+      role: {type: enum, values: [chip_design_research, npu_compiler, verification, fae, on_device, quant_research, model_optimization, porting, pm, student], evidence: [로그 01, 로그 03, 로그 06, 로그 09, 로그 16, 로그 18]}
+      chip_arithmetic_access: {type: bool, note: "칩 계산 규칙을 직접 보는가 — 1차 사용자를 가르는 핵심 변수", evidence: [로그 15, 로그 16, 로그 17, 로그 18, 로그 19]}
+    relations:
+      - targets: Chip
+        evidence: [로그 03, 로그 04, 로그 14]
+      - defines: Recipe
+        evidence: [로그 03, 로그 07, 로그 11]
+      - deploys: Model
+        evidence: [로그 03, 로그 06, 로그 10]
+
+  Chip:
+    description: 계산 규칙을 흉내 낼 대상 하드웨어
+    synonyms: [칩, 보드, NPU, SoC, FPGA, 가속기, 박스, MCU급 보드]   # 인터뷰 원문 표현 (ontology.md §3)
+    evidence: [로그 03, 로그 04, 로그 05, 로그 11, 로그 14, 로그 27]
+    code: null   # 칩 자체는 코드 밖 — 그 계산 규칙이 HardwarePreset·Recipe로 들어온다
+    attributes:
+      kind: {type: enum, values: [npu, soc, fpga, mcu, gpu], evidence: [로그 03, 로그 05, 로그 07, 로그 11]}
+      arithmetic_disclosure: {type: enum, values: [documented, inquiry_only, undisclosed], note: "undisclosed면 레시피를 쓸 수 없음 — 범위 밖", evidence: [로그 04, 로그 07, 로그 14, 로그 27]}
+      revision: {type: string, note: "리비전·벤더가 바뀌면 계산 규칙도 바뀜", evidence: [로그 04, 로그 14]}
+      memory_budget: {type: string, examples: ["2GB", "4MB flash", "300MB", "8GB"], evidence: [로그 03, 로그 05, 로그 12, 로그 20]}
+    relations:
+      - described_by: HardwarePreset
+        evidence: [로그 07]
+
+  Model:
+    description: 양자화되어 칩에 올라가는 AI 모델
+    evidence: [로그 03, 로그 04, 로그 05, 로그 10]
+    code: transformers / torchvision / ultralytics 모델 (patch_model의 입력)
+    attributes:
+      domain: {type: enum, values: [llm, speech, vision], evidence: [로그 03, 로그 04, 로그 05]}
+      params: {type: string, examples: ["1B", "1.5B", "3B", "7B"], evidence: [로그 03, 로그 06, 로그 10, 로그 11]}
+      revision: {type: string, code: "EvalRun.env.model_sha", evidence: [로그 15, 로그 16]}   # "새 파일을 줬는데 뭐가 달라졌는지 설명을 못 들었다"
+    relations:
+      - has: Layer
+        evidence: [로그 03, 로그 05, 로그 10]
+
+  Layer:
+    description: 모델 안의 계산 단위 (Linear·Conv2d·Attention·KV 캐시·활성함수)
+    evidence: [로그 03, 로그 05, 로그 08, 로그 10, 로그 13]
+    code: tricast.nn.EmuLinear / EmuConv2d / patch_attention / tricast.kv
+    attributes:
+      kind: {type: enum, values: [linear, conv2d, attention, kv_cache, activation_fn], note: "activation_fn(LUT)은 미지원", evidence: [로그 03, 로그 05, 로그 08, 로그 13]}
+      decoder_index: {type: int, note: "-1 = 마지막 블록", code: "overrides[].layers", evidence: [로그 10, 로그 13]}
+    relations:
+      - belongs_to: Model
+        evidence: [로그 10]
+
+  Recipe:
+    description: 칩의 계산 규칙 한 벌을 적은 설정 카드 — 조합을 바꿀 때 코드 대신 이것을 바꾼다
+    synonyms: [조합, 설정, 정밀도 조합]   # 인터뷰 원문 표현 (ontology.md §3)
+    evidence: [로그 02, 로그 03, 로그 07, 로그 11]
+    code: tricast.recipe.Recipe (YAML · dict, sha256)
+    attributes:
+      name: {type: string, key: true}
+      sha256: {type: string, note: "키 순서와 무관한 정규 JSON 해시", evidence: [로그 16]}
+      include_exclude: {type: list, examples: ["*", "lm_head"], code: "Recipe.include / Recipe.exclude", evidence: [로그 08]}   # softmax만 CPU로 뺌 = 일부 제외
+    relations:
+      - has: QuantSpec
+        evidence: [로그 04, 로그 05, 로그 11]
+      - has: MMASpec
+        evidence: [로그 03, 로그 07]
+      - has: WeightStructure
+        evidence: [로그 02]
+      - has: KVSpec
+        evidence: [로그 13]
+      - has: LayerRule
+        evidence: [로그 09, 로그 10, 로그 14]
+      - applied_to: Model
+        evidence: [로그 03, 로그 10]
+
+  Format:
+    description: 숫자 하나를 몇 비트로 어떻게 표현하는지 (수 형식)
+    synonyms: [정밀도, 비트 폭, W8A8, INT8, FP8, E4M3, 4비트]   # 인터뷰 원문 표현 (ontology.md §3)
+    evidence: [로그 03, 로그 06, 로그 07, 로그 13]
+    code: tricast.formats (FloatFormat · IntFormat · Pow2Format, 등록 20종)
+    attributes:
+      kind: {type: enum, values: [float, int, pow2], evidence: [로그 06, 로그 07, 로그 12]}
+      bits: {type: int, examples: [4, 8], evidence: [로그 07, 로그 10, 로그 12]}
+      special: {type: enum, values: [ieee, fn, fnuz, none], note: "e4m3(fn) 최대 448 vs e4m3fnuz 최대 240", evidence: [로그 06]}
+      subnormals: {type: bool, note: "false = 서브노멀을 0으로 (FTZ)", evidence: [로그 06]}
+      max_normal: {type: float, evidence: [로그 06]}
+
+  QuantSpec:
+    description: 텐서를 Format 위로 옮기는 방법 — 스케일 단위·방법, 반올림, 보정
+    evidence: [로그 04, 로그 05, 로그 11, 로그 12]
+    code: tricast.quant.spec.QuantSpec (명명된 방식 27종 + bfp)
+    attributes:
+      granularity: {type: enum, values: [tensor, row, group, block], note: "channel·token은 row의 동의어", synonyms: [채널별 스케일, 텐서 하나에 스케일 하나, 그룹 크기, 블록 스케일], evidence: [로그 05, 로그 11]}
+      group_size: {type: int, evidence: [로그 11]}
+      scale_method: {type: enum, values: [absmax, pow2_floor, pow2_ceil, mse, percentile], note: "Four Over Six = mse + search [1.0, 1.5] (방식 이름 nvfp4_4o6)", evidence: [로그 11, 로그 12]}
+      rounding: {type: enum, values: [rne, rna, rtz, rup, rdn, sr], note: "칩의 '버림' = rtz", synonyms: [반올림, 라운딩, 버림, 짝수 쪽 반올림], evidence: [로그 04, 로그 09, 로그 11]}
+      saturate: {type: bool, evidence: [로그 09]}   # "포화 처리"
+      calibration_samples: {type: int, examples: [128, 512], code: "Recipe.calibration.samples", evidence: [로그 11, 로그 14, 로그 21]}
+    relations:
+      - uses: Format
+        evidence: [로그 04, 로그 07]
+
+  MMASpec:
+    description: 곱한 값을 더하는 칩의 누산 규칙
+    synonyms: [누산기, 누적기, 누적, 내적 누산, 연산기, IEEE 연산 알고리즘]   # 인터뷰 원문 표현 (ontology.md §3)
+    evidence: [로그 01, 로그 02, 로그 03, 로그 07, 로그 09]
+    code: tricast.mma.spec.MMASpec · tricast.kernels.mma (Triton) · tricast.reference.mma
+    attributes:
+      algorithm: {type: enum, values: [cofda, gdfs, fp32_fma, fp64, int_exact], evidence: [로그 01, 로그 07]}
+      f_bits: {type: int, range: [1, 48], note: "누산기에 남기는 소수 비트", evidence: [로그 03, 로그 07]}
+      chunk_size: {type: int, note: "한 번에 정렬해 더하는 곱의 개수 (로그 03: 32개)", evidence: [로그 03, 로그 07]}
+      out_format: {type: Format, note: "ULP 오차를 재는 눈금의 기준 형식", evidence: [로그 01, 로그 02]}
+    relations:
+      - uses: Format
+        evidence: [로그 01, 로그 02]
+
+  HardwarePreset:
+    description: 특정 칩·GPU 세대의 MMASpec 값 + 출처·검증 상태
+    evidence: [로그 06, 로그 07, 로그 13, 로그 24]
+    synonyms: [GPU 세대별 누산 방식, 칩 리비전 규칙]
+    code: tricast.mma.spec.PRESETS (8종, provenance 필수)
+    attributes:
+      provenance: {type: string, note: "출처 없으면 만들지 않음 — 모르면 '미검증'", evidence: [로그 06, 로그 07]}
+      silicon_check: {type: enum, values: [verified, partial_mismatch, planned, user_deferred], evidence: [로그 06, 로그 24]}
+    relations:
+      - instantiates: MMASpec
+        evidence: [로그 07]
+      - describes: Chip
+        evidence: [로그 07]
+
+  WeightStructure:
+    description: 양자화 전에 가중치 구조를 바꾸는 규칙 — N:M 희소, 이상치 별도 보존
+    evidence: [로그 02]
+    code: tricast.quant.structure (SparsitySpec · OutlierSpec)
+    attributes:
+      sparsity: {type: enum, values: ["none", "n:m", unstructured], evidence: [로그 02]}
+      outlier_fraction: {type: float, evidence: [로그 02]}
+      outlier_format: {type: Format, evidence: [로그 02]}
+
+  KVSpec:
+    description: 생성 중 쌓이는 KV 캐시의 양자화 규칙
+    evidence: [로그 13]
+    code: tricast.quant.spec.KVSpec · tricast.kv (kivi2 · kivi4 · kv_fp8)
+    attributes:
+      preset: {type: enum, values: [kivi2, kivi4, kv_fp8], evidence: [로그 13]}
+      layers: {type: string, note: "앞쪽 레이어만 양자화 등", evidence: [로그 13]}
+
+  LayerRule:
+    description: 특정 레이어에만 다른 규칙을 주거나 양자화에서 빼는 규칙 (혼합 정밀도)
+    synonyms: [레이어별 8/16비트, 민감한 레이어, 앞쪽 블록 · 맨 끝 블록, 레이어별 켜고 끄는 실험]   # 인터뷰 원문 표현 (ontology.md §3)
+    evidence: [로그 08, 로그 09, 로그 10, 로그 13, 로그 14]
+    code: Recipe.overrides (match · layers · modules · skip)
+    attributes:
+      selector: {type: enum, values: [match, layers, modules], evidence: [로그 10, 로그 13]}
+      skip: {type: bool, note: "true = 원래 정밀도 유지", evidence: [로그 08, 로그 10]}
+    relations:
+      - selects: Layer
+        evidence: [로그 10, 로그 13]
+
+  Symptom:
+    description: 칩에서 관찰된 출력 차이 — 증상만으로는 원인을 알 수 없다
+    evidence: [로그 03, 로그 04, 로그 05, 로그 06, 로그 08]
+    code: null   # 사용자가 보는 현상 — EvalRun 지표로 측정
+    attributes:
+      category: {type: enum, values: [repetition, numeric_mismatch, quality_drop, number_format_error, detection_miss], evidence: [로그 03, 로그 06, 로그 09, 로그 08, 로그 05]}
+      visible_in_average: {type: bool, note: "평균 점수로 안 보이는 실패 (긴 문맥·작은 물체)", evidence: [로그 05, 로그 13]}
+    relations:
+      - caused_by: RootCause
+        evidence: [로그 03, 로그 04, 로그 06]
+
+  RootCause:
+    description: 증상을 만든 칩 계산 규칙의 차이
+    synonyms: [원인, 칩 최적화 이슈]   # 인터뷰 원문 표현 (ontology.md §3)
+    evidence: [로그 03, 로그 04, 로그 05, 로그 06, 로그 07, 로그 08]
+    code: null   # 원인 → 레시피 축으로 표현 (expressed_as)
+    attributes:
+      category:
+        type: enum
+        values: [accumulator_width, rounding, special_values, scale_granularity, outlier_sparsity, kv_cache, gpu_generation_accumulation, activation_lut, undisclosed_arithmetic]
+        evidence: [로그 03, 로그 04, 로그 06, 로그 05, 로그 02, 로그 13, 로그 07, 로그 08, 로그 14]
+      covered: {type: bool, note: "activation_lut = false (미지원), undisclosed_arithmetic = false (범위 밖)", evidence: [로그 08, 로그 14]}
+    relations:
+      - expressed_as: Recipe
+        evidence: [로그 03, 로그 04, 로그 05, 로그 06]
+
+  Reference:
+    description: 결과가 맞는지 판정하는 비교 기준
+    synonyms: [C 모델, 비트 정확 시뮬레이터, 참조 구현, 정확한 참조 모델, 비트 정확 모델, RTL 시뮬레이션, SDK 시뮬레이터]   # 인터뷰 원문 표현 (ontology.md §3)
+    evidence: [로그 03, 로그 06, 로그 09, 로그 16, 로그 24]
+    code: tricast.reference (fp64 · int64 · Fraction) · 비교 기준 native / same_quant_fp64
+    attributes:
+      kind: {type: enum, values: [pytorch_fakequant, vendor_sdk_sim, bit_exact_c_model, rtl_sim, real_chip, dedicated_team_model], evidence: [로그 03, 로그 05, 로그 06, 로그 08, 로그 09, 로그 24]}
+      bit_exact: {type: bool, evidence: [로그 02, 로그 03]}
+      throughput: {type: string, examples: ["문장당 20분", "문장당 수 분"], evidence: [로그 03, 로그 09]}
+
+  EvalRun:
+    description: 모델·레시피 조합 하나를 평가한 기록 — 지표 + 실행 환경
+    evidence: [로그 03, 로그 07, 로그 11, 로그 16, 로그 18]
+    code: tricast.eval.runner (record · env.json)
+    attributes:
+      metrics: {type: dict, examples: [ppl, wer, accuracy, benchmark, logits], evidence: [로그 03, 로그 04, 로그 06, 로그 07, 로그 12]}
+      env: {type: dict, examples: [git_sha, model_sha, recipe_hash, dataset_fingerprints, gpu_names, versions], note: "env가 함께 있을 때만 근거가 된다", evidence: [로그 07, 로그 16, 로그 18]}
+      seed: {type: int, evidence: [로그 07, 로그 11]}
+    relations:
+      - evaluates: Model
+        evidence: [로그 03, 로그 06]
+      - under: Recipe
+        evidence: [로그 07, 로그 11]
+      - compared_with: Reference
+        evidence: [로그 06, 로그 16]
+      - reveals: Symptom
+        evidence: [로그 06, 로그 13]
+
+  ErrorReport:
+    description: 레이어 단위 오차 분석 — 어디서 차이가 생기는지 좁힌다
+    evidence: [로그 01, 로그 02, 로그 03, 로그 07, 로그 10, 로그 13]
+    code: tricast.analysis.layer_report (MSE · SQNR · cosine · mma_ulp · logits KL)
+    attributes:
+      mma_ulp: {type: float, note: "같은 피연산자를 FP64로 누산한 값과의 ULP 거리", evidence: [로그 01, 로그 02]}
+      per_layer: {type: list, note: "레이어 덤프 비교의 자동화", evidence: [로그 03, 로그 07, 로그 13]}
+      sensitivity_rank: {type: list, evidence: [로그 10]}
+    relations:
+      - part_of: EvalRun
+        evidence: [로그 03, 로그 07]
+      - localizes: Layer
+        evidence: [로그 03, 로그 10, 로그 13]
+
+# 범위: TriCast 가 관리하는 것 / 이름·revision·출처로만 가리키는 외부 대상 / 범위 밖 (제외 이유와 근거)
+scope:
+  managed: [Recipe, Format, QuantSpec, MMASpec, HardwarePreset, WeightStructure, KVSpec, LayerRule, Reference, EvalRun, ErrorReport]
+  external_reference:
+    classes: [Engineer, Chip, Model, Layer, Symptom, RootCause]
+    note: "Model 은 체크포인트 이름과 revision(EvalRun.env.model_sha)으로, Chip 의 계산 규칙은 HardwarePreset.provenance 의 출처로 가리킨다. Symptom·RootCause 는 사용자가 칩에서 겪는 현상과 원인이며, TriCast 는 이를 EvalRun·ErrorReport 로 재고 Recipe 로 표현한다"
+  out_of_scope:   # docs/SPEC.md §4 의 비포함 목록과 같은 항목 (tests/test_ontology.py 가 대조)
+    - item: 실제 칩 RTL·사이클 단위 시뮬레이션
+      reason: 사이클 정확 시뮬레이션은 RTL·C 모델의 몫이고, TriCast 는 계산 결과를 모델 수준으로 빠르게 잰다 (페인 P4)
+      evidence: [로그 03, 로그 06, 로그 09]
+    - item: 칩 속도·전력·면적 예측
+      reason: TriCast 는 계산 결과를 맞추는 도구이며 성능 시뮬레이터가 아니다. 누산 비트 수를 정하는 설계 목적(P10)은 공유하고 오차까지만 다룬다
+      evidence: [로그 01, 로그 02]
+    - item: Tensor Core 네이티브 실행 경로
+      reason: Tensor Core 는 정렬 폭·절삭이 고정이라 칩 규칙을 바꿔 넣을 수 없어, 같은 산술을 CUDA core 에서 에뮬레이트한다
+      evidence: [로그 07]
+    - item: 출처 없는 하드웨어 수치
+      reason: 절대 규칙 2 — 출처를 모르는 값은 "미검증"으로 표시하고 프리셋으로 만들지 않는다
+      evidence: [로그 06, 로그 07]
+    - item: 활성함수 표(LUT) 근사
+      reason: 현재 레시피 항목에 없음 — 다음 버전 후보
+      evidence: [로그 08]
+    - item: 계산 규칙이 비공개인 칩의 역공학
+      reason: 규칙을 모르면 레시피를 쓸 수 없다
+      evidence: [로그 14, 로그 16, 로그 27]
+    - item: 칩 컴파일러·배포
+      reason: 칩 벤더의 영역
+      evidence: [로그 05]
+    - item: 모델 학습 파이프라인
+      reason: TriCast 는 추론 산술 에뮬레이터이며 QAT 는 STE 수준만 지원한다
+      evidence: [로그 12]
+# 핵심 흐름: Engineer --defines--> Recipe(QuantSpec·MMASpec←HardwarePreset) --applied_to--> Model --EvalRun--> Symptom --caused_by--> RootCause --expressed_as--> Recipe

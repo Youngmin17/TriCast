@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tricast"
+version = "0.1.0.dev0"
+description = "Triton emulation of arbitrary number formats, quantization schemes and MMA accumulation arithmetic, wired to Hugging Face models and lm-eval"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [{ name = "Youngmin17", email = "galateia2331@gmail.com" }]
+dependencies = ["torch>=2.4", "numpy", "pyyaml", "jsonschema"]
+
+[project.optional-dependencies]
+triton = ["triton>=3.4"]
+eval = ["transformers>=4.55", "lm_eval>=0.4.13", "datasets>=4.0", "accelerate"]
+# transformers: KV cache API tested on 4.55.2. datasets>=4: hub cards of hellaswag/coqa use the
+# "List" feature type; lm_eval 0.4.9.1 pins datasets<4 (tested: lm_eval 0.4.13, datasets 4.8.5).
+agent = ["anthropic"]
+# TriCast Studio server and its tests (app/tests); the GPU runners also need app/requirements.txt.
+app = ["fastapi", "uvicorn", "httpx", "pillow"]
+dev = ["pytest", "hypothesis", "ruff"]
+
+[project.scripts]
+tricast = "tricast.cli:main"
+tricast-lm-eval = "tricast.eval.lmeval:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+tricast = ["schemas/*.json", "prompts/*.md", "recipes/*.yaml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Tests import this checkout's src/, not whichever tricast is installed in the environment.
+pythonpath = ["src"]
+addopts = "-ra"
+markers = [
+  "gpu: needs a CUDA GPU with triton",
+  "slow: downloads models or runs full evaluations",
+  "oracle: needs an external oracle package (e.g. microxcaling)",
+]
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = ["E731"]

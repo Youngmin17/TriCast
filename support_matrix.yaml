@@ -1,0 +1,362 @@
+# TriCast support matrix — the single source of implementation status (AGENTS.md §7).
+#
+# status:
+#   verified     test evidence on the named backend (evidence names the test and the run)
+#   implemented  code + CPU tests; the named backend is not yet verified end to end
+#   planned      not implemented
+# scope_status: user_deferred records a deliverable decision, not a verification/implementation result.
+# Update this file in the same change that moves a cell; never mark "verified" without evidence.
+
+updated: 2026-10-08
+
+backends:
+  reference:
+    status: verified
+    evidence: "pytest --ignore=tests/gpu: Linux x86_64 torch 2.8.0 (UCL cluster) 2337 passed at 82db449, after
+      six tests that compared native CPU results bit for bit (BLAS/SDPA rounding by shape) got tolerances
+      for those native parts only (9a2680b); macOS arm64 torch 2.11: the affected test files (483 tests)
+      passed at 82db449, the full suite at an earlier commit. On CUDA tensors the reference equals the CPU
+      bit for bit since 9e9bfed (tests/gpu/test_reference_cuda.py, A100 and V100); before, torch.ldexp
+      made rare casts differ and every reference GEMM raise on CUDA. Current model-expansion snapshot:
+      geneva CPU suite 2337 passed, 1 existing CUDA-only skip (tests/test_golden.py:294), with
+      MKL_CBWR=COMPATIBLE and the microxcaling oracle on PYTHONPATH; runs/20261005_model_expansion/cpu/stdout.log;
+      source identity is recorded under model_families.validation. Final attention-extension CPU regression:
+      2337 passed, 1 CUDA-only skip in 146.85s, src SHA256 2bdfa31c4d29d9bdbeeb873016c345f2e934eec174fee97c8b30119c6dc5a58a;
+      quality_20261005/results/cpu_regression_final/stdout.log. Metadata-only named-task capture correction:
+      Berlin CPU 2337 passed, 1 CUDA-only skip in 91.31s, src SHA256
+      1de6f8584e2ffdda5fdbb0490c0e8a28efbe8f1feea910bb76bebc7f3bcf386a;
+      quality_20261005/results/cpu_regression_metadata_full/stdout.log"
+  triton_quantize:
+    status: verified
+    evidence: "tests/gpu/test_triton_quantize.py bit-exact vs reference (A100 sm_80 and V100 sm_70, triton 3.4.0);
+      current H200 snapshot: full GPU suite 896 passed, 1 existing optional performance skip
+      (TRICAST_MMA_PERF), runs/20261005_model_expansion/gpu-final-h200/stdout.log. Final attention-extension
+      H200 suite: 896 passed, 1 optional performance skip in 62.89s; h200_regression_final_clean,
+      src SHA256 2bdfa31c4d29d9bdbeeb873016c345f2e934eec174fee97c8b30119c6dc5a58a"
+  triton_mma:
+    status: verified
+    evidence: "tests/gpu/test_triton_mma.py bit-exact vs reference (A100 and V100; whole GPU suite 896 passed at 9e9bfed);
+      bench_mma_vs_nadpe.py bit-identical to NADPE on full-size GEMMs; small-M kernel: GPU suite 845 passed at
+      cc0478b on A100 and V100 (incl. tests/gpu/test_triton_gemv.py), all 1716 NADPE vectors on A100 and V100,
+      Qwen3-0.6B decode logits of 9 recipes identical to the tiled kernel; lm-eval hopper_fp8_w8a8 (HellaSwag 2000,
+      CoQA 500) rerun at b68addd reproduces every metric of the 5c09f47 run. Current model-expansion snapshot:
+      berlin H200 NVL, Triton 3.4.0, full GPU suite 896 passed, 1 optional performance skip in 65.78s;
+      runs/20261005_model_expansion/gpu-final-h200/stdout.log; model_families.validation records source identity.
+      Final attention-extension H200 regression: 896 passed, 1 optional performance skip in 62.89s;
+      h200_regression_final_clean at source 2bdfa31c4d29d9bdbeeb873016c345f2e934eec174fee97c8b30119c6dc5a58a"
+    performance: "A100: CoFDA F=13 0.15 TMAC/s (NADPE 0.15), GDFS G=6 0.15, GDFS G=32 0.11 (NADPE 0.16);
+      Qwen3-0.6B Hopper-FP8 decode step (M=1, scripts/bench/bench_decode.py, 032684b and cc0478b alternated
+      twice on one GPU): V100 375-401 -> 168-170 ms; A100 292-294 -> 101 ms (host load ~95 on 128 CPUs)"
+
+formats:
+  float: {status: verified, members: [fp32, tf32, bf16, fp16, fp8_e4m3, fp8_e5m2, fp8_e4m3fnuz,
+          fp8_e5m2fnuz, fp6_e3m2, fp6_e2m3, fp4_e2m1, ue4m3, "custom ExMy (ieee|fn|fnuz|none, bias, nosub)"],
+          evidence: "tests/test_cast_reference.py: torch-native parity (fp8 x4, bf16, fp16) + brute-force grid oracle"}
+  int: {status: verified, members: [int8, int4, int2, uint8, uint4, mxint8, mxint4, "intN[:full][:frac=F]"]}
+  pow2: {status: verified, members: [e8m0]}
+
+rounding: {status: verified, modes: [rne, rna, rtz, rup, rdn, sr], note: "SR takes explicit uint32 noise for cross-backend parity"}
+
+quantization:
+  granularity: {status: verified, values: [tensor, row, group, block]}
+  scale_method: {status: verified, values: [absmax, pow2_floor, pow2_ceil, mse, percentile, four_over_six]}
+  scale_format: {status: verified, values: [fp32, fp16, bf16, ue4m3, e8m0, "any float format"]}
+  two_level: {status: verified, note: "NVFP4, TensorRT-Model-Optimizer ordering"}
+  zero_point: {status: implemented, values: [none, int, float],
+               note: "dequant mma_input only; float = KIVI/HQQ offset (unsigned formats), int = GPTQ/AWQ style"}
+  observers: {status: implemented, values: [minmax, ema, history, percentile, mse], note: "tensor granularity; CPU tests"}
+  microxcaling_parity: {status: verified, evidence: "tests/test_microxcaling_parity.py (even/nearest/floor)"}
+  schemes: [mxfp8_e4m3, mxfp8_e5m2, mxfp6_e3m2, mxfp6_e2m3, mxfp4, mxint8, mxint4, nvfp4, nvfp4_4o6,
+            msfp12, msfp16, "bfp<m>_b<block>", fp8_tensor, fp8_tensor_ema, fp8_tensor_delayed, fp8_row,
+            fp8_group128, fp8_block128, int8_tensor, int8_row, int4_g128, int4_g128_zp, kivi2, kivi4,
+            bf16, fp16, fp32, tf32]
+
+transforms: {status: implemented, values: [hadamard, random_hadamard, smoothquant, awq],
+             note: "smoothquant/awq share one scale across linears reading the same input (q/k/v, gate/up)",
+             evidence: "tests/test_transforms.py, tests/test_calibrate.py (CPU)"}
+weight_algorithms: {status: implemented, values: [rtn, gptq], note: "gptq supports sequential calibration",
+                    evidence: "tests/test_gptq.py (CPU): GPTQ error < RTN"}
+weight_structure:
+  sparsity: {status: verified, values: ["n:m", unstructured], source: "team interviews, log 10",
+             note: "magnitude pruning after the transform, before quantization; dense K order in the accumulator
+               (hardware that compresses N:M operands may chunk differently: not modeled); inference only, not with gptq",
+             evidence: "tests/test_sparsity_outliers.py (CPU); tests/gpu/test_triton_structure.py reference = Triton
+               bit for bit (A100, V100)"}
+  outliers: {status: verified, values: [fraction, format], source: "team interviews, log 10; SpQR arXiv:2306.03078",
+             note: "largest |w| kept in a float format beside the quantized weight, added through an fp32 FMA path
+               and rounded once; magnitude selection (not SpQR's sensitivity); inference only, not with gptq",
+             evidence: "tests/test_sparsity_outliers.py (CPU); tests/gpu/test_triton_structure.py (A100, V100)"}
+kv_cache:
+  status: implemented
+  modes: [cache, fakequant]
+  presets: [kivi2, kivi4, kv_fp8]
+  note: "KIVI layout (keys per channel, values per token, residual window); HF transformers 4.55 cache API"
+  evidence: "tests/test_kv.py, tests/test_kv_generation.py (CPU, tiny models)"
+per_layer_rules: {status: implemented, selectors: [match, layers, modules], actions: [override fields, skip]}
+qat: {status: implemented, note: "STE (clipped) through fake_quant and EmuLinear backward; LSQ planned"}
+
+mma:
+  algorithms:
+    cofda_fused: {reference: verified, triton: verified}
+    cofda_decoupled: {reference: verified, triton: verified}
+    cofda_promote: {reference: verified, triton: verified, note: "DeepSeek-V3 style fp32 promotion"}
+    gdfs: {reference: verified, triton: verified}
+    fp32_fma: {reference: verified, triton: verified}
+    fp64: {reference: verified, triton: verified}
+    int_exact: {reference: verified, triton: verified}
+  scale_apply: [epilogue, product, group, promote, operand]
+  presets:
+    nvidia_hopper_fp8:
+      params: "cofda F=13 CS=32"
+      source: NADPE
+      silicon_check: partial_mismatch
+      note: "Observed WGMMA partial mismatch: 140/141 numerical cases passed, direct FP32-C
+        signed-zero/subnormal case differs in 132/512 FP32 elements (max_abs_diff=2^-149). Retained
+        PTX/SASS reinspection passed for native QGMMA; overall native bit parity is not verified. The earlier mma.sync path was
+        compiler-lowered to FP16. integration.silicon_probe.wgmma"
+    nvidia_ada_fp8: {params: "cofda F=13 CS=16", source: NADPE, silicon_check: planned}
+    nvidia_blackwell_fp8: {params: "cofda F=25 CS=32", source: NADPE, silicon_check: planned,
+      scope_status: user_deferred, scope_note: "Native validation excluded from current deliverable by user decision 2026-10-05; no Blackwell hardware or silicon evidence"}
+    nvidia_blackwell_fp4: {params: "gdfs G=6 F=35 GS=16 KT=64", source: NADPE, silicon_check: planned,
+      scope_status: user_deferred, scope_note: "Native validation excluded from current deliverable by user decision 2026-10-05; no Blackwell hardware or silicon evidence"}
+    deepseek_fp8_promote128: {params: "cofda F=13 CS=32 promote 128", source: "DeepSeek-V3 report"}
+  nadpe_oracle:
+    triton_evidence: "scripts/nadpe_oracle/check_triton.py on A100: all 1716 cases bit-identical (FP8 1200,
+      NVFP4 172, MXFP4 344), 0 mismatches"
+    fp8:
+      reference: verified
+      triton: verified
+      evidence: "tests/data/nadpe/fp8_*.pt — 1200 cases (CoFDA fused 264, decoupled 264, GDFS 672 with
+        k_tile 32) bit-exact vs NADPE MMA-Emu CUDA built standalone for sm_80 (scripts/nadpe_oracle)"
+    fp4:
+      reference: verified
+      triton: verified
+      evidence: "tests/data/nadpe/fp4_*.pt — 516 cases (NVFP4 UE4M3 block 16, MXFP4 E8M0 block 32; GDFS k_tile 64)
+        bit-exact vs the same standalone NADPE build (scripts/nadpe_oracle/gen_vectors_fp4.py)"
+
+integration:
+  hf_patch: {status: implemented, note: "nn.Linear -> EmuLinear; lm_head excluded by default"}
+  conv2d_patch:
+    status: verified
+    backends: [reference, triton]
+    note: "Opt-in include_conv2d=True; unfold -> one EmuLinear per group. Inference-only, dynamic quantization,
+      RTN weights; no transforms, GPTQ, observers, custom Conv2d subclasses or module-local hooks.
+      Public Parameters/state_dict names and aliases are preserved; unpatch restores the original modules.
+      SR caches survive whole-module deepcopy/pickle, but are not part of a plain state_dict.
+      This is an explicit reduction order, not cuDNN algorithm or native Tensor Core convolution parity"
+    evidence: "scripts/e2e/validate_model_families.py: 40 convolution cases (8 geometries x 5 recipes),
+      all finite and bit-identical to independent matrix lowering (max_diff=0, bypass_detected=false),
+      plus 11 contract guards on geneva CPU reference, berlin H200 NVL GPU 1 and geneva A100 GPU 0,
+      Triton 3.4.0;
+      whole-module SR pickle probe passed (runs/20261005_model_expansion/sr-pickle/stdout.log).
+      See model_families.validation for source identity and artifacts"
+  calibration: {status: implemented, datasets: [wikitext2, c4, pile], options: [samples, seqlen, seed, sequential],
+                note: "recipes that need calibration refuse to run until calibrate() completes"}
+  ppl: {status: implemented, note: "GPTQ convention, WikiText-2 test"}
+  lm_eval:
+    status: implemented
+    note: "model name 'tricast' (HFLM subclass)"
+    task_metadata:
+      status: verified
+      scope: "lm-eval 0.4.13 named, inline, nested-group and prebuilt task fingerprint capture;
+        five CPU checks including the old missing-capture negative control. Metadata only, not model quality"
+      src_sha256: 1de6f8584e2ffdda5fdbb0490c0e8a28efbe8f1feea910bb76bebc7f3bcf386a
+      harness_sha256: cfab04623322e0fe4e4fcf99b76d85d5091fb9739c61f5d006eb04770aeb2fda
+      evidence: "UCL Berlin metadata_provenance_h200_final and metadata_provenance_a100_final each
+        passed five checks; full Winogrande validation cache audits (1267 rows, fingerprint
+        5b125086384c0403) link read-only to the older H200/A100 runs. Their raw
+        fingerprints remain empty and source remains 2bdfa31c; this is after-run cache evidence,
+        not historical in-memory capture or a quality rerun"
+  runner: {status: implemented, note: "resume, env capture, sweeps, native_baseline (unpatched model run)"}
+  attention_matmul_emulation:
+    status: verified
+    validation_status: verified
+    api: "AttentionSpec(qk=LinearSpec(...), pv=LinearSpec(...)); patch_attention / unpatch_attention"
+    architectures: [Llama, Qwen3]
+    transformers_version: 4.55.2
+    dispatch: eager
+    note: "Separate opt-in; projection/MLP patching remains independent. Dynamic deterministic quantization,
+      one matrix scale domain per batch item/query head; native masks, FP32 softmax, RoPE, normalization
+      and cache updates. Inference requires eval plus no_grad/inference_mode"
+    cache: "No cache or unprocessed HF DynamicCache with exact plain DynamicLayer instances only;
+      TriCastKVCache, StaticCache, sliding/offloaded/quantized caches and processed/custom variants unsupported"
+    unsupported: "Observers including history, transforms, GPTQ, sparsity, outliers, element/scale SR,
+      custom attention subclasses/forwards/hooks, non-eager dispatch, sliding attention and autograd/training"
+    evidence: "scripts/e2e/validate_attention.py: final H200/A100 Triton and V100 reference-CUDA runs passed
+      47 direct arithmetic matrix cases, tiny Llama and Qwen3 x 5 recipes x 20 generated tokens each,
+      and 29 rejection/bypass guards. Actual emulated GEMMs match CPU reference operand bits exactly;
+      native softmax stays device-local. This is arithmetic/integration evidence, not pretrained
+      attention quality, long-context, performance or silicon parity"
+    validation:
+      base_git_sha: 92481dca53ed0ce250a0f9a45a2c25d607185d02
+      git_dirty: true
+      src_sha256: 2bdfa31c4d29d9bdbeeb873016c345f2e934eec174fee97c8b30119c6dc5a58a
+      harness_sha256: 9e30ab6ad0e7851061d219990c4f425ce8bbfb01d6912cebe92f4a158980cad7
+      triton_devices: [H200, A100]
+      reference_cuda_devices: [V100]
+      remote_result_root: /scratch/uceeeee/tricast/quality_20261005/results
+      run_directories: [berlin_attention_final, geneva_attention_final, cork_attention_final]
+  error_report: {status: implemented, metrics: [mse, sqnr_db, max_abs_error, relative_frobenius, cosine, logits_kl, top1_agreement,
+                 mma_ulp], note: "mma_ulp = layer GEMM vs fp64 MMA on identical operands, in ULPs of the out_format
+                 (team interviews, log 9); tests/test_analysis_ulp.py (CPU)"}
+  silicon_probe:
+    status: implemented
+    validation_status: failed_compiler_lowering
+    instruction: mma.sync.aligned.m16n8k32.row.col.f32.e4m3.e4m3.f32
+    architecture: sm_90
+    scope: "Finite raw E4M3, unscaled dense MMA, sequential K chunks, FP32 D and explicit C controls;
+      named GPU/instruction/vector evidence only, not universal Hopper or other-chip verification"
+    evidence: "H200 mma.sync probe: 4098 mapping cases passed, 6/141 numerical cases passed and 135 failed.
+      SASS converted FP8 to FP16 then executed HMMA; not native FP8 evidence. Failed tensors retained
+      under quality_20261005/results/berlin_silicon_envfix"
+    wgmma:
+      status: implemented
+      validation_status: partial_mismatch
+      further_probe_scope: user_deferred
+      scope_note: "User decision 2026-10-05: further probe only if needed; retained 140/141 result remains failed"
+      instruction: wgmma.mma_async.sync.aligned.m64n8k32.f32.e4m3.e4m3
+      evidence: "H200: 16386 mapping cases passed; 140/141 numerical cases passed. Direct FP32-C
+        zero-product case differs in 132/512 FP32 elements, max_abs_diff=2^-149; public zero-C checks passed.
+        Retained PTX/SASS reinspection passed (dump rc=0) with QGMMA.64x8x32.F32.E4M3.E4M3;
+        extension SHA256 cfcc8cf8e490d4550dc87dbf0aa05247533b595fe13d29ccfbbce36d9b4c7668.
+        Overall native bit parity is not verified"
+    blackwell_fp4: {status: planned, scope_status: user_deferred,
+      scope_note: "User decision 2026-10-05: excluded from current deliverable",
+      blocker: "Blackwell GPU unavailable; Hopper emulation is not silicon evidence"}
+
+model_families:
+  validation:
+    base_git_sha: bcb904aee6b25d39d87916c21f5faab8c0569478
+    git_dirty: true
+    src_sha256: 4aa5170252e71e165ec0efe5cc0a2902d9d6b55d99fbfee4f2a64177ce3fd407
+    reference_artifacts: runs/20261005_model_expansion/reference-cpu
+    triton_artifacts: runs/20261005_model_expansion/language-h200
+    triton_a100_artifacts: runs/20261005_model_expansion/language-a100
+    vision_artifacts: runs/20261005_model_expansion/vision-h200
+    yolo_checkpoint_artifacts: runs/20261005_model_expansion/yolo-checkpoint-h200
+    yolo_current_artifacts: runs/20261005_model_expansion/yolo-current-h200
+    kernel_witness_artifacts: runs/20261005_model_expansion/yolo-profile-h200
+    environment: "Python 3.12.14, torch 2.8.0+cu128, Transformers 4.55.2, Triton 3.4.0;
+      seed=42; env.json/result.json and stdout/stderr retained in each artifact directory"
+    scope: "Operator integration with each family's stated random initialization or pinned checkpoint and
+      synthetic inputs, not pretrained accuracy, performance or silicon validation.
+      Per-run harness/archive hashes are in env.json; library source SHA is shared across these runs"
+  llama:
+    attention_integration: {status: verified, validation_status: verified,
+      note: "Opt-in Transformers 4.55.2 eager, tiny-model scope only; integration.attention_matmul_emulation
+        records final H200/A100/V100 arithmetic/integration evidence, not pretrained attention quality"}
+    operator_integration:
+      status: verified
+      evidence: "Tiny Llama config (1 layer, hidden_size=32): 7 Linear replacements, forward and 20-token
+        generation with CoFDA, GDFS, int_exact, fp32_fma and fp64 on CPU reference, H200 and A100 Triton;
+        identical-operand bit parity, finite outputs, selected-MMA call trace, fp64 control and native
+        output restoration after unpatch; model_families.validation"
+    pretrained_quality:
+      status: verified
+      scope: "Completed Llama-3.2-1B projection/MLP measurements with native SDPA attention;
+        not acceptable-quality certification or new QK/PV quality. Compare each GPU's own native baseline"
+      checkpoints: [meta-llama/Llama-3.2-1B]
+      revision: 4e20de362430cd3b72f300e6b0f18e50e7166e08
+      dataset_accounting: "WikiText-2 raw-v1 test: 4358 rows, 141 complete windows, 288627 targets;
+        Winogrande validation: all 1267 examples, 2534 task forwards, for native and every recipe"
+      h200:
+        recipe: hopper_fp8_w8a8
+        native: {PPL: 9.757301558917202, Winogrande_accuracy: 0.6093133385951065}
+        emulated: {PPL: 9.879751831559362, Winogrande_accuracy: 0.6250986582478295}
+      a100:
+        native: {PPL: 9.756441337785912, Winogrande_accuracy: 0.6022099447513812}
+        bf16_passthrough:
+          PPL: 9.75687462948328
+          Winogrande_accuracy: 0.601420678768745
+          relative_PPL_difference: 4.4410834070252037e-05
+          AC4: passed
+          AC4_relative_PPL_limit: 0.001
+        fp8_f7_lowacc:
+          PPL: 141.2488335349401
+          Winogrande_accuracy: 0.4956590370955012
+          relative_PPL_increase: 13.477495292048213
+          Winogrande_delta_pp: -10.655090765588005
+          quality_status: severe_measured_degradation
+      evidence: "Round8 strict final H200/A100 runs passed full execution/restoration gates. Native
+        2675 and each patched recipe 2676 finite root forwards; all 112 selected layers each executed
+        2676 times, totaling 299712 traced arithmetic/Triton dispatches per recipe (Hopper/F7 cofda,
+        BF16 fp32_fma), bypass_detected=false. BF16 AC4 passed; F7 measured PPL 14.4775x native,
+        not an accepted tolerance and not attributable to F=7 alone. Original source 2bdfa31c,
+        harness e88512e8, archive 3b9cee29; berlin_llama_final and geneva_llama_final. Original task
+        fingerprints remain empty; later 1de6f858 metadata-only correction and after-run cache audits
+        do not relabel old scores or establish historical in-memory dataset identity"
+  qwen:
+    attention_integration: {status: verified, validation_status: verified,
+      note: "Qwen3 only, opt-in Transformers 4.55.2 eager, tiny-model scope; final H200/A100/V100 evidence
+        in integration.attention_matmul_emulation, not historical Qwen3-0.6B projection quality"}
+    operator_integration:
+      status: verified
+      evidence: "Tiny Qwen3 config (1 layer, hidden_size=32): same 7 Linear replacements, 5 MMA families,
+        forward/generation and parity/reversibility gates as Llama; model_families.validation"
+    pretrained_quality:
+      status: verified
+      checkpoints: [Qwen/Qwen3-0.6B]
+      evidence: "Historical full runs of configs/e2e/qwen3_0.6b_ppl_{a,b,c,d}.yaml and
+        qwen3_0.6b_lmeval_{a,b}.yaml on A100: WikiText-2 test 146 windows of 2048 tokens (dataset fingerprint
+        a46124b21ac53738), Qwen/Qwen3-0.6B@c1899de289a0, native PPL 20.9662, bf16_passthrough 20.9669
+        (+0.004%); TriCast 49a6a76, GPTQ/AWQ rows rerun at 9e9bfed. The per-recipe report lives in the
+        pre-squash history (docs/results/qwen3_0.6b.md). Not a new quality run and not validation of other
+        Qwen checkpoints"
+  resnet:
+    operator_integration:
+      status: verified
+      evidence: "torchvision 0.23.0, random-initialized full ResNet18, image [1,3,32,32], fp8_f7_lowacc on
+        berlin H200 Triton: 20 Conv2d + 1 Linear replacements, finite [1,1000] output, selected CoFDA traced
+        at all 21 operators, output max_diff=0.150390625 versus the FP64 control and bit-identical native
+        output after unpatch. vision-h200/result.json contains this passing ResNet suite inside the
+        combined run that failed the YOLO gate; no full-model reference parity or ImageNet quality claim"
+    pretrained_quality:
+      status: planned
+      validation_status: data_blocked
+      scope_status: user_deferred
+      scope_note: "User decision 2026-10-05: full ResNet/ImageNet accuracy excluded from current deliverable; unmeasured, not verified"
+      checkpoint: ResNet18_IMAGENET1K_V1
+      checkpoint_sha256: f37072fd47e89c5e827621c5baffa7500819f7896bbacec160b1a16c560e07ec
+      evaluator: scripts/e2e/evaluate_vision_quality.py
+      blocker: "Authorized ImageNet-1k validation data: all 50000 images and 1000 classes"
+      note: "Checkpoint obtained and full native/emulated evaluator implemented; accuracy run not
+        executed. Authorized ImageNet data, not model weights, was the primary blocker. Full
+        50000-image emulation runtime/memory cost is unmeasured. Random/synthetic forward evidence
+        cannot substitute for ImageNet top-1/top-5"
+  yolo:
+    operator_integration:
+      status: verified
+      checkpoint_sha256: 0ebbc80d4a7680d14987a577cd21342b65ecfd94632bd9a8da63ae6417644ee1
+      note: "Opt-in PyTorch Conv2d/Linear; this verifies only a checkpoint-backed raw detection forward
+        on synthetic inputs. Native custom ops and attention remain unchanged; NMS/mAP are not evaluated"
+      evidence: "Ultralytics 8.3.221, official v8.3.0 yolo11n.pt, image [1,3,64,64], fp8_f7_lowacc,
+        berlin H200 NVL GPU 1: 88 Conv2d replacements, finite [1,84,84] raw prediction and three feature maps,
+        selected CoFDA execution traced with bypass_detected=false; output max_diff versus the FP64 control
+        [25.5,4.296875,7.0,11.625]; native output bit-identical after unpatch.
+        yolo-checkpoint-h200/env.json and result.json. The earlier random-initialized image32 run failed
+        the final-output propagation gate; that failed vision-h200/result.json is retained, not waived"
+    pretrained_quality:
+      status: verified
+      scope: "Completed measurement, not accuracy preservation; only YOLO11n with fp8_f7_lowacc"
+      checkpoints: [yolo11n.pt]
+      recipe: fp8_f7_lowacc
+      dataset: COCO2017_validation
+      images: 5000
+      batches: 625
+      native: {AP_50_95: 0.3941942578919265, AP_50: 0.5528278635775589}
+      emulated: {AP_50_95: 0.1939528967863797, AP_50: 0.29158116892426295}
+      delta: {AP_50_95: -0.20024136110554683, AP_50: -0.2612466946532959}
+      evidence: "berlin H200 GPU 1, Ultralytics 8.3.221, FP32, batch 8, imgsz 640, conf=0.001,
+        IoU=0.7, max_det=300; all 5000 unique images and 625 batches. 88 Conv2d modules/897 grouped
+        engines dispatched CoFDA/Triton; finite outputs, bypass_detected=false, native identities/state
+        and first-batch output bits restored. passed_full_quality means execution/evaluation completed;
+        relative AP loss is 50.7976352%, not an accepted accuracy tolerance. Round5 core2bdfa31c,
+        harness cfdaeb26; runs/20261005_quality_extension/results/berlin_coco_full/{env,result}.json
+        (the detailed provenance report was removed from the repo in the 2026-10-08 docs cleanup)"
+
+agent:
+  structured_parse: {status: implemented, note: "Claude API (claude-opus-5-5, json_schema output) or offline
+                     parser; live API path untested here (no ANTHROPIC_API_KEY)",
+                     evidence: "tests/test_agent_parser.py, tests/test_agent_request.py (mocked client)"}
+  tools: {status: implemented, evidence: "tests/test_tools.py, tests/test_agent_loop.py (mocked client)"}
+  evals: {status: implemented, note: "criteria are a human-review draft", evidence: "evals/run_evals.py, tests/test_evals.py"}

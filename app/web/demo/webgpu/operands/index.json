@@ -1,0 +1,23 @@
+{
+ "packs": [
+  {
+   "id": "qwen3-0.6b.l0.q_proj",
+   "label": "Qwen3-0.6B · l0.q_proj",
+   "model": "Qwen/Qwen3-0.6B",
+   "layer": "model.layers.0.self_attn.q_proj",
+   "M": 19,
+   "N": 2048,
+   "K": 1024,
+   "a_file": "qwen3-0.6b.l0.q_proj.a.u8.bin",
+   "b_file": "qwen3-0.6b.l0.q_proj.b.u8.bin",
+   "scale_a": 0.0184151791036129,
+   "scale_b": 0.0014386858092620969,
+   "meta_file": "qwen3-0.6b.l0.q_proj.json",
+   "server": {
+    "[[\"algorithm\",\"cofda\"],[\"c_mode\",\"fused\"],[\"chunk_size\",32],[\"f_bits\",7],[\"norm_rounding\",\"rtz\"],[\"promote_interval\",0]]": "qwen3-0.6b.l0.q_proj.f7_fused.triton.u32.bin",
+    "[[\"algorithm\",\"cofda\"],[\"c_mode\",\"fused\"],[\"chunk_size\",32],[\"f_bits\",13],[\"norm_rounding\",\"rtz\"],[\"promote_interval\",0]]": "qwen3-0.6b.l0.q_proj.hopper.triton.u32.bin",
+    "[[\"algorithm\",\"cofda\"],[\"c_mode\",\"decoupled\"],[\"chunk_size\",32],[\"f2_bits\",23],[\"f_bits\",7],[\"norm_rounding\",\"rtz\"],[\"promote_interval\",0]]": "qwen3-0.6b.l0.q_proj.f7_decoupled.triton.u32.bin"
+   }
+  }
+ ]
+}

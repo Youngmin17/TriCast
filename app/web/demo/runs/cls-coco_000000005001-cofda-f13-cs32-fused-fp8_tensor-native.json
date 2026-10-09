@@ -1,0 +1,173 @@
+{
+ "id": "cls-coco_000000005001-cofda-f13-cs32-fused-fp8_tensor-native",
+ "status": "done",
+ "stage": null,
+ "progress": 1.0,
+ "request": {
+  "task": "vision.classify",
+  "model": "resnet18",
+  "mma": {
+   "algorithm": "cofda",
+   "f_bits": 13,
+   "chunk_size": 32,
+   "c_mode": "fused",
+   "promote_interval": 0,
+   "norm_rounding": "rtz"
+  },
+  "format": "fp8_tensor",
+  "baseline": "native",
+  "input": {
+   "image": "coco_000000005001.jpg"
+  }
+ },
+ "mma_label": "CoFDA · F13 · CS32 · fused",
+ "preset": "hopper",
+ "recipe": {
+  "name": "studio:cofda-f13-cs32-fused:fp8_tensor",
+  "bundled": "hopper_fp8_w8a8",
+  "yaml": "name: studio:cofda-f13-cs32-fused:fp8_tensor\ndescription: CoFDA · F13 · CS32 · fused · FP8 E4M3 · 텐서 스케일\ndefaults:\n  weight: fp8_tensor\n  activation: fp8_tensor\n  mma:\n    algorithm: cofda\n    f_bits: 13\n    chunk_size: 32\n    c_mode: fused\n    promote_interval: 0\n    norm_rounding: rtz\n  transform: none\n  weight_algo: rtn\ninclude:\n- '*'\nexclude:\n- lm_head\nbackend: auto\n"
+ },
+ "env": {
+  "utc": "2026-10-07T09:59:47.224768+00:00",
+  "hostname": "geneva.ee.ucl.ac.uk",
+  "git_sha": "625d5090b7b601fd05fd252fd96de6b439582d8d",
+  "git_dirty": false,
+  "src_sha256": null,
+  "versions": {
+   "python": "3.12.14",
+   "torch": "2.8.0+cu128",
+   "triton": "3.4.0",
+   "transformers": "4.55.2",
+   "lm_eval": "0.4.13",
+   "datasets": "4.8.5"
+  },
+  "gpu_names": [
+   "NVIDIA A100-SXM4-80GB"
+  ],
+  "gpu_driver": "595.71.05\n595.71.05\n595.71.05\n595.71.05",
+  "cuda": "12.8",
+  "model_id": "resnet18",
+  "model_sha": "f37072fd47e89c5e827621c5baffa7500819f7896bbacec160b1a16c560e07ec",
+  "model_kind": "local",
+  "environment": {
+   "CUDA_VISIBLE_DEVICES": "0",
+   "PYTHONNOUSERSITE": "1",
+   "CUBLAS_WORKSPACE_CONFIG": ":4096:8",
+   "CONDA_DEFAULT_ENV": "/scratch/uceeeee/conda_envs/tricast"
+  },
+  "app": "tricast-studio",
+  "app_sha256": "55fc8ad1b38174de2d9e608c38070960d2c3682f00698e430a84e2a29bd92425",
+  "task": "vision.classify",
+  "device": "cuda",
+  "seed": 42,
+  "deterministic_algorithms": true,
+  "tf32": {
+   "matmul": false,
+   "cudnn": false
+  },
+  "recipe_sha256": "07a0771512d440d54eb39660752aecc5fbb44bb539c3dd522c2afb5198f002f3",
+  "baseline_recipe_sha256": null,
+  "model_revision": "f37072fd47e89c5e827621c5baffa7500819f7896bbacec160b1a16c560e07ec",
+  "checkpoint": {
+   "path": "/scratch/uceeeee/tricast/quality_20261005/checkpoints/resnet18-f37072fd.pth",
+   "sha256": "f37072fd47e89c5e827621c5baffa7500819f7896bbacec160b1a16c560e07ec"
+  },
+  "dtype": "float32",
+  "optional_versions": {
+   "ultralytics": "8.3.221",
+   "torchvision": "0.23.0",
+   "opencv-python": null,
+   "opencv-python-headless": "4.11.0.86",
+   "pillow": "11.3.0"
+  },
+  "preprocessing": "torchvision ResNet18_Weights.IMAGENET1K_V1.transforms()"
+ },
+ "baseline": {
+  "label": "원본 (native)",
+  "image": {
+   "media": "coco_000000005001.jpg",
+   "width": 640,
+   "height": 480
+  },
+  "top": [
+   {
+    "label": "drumstick",
+    "class_id": 542,
+    "p": 0.2255566442034497
+   },
+   {
+    "label": "parallel bars",
+    "class_id": 702,
+    "p": 0.1843277939909819
+   },
+   {
+    "label": "stretcher",
+    "class_id": 830,
+    "p": 0.1525049009934497
+   },
+   {
+    "label": "syringe",
+    "class_id": 845,
+    "p": 0.05104412575156057
+   },
+   {
+    "label": "jinrikisha",
+    "class_id": 612,
+    "p": 0.03892757851861878
+   }
+  ]
+ },
+ "emulated": {
+  "label": "CoFDA · F13 · CS32 · fused · FP8 E4M3 · 텐서 스케일",
+  "image": {
+   "media": "coco_000000005001.jpg",
+   "width": 640,
+   "height": 480
+  },
+  "top": [
+   {
+    "label": "drumstick",
+    "class_id": 542,
+    "p": 0.2228065337977447
+   },
+   {
+    "label": "parallel bars",
+    "class_id": 702,
+    "p": 0.19662607595211967
+   },
+   {
+    "label": "stretcher",
+    "class_id": 830,
+    "p": 0.09886980004123842
+   },
+   {
+    "label": "syringe",
+    "class_id": 845,
+    "p": 0.059967565044668485
+   },
+   {
+    "label": "crutch",
+    "class_id": 523,
+    "p": 0.05633431394807835
+   }
+  ]
+ },
+ "metrics": {
+  "top1_same": true,
+  "top5_overlap": 4,
+  "kl": 0.03827426411581006,
+  "baseline_top1_p": 0.2255566442034497,
+  "emulated_top1_p": 0.2228065337977447
+ },
+ "timing": {
+  "baseline_s": 0.023210159968584776,
+  "emulated_s": 0.13387664500623941
+ },
+ "evidence": {
+  "patched_linear": 1,
+  "patched_conv2d": 20,
+  "emulated_calls": 21,
+  "backend": "triton"
+ },
+ "cached_baseline": true
+}

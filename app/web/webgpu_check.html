@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WebGPU 비트 검증</title>
+<style>
+  :root { color-scheme: light dark; --bg: #f7f7f5; --fg: #1d1d1b; --muted: #6b6b66; --ok: #1f7a4d; --bad: #b3261e; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #151514; --fg: #e8e8e3; --muted: #9a9a92; --ok: #5cc28f; --bad: #ff8a80; } }
+  body { margin: 0; padding: 24px 16px; background: var(--bg); color: var(--fg);
+         font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, "Apple SD Gothic Neo", sans-serif; }
+  main { max-width: 960px; margin: 0 auto; }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  p { color: var(--muted); margin: 0 0 16px; }
+  #status.ok { color: var(--ok); } #status.bad { color: var(--bad); }
+  pre { white-space: pre-wrap; word-break: break-word; font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; }
+</style>
+</head>
+<body>
+<main>
+  <h1>WebGPU CoFDA 비트 검증</h1>
+  <p>골든 벡터(TriCast 레퍼런스, app/webgpu_golden.py)와 WebGPU 결과·JS 레퍼런스를 비트 단위로 비교하고 처리량을 잽니다.</p>
+  <div id="status">실행 중…</div>
+  <pre id="summary"></pre>
+</main>
+<script type="module">
+import {probeWebGPU} from "./js/webgpu/probe.js";
+import {createEngine} from "./js/webgpu/engine.js";
+import {bitsToFloat, cofdaGemm, fp64Gemm} from "./js/webgpu/reference.js";
+
+const hexBytes = (s) => Uint8Array.from(s.match(/../g) || [], (h) => parseInt(h, 16));
+const hexWords = (s) => Uint32Array.from(s.match(/.{8}/g) || [], (h) => parseInt(h, 16));
+const isNaNBits = (x) => (x & 0x7f800000) === 0x7f800000 && (x & 0x7fffff) !== 0;
+const median = (xs) => [...xs].sort((x, y) => x - y)[Math.floor(xs.length / 2)];
+
+// Bitwise comparison; NaN positions are also counted separately (NaN payloads are not compared).
+function compare(got, expected, label, id, mismatches) {
+  let bitwise = 0;
+  let nanClass = 0;
+  for (let i = 0; i < expected.length; i += 1) {
+    if (got[i] === expected[i]) bitwise += 1;
+    else if (isNaNBits(got[i]) && isNaNBits(expected[i])) nanClass += 1;
+    else if (mismatches.length < 12) {
+      mismatches.push({where: label, id, index: i, expected: expected[i].toString(16), got: got[i].toString(16)});
+    }
+  }
+  return {bitwise, nanClass};
+}
+
+function caseArgs(c) {
+  return {a: hexBytes(c.a), b: hexBytes(c.b), M: c.M, N: c.N, K: c.K,
+    scaleA: bitsToFloat(parseInt(c.scale_a, 16)), scaleB: bitsToFloat(parseInt(c.scale_b, 16)), mma: c.mma};
+}
+
+// Gaussian-like E4M3 codes from a fixed LCG (exponent field around the bias, no NaN codes).
+function randomCodes(count, seed) {
+  let state = seed >>> 0;
+  const next = () => (state = (state * 1664525 + 1013904223) >>> 0) / 2 ** 32;
+  const codes = new Uint8Array(count);
+  for (let i = 0; i < count; i += 1) {
+    const g = Math.sqrt(-2 * Math.log(next() + 1e-12)) * Math.cos(2 * Math.PI * next());
+    const field = Math.min(15, Math.max(0, Math.round(7 + 2.5 * g)));
+    let mant = Math.floor(next() * 8);
+    if (field === 15 && mant === 7) mant = 6;
+    codes[i] = (next() < 0.5 ? 0x80 : 0) | (field << 3) | mant;
+  }
+  return codes;
+}
+
+const MMA = {
+  f13_cs32_fused: {algorithm: "cofda", f_bits: 13, chunk_size: 32, c_mode: "fused", promote_interval: 0, norm_rounding: "rtz"},
+  f7_cs32_decoupled: {algorithm: "cofda", f_bits: 7, chunk_size: 32, c_mode: "decoupled", f2_bits: 23, promote_interval: 0,
+    norm_rounding: "rtz"},
+};
+const SHAPES = [
+  {name: "gemv_1x1024x1024", M: 1, N: 1024, K: 1024},
+  {name: "gemv_1x1024x3072", M: 1, N: 1024, K: 3072},
+  {name: "gemm_16x1024x1024", M: 16, N: 1024, K: 1024},
+];
+// Extra settings checked against the (golden-verified) JS reference on larger random problems.
+const SWEEP = [
+  {f_bits: 13, chunk_size: 32, c_mode: "fused", norm_rounding: "rne"},
+  {f_bits: 25, chunk_size: 32, c_mode: "fused", norm_rounding: "rtz"},
+  {f_bits: 48, chunk_size: 128, c_mode: "fused", norm_rounding: "rne"},
+  {f_bits: 1, chunk_size: 1, c_mode: "fused", norm_rounding: "rtz"},
+  {f_bits: 23, chunk_size: 3, c_mode: "decoupled", f2_bits: 48, norm_rounding: "rne"},
+  {f_bits: 30, chunk_size: 2, c_mode: "decoupled", f2_bits: 7, norm_rounding: "rtz"},
+  {f_bits: 7, chunk_size: 16, c_mode: "decoupled", f2_bits: 23, norm_rounding: "rne"},
+  {f_bits: 22, chunk_size: 128, c_mode: "fused", norm_rounding: "rtz"},
+].map((m) => ({algorithm: "cofda", promote_interval: 0, ...m}));
+
+async function main() {
+  const started = performance.now();
+  const summary = {ok: false, userAgent: navigator.userAgent};
+  const probe = await probeWebGPU();
+  summary.probe = probe;
+  const golden = await (await fetch("demo/webgpu/golden.json")).json();
+  const cases = golden.cases;
+  const mismatches = [];
+  const totals = {outputs: 0, webgpu: {bitwise: 0, nanClass: 0}, cofda_js: {bitwise: 0, nanClass: 0},
+    fp64_js: {bitwise: 0, nanClass: 0}};
+  for (const c of cases) {
+    const args = caseArgs(c);
+    const expected = hexWords(c.expected);
+    totals.outputs += expected.length;
+    for (const [key, got, want] of [["cofda_js", cofdaGemm(args), expected], ["fp64_js", fp64Gemm(args), hexWords(c.fp64)]]) {
+      const r = compare(got, want, key, c.id, mismatches);
+      totals[key].bitwise += r.bitwise;
+      totals[key].nanClass += r.nanClass;
+    }
+  }
+  summary.golden = {cases: cases.length, git_sha: golden.env?.git_sha ?? null, totals};
+  if (!probe.available) {
+    summary.mismatches = mismatches;
+    summary.error = `GPU 미검증: ${probe.reason}`;
+    return finish(summary, started);
+  }
+  const engine = await createEngine();
+  try {
+    for (const c of cases) {
+      const r = compare((await engine.gemm(caseArgs(c))).bits, hexWords(c.expected), "webgpu", c.id, mismatches);
+      totals.webgpu.bitwise += r.bitwise;
+      totals.webgpu.nanClass += r.nanClass;
+    }
+    const sweep = [];
+    for (const [i, mma] of SWEEP.entries()) {
+      const args = {M: 4, N: 256, K: 1024, scaleA: 0.0123, scaleB: 3.5, mma};
+      args.a = randomCodes(args.M * args.K, 11 + i);
+      args.b = randomCodes(args.N * args.K, 101 + i);
+      const want = cofdaGemm(args);
+      const r = compare((await engine.gemm(args)).bits, want, "sweep", JSON.stringify(mma), mismatches);
+      sweep.push({mma, equal: r.bitwise, total: want.length});
+    }
+    summary.sweep = sweep;
+    const bench = [];
+    for (const shape of SHAPES) {
+      const a = randomCodes(shape.M * shape.K, 1);
+      const b = randomCodes(shape.N * shape.K, 2);
+      for (const [name, mma] of Object.entries(MMA)) {
+        const args = {...shape, a, b, scaleA: 0.0123, scaleB: 3.5, mma};
+        const timed = async (fn, repeat) => {
+          const times = [];
+          let last = null;
+          for (let i = 0; i < 8; i += 1) {
+            last = await fn({...args, repeat});
+            if (i >= 3) times.push(last.ms);  // 3 warmups, median of 5
+          }
+          return {ms: median(times), bits: last.bits};
+        };
+        const emulated = await timed(engine.gemm, 20);
+        const single = await timed(engine.gemm, 1);
+        const native = await timed(engine.gemmF32, 20);
+        const want = cofdaGemm(args);
+        let equal = 0;
+        for (let i = 0; i < want.length; i += 1) if (want[i] === emulated.bits[i]) equal += 1;
+        const macs = shape.M * shape.N * shape.K;
+        bench.push({shape: shape.name, mma: name, M: shape.M, N: shape.N, K: shape.K,
+          cofda_ms: +emulated.ms.toFixed(4), cofda_gmacs: +(macs / emulated.ms / 1e6).toFixed(2),
+          cofda_single_dispatch_ms: +single.ms.toFixed(4),
+          f32_ms: +native.ms.toFixed(4), f32_gmacs: +(macs / native.ms / 1e6).toFixed(2),
+          parity_vs_js: `${equal}/${want.length}`});
+      }
+    }
+    summary.bench = bench;
+  } finally {
+    engine.destroy();
+  }
+  summary.mismatches = mismatches;
+  const all = totals.outputs;
+  const exact = (t) => t.bitwise === all;
+  summary.ok = exact(totals.webgpu) && exact(totals.cofda_js) && totals.fp64_js.bitwise + totals.fp64_js.nanClass === all
+    && summary.sweep.every((s) => s.equal === s.total)
+    && summary.bench.every((b) => b.parity_vs_js.split("/")[0] === b.parity_vs_js.split("/")[1]);
+  return finish(summary, started);
+}
+
+function finish(summary, started) {
+  summary.elapsed_ms = Math.round(performance.now() - started);
+  const status = document.getElementById("status");
+  status.textContent = summary.ok ? "통과: 모든 비교가 비트 단위로 같습니다" : `확인 필요: ${summary.error || "일치하지 않는 출력이 있습니다"}`;
+  status.className = summary.ok ? "ok" : "bad";
+  document.getElementById("summary").textContent = JSON.stringify(summary, null, 2);
+  console.log("WEBGPU_CHECK_DONE", JSON.stringify(summary));
+}
+
+main().catch((error) => {
+  const summary = {ok: false, error: String(error?.stack || error)};
+  document.getElementById("summary").textContent = JSON.stringify(summary, null, 2);
+  console.log("WEBGPU_CHECK_DONE", JSON.stringify(summary));
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+# NVFP4 W4A4 with one AWQ scale per shared-input group.
+# Source: AWQ; NVIDIA NVFP4; tricast.transforms (AWQ group-error search).
+name: nvfp4_awq_shared
+description: NVFP4 operands after AWQ scaling shared by sibling projections.
+defaults:
+  weight: nvfp4
+  activation: nvfp4
+  mma: nvidia_blackwell_fp4
+  transform:
+    kind: awq
+    share_inputs: true
+calibration: {}
+exclude: [lm_head]

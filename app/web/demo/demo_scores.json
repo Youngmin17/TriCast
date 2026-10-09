@@ -1,0 +1,521 @@
+{
+ "rule": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json",
+ "quick": false,
+ "design": {
+  "algorithm": "cofda",
+  "f_bits": 7,
+  "chunk_size": 32,
+  "c_mode": "fused",
+  "promote_interval": 0,
+  "norm_rounding": "rtz"
+ },
+ "format": "fp8_tensor",
+ "detection": {
+  "conf": 0.25,
+  "iou": 0.7,
+  "imgsz": 640,
+  "max_det": 100
+ },
+ "images": [
+  {
+   "image_id": 285,
+   "file_name": "000000000285.jpg",
+   "media": "coco_000000000285.jpg",
+   "flickr_url": "http://farm8.staticflickr.com/7434/9138147604_c6225224b8_z.jpg",
+   "coco_url": "http://images.cocodataset.org/val2017/000000000285.jpg",
+   "license": {
+    "id": 4,
+    "name": "Attribution License",
+    "url": "http://creativecommons.org/licenses/by/2.0/"
+   },
+   "resized": false,
+   "run": "det-coco_000000000285-cofda-f7-cs32-fused-fp8_tensor-native",
+   "score": 0.14569912377378613,
+   "matched": 1,
+   "baseline_only": 0,
+   "emulated_only": 0,
+   "mean_iou": 0.8543008762262139,
+   "role": null
+  },
+  {
+   "image_id": 785,
+   "file_name": "000000000785.jpg",
+   "media": "coco_000000000785.jpg",
+   "flickr_url": "http://farm8.staticflickr.com/7015/6795644157_f019453ae7_z.jpg",
+   "coco_url": "http://images.cocodataset.org/val2017/000000000785.jpg",
+   "license": {
+    "id": 4,
+    "name": "Attribution License",
+    "url": "http://creativecommons.org/licenses/by/2.0/"
+   },
+   "resized": false,
+   "run": "det-coco_000000000785-cofda-f7-cs32-fused-fp8_tensor-native",
+   "score": 1.1776155445442353,
+   "matched": 2,
+   "baseline_only": 1,
+   "emulated_only": 0,
+   "mean_iou": 0.8223844554557646,
+   "role": null
+  },
+  {
+   "image_id": 872,
+   "file_name": "000000000872.jpg",
+   "media": "coco_000000000872.jpg",
+   "flickr_url": "http://farm9.staticflickr.com/8447/7805810128_605424213d_z.jpg",
+   "coco_url": "http://images.cocodataset.org/val2017/000000000872.jpg",
+   "license": {
+    "id": 4,
+    "name": "Attribution License",
+    "url": "http://creativecommons.org/licenses/by/2.0/"
+   },
+   "resized": false,
+   "run": "det-coco_000000000872-cofda-f7-cs32-fused-fp8_tensor-native",
+   "score": 2.163553788911957,
+   "matched": 2,
+   "baseline_only": 1,
+   "emulated_only": 1,
+   "mean_iou": 0.836446211088043,
+   "role": null
+  },
+  {
+   "image_id": 885,
+   "file_name": "000000000885.jpg",
+   "media": "coco_000000000885.jpg",
+   "flickr_url": "http://farm4.staticflickr.com/3715/9639200419_ee41490b2a_z.jpg",
+   "coco_url": "http://images.cocodataset.org/val2017/000000000885.jpg",
+   "license": {
+    "id": 4,
+    "name": "Attribution License",
+    "url": "http://creativecommons.org/licenses/by/2.0/"
+   },
+   "resized": false,
+   "run": "det-coco_000000000885-cofda-f7-cs32-fused-fp8_tensor-native",
+   "score": 2.0526324895231927,
+   "matched": 4,
+   "baseline_only": 2,
+   "emulated_only": 0,
+   "mean_iou": 0.9473675104768073,
+   "role": null
+  },
+  {
+   "image_id": 1000,
+   "file_name": "000000001000.jpg",
+   "media": "coco_000000001000.jpg",
+   "flickr_url": "http://farm5.staticflickr.com/4115/4906536419_6113bd7de4_z.jpg",
+   "coco_url": "http://images.cocodataset.org/val2017/000000001000.jpg",
+   "license": {
+    "id": 4,
+    "name": "Attribution License",
+    "url": "http://creativecommons.org/licenses/by/2.0/"
+   },
+   "resized": false,
+   "run": "det-coco_000000001000-cofda-f7-cs32-fused-fp8_tensor-native",
+   "score": 13.091118229028346,
+   "matched": 7,
+   "baseline_only": 12,
+   "emulated_only": 1,
+   "mean_iou": 0.9088817709716529,
+   "role": "top2"
+  },
+  {
+   "image_id": 1268,
+   "file_name": "000000001268.jpg",
+   "media": "coco_000000001268.jpg",
+   "flickr_url": "http://farm6.staticflickr.com/5454/9413846304_881d5e5c3b_z.jpg",
+   "coco_url": "http://images.cocodataset.org/val2017/000000001268.jpg",
+   "license": {
+    "id": 4,
+    "name": "Attribution License",
+    "url": "http://creativecommons.org/licenses/by/2.0/"
+   },
+   "resized": false,
+   "run": "det-coco_000000001268-cofda-f7-cs32-fused-fp8_tensor-native",
+   "score": 4.08781540209514,
+   "matched": 3,
+   "baseline_only": 4,
+   "emulated_only": 0,
+   "mean_iou": 0.9121845979048593,
+   "role": null
+  },
+  {
+   "image_id": 1296,
+   "file_name": "000000001296.jpg",
+   "media": "coco_000000001296.jpg",
+   "flickr_url": "http://farm5.staticflickr.com/4010/4690487654_90536a4a16_z.jpg",
+   "coco_url": "http://images.cocodataset.org/val2017/000000001296.jpg",
+   "license": {
+    "id": 5,
+    "name": "Attribution-ShareAlike License",
+    "url": "http://creativecommons.org/licenses/by-sa/2.0/"
+   },
+   "resized": false,
+   "run": "det-coco_000000001296-cofda-f7-cs32-fused-fp8_tensor-native",
+   "score": 4.129556946782629,
+   "matched": 1,
+   "baseline_only": 3,
+   "emulated_only": 1,
+   "mean_iou": 0.8704430532173708,
+   "role": null
+  },
+  {
+   "image_id": 1993,
+   "file_name": "000000001993.jpg",
+   "media": "coco_000000001993.jpg",
+   "flickr_url": "http://farm4.staticflickr.com/3413/3223600591_25cb6f12c6_z.jpg",
+   "coco_url": "http://images.cocodataset.org/val2017/000000001993.jpg",
+   "license": {
+    "id": 4,
+    "name": "Attribution License",
+    "url": "http://creativecommons.org/licenses/by/2.0/"
+   },
+   "resized": false,
+   "run": "det-coco_000000001993-cofda-f7-cs32-fused-fp8_tensor-native",
+   "score": 4.0,
+   "matched": 0,
+   "baseline_only": 3,
+   "emulated_only": 0,
+   "mean_iou": null,
+   "role": null
+  },
+  {
+   "image_id": 2149,
+   "file_name": "000000002149.jpg",
+   "media": "coco_000000002149.jpg",
+   "flickr_url": "http://farm4.staticflickr.com/3598/3330055100_17454411a4_z.jpg",
+   "coco_url": "http://images.cocodataset.org/val2017/000000002149.jpg",
+   "license": {
+    "id": 5,
+    "name": "Attribution-ShareAlike License",
+    "url": "http://creativecommons.org/licenses/by-sa/2.0/"
+   },
+   "resized": false,
+   "run": "det-coco_000000002149-cofda-f7-cs32-fused-fp8_tensor-native",
+   "score": 6.075166492817721,
+   "matched": 2,
+   "baseline_only": 3,
+   "emulated_only": 3,
+   "mean_iou": 0.9248335071822786,
+   "role": null
+  },
+  {
+   "image_id": 2153,
+   "file_name": "000000002153.jpg",
+   "media": "coco_000000002153.jpg",
+   "flickr_url": "http://farm3.staticflickr.com/2220/2535221304_39d9542f76_z.jpg",
+   "coco_url": "http://images.cocodataset.org/val2017/000000002153.jpg",
+   "license": {
+    "id": 5,
+    "name": "Attribution-ShareAlike License",
+    "url": "http://creativecommons.org/licenses/by-sa/2.0/"
+   },
+   "resized": false,
+   "run": "det-coco_000000002153-cofda-f7-cs32-fused-fp8_tensor-native",
+   "score": 2.1297915128921865,
+   "matched": 5,
+   "baseline_only": 2,
+   "emulated_only": 0,
+   "mean_iou": 0.8702084871078133,
+   "role": null
+  },
+  {
+   "image_id": 2473,
+   "file_name": "000000002473.jpg",
+   "media": "coco_000000002473.jpg",
+   "flickr_url": "http://farm5.staticflickr.com/4027/4377710907_7b97c2464d_z.jpg",
+   "coco_url": "http://images.cocodataset.org/val2017/000000002473.jpg",
+   "license": {
+    "id": 4,
+    "name": "Attribution License",
+    "url": "http://creativecommons.org/licenses/by/2.0/"
+   },
+   "resized": false,
+   "run": "det-coco_000000002473-cofda-f7-cs32-fused-fp8_tensor-native",
+   "score": 3.0443046411545365,
+   "matched": 2,
+   "baseline_only": 3,
+   "emulated_only": 0,
+   "mean_iou": 0.9556953588454635,
+   "role": null
+  },
+  {
+   "image_id": 2592,
+   "file_name": "000000002592.jpg",
+   "media": "coco_000000002592.jpg",
+   "flickr_url": "http://farm4.staticflickr.com/3271/2864950455_3f5b5086da_z.jpg",
+   "coco_url": "http://images.cocodataset.org/val2017/000000002592.jpg",
+   "license": {
+    "id": 5,
+    "name": "Attribution-ShareAlike License",
+    "url": "http://creativecommons.org/licenses/by-sa/2.0/"
+   },
+   "resized": false,
+   "run": "det-coco_000000002592-cofda-f7-cs32-fused-fp8_tensor-native",
+   "score": 1.0696266084474195,
+   "matched": 1,
+   "baseline_only": 1,
+   "emulated_only": 0,
+   "mean_iou": 0.9303733915525805,
+   "role": null
+  },
+  {
+   "image_id": 3501,
+   "file_name": "000000003501.jpg",
+   "media": "coco_000000003501.jpg",
+   "flickr_url": "http://farm8.staticflickr.com/7179/7077469199_84f6efe841_z.jpg",
+   "coco_url": "http://images.cocodataset.org/val2017/000000003501.jpg",
+   "license": {
+    "id": 5,
+    "name": "Attribution-ShareAlike License",
+    "url": "http://creativecommons.org/licenses/by-sa/2.0/"
+   },
+   "resized": false,
+   "run": "det-coco_000000003501-cofda-f7-cs32-fused-fp8_tensor-native",
+   "score": 3.1616200127699168,
+   "matched": 2,
+   "baseline_only": 3,
+   "emulated_only": 0,
+   "mean_iou": 0.8383799872300834,
+   "role": null
+  },
+  {
+   "image_id": 3553,
+   "file_name": "000000003553.jpg",
+   "media": "coco_000000003553.jpg",
+   "flickr_url": "http://farm4.staticflickr.com/3433/3863384254_02e869d699_z.jpg",
+   "coco_url": "http://images.cocodataset.org/val2017/000000003553.jpg",
+   "license": {
+    "id": 5,
+    "name": "Attribution-ShareAlike License",
+    "url": "http://creativecommons.org/licenses/by-sa/2.0/"
+   },
+   "resized": false,
+   "run": "det-coco_000000003553-cofda-f7-cs32-fused-fp8_tensor-native",
+   "score": 3.0,
+   "matched": 0,
+   "baseline_only": 2,
+   "emulated_only": 0,
+   "mean_iou": null,
+   "role": null
+  },
+  {
+   "image_id": 5001,
+   "file_name": "000000005001.jpg",
+   "media": "coco_000000005001.jpg",
+   "flickr_url": "http://farm6.staticflickr.com/5298/5457068434_0929d78491_z.jpg",
+   "coco_url": "http://images.cocodataset.org/val2017/000000005001.jpg",
+   "license": {
+    "id": 4,
+    "name": "Attribution License",
+    "url": "http://creativecommons.org/licenses/by/2.0/"
+   },
+   "resized": false,
+   "run": "det-coco_000000005001-cofda-f7-cs32-fused-fp8_tensor-native",
+   "score": 21.0,
+   "matched": 0,
+   "baseline_only": 19,
+   "emulated_only": 1,
+   "mean_iou": null,
+   "role": "top1"
+  },
+  {
+   "image_id": 6012,
+   "file_name": "000000006012.jpg",
+   "media": "coco_000000006012.jpg",
+   "flickr_url": "http://farm5.staticflickr.com/4030/4281955635_f02ce45926_z.jpg",
+   "coco_url": "http://images.cocodataset.org/val2017/000000006012.jpg",
+   "license": {
+    "id": 4,
+    "name": "Attribution License",
+    "url": "http://creativecommons.org/licenses/by/2.0/"
+   },
+   "resized": false,
+   "run": "det-coco_000000006012-cofda-f7-cs32-fused-fp8_tensor-native",
+   "score": 2.108569994446721,
+   "matched": 4,
+   "baseline_only": 0,
+   "emulated_only": 2,
+   "mean_iou": 0.8914300055532789,
+   "role": null
+  },
+  {
+   "image_id": 6723,
+   "file_name": "000000006723.jpg",
+   "media": "coco_000000006723.jpg",
+   "flickr_url": "http://farm5.staticflickr.com/4009/4575950642_c74342b147_z.jpg",
+   "coco_url": "http://images.cocodataset.org/val2017/000000006723.jpg",
+   "license": {
+    "id": 5,
+    "name": "Attribution-ShareAlike License",
+    "url": "http://creativecommons.org/licenses/by-sa/2.0/"
+   },
+   "resized": false,
+   "run": "det-coco_000000006723-cofda-f7-cs32-fused-fp8_tensor-native",
+   "score": 9.0,
+   "matched": 0,
+   "baseline_only": 8,
+   "emulated_only": 0,
+   "mean_iou": null,
+   "role": null
+  },
+  {
+   "image_id": 6818,
+   "file_name": "000000006818.jpg",
+   "media": "coco_000000006818.jpg",
+   "flickr_url": "http://farm3.staticflickr.com/2318/2068039201_b967c69504_z.jpg",
+   "coco_url": "http://images.cocodataset.org/val2017/000000006818.jpg",
+   "license": {
+    "id": 4,
+    "name": "Attribution License",
+    "url": "http://creativecommons.org/licenses/by/2.0/"
+   },
+   "resized": false,
+   "run": "det-coco_000000006818-cofda-f7-cs32-fused-fp8_tensor-native",
+   "score": 3.0,
+   "matched": 0,
+   "baseline_only": 2,
+   "emulated_only": 0,
+   "mean_iou": null,
+   "role": null
+  },
+  {
+   "image_id": 7281,
+   "file_name": "000000007281.jpg",
+   "media": "coco_000000007281.jpg",
+   "flickr_url": "http://farm5.staticflickr.com/4112/5022207571_74aab92fd5_z.jpg",
+   "coco_url": "http://images.cocodataset.org/val2017/000000007281.jpg",
+   "license": {
+    "id": 4,
+    "name": "Attribution License",
+    "url": "http://creativecommons.org/licenses/by/2.0/"
+   },
+   "resized": false,
+   "run": "det-coco_000000007281-cofda-f7-cs32-fused-fp8_tensor-native",
+   "score": 8.090844961277293,
+   "matched": 5,
+   "baseline_only": 8,
+   "emulated_only": 0,
+   "mean_iou": 0.9091550387227076,
+   "role": null
+  },
+  {
+   "image_id": 7511,
+   "file_name": "000000007511.jpg",
+   "media": "coco_000000007511.jpg",
+   "flickr_url": "http://farm1.staticflickr.com/51/173980729_349afaca85_z.jpg",
+   "coco_url": "http://images.cocodataset.org/val2017/000000007511.jpg",
+   "license": {
+    "id": 5,
+    "name": "Attribution-ShareAlike License",
+    "url": "http://creativecommons.org/licenses/by-sa/2.0/"
+   },
+   "resized": false,
+   "run": "det-coco_000000007511-cofda-f7-cs32-fused-fp8_tensor-native",
+   "score": 6.102675256657854,
+   "matched": 3,
+   "baseline_only": 6,
+   "emulated_only": 0,
+   "mean_iou": 0.897324743342146,
+   "role": null
+  },
+  {
+   "image_id": 7574,
+   "file_name": "000000007574.jpg",
+   "media": "coco_000000007574.jpg",
+   "flickr_url": "http://farm8.staticflickr.com/7054/6924897347_7266fd119c_z.jpg",
+   "coco_url": "http://images.cocodataset.org/val2017/000000007574.jpg",
+   "license": {
+    "id": 4,
+    "name": "Attribution License",
+    "url": "http://creativecommons.org/licenses/by/2.0/"
+   },
+   "resized": false,
+   "run": "det-coco_000000007574-cofda-f7-cs32-fused-fp8_tensor-native",
+   "score": 5.090225599420377,
+   "matched": 2,
+   "baseline_only": 5,
+   "emulated_only": 0,
+   "mean_iou": 0.9097744005796233,
+   "role": null
+  },
+  {
+   "image_id": 7991,
+   "file_name": "000000007991.jpg",
+   "media": "coco_000000007991.jpg",
+   "flickr_url": "http://farm6.staticflickr.com/5283/5355551637_6638017f91_z.jpg",
+   "coco_url": "http://images.cocodataset.org/val2017/000000007991.jpg",
+   "license": {
+    "id": 4,
+    "name": "Attribution License",
+    "url": "http://creativecommons.org/licenses/by/2.0/"
+   },
+   "resized": false,
+   "run": "det-coco_000000007991-cofda-f7-cs32-fused-fp8_tensor-native",
+   "score": 5.075828010444974,
+   "matched": 1,
+   "baseline_only": 5,
+   "emulated_only": 0,
+   "mean_iou": 0.9241719895550258,
+   "role": null
+  },
+  {
+   "image_id": 8021,
+   "file_name": "000000008021.jpg",
+   "media": "coco_000000008021.jpg",
+   "flickr_url": "http://farm7.staticflickr.com/6117/6240308255_77782d0723_z.jpg",
+   "coco_url": "http://images.cocodataset.org/val2017/000000008021.jpg",
+   "license": {
+    "id": 4,
+    "name": "Attribution License",
+    "url": "http://creativecommons.org/licenses/by/2.0/"
+   },
+   "resized": false,
+   "run": "det-coco_000000008021-cofda-f7-cs32-fused-fp8_tensor-native",
+   "score": 3.167918360332452,
+   "matched": 1,
+   "baseline_only": 3,
+   "emulated_only": 0,
+   "mean_iou": 0.832081639667548,
+   "role": "median"
+  },
+  {
+   "image_id": 8690,
+   "file_name": "000000008690.jpg",
+   "media": "coco_000000008690.jpg",
+   "flickr_url": "http://farm4.staticflickr.com/3753/9867545575_fa972e6c4a_z.jpg",
+   "coco_url": "http://images.cocodataset.org/val2017/000000008690.jpg",
+   "license": {
+    "id": 5,
+    "name": "Attribution-ShareAlike License",
+    "url": "http://creativecommons.org/licenses/by-sa/2.0/"
+   },
+   "resized": false,
+   "run": "det-coco_000000008690-cofda-f7-cs32-fused-fp8_tensor-native",
+   "score": 5.17303694941241,
+   "matched": 1,
+   "baseline_only": 4,
+   "emulated_only": 1,
+   "mean_iou": 0.8269630505875905,
+   "role": null
+  }
+ ],
+ "selected": [
+  {
+   "image_id": 5001,
+   "media": "coco_000000005001.jpg",
+   "role": "top1",
+   "score": 21.0
+  },
+  {
+   "image_id": 1000,
+   "media": "coco_000000001000.jpg",
+   "role": "top2",
+   "score": 13.091118229028346
+  },
+  {
+   "image_id": 8021,
+   "media": "coco_000000008021.jpg",
+   "role": "median",
+   "score": 3.167918360332452
+  }
+ ]
+}

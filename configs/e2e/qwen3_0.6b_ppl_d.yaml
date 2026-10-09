@@ -1,0 +1,12 @@
+# Qwen3-0.6B, full WikiText-2 test perplexity (GPTQ convention: 2048-token windows).
+# Part D: weight structure from the team interviews (log 10) — 2:4-sparse FP8 against
+# hopper_fp8_w8a8 (part A) and NVFP4 with 0.5% BF16 outliers against nvfp4_w_a (part B).
+model: Qwen/Qwen3-0.6B
+dtype: bfloat16
+device: cuda
+seed: 42
+native_baseline: true
+tasks:
+  ppl: {dataset: wikitext2, seqlen: 2048}
+recipes: [fp8_2of4_sparse, nvfp4_outliers]
+output_dir: ../../runs/e2e/qwen3_0.6b_ppl_d

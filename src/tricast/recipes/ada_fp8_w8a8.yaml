@@ -1,0 +1,15 @@
+# Per-tensor FP8 E4M3 W8A8 with Ada accumulation.
+# Source: NADPE MICRO 2026 core/design_space.cuh.
+name: ada_fp8_w8a8
+description: Per-tensor FP8 E4M3 W8A8 with Ada accumulation.
+defaults:
+  weight: fp8_tensor
+  activation: fp8_tensor
+  mma: nvidia_ada_fp8
+  transform: none
+  weight_algo: rtn
+include:
+- '*'
+exclude:
+- lm_head
+backend: auto

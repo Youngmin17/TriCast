@@ -1,0 +1,11 @@
+# KV-only recipe; keep native linear layers as the comparison baseline.
+# Source: KIVI (ICML 2024), Algorithm 1, https://proceedings.mlr.press/v235/liu24bz.html
+# tricast.kv: channel keys flush at R=128; token values retain the latest R.
+# Cache attention reads before writing, so prompt prefill stays in full precision.
+name: kivi2_kv
+description: KIVI 2-bit keys and values with native linear layers and residual length 128.
+defaults: {}
+include: []
+kv:
+  preset: kivi2
+  mode: cache

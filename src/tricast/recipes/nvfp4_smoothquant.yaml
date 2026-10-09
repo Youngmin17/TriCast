@@ -1,0 +1,23 @@
+# NVFP4 W4A4 after SmoothQuant diagonal scaling with alpha=0.5.
+# Source: SmoothQuant and NVIDIA NVFP4.
+name: nvfp4_smoothquant
+description: NVFP4 W4A4 after SmoothQuant diagonal scaling with alpha=0.5.
+defaults:
+  weight: nvfp4
+  activation: nvfp4
+  mma: nvidia_blackwell_fp4
+  transform:
+    kind: smoothquant
+    alpha: 0.5
+  weight_algo: rtn
+include:
+- '*'
+exclude:
+- lm_head
+backend: auto
+calibration:
+  dataset: wikitext2
+  split: train
+  samples: 128
+  seqlen: 2048
+  seed: 42

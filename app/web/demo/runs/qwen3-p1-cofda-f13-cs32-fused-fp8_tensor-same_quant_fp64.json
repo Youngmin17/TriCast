@@ -1,0 +1,2807 @@
+{
+ "id": "qwen3-p1-cofda-f13-cs32-fused-fp8_tensor-same_quant_fp64",
+ "status": "done",
+ "stage": null,
+ "progress": 1.0,
+ "request": {
+  "task": "llm.generate",
+  "model": "Qwen/Qwen3-0.6B",
+  "mma": {
+   "algorithm": "cofda",
+   "f_bits": 13,
+   "chunk_size": 32,
+   "c_mode": "fused",
+   "promote_interval": 0,
+   "norm_rounding": "rtz"
+  },
+  "format": "fp8_tensor",
+  "baseline": "same_quant_fp64",
+  "input": {
+   "prompt": "Explain in two sentences why an accumulator's precision matters in a dot product.",
+   "max_new_tokens": 48
+  }
+ },
+ "mma_label": "CoFDA · F13 · CS32 · fused",
+ "preset": "hopper",
+ "recipe": {
+  "name": "studio:cofda-f13-cs32-fused:fp8_tensor",
+  "bundled": "hopper_fp8_w8a8",
+  "yaml": "name: studio:cofda-f13-cs32-fused:fp8_tensor\ndescription: CoFDA · F13 · CS32 · fused · FP8 E4M3 · 텐서 스케일\ndefaults:\n  weight: fp8_tensor\n  activation: fp8_tensor\n  mma:\n    algorithm: cofda\n    f_bits: 13\n    chunk_size: 32\n    c_mode: fused\n    promote_interval: 0\n    norm_rounding: rtz\n  transform: none\n  weight_algo: rtn\ninclude:\n- '*'\nexclude:\n- lm_head\nbackend: auto\n"
+ },
+ "env": {
+  "utc": "2026-10-07T09:53:49.549663+00:00",
+  "hostname": "geneva.ee.ucl.ac.uk",
+  "git_sha": "625d5090b7b601fd05fd252fd96de6b439582d8d",
+  "git_dirty": false,
+  "src_sha256": null,
+  "versions": {
+   "python": "3.12.14",
+   "torch": "2.8.0+cu128",
+   "triton": "3.4.0",
+   "transformers": "4.55.2",
+   "lm_eval": "0.4.13",
+   "datasets": "4.8.5"
+  },
+  "gpu_names": [
+   "NVIDIA A100-SXM4-80GB"
+  ],
+  "gpu_driver": "595.71.05\n595.71.05\n595.71.05\n595.71.05",
+  "cuda": "12.8",
+  "model_id": "Qwen/Qwen3-0.6B",
+  "model_sha": "c1899de289a04d12100db370d81485cdf75e47ca",
+  "model_kind": "hf",
+  "environment": {
+   "CUDA_VISIBLE_DEVICES": "0",
+   "PYTHONNOUSERSITE": "1",
+   "CUBLAS_WORKSPACE_CONFIG": ":4096:8",
+   "CONDA_DEFAULT_ENV": "/scratch/uceeeee/conda_envs/tricast"
+  },
+  "app": "tricast-studio",
+  "app_sha256": "55fc8ad1b38174de2d9e608c38070960d2c3682f00698e430a84e2a29bd92425",
+  "task": "llm.generate",
+  "device": "cuda",
+  "seed": 42,
+  "deterministic_algorithms": true,
+  "tf32": {
+   "matmul": false,
+   "cudnn": false
+  },
+  "recipe_sha256": "07a0771512d440d54eb39660752aecc5fbb44bb539c3dd522c2afb5198f002f3",
+  "baseline_recipe_sha256": "d6e6a8d4fde535e7bc45ff65a25337dd8d2bd3d60516034a1a50bfd51b18d40f",
+  "model_revision": "c1899de289a04d12100db370d81485cdf75e47ca",
+  "dtype": "bfloat16",
+  "attn_implementation": "eager",
+  "generation": {
+   "do_sample": false,
+   "num_beams": 1,
+   "chat_template": true,
+   "enable_thinking": false
+  },
+  "model_commit": "c1899de289a04d12100db370d81485cdf75e47ca"
+ },
+ "baseline": {
+  "label": "FP64 정확 누산 · FP8 E4M3 · 텐서 스케일",
+  "text": "An accumulator's precision in a dot product is crucial because it directly affects the accuracy of the result, ensuring that the computed value reflects the actual scalar product between the vectors. A more precise accumulator allows for better handling of floating-point errors and maintains",
+  "tokens": [
+   {
+    "id": 2082,
+    "piece": "An",
+    "logprob": -0.27021783848571823,
+    "top": [
+     {
+      "piece": "An",
+      "p": 0.7632132190150182
+     },
+     {
+      "piece": "Acc",
+      "p": 0.21866424827490955
+     },
+     {
+      "piece": "The",
+      "p": 0.012336192735165907
+     },
+     {
+      "piece": "Precision",
+      "p": 0.0024291403771233276
+     },
+     {
+      "piece": "Accuracy",
+      "p": 0.0008936308044631163
+     }
+    ]
+   },
+   {
+    "id": 56312,
+    "piece": " accumulator",
+    "logprob": -0.0006856778017918659,
+    "top": [
+     {
+      "piece": " accumulator",
+      "p": 0.9993145572215123
+     },
+     {
+      "piece": "accumulator",
+      "p": 0.0006262971131589203
+     },
+     {
+      "piece": " accum",
+      "p": 1.4729096337623667e-05
+     },
+     {
+      "piece": " attacker",
+      "p": 1.2998381895822994e-05
+     },
+     {
+      "piece": " accelerator",
+      "p": 6.140000847341123e-06
+     }
+    ]
+   },
+   {
+    "id": 594,
+    "piece": "'s",
+    "logprob": -0.038672859530338985,
+    "top": [
+     {
+      "piece": "'s",
+      "p": 0.962065388194373
+     },
+     {
+      "piece": "’s",
+      "p": 0.03730332330955494
+     },
+     {
+      "piece": " precision",
+      "p": 0.00041440248951077915
+     },
+     {
+      "piece": " can",
+      "p": 3.001921565454981e-05
+     },
+     {
+      "piece": " is",
+      "p": 2.4886803882558697e-05
+     }
+    ]
+   },
+   {
+    "id": 16052,
+    "piece": " precision",
+    "logprob": -7.881740108253184e-05,
+    "top": [
+     {
+      "piece": " precision",
+      "p": 0.9999211857049273
+     },
+     {
+      "piece": " accuracy",
+      "p": 5.144080558931211e-05
+     },
+     {
+      "piece": " precise",
+      "p": 8.939071641522466e-06
+     },
+     {
+      "piece": "precision",
+      "p": 6.9617559943490845e-06
+     },
+     {
+      "piece": " **",
+      "p": 3.288500680074772e-06
+     }
+    ]
+   },
+   {
+    "id": 304,
+    "piece": " in",
+    "logprob": -0.9598942568057149,
+    "top": [
+     {
+      "piece": " in",
+      "p": 0.3829333764327015
+     },
+     {
+      "piece": " matters",
+      "p": 0.33793751859812
+     },
+     {
+      "piece": " is",
+      "p": 0.23226083343371262
+     },
+     {
+      "piece": " affects",
+      "p": 0.021603622785479778
+     },
+     {
+      "piece": " directly",
+      "p": 0.007013669441185074
+     }
+    ]
+   },
+   {
+    "id": 264,
+    "piece": " a",
+    "logprob": -0.0019451333726953975,
+    "top": [
+     {
+      "piece": " a",
+      "p": 0.9980567571732367
+     },
+     {
+      "piece": " dot",
+      "p": 0.0013242021744717086
+     },
+     {
+      "piece": " the",
+      "p": 0.0003793902749988389
+     },
+     {
+      "piece": " computing",
+      "p": 8.465341281924776e-05
+     },
+     {
+      "piece": " calculating",
+      "p": 6.592814419329706e-05
+     }
+    ]
+   },
+   {
+    "id": 12756,
+    "piece": " dot",
+    "logprob": -7.545765944613283e-06,
+    "top": [
+     {
+      "piece": " dot",
+      "p": 0.9999924542625246
+     },
+     {
+      "piece": " Dot",
+      "p": 2.902298508502531e-06
+     },
+     {
+      "piece": ".dot",
+      "p": 1.5534884456495995e-06
+     },
+     {
+      "piece": " scalar",
+      "p": 7.338159817944985e-07
+     },
+     {
+      "piece": "(dot",
+      "p": 3.927833906853886e-07
+     }
+    ]
+   },
+   {
+    "id": 1985,
+    "piece": " product",
+    "logprob": -4.860458716895953e-06,
+    "top": [
+     {
+      "piece": " product",
+      "p": 0.9999951395530952
+     },
+     {
+      "piece": " operation",
+      "p": 1.2098612668091303e-06
+     },
+     {
+      "piece": "产品",
+      "p": 6.475920699820503e-07
+     },
+     {
+      "piece": " products",
+      "p": 5.714979958975059e-07
+     },
+     {
+      "piece": "-product",
+      "p": 4.4508308672871614e-07
+     }
+    ]
+   },
+   {
+    "id": 374,
+    "piece": " is",
+    "logprob": -0.7748572309882137,
+    "top": [
+     {
+      "piece": " is",
+      "p": 0.4607695599179892
+     },
+     {
+      "piece": " ensures",
+      "p": 0.35884769407959655
+     },
+     {
+      "piece": " determines",
+      "p": 0.0907309059265505
+     },
+     {
+      "piece": " affects",
+      "p": 0.04856475431706754
+     },
+     {
+      "piece": " directly",
+      "p": 0.013914035070176481
+     }
+    ]
+   },
+   {
+    "id": 16587,
+    "piece": " crucial",
+    "logprob": -0.22968538439288186,
+    "top": [
+     {
+      "piece": " crucial",
+      "p": 0.7947836145018374
+     },
+     {
+      "piece": " critical",
+      "p": 0.09492336620970666
+     },
+     {
+      "piece": " important",
+      "p": 0.07392639193589329
+     },
+     {
+      "piece": " essential",
+      "p": 0.021180265904199903
+     },
+     {
+      "piece": " vital",
+      "p": 0.012846480651763362
+     }
+    ]
+   },
+   {
+    "id": 1576,
+    "piece": " because",
+    "logprob": -0.040064498562791415,
+    "top": [
+     {
+      "piece": " because",
+      "p": 0.9607274716127828
+     },
+     {
+      "piece": " to",
+      "p": 0.029011455824645812
+     },
+     {
+      "piece": " for",
+      "p": 0.00831192125765853
+     },
+     {
+      "piece": ",",
+      "p": 0.0014443953345929061
+     },
+     {
+      "piece": " as",
+      "p": 0.000365200332580732
+     }
+    ]
+   },
+   {
+    "id": 432,
+    "piece": " it",
+    "logprob": -0.4669345517757195,
+    "top": [
+     {
+      "piece": " it",
+      "p": 0.6269211199437716
+     },
+     {
+      "piece": " higher",
+      "p": 0.23063139126348947
+     },
+     {
+      "piece": " high",
+      "p": 0.0400777263433191
+     },
+     {
+      "piece": " precise",
+      "p": 0.03121256465989839
+     },
+     {
+      "piece": " if",
+      "p": 0.013011332743471278
+     }
+    ]
+   },
+   {
+    "id": 5961,
+    "piece": " directly",
+    "logprob": -0.3609010331281901,
+    "top": [
+     {
+      "piece": " directly",
+      "p": 0.6970479797114408
+     },
+     {
+      "piece": " ensures",
+      "p": 0.13725688538267888
+     },
+     {
+      "piece": " determines",
+      "p": 0.12112877620862295
+     },
+     {
+      "piece": " affects",
+      "p": 0.02385167023867387
+     },
+     {
+      "piece": " allows",
+      "p": 0.00994285542839936
+     }
+    ]
+   },
+   {
+    "id": 21501,
+    "piece": " affects",
+    "logprob": -0.17845939023562526,
+    "top": [
+     {
+      "piece": " affects",
+      "p": 0.8365580286120234
+     },
+     {
+      "piece": " influences",
+      "p": 0.0881725675167092
+     },
+     {
+      "piece": " impacts",
+      "p": 0.060600060337707366
+     },
+     {
+      "piece": " determines",
+      "p": 0.011932859398573194
+     },
+     {
+      "piece": " relates",
+      "p": 0.0005941020867008714
+     }
+    ]
+   },
+   {
+    "id": 279,
+    "piece": " the",
+    "logprob": -0.016951253881922097,
+    "top": [
+     {
+      "piece": " the",
+      "p": 0.9831916102411326
+     },
+     {
+      "piece": " how",
+      "p": 0.005159316064661114
+     },
+     {
+      "piece": " numerical",
+      "p": 0.004018079391270955
+     },
+     {
+      "piece": " accuracy",
+      "p": 0.0021507229148744057
+     },
+     {
+      "piece": " both",
+      "p": 0.0016749846902738017
+     }
+    ]
+   },
+   {
+    "id": 13403,
+    "piece": " accuracy",
+    "logprob": -0.03374689237928525,
+    "top": [
+     {
+      "piece": " accuracy",
+      "p": 0.9668161822148696
+     },
+     {
+      "piece": " precision",
+      "p": 0.015627128128981243
+     },
+     {
+      "piece": " reliability",
+      "p": 0.004477247170101934
+     },
+     {
+      "piece": " numerical",
+      "p": 0.0023964977161013675
+     },
+     {
+      "piece": " result",
+      "p": 0.0007780288965509589
+     }
+    ]
+   },
+   {
+    "id": 315,
+    "piece": " of",
+    "logprob": -0.02997459651456773,
+    "top": [
+     {
+      "piece": " of",
+      "p": 0.9704701865606173
+     },
+     {
+      "piece": " and",
+      "p": 0.029305660323499932
+     },
+     {
+      "piece": " (",
+      "p": 7.264146931552032e-05
+     },
+     {
+      "piece": ",",
+      "p": 4.690085762112263e-05
+     },
+     {
+      "piece": " in",
+      "p": 3.2234456609099445e-05
+     }
+    ]
+   },
+   {
+    "id": 279,
+    "piece": " the",
+    "logprob": -0.035690863673094306,
+    "top": [
+     {
+      "piece": " the",
+      "p": 0.9649385449380401
+     },
+     {
+      "piece": " results",
+      "p": 0.017673465938905737
+     },
+     {
+      "piece": " intermediate",
+      "p": 0.00446855198446188
+     },
+     {
+      "piece": " numerical",
+      "p": 0.0030711878706407734
+     },
+     {
+      "piece": " scalar",
+      "p": 0.0010613741275200207
+     }
+    ]
+   },
+   {
+    "id": 1102,
+    "piece": " result",
+    "logprob": -1.053690096656265,
+    "top": [
+     {
+      "piece": " result",
+      "p": 0.34864882458389024
+     },
+     {
+      "piece": " computed",
+      "p": 0.18661826789823993
+     },
+     {
+      "piece": " resulting",
+      "p": 0.09988956066295154
+     },
+     {
+      "piece": " final",
+      "p": 0.07779406806496526
+     },
+     {
+      "piece": " results",
+      "p": 0.06058608112730512
+     }
+    ]
+   },
+   {
+    "id": 11,
+    "piece": ",",
+    "logprob": -0.5720972888544751,
+    "top": [
+     {
+      "piece": ",",
+      "p": 0.5643406113968791
+     },
+     {
+      "piece": ".",
+      "p": 0.34228988333317995
+     },
+     {
+      "piece": "—",
+      "p": 0.06740087433258461
+     },
+     {
+      "piece": " and",
+      "p": 0.004882502960548546
+     },
+     {
+      "piece": ":",
+      "p": 0.002961387741710395
+     }
+    ]
+   },
+   {
+    "id": 22573,
+    "piece": " ensuring",
+    "logprob": -0.5429444424905046,
+    "top": [
+     {
+      "piece": " ensuring",
+      "p": 0.5810349073192771
+     },
+     {
+      "piece": " which",
+      "p": 0.2744614561926019
+     },
+     {
+      "piece": " especially",
+      "p": 0.03277974638788868
+     },
+     {
+      "piece": " as",
+      "p": 0.022529168253882986
+     },
+     {
+      "piece": " allowing",
+      "p": 0.019881921201858936
+     }
+    ]
+   },
+   {
+    "id": 429,
+    "piece": " that",
+    "logprob": -0.07976244667834008,
+    "top": [
+     {
+      "piece": " that",
+      "p": 0.9233356617895183
+     },
+     {
+      "piece": " the",
+      "p": 0.052091033504330045
+     },
+     {
+      "piece": " reliable",
+      "p": 0.01691148255442721
+     },
+     {
+      "piece": " correct",
+      "p": 0.0015730129115950936
+     },
+     {
+      "piece": " results",
+      "p": 0.0007909605645060252
+     }
+    ]
+   },
+   {
+    "id": 279,
+    "piece": " the",
+    "logprob": -0.419535554112238,
+    "top": [
+     {
+      "piece": " the",
+      "p": 0.6573520533853384
+     },
+     {
+      "piece": " small",
+      "p": 0.1883345165207952
+     },
+     {
+      "piece": " floating",
+      "p": 0.03272763162365159
+     },
+     {
+      "piece": " even",
+      "p": 0.02888203353680218
+     },
+     {
+      "piece": " any",
+      "p": 0.013642906617929629
+     }
+    ]
+   },
+   {
+    "id": 24182,
+    "piece": " computed",
+    "logprob": -1.2864143978104459,
+    "top": [
+     {
+      "piece": " computed",
+      "p": 0.27625956624448067
+     },
+     {
+      "piece": " calculated",
+      "p": 0.1898702380432759
+     },
+     {
+      "piece": " precision",
+      "p": 0.06984935706644908
+     },
+     {
+      "piece": " calculation",
+      "p": 0.054398733980384716
+     },
+     {
+      "piece": " final",
+      "p": 0.04236577662201666
+     }
+    ]
+   },
+   {
+    "id": 897,
+    "piece": " value",
+    "logprob": -0.2581012690011292,
+    "top": [
+     {
+      "piece": " value",
+      "p": 0.7725169961210023
+     },
+     {
+      "piece": " values",
+      "p": 0.15211761582989844
+     },
+     {
+      "piece": " dot",
+      "p": 0.02058688062361754
+     },
+     {
+      "piece": " product",
+      "p": 0.014149142336361947
+     },
+     {
+      "piece": " scalar",
+      "p": 0.009724553831869013
+     }
+    ]
+   },
+   {
+    "id": 25963,
+    "piece": " reflects",
+    "logprob": -0.7722465275907004,
+    "top": [
+     {
+      "piece": " reflects",
+      "p": 0.4619740641911013
+     },
+     {
+      "piece": " is",
+      "p": 0.24727689753765258
+     },
+     {
+      "piece": " reliably",
+      "p": 0.0708460172972432
+     },
+     {
+      "piece": " does",
+      "p": 0.037921140423403485
+     },
+     {
+      "piece": " represents",
+      "p": 0.03346528896612907
+     }
+    ]
+   },
+   {
+    "id": 279,
+    "piece": " the",
+    "logprob": -0.020343289234889567,
+    "top": [
+     {
+      "piece": " the",
+      "p": 0.9798622394045285
+     },
+     {
+      "piece": " real",
+      "p": 0.004004473013627866
+     },
+     {
+      "piece": " both",
+      "p": 0.0031186867188016903
+     },
+     {
+      "piece": " all",
+      "p": 0.0021434399457401975
+     },
+     {
+      "piece": " precise",
+      "p": 0.0014731632944395409
+     }
+    ]
+   },
+   {
+    "id": 5042,
+    "piece": " actual",
+    "logprob": -0.8586036740190238,
+    "top": [
+     {
+      "piece": " actual",
+      "p": 0.4237533672446355
+     },
+     {
+      "piece": " exact",
+      "p": 0.2912411461588116
+     },
+     {
+      "piece": " true",
+      "p": 0.13757257622737984
+     },
+     {
+      "piece": " correct",
+      "p": 0.08344198541755925
+     },
+     {
+      "piece": " precise",
+      "p": 0.0145000428553438
+     }
+    ]
+   },
+   {
+    "id": 17274,
+    "piece": " scalar",
+    "logprob": -1.477114095749542,
+    "top": [
+     {
+      "piece": " scalar",
+      "p": 0.22829557780261953
+     },
+     {
+      "piece": " mathematical",
+      "p": 0.13846826741409965
+     },
+     {
+      "piece": " relationship",
+      "p": 0.10783919509264153
+     },
+     {
+      "piece": " contribution",
+      "p": 0.09516775564647205
+     },
+     {
+      "piece": " contributions",
+      "p": 0.057722161615625385
+     }
+    ]
+   },
+   {
+    "id": 1985,
+    "piece": " product",
+    "logprob": -0.96838785269941,
+    "top": [
+     {
+      "piece": " product",
+      "p": 0.37969466868680374
+     },
+     {
+      "piece": " multiplication",
+      "p": 0.33507936904398844
+     },
+     {
+      "piece": " value",
+      "p": 0.13968186253227727
+     },
+     {
+      "piece": " dot",
+      "p": 0.07476631327721996
+     },
+     {
+      "piece": " projection",
+      "p": 0.01299243709543389
+     }
+    ]
+   },
+   {
+    "id": 1948,
+    "piece": " between",
+    "logprob": -0.9479665041623747,
+    "top": [
+     {
+      "piece": " between",
+      "p": 0.3875282598656421
+     },
+     {
+      "piece": " of",
+      "p": 0.1425636796775139
+     },
+     {
+      "piece": " without",
+      "p": 0.1425636796775139
+     },
+     {
+      "piece": ".",
+      "p": 0.11102870537038875
+     },
+     {
+      "piece": " with",
+      "p": 0.07630883883910983
+     }
+    ]
+   },
+   {
+    "id": 279,
+    "piece": " the",
+    "logprob": -0.9904848575000998,
+    "top": [
+     {
+      "piece": " the",
+      "p": 0.37139657294587003
+     },
+     {
+      "piece": " vectors",
+      "p": 0.37139657294587003
+     },
+     {
+      "piece": " two",
+      "p": 0.25525688276540576
+     },
+     {
+      "piece": " input",
+      "p": 0.000558372163904375
+     },
+     {
+      "piece": " vector",
+      "p": 0.0004348606784940021
+     }
+    ]
+   },
+   {
+    "id": 22879,
+    "piece": " vectors",
+    "logprob": -0.2812421444587881,
+    "top": [
+     {
+      "piece": " vectors",
+      "p": 0.7548455316858996
+     },
+     {
+      "piece": " two",
+      "p": 0.19085483912648182
+     },
+     {
+      "piece": " input",
+      "p": 0.04258547081939469
+     },
+     {
+      "piece": " vector",
+      "p": 0.005086109184996083
+     },
+     {
+      "piece": " operands",
+      "p": 0.00272239806796456
+     }
+    ]
+   },
+   {
+    "id": 13,
+    "piece": ".",
+    "logprob": -0.5779172508059778,
+    "top": [
+     {
+      "piece": ".",
+      "p": 0.5610657096565622
+     },
+     {
+      "piece": " accurately",
+      "p": 0.1821513669901664
+     },
+     {
+      "piece": " correctly",
+      "p": 0.05218724039732355
+     },
+     {
+      "piece": ",",
+      "p": 0.040643463687771234
+     },
+     {
+      "piece": " efficiently",
+      "p": 0.040643463687771234
+     }
+    ]
+   },
+   {
+    "id": 362,
+    "piece": " A",
+    "logprob": -1.014776748264002,
+    "top": [
+     {
+      "piece": " A",
+      "p": 0.3624833458360634
+     },
+     {
+      "piece": " This",
+      "p": 0.21985726288479018
+     },
+     {
+      "piece": " If",
+      "p": 0.1712250084986103
+     },
+     {
+      "piece": " High",
+      "p": 0.09165014264714237
+     },
+     {
+      "piece": " Precision",
+      "p": 0.049056786277278656
+     }
+    ]
+   },
+   {
+    "id": 803,
+    "piece": " more",
+    "logprob": -0.8544554712656495,
+    "top": [
+     {
+      "piece": " more",
+      "p": 0.42551483306218807
+     },
+     {
+      "piece": " higher",
+      "p": 0.42551483306218807
+     },
+     {
+      "piece": " lower",
+      "p": 0.07394339053787427
+     },
+     {
+      "piece": " less",
+      "p": 0.021185136085207373
+     },
+     {
+      "piece": " precise",
+      "p": 0.018695816976028647
+     }
+    ]
+   },
+   {
+    "id": 23560,
+    "piece": " precise",
+    "logprob": -0.04322015044317526,
+    "top": [
+     {
+      "piece": " precise",
+      "p": 0.9577005286614524
+     },
+     {
+      "piece": " accurate",
+      "p": 0.042078424558900436
+     },
+     {
+      "piece": " exact",
+      "p": 5.582883027319461e-05
+     },
+     {
+      "piece": " detailed",
+      "p": 4.926876979101534e-05
+     },
+     {
+      "piece": " precisely",
+      "p": 3.386189725658537e-05
+     }
+    ]
+   },
+   {
+    "id": 56312,
+    "piece": " accumulator",
+    "logprob": -0.007482551282380871,
+    "top": [
+     {
+      "piece": " accumulator",
+      "p": 0.9925453733119883
+     },
+     {
+      "piece": "accumulator",
+      "p": 0.0031590543538419147
+     },
+     {
+      "piece": " accumulation",
+      "p": 0.00278785568236187
+     },
+     {
+      "piece": " value",
+      "p": 0.0002436001146981494
+     },
+     {
+      "piece": " accum",
+      "p": 0.00017822165112636065
+     }
+    ]
+   },
+   {
+    "id": 6147,
+    "piece": " allows",
+    "logprob": -1.070947277924558,
+    "top": [
+     {
+      "piece": " allows",
+      "p": 0.3426837468704917
+     },
+     {
+      "piece": " minim",
+      "p": 0.26688237040858204
+     },
+     {
+      "piece": " reduces",
+      "p": 0.2078481990621564
+     },
+     {
+      "piece": " can",
+      "p": 0.06747843066151851
+     },
+     {
+      "piece": " helps",
+      "p": 0.02482392736288535
+     }
+    ]
+   },
+   {
+    "id": 369,
+    "piece": " for",
+    "logprob": -0.0312861114764948,
+    "top": [
+     {
+      "piece": " for",
+      "p": 0.9691982346651306
+     },
+     {
+      "piece": " the",
+      "p": 0.02582825809381497
+     },
+     {
+      "piece": " better",
+      "p": 0.002402402233797385
+     },
+     {
+      "piece": " higher",
+      "p": 0.0006074224097537509
+     },
+     {
+      "piece": " accurate",
+      "p": 0.0005035708647211659
+     }
+    ]
+   },
+   {
+    "id": 2664,
+    "piece": " better",
+    "logprob": -0.34100714934728693,
+    "top": [
+     {
+      "piece": " better",
+      "p": 0.7110538246175057
+     },
+     {
+      "piece": " more",
+      "p": 0.05150856629356737
+     },
+     {
+      "piece": " higher",
+      "p": 0.04011491176431564
+     },
+     {
+      "piece": " accurate",
+      "p": 0.03124152469488933
+     },
+     {
+      "piece": " reliable",
+      "p": 0.03124152469488933
+     }
+    ]
+   },
+   {
+    "id": 11589,
+    "piece": " handling",
+    "logprob": -0.5274362247219899,
+    "top": [
+     {
+      "piece": " handling",
+      "p": 0.5901159566359983
+     },
+     {
+      "piece": " representation",
+      "p": 0.19158260134940974
+     },
+     {
+      "piece": " error",
+      "p": 0.10254677687766926
+     },
+     {
+      "piece": " numerical",
+      "p": 0.015726057568129247
+     },
+     {
+      "piece": " resolution",
+      "p": 0.008417552038888738
+     }
+    ]
+   },
+   {
+    "id": 315,
+    "piece": " of",
+    "logprob": -0.00012930542004114013,
+    "top": [
+     {
+      "piece": " of",
+      "p": 0.9998707029395444
+     },
+     {
+      "piece": " and",
+      "p": 0.0001088946882712664
+     },
+     {
+      "piece": " in",
+      "p": 4.494620568884957e-06
+     },
+     {
+      "piece": " with",
+      "p": 2.1231084240030456e-06
+     },
+     {
+      "piece": " when",
+      "p": 2.1231084240030456e-06
+     }
+    ]
+   },
+   {
+    "id": 19057,
+    "piece": " floating",
+    "logprob": -0.6420362088717865,
+    "top": [
+     {
+      "piece": " floating",
+      "p": 0.526219838905464
+     },
+     {
+      "piece": " small",
+      "p": 0.11741551692825711
+     },
+     {
+      "piece": " data",
+      "p": 0.038119237276914755
+     },
+     {
+      "piece": " numerical",
+      "p": 0.038119237276914755
+     },
+     {
+      "piece": " potential",
+      "p": 0.023120486133309512
+     }
+    ]
+   },
+   {
+    "id": 16574,
+    "piece": "-point",
+    "logprob": -0.0032036482665557414,
+    "top": [
+     {
+      "piece": "-point",
+      "p": 0.9968014779389046
+     },
+     {
+      "piece": " point",
+      "p": 0.0031726006019163993
+     },
+     {
+      "piece": "-",
+      "p": 4.769812088585352e-06
+     },
+     {
+      "piece": " points",
+      "p": 3.714733389693725e-06
+     },
+     {
+      "piece": "point",
+      "p": 3.278240710332287e-06
+     }
+    ]
+   },
+   {
+    "id": 5975,
+    "piece": " errors",
+    "logprob": -0.9246995022080167,
+    "top": [
+     {
+      "piece": " errors",
+      "p": 0.3966505937958504
+     },
+     {
+      "piece": " operations",
+      "p": 0.16534856763641784
+     },
+     {
+      "piece": " precision",
+      "p": 0.14591959878593821
+     },
+     {
+      "piece": " im",
+      "p": 0.08850471051663786
+     },
+     {
+      "piece": " arithmetic",
+      "p": 0.06892753785586557
+     }
+    ]
+   },
+   {
+    "id": 323,
+    "piece": " and",
+    "logprob": -0.43817519355611173,
+    "top": [
+     {
+      "piece": " and",
+      "p": 0.6452127358413887
+     },
+     {
+      "piece": ",",
+      "p": 0.3453574906851076
+     },
+     {
+      "piece": " during",
+      "p": 0.004926260029357406
+     },
+     {
+      "piece": " introduced",
+      "p": 0.0015993224733796983
+     },
+     {
+      "piece": " or",
+      "p": 0.0010991971892833268
+     }
+    ]
+   },
+   {
+    "id": 31995,
+    "piece": " maintains",
+    "logprob": -0.9928869676586026,
+    "top": [
+     {
+      "piece": " maintains",
+      "p": 0.37050550811157235
+     },
+     {
+      "piece": " ensures",
+      "p": 0.09367846291436219
+     },
+     {
+      "piece": " more",
+      "p": 0.08267095336081051
+     },
+     {
+      "piece": " reduces",
+      "p": 0.05014246788100475
+     },
+     {
+      "piece": " avoids",
+      "p": 0.04425057259293425
+     }
+    ]
+   }
+  ]
+ },
+ "emulated": {
+  "label": "CoFDA · F13 · CS32 · fused · FP8 E4M3 · 텐서 스케일",
+  "text": "An accumulator's precision in a dot product is crucial because it directly affects the accuracy of the result, ensuring that the computed value reflects the exact relationship between the vectors. A more precise accumulator allows for better handling of floating-point operations, reducing errors",
+  "tokens": [
+   {
+    "id": 2082,
+    "piece": "An",
+    "logprob": -0.5330845411415188,
+    "top": [
+     {
+      "piece": "An",
+      "p": 0.5867921906662924
+     },
+     {
+      "piece": "Acc",
+      "p": 0.4032959815232107
+     },
+     {
+      "piece": "The",
+      "p": 0.003953774680186732
+     },
+     {
+      "piece": "Precision",
+      "p": 0.003953774680186732
+     },
+     {
+      "piece": "Accuracy",
+      "p": 0.0006870630176905709
+     }
+    ]
+   },
+   {
+    "id": 56312,
+    "piece": " accumulator",
+    "logprob": -0.000981490742955025,
+    "top": [
+     {
+      "piece": " accumulator",
+      "p": 0.9990189907615407
+     },
+     {
+      "piece": "accumulator",
+      "p": 0.0009109874009219227
+     },
+     {
+      "piece": " attacker",
+      "p": 1.6685316267472444e-05
+     },
+     {
+      "piece": " accum",
+      "p": 1.4724739924688794e-05
+     },
+     {
+      "piece": " accelerator",
+      "p": 7.881585326659533e-06
+     }
+    ]
+   },
+   {
+    "id": 594,
+    "piece": "'s",
+    "logprob": -0.03870710771288529,
+    "top": [
+     {
+      "piece": "'s",
+      "p": 0.9620324397675517
+     },
+     {
+      "piece": "’s",
+      "p": 0.03730204576040563
+     },
+     {
+      "piece": " precision",
+      "p": 0.00032272593037188814
+     },
+     {
+      "piece": " ensures",
+      "p": 4.9491624352179594e-05
+     },
+     {
+      "piece": " can",
+      "p": 4.649307841629504e-05
+     }
+    ]
+   },
+   {
+    "id": 16052,
+    "piece": " precision",
+    "logprob": -0.00016247808751906762,
+    "top": [
+     {
+      "piece": " precision",
+      "p": 0.9998375351113306
+     },
+     {
+      "piece": " accuracy",
+      "p": 0.00010889107600389679
+     },
+     {
+      "piece": " precise",
+      "p": 2.4296883227484333e-05
+     },
+     {
+      "piece": "precision",
+      "p": 7.888043088920493e-06
+     },
+     {
+      "piece": " ability",
+      "p": 4.222165211994931e-06
+     }
+    ]
+   },
+   {
+    "id": 304,
+    "piece": " in",
+    "logprob": -0.8212451719204217,
+    "top": [
+     {
+      "piece": " in",
+      "p": 0.4398835826695874
+     },
+     {
+      "piece": " matters",
+      "p": 0.26680287959334154
+     },
+     {
+      "piece": " is",
+      "p": 0.23545271484177469
+     },
+     {
+      "piece": " affects",
+      "p": 0.021900514004271676
+     },
+     {
+      "piece": " ensures",
+      "p": 0.011722500411226603
+     }
+    ]
+   },
+   {
+    "id": 264,
+    "piece": " a",
+    "logprob": -0.004242296076129719,
+    "top": [
+     {
+      "piece": " a",
+      "p": 0.9957666897505324
+     },
+     {
+      "piece": " dot",
+      "p": 0.003591295435326684
+     },
+     {
+      "piece": " the",
+      "p": 0.0003340425105214986
+     },
+     {
+      "piece": " computing",
+      "p": 9.570478161962986e-05
+     },
+     {
+      "piece": " calculating",
+      "p": 9.570478161962986e-05
+     }
+    ]
+   },
+   {
+    "id": 12756,
+    "piece": " dot",
+    "logprob": -9.232990072214504e-06,
+    "top": [
+     {
+      "piece": " dot",
+      "p": 0.9999907670525517
+     },
+     {
+      "piece": " Dot",
+      "p": 3.726618764085776e-06
+     },
+     {
+      "piece": ".dot",
+      "p": 1.7603300589711786e-06
+     },
+     {
+      "piece": " scalar",
+      "p": 7.338147436835133e-07
+     },
+     {
+      "piece": "(dot",
+      "p": 3.92782727972334e-07
+     }
+    ]
+   },
+   {
+    "id": 1985,
+    "piece": " product",
+    "logprob": -4.373547594459239e-06,
+    "top": [
+     {
+      "piece": " product",
+      "p": 0.9999956264619695
+     },
+     {
+      "piece": " operation",
+      "p": 1.5534933736619686e-06
+     },
+     {
+      "piece": "-product",
+      "p": 4.450833034446737e-07
+     },
+     {
+      "piece": "product",
+      "p": 3.9278463668204415e-07
+     },
+     {
+      "piece": "产品",
+      "p": 3.9278463668204415e-07
+     }
+    ]
+   },
+   {
+    "id": 374,
+    "piece": " is",
+    "logprob": -0.9010106288722842,
+    "top": [
+     {
+      "piece": " is",
+      "p": 0.40615897626311537
+     },
+     {
+      "piece": " ensures",
+      "p": 0.35843403850912947
+     },
+     {
+      "piece": " determines",
+      "p": 0.11636649498720662
+     },
+     {
+      "piece": " affects",
+      "p": 0.06228649633860014
+     },
+     {
+      "piece": " directly",
+      "p": 0.017845379980623605
+     }
+    ]
+   },
+   {
+    "id": 16587,
+    "piece": " crucial",
+    "logprob": -0.22231381409001966,
+    "top": [
+     {
+      "piece": " crucial",
+      "p": 0.8006640652410782
+     },
+     {
+      "piece": " critical",
+      "p": 0.09562568589624043
+     },
+     {
+      "piece": " important",
+      "p": 0.06572250869351913
+     },
+     {
+      "piece": " essential",
+      "p": 0.024177959770557075
+     },
+     {
+      "piece": " vital",
+      "p": 0.011420859509128975
+     }
+    ]
+   },
+   {
+    "id": 1576,
+    "piece": " because",
+    "logprob": -0.08621539305991027,
+    "top": [
+     {
+      "piece": " because",
+      "p": 0.9173966090749158
+     },
+     {
+      "piece": " to",
+      "p": 0.05864720309644539
+     },
+     {
+      "piece": " for",
+      "p": 0.02157510030138841
+     },
+     {
+      "piece": ",",
+      "p": 0.0017709920785499464
+     },
+     {
+      "piece": " as",
+      "p": 0.00044777692131397627
+     }
+    ]
+   },
+   {
+    "id": 432,
+    "piece": " it",
+    "logprob": -0.49139179051242043,
+    "top": [
+     {
+      "piece": " it",
+      "p": 0.6117743396595753
+     },
+     {
+      "piece": " higher",
+      "p": 0.22505920219699266
+     },
+     {
+      "piece": " high",
+      "p": 0.05021749582909282
+     },
+     {
+      "piece": " precise",
+      "p": 0.0391094250755825
+     },
+     {
+      "piece": " a",
+      "p": 0.0098884112282663
+     }
+    ]
+   },
+   {
+    "id": 5961,
+    "piece": " directly",
+    "logprob": -0.27182781511686455,
+    "top": [
+     {
+      "piece": " directly",
+      "p": 0.7619854521709859
+     },
+     {
+      "piece": " ensures",
+      "p": 0.11685425375399935
+     },
+     {
+      "piece": " determines",
+      "p": 0.09100618432883935
+     },
+     {
+      "piece": " affects",
+      "p": 0.01792018021013343
+     },
+     {
+      "piece": " allows",
+      "p": 0.003998532680175795
+     }
+    ]
+   },
+   {
+    "id": 21501,
+    "piece": " affects",
+    "logprob": -0.19192962167047845,
+    "top": [
+     {
+      "piece": " affects",
+      "p": 0.825364954254395
+     },
+     {
+      "piece": " influences",
+      "p": 0.08699282615895185
+     },
+     {
+      "piece": " impacts",
+      "p": 0.06775008113418629
+     },
+     {
+      "piece": " determines",
+      "p": 0.017129903129706442
+     },
+     {
+      "piece": " controls",
+      "p": 0.0005506398338189031
+     }
+    ]
+   },
+   {
+    "id": 279,
+    "piece": " the",
+    "logprob": -0.01742890457537405,
+    "top": [
+     {
+      "piece": " the",
+      "p": 0.9827221002265233
+     },
+     {
+      "piece": " how",
+      "p": 0.0058434792089556604
+     },
+     {
+      "piece": " numerical",
+      "p": 0.005156852302220852
+     },
+     {
+      "piece": " both",
+      "p": 0.00214969586588755
+     },
+     {
+      "piece": " accuracy",
+      "p": 0.0013038564517182964
+     }
+    ]
+   },
+   {
+    "id": 13403,
+    "piece": " accuracy",
+    "logprob": -0.05880125328301004,
+    "top": [
+     {
+      "piece": " accuracy",
+      "p": 0.9428941476523676
+     },
+     {
+      "piece": " precision",
+      "p": 0.03226406349974622
+     },
+     {
+      "piece": " reliability",
+      "p": 0.005606653546086467
+     },
+     {
+      "piece": " numerical",
+      "p": 0.0043664661721022095
+     },
+     {
+      "piece": " accurate",
+      "p": 0.0008598081686710908
+     }
+    ]
+   },
+   {
+    "id": 315,
+    "piece": " of",
+    "logprob": -0.023491249487634824,
+    "top": [
+     {
+      "piece": " of",
+      "p": 0.9767825219789837
+     },
+     {
+      "piece": " and",
+      "p": 0.02297172310849337
+     },
+     {
+      "piece": " in",
+      "p": 6.061360109941411e-05
+     },
+     {
+      "piece": " (",
+      "p": 5.6941208656954876e-05
+     },
+     {
+      "piece": ",",
+      "p": 5.025044026918582e-05
+     }
+    ]
+   },
+   {
+    "id": 279,
+    "piece": " the",
+    "logprob": -0.0460683151403805,
+    "top": [
+     {
+      "piece": " the",
+      "p": 0.9549767205935181
+     },
+     {
+      "piece": " results",
+      "p": 0.01981990952071563
+     },
+     {
+      "piece": " intermediate",
+      "p": 0.009362262335939259
+     },
+     {
+      "piece": " numerical",
+      "p": 0.0030394815674188273
+     },
+     {
+      "piece": " scalar",
+      "p": 0.0014357494301214875
+     }
+    ]
+   },
+   {
+    "id": 1102,
+    "piece": " result",
+    "logprob": -0.9576048724690944,
+    "top": [
+     {
+      "piece": " result",
+      "p": 0.383811062403583
+     },
+     {
+      "piece": " computed",
+      "p": 0.15999625464851164
+     },
+     {
+      "piece": " resulting",
+      "p": 0.09704263388351227
+     },
+     {
+      "piece": " dot",
+      "p": 0.08563982382085049
+     },
+     {
+      "piece": " final",
+      "p": 0.0666963618537755
+     }
+    ]
+   },
+   {
+    "id": 11,
+    "piece": ",",
+    "logprob": -0.45346462986374975,
+    "top": [
+     {
+      "piece": ",",
+      "p": 0.6354228286056826
+     },
+     {
+      "piece": ".",
+      "p": 0.26488364368239553
+     },
+     {
+      "piece": "—",
+      "p": 0.07589043452481169
+     },
+     {
+      "piece": " and",
+      "p": 0.00294259148070474
+     },
+     {
+      "piece": "—the",
+      "p": 0.00294259148070474
+     }
+    ]
+   },
+   {
+    "id": 22573,
+    "piece": " ensuring",
+    "logprob": -0.6280683166146569,
+    "top": [
+     {
+      "piece": " ensuring",
+      "p": 0.5336215940369012
+     },
+     {
+      "piece": " which",
+      "p": 0.3236578574681087
+     },
+     {
+      "piece": " especially",
+      "p": 0.034113287200493066
+     },
+     {
+      "piece": " as",
+      "p": 0.026567454784883735
+     },
+     {
+      "piece": " allowing",
+      "p": 0.018259526838414506
+     }
+    ]
+   },
+   {
+    "id": 429,
+    "piece": " that",
+    "logprob": -0.10239487769777526,
+    "top": [
+     {
+      "piece": " that",
+      "p": 0.9026730358331996
+     },
+     {
+      "piece": " the",
+      "p": 0.06538941539712714
+     },
+     {
+      "piece": " reliable",
+      "p": 0.0187343811751605
+     },
+     {
+      "piece": " correct",
+      "p": 0.002237502752389573
+     },
+     {
+      "piece": " results",
+      "p": 0.0016369919834593398
+     }
+    ]
+   },
+   {
+    "id": 279,
+    "piece": " the",
+    "logprob": -0.5997415656249616,
+    "top": [
+     {
+      "piece": " the",
+      "p": 0.5489534862148984
+     },
+     {
+      "piece": " small",
+      "p": 0.2593072658984937
+     },
+     {
+      "piece": " even",
+      "p": 0.05106062812069176
+     },
+     {
+      "piece": " floating",
+      "p": 0.030969836459384614
+     },
+     {
+      "piece": " any",
+      "p": 0.011393166129849372
+     }
+    ]
+   },
+   {
+    "id": 24182,
+    "piece": " computed",
+    "logprob": -1.245172150289439,
+    "top": [
+     {
+      "piece": " computed",
+      "p": 0.2878913432865178
+     },
+     {
+      "piece": " calculated",
+      "p": 0.13599024139223245
+     },
+     {
+      "piece": " precision",
+      "p": 0.0642372415328673
+     },
+     {
+      "piece": " calculation",
+      "p": 0.05002801400814404
+     },
+     {
+      "piece": " final",
+      "p": 0.04414956740464586
+     }
+    ]
+   },
+   {
+    "id": 897,
+    "piece": " value",
+    "logprob": -0.3650607022272934,
+    "top": [
+     {
+      "piece": " value",
+      "p": 0.6941545128740392
+     },
+     {
+      "piece": " values",
+      "p": 0.17550974646111275
+     },
+     {
+      "piece": " dot",
+      "p": 0.06456642744825569
+     },
+     {
+      "piece": " product",
+      "p": 0.014406717296741261
+     },
+     {
+      "piece": " scalar",
+      "p": 0.014406717296741261
+     }
+    ]
+   },
+   {
+    "id": 25963,
+    "piece": " reflects",
+    "logprob": -0.8343036454350758,
+    "top": [
+     {
+      "piece": " reflects",
+      "p": 0.4341767171281308
+     },
+     {
+      "piece": " is",
+      "p": 0.2633414906715906
+     },
+     {
+      "piece": " reliably",
+      "p": 0.08549446470435773
+     },
+     {
+      "piece": " does",
+      "p": 0.05185501407891254
+     },
+     {
+      "piece": " remains",
+      "p": 0.02775598891175108
+     }
+    ]
+   },
+   {
+    "id": 279,
+    "piece": " the",
+    "logprob": -0.0225554695872379,
+    "top": [
+     {
+      "piece": " the",
+      "p": 0.9776970032399693
+     },
+     {
+      "piece": " both",
+      "p": 0.003995624188313016
+     },
+     {
+      "piece": " real",
+      "p": 0.003526125970078325
+     },
+     {
+      "piece": " all",
+      "p": 0.0024234685749012492
+     },
+     {
+      "piece": " precise",
+      "p": 0.0018873992238820345
+     }
+    ]
+   },
+   {
+    "id": 4734,
+    "piece": " exact",
+    "logprob": -1.0607703102809627,
+    "top": [
+     {
+      "piece": " exact",
+      "p": 0.34618903462068834
+     },
+     {
+      "piece": " actual",
+      "p": 0.3055107507615087
+     },
+     {
+      "piece": " true",
+      "p": 0.18530163720867981
+     },
+     {
+      "piece": " correct",
+      "p": 0.08753029558553024
+     },
+     {
+      "piece": " precise",
+      "p": 0.015210484635280679
+     }
+    ]
+   },
+   {
+    "id": 5025,
+    "piece": " relationship",
+    "logprob": -1.3387088266186158,
+    "top": [
+     {
+      "piece": " relationship",
+      "p": 0.262183975096812
+     },
+     {
+      "piece": " contribution",
+      "p": 0.15902261938155007
+     },
+     {
+      "piece": " contributions",
+      "p": 0.14033696904510698
+     },
+     {
+      "piece": " mathematical",
+      "p": 0.14033696904510698
+     },
+     {
+      "piece": " value",
+      "p": 0.027633987667751138
+     }
+    ]
+   },
+   {
+    "id": 1948,
+    "piece": " between",
+    "logprob": -0.0008136518888163287,
+    "top": [
+     {
+      "piece": " between",
+      "p": 0.9991866790361231
+     },
+     {
+      "piece": " of",
+      "p": 0.000261046070240022
+     },
+     {
+      "piece": " in",
+      "p": 0.0001794141653464822
+     },
+     {
+      "piece": " and",
+      "p": 9.021510787151095e-05
+     },
+     {
+      "piece": " or",
+      "p": 6.600278288590462e-05
+     }
+    ]
+   },
+   {
+    "id": 279,
+    "piece": " the",
+    "logprob": -0.36566855074499294,
+    "top": [
+     {
+      "piece": " the",
+      "p": 0.6937327002943975
+     },
+     {
+      "piece": " vectors",
+      "p": 0.2891908145617479
+     },
+     {
+      "piece": " input",
+      "p": 0.005296714529451864
+     },
+     {
+      "piece": " two",
+      "p": 0.004674334166116093
+     },
+     {
+      "piece": " vector",
+      "p": 0.002835126985491696
+     }
+    ]
+   },
+   {
+    "id": 22879,
+    "piece": " vectors",
+    "logprob": -0.4162810347041866,
+    "top": [
+     {
+      "piece": " vectors",
+      "p": 0.6594949034832159
+     },
+     {
+      "piece": " input",
+      "p": 0.2749183774336964
+     },
+     {
+      "piece": " two",
+      "p": 0.013687380052873663
+     },
+     {
+      "piece": " vector",
+      "p": 0.010659742303373935
+     },
+     {
+      "piece": " inputs",
+      "p": 0.010659742303373935
+     }
+    ]
+   },
+   {
+    "id": 13,
+    "piece": ".",
+    "logprob": -0.3801858770613838,
+    "top": [
+     {
+      "piece": ".",
+      "p": 0.683734306876288
+     },
+     {
+      "piece": ",",
+      "p": 0.09253337607969148
+     },
+     {
+      "piece": " being",
+      "p": 0.056124329639052485
+     },
+     {
+      "piece": " involved",
+      "p": 0.056124329639052485
+     },
+     {
+      "piece": "'",
+      "p": 0.03857365004025117
+     }
+    ]
+   },
+   {
+    "id": 362,
+    "piece": " A",
+    "logprob": -0.8451836971041464,
+    "top": [
+     {
+      "piece": " A",
+      "p": 0.42947845701515347
+     },
+     {
+      "piece": " This",
+      "p": 0.17903325699974634
+     },
+     {
+      "piece": " If",
+      "p": 0.17903325699974634
+     },
+     {
+      "piece": " High",
+      "p": 0.07463216510253572
+     },
+     {
+      "piece": " Precision",
+      "p": 0.039947719306248394
+     }
+    ]
+   },
+   {
+    "id": 803,
+    "piece": " more",
+    "logprob": -0.6585508439012558,
+    "top": [
+     {
+      "piece": " more",
+      "p": 0.5176008757251738
+     },
+     {
+      "piece": " higher",
+      "p": 0.3139408006214264
+     },
+     {
+      "piece": " lower",
+      "p": 0.07937666513573995
+     },
+     {
+      "piece": " less",
+      "p": 0.0330891169438292
+     },
+     {
+      "piece": " precise",
+      "p": 0.0200695639292492
+     }
+    ]
+   },
+   {
+    "id": 23560,
+    "piece": " precise",
+    "logprob": -0.026495555122907005,
+    "top": [
+     {
+      "piece": " precise",
+      "p": 0.9738523724800173
+     },
+     {
+      "piece": " accurate",
+      "p": 0.025952286665460702
+     },
+     {
+      "piece": " detailed",
+      "p": 6.432928706148006e-05
+     },
+     {
+      "piece": " precisely",
+      "p": 3.0387003569518493e-05
+     },
+     {
+      "piece": " refined",
+      "p": 1.6264990939032123e-05
+     }
+    ]
+   },
+   {
+    "id": 56312,
+    "piece": " accumulator",
+    "logprob": -0.0071367133024964,
+    "top": [
+     {
+      "piece": " accumulator",
+      "p": 0.9928886925618343
+     },
+     {
+      "piece": "accumulator",
+      "p": 0.0035809157567603684
+     },
+     {
+      "piece": " accumulation",
+      "p": 0.002461125007875062
+     },
+     {
+      "piece": " accum",
+      "p": 0.00020202144288466718
+     },
+     {
+      "piece": " value",
+      "p": 9.542817255519604e-05
+     }
+    ]
+   },
+   {
+    "id": 6147,
+    "piece": " allows",
+    "logprob": -0.583426761786261,
+    "top": [
+     {
+      "piece": " allows",
+      "p": 0.5579830118451324
+     },
+     {
+      "piece": " minim",
+      "p": 0.1598648094601267
+     },
+     {
+      "piece": " reduces",
+      "p": 0.10987336959790668
+     },
+     {
+      "piece": " can",
+      "p": 0.05881097676717052
+     },
+     {
+      "piece": " helps",
+      "p": 0.02451606255442854
+     }
+    ]
+   },
+   {
+    "id": 369,
+    "piece": " for",
+    "logprob": -0.03341029390223148,
+    "top": [
+     {
+      "piece": " for",
+      "p": 0.9671416658449681
+     },
+     {
+      "piece": " the",
+      "p": 0.029205147707220342
+     },
+     {
+      "piece": " better",
+      "p": 0.0014540386855929441
+     },
+     {
+      "piece": " accurate",
+      "p": 0.0004434567441451255
+     },
+     {
+      "piece": " higher",
+      "p": 0.00039134920313832266
+     }
+    ]
+   },
+   {
+    "id": 2664,
+    "piece": " better",
+    "logprob": -0.4077229473084401,
+    "top": [
+     {
+      "piece": " better",
+      "p": 0.665163138534256
+     },
+     {
+      "piece": " reliable",
+      "p": 0.07010767900864652
+     },
+     {
+      "piece": " accurate",
+      "p": 0.04818425614356164
+     },
+     {
+      "piece": " higher",
+      "p": 0.033116522653987956
+     },
+     {
+      "piece": " more",
+      "p": 0.029225228666516955
+     }
+    ]
+   },
+   {
+    "id": 11589,
+    "piece": " handling",
+    "logprob": -0.6206967379724204,
+    "top": [
+     {
+      "piece": " handling",
+      "p": 0.5375697618185272
+     },
+     {
+      "piece": " representation",
+      "p": 0.22409241662976598
+     },
+     {
+      "piece": " error",
+      "p": 0.08243899300051631
+     },
+     {
+      "piece": " numerical",
+      "p": 0.011876462984293476
+     },
+     {
+      "piece": " detection",
+      "p": 0.010480941797299593
+     }
+    ]
+   },
+   {
+    "id": 315,
+    "piece": " of",
+    "logprob": -8.848681140017213e-05,
+    "top": [
+     {
+      "piece": " of",
+      "p": 0.9999115171034423
+     },
+     {
+      "piece": " and",
+      "p": 5.8289505650168055e-05
+     },
+     {
+      "piece": " in",
+      "p": 4.494804036787373e-06
+     },
+     {
+      "piece": " when",
+      "p": 3.72632342701154e-06
+     },
+     {
+      "piece": " errors",
+      "p": 3.5005569036025183e-06
+     }
+    ]
+   },
+   {
+    "id": 19057,
+    "piece": " floating",
+    "logprob": -1.0504737792212442,
+    "top": [
+     {
+      "piece": " floating",
+      "p": 0.3497719951453905
+     },
+     {
+      "piece": " small",
+      "p": 0.10021135441651349
+     },
+     {
+      "piece": " data",
+      "p": 0.053639272718805836
+     },
+     {
+      "piece": " overlapping",
+      "p": 0.047336492031236535
+     },
+     {
+      "piece": " numerical",
+      "p": 0.02871103374018771
+     }
+    ]
+   },
+   {
+    "id": 16574,
+    "piece": "-point",
+    "logprob": -0.002843474613223543,
+    "top": [
+     {
+      "piece": "-point",
+      "p": 0.9971605642316899
+     },
+     {
+      "piece": " point",
+      "p": 0.0028008188038237546
+     },
+     {
+      "piece": "-",
+      "p": 6.942535706426198e-06
+     },
+     {
+      "piece": " points",
+      "p": 6.126766257004075e-06
+     },
+     {
+      "piece": " or",
+      "p": 3.7160715797657837e-06
+     }
+    ]
+   },
+   {
+    "id": 7525,
+    "piece": " operations",
+    "logprob": -0.9354169653471713,
+    "top": [
+     {
+      "piece": " operations",
+      "p": 0.3924222049525687
+     },
+     {
+      "piece": " errors",
+      "p": 0.21004847000548388
+     },
+     {
+      "piece": " precision",
+      "p": 0.1124308441133636
+     },
+     {
+      "piece": " arithmetic",
+      "p": 0.09921987168501487
+     },
+     {
+      "piece": " im",
+      "p": 0.04136099610285775
+     }
+    ]
+   },
+   {
+    "id": 11,
+    "piece": ",",
+    "logprob": -0.6955929863512977,
+    "top": [
+     {
+      "piece": ",",
+      "p": 0.49877859137733394
+     },
+     {
+      "piece": " and",
+      "p": 0.49877859137733394
+     },
+     {
+      "piece": " while",
+      "p": 0.0005153867406781936
+     },
+     {
+      "piece": " in",
+      "p": 0.00035421978129914557
+     },
+     {
+      "piece": " with",
+      "p": 0.00031259785983068903
+     }
+    ]
+   },
+   {
+    "id": 17719,
+    "piece": " reducing",
+    "logprob": -1.1565700467507798,
+    "top": [
+     {
+      "piece": " reducing",
+      "p": 0.3145632699539311
+     },
+     {
+      "piece": " which",
+      "p": 0.24498212096562325
+     },
+     {
+      "piece": " minimizing",
+      "p": 0.24498212096562325
+     },
+     {
+      "piece": " preventing",
+      "p": 0.04823983983441739
+     },
+     {
+      "piece": " preserving",
+      "p": 0.037569225038283416
+     }
+    ]
+   },
+   {
+    "id": 5975,
+    "piece": " errors",
+    "logprob": -0.5321414318748062,
+    "top": [
+     {
+      "piece": " errors",
+      "p": 0.5873458608636526
+     },
+     {
+      "piece": " rounding",
+      "p": 0.2160724670688802
+     },
+     {
+      "piece": " potential",
+      "p": 0.09007240501925139
+     },
+     {
+      "piece": " the",
+      "p": 0.05463167523823006
+     },
+     {
+      "piece": " error",
+      "p": 0.02277387047822894
+     }
+    ]
+   }
+  ]
+ },
+ "metrics": {
+  "first_divergence": 27,
+  "prefix_match": 27,
+  "teacher_forced": {
+   "positions": 48,
+   "top1_agreement": 0.9375,
+   "kl_mean": 0.017438474431935174,
+   "kl_max": 0.1790273829795054,
+   "kl": [
+    0.08156797688519685,
+    5.1538788712542556e-05,
+    4.81472066546461e-05,
+    2.938374696811479e-05,
+    0.01485812988445478,
+    0.000963691283852365,
+    3.438923173966609e-07,
+    2.5538457876207023e-07,
+    0.01130158688981463,
+    0.0008130587860802176,
+    0.015604269036859738,
+    0.004928357336073411,
+    0.013710440985590641,
+    0.0013955243911144756,
+    0.0006832095010478039,
+    0.007777996955798373,
+    0.0008359276504623624,
+    0.0025398938640328744,
+    0.027534625530507558,
+    0.016658344263755162,
+    0.009253262342080414,
+    0.0034053781611841864,
+    0.032563963387310144,
+    0.027287673212666813,
+    0.029153072945728407,
+    0.011020888261895047,
+    0.0009231949524705501,
+    0.03605376712906458,
+    0.04152508731263253,
+    0.014477170307771955,
+    0.0234161865505913,
+    0.0015314219510263495,
+    0.003925200689461382,
+    0.030326378654076367,
+    0.03585077816225856,
+    0.019975335602059004,
+    0.00031057214824828085,
+    0.0001307706248243923,
+    0.03233144437872525,
+    0.00088996563091699,
+    0.013663546410655411,
+    0.026319443353411257,
+    1.2777934291346416e-05,
+    0.03760234876124739,
+    1.1480532875695584e-06,
+    0.1790273829795054,
+    0.00195977695114565,
+    0.0228061336204791
+   ],
+   "top1": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    false,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    false,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    false,
+    true,
+    true
+   ]
+  }
+ },
+ "timing": {
+  "baseline_s": 6.5867940513417125,
+  "emulated_s": 13.659689786378294
+ },
+ "evidence": {
+  "patched_linear": 196,
+  "patched_conv2d": 0,
+  "emulated_calls": 18816,
+  "backend": "triton"
+ },
+ "cached_baseline": true
+}

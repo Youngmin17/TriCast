@@ -1,0 +1,2946 @@
+{
+ "runs": [
+  {
+   "id": "qwen3-p1-cofda-f5-cs32-fused-fp8_tensor-native",
+   "task": "llm.generate",
+   "model": "Qwen/Qwen3-0.6B",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 5,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "prompt": "Explain in two sentences why an accumulator's precision matters in a dot product."
+   },
+   "title": "Qwen3-0.6B · 프롬프트 1 · CoFDA · F5 · CS32 · fused · FP8 E4M3 · 텐서 스케일",
+   "selection": "설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled (F2 23) F ∈ {5,7,9,11,13} · FP8 텐서 스케일 · greedy, max_new_tokens 48, seed 42",
+   "role": null,
+   "summary": {
+    "first_divergence": 0,
+    "prefix_match": 0,
+    "top1_agreement": 0.16666666666666666,
+    "kl_mean": 6.006067044839797
+   },
+   "preview": {
+    "baseline": "An accumulator's precision in a dot product ensures accurate computation of the result, preventing rounding errors that could lead to incorrect precision in the final value. This is crucial for maintaining the accuracy of the dot product calculation, especially when dealing with large or",
+    "emulated": "اكواר\n\nأ\n\n*\n\n*\n\n*\n\n*\n\n*\n\n*\n\n*\n\n*\n\n*\n\n*\n\n*\n\n*\n\n*\n\n*\n\n*\n\n*\n\n*\n\n*\n\n*\n\n*\n\n*\n\n*\n\n*\n\n*\n\n*\n\n*\n\n*\n\n*\n\n*\n\n*\n\n*\n\n*\n\n*\n\n*\n\n*\n\n*\n\n*\n\n*\n\n*\n\n*\n\n*\n\n*\n\n"
+   }
+  },
+  {
+   "id": "qwen3-p1-cofda-f7-cs32-fused-fp8_tensor-native",
+   "task": "llm.generate",
+   "model": "Qwen/Qwen3-0.6B",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 7,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "prompt": "Explain in two sentences why an accumulator's precision matters in a dot product."
+   },
+   "title": "Qwen3-0.6B · 프롬프트 1 · CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 · preset F7 fused 설계점",
+   "selection": "설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled (F2 23) F ∈ {5,7,9,11,13} · FP8 텐서 스케일 · greedy, max_new_tokens 48, seed 42",
+   "role": null,
+   "summary": {
+    "first_divergence": 0,
+    "prefix_match": 0,
+    "top1_agreement": 0.75,
+    "kl_mean": 0.24310626821139772
+   },
+   "preview": {
+    "baseline": "An accumulator's precision in a dot product ensures accurate computation of the result, preventing rounding errors that could lead to incorrect precision in the final value. This is crucial for maintaining the accuracy of the dot product calculation, especially when dealing with large or",
+    "emulated": "Accumulators' precision is crucial in a dot product because it ensures the result is accurate and reliable, which is essential for the precision of the dot product. This is important for the accuracy of the result, which is necessary for the performance"
+   }
+  },
+  {
+   "id": "qwen3-p1-cofda-f9-cs32-fused-fp8_tensor-native",
+   "task": "llm.generate",
+   "model": "Qwen/Qwen3-0.6B",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 9,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "prompt": "Explain in two sentences why an accumulator's precision matters in a dot product."
+   },
+   "title": "Qwen3-0.6B · 프롬프트 1 · CoFDA · F9 · CS32 · fused · FP8 E4M3 · 텐서 스케일",
+   "selection": "설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled (F2 23) F ∈ {5,7,9,11,13} · FP8 텐서 스케일 · greedy, max_new_tokens 48, seed 42",
+   "role": null,
+   "summary": {
+    "first_divergence": 10,
+    "prefix_match": 10,
+    "top1_agreement": 0.8541666666666666,
+    "kl_mean": 0.04680671064496355
+   },
+   "preview": {
+    "baseline": "An accumulator's precision in a dot product ensures accurate computation of the result, preventing rounding errors that could lead to incorrect precision in the final value. This is crucial for maintaining the accuracy of the dot product calculation, especially when dealing with large or",
+    "emulated": "An accumulator's precision in a dot product ensures accurate results by minimizing rounding errors, which can lead to incorrect calculations. This is crucial for maintaining the integrity of the dot product's output."
+   }
+  },
+  {
+   "id": "qwen3-p1-cofda-f11-cs32-fused-fp8_tensor-native",
+   "task": "llm.generate",
+   "model": "Qwen/Qwen3-0.6B",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 11,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "prompt": "Explain in two sentences why an accumulator's precision matters in a dot product."
+   },
+   "title": "Qwen3-0.6B · 프롬프트 1 · CoFDA · F11 · CS32 · fused · FP8 E4M3 · 텐서 스케일",
+   "selection": "설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled (F2 23) F ∈ {5,7,9,11,13} · FP8 텐서 스케일 · greedy, max_new_tokens 48, seed 42",
+   "role": null,
+   "summary": {
+    "first_divergence": 8,
+    "prefix_match": 8,
+    "top1_agreement": 0.8958333333333334,
+    "kl_mean": 0.028019751365556362
+   },
+   "preview": {
+    "baseline": "An accumulator's precision in a dot product ensures accurate computation of the result, preventing rounding errors that could lead to incorrect precision in the final value. This is crucial for maintaining the accuracy of the dot product calculation, especially when dealing with large or",
+    "emulated": "An accumulator's precision in a dot product is crucial because it directly affects the accuracy of the result, ensuring that the computed value reflects the actual scalar product between two vectors. If the precision is insufficient, the result may be rounded or misinterpreted"
+   }
+  },
+  {
+   "id": "qwen3-p1-cofda-f13-cs32-fused-fp8_tensor-native",
+   "task": "llm.generate",
+   "model": "Qwen/Qwen3-0.6B",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 13,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "prompt": "Explain in two sentences why an accumulator's precision matters in a dot product."
+   },
+   "title": "Qwen3-0.6B · 프롬프트 1 · CoFDA · F13 · CS32 · fused · FP8 E4M3 · 텐서 스케일 · preset Hopper FP8",
+   "selection": "설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled (F2 23) F ∈ {5,7,9,11,13} · FP8 텐서 스케일 · greedy, max_new_tokens 48, seed 42",
+   "role": null,
+   "summary": {
+    "first_divergence": 8,
+    "prefix_match": 8,
+    "top1_agreement": 0.8958333333333334,
+    "kl_mean": 0.016964750523153313
+   },
+   "preview": {
+    "baseline": "An accumulator's precision in a dot product ensures accurate computation of the result, preventing rounding errors that could lead to incorrect precision in the final value. This is crucial for maintaining the accuracy of the dot product calculation, especially when dealing with large or",
+    "emulated": "An accumulator's precision in a dot product is crucial because it directly affects the accuracy of the result, ensuring that the computed value reflects the exact relationship between the vectors. A more precise accumulator allows for better handling of floating-point operations, reducing errors"
+   }
+  },
+  {
+   "id": "qwen3-p1-cofda-f16-cs32-fused-fp8_tensor-native",
+   "task": "llm.generate",
+   "model": "Qwen/Qwen3-0.6B",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 16,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "prompt": "Explain in two sentences why an accumulator's precision matters in a dot product."
+   },
+   "title": "Qwen3-0.6B · 프롬프트 1 · CoFDA · F16 · CS32 · fused · FP8 E4M3 · 텐서 스케일",
+   "selection": "설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled (F2 23) F ∈ {5,7,9,11,13} · FP8 텐서 스케일 · greedy, max_new_tokens 48, seed 42",
+   "role": null,
+   "summary": {
+    "first_divergence": 10,
+    "prefix_match": 10,
+    "top1_agreement": 0.8958333333333334,
+    "kl_mean": 0.019616250259951798
+   },
+   "preview": {
+    "baseline": "An accumulator's precision in a dot product ensures accurate computation of the result, preventing rounding errors that could lead to incorrect precision in the final value. This is crucial for maintaining the accuracy of the dot product calculation, especially when dealing with large or",
+    "emulated": "An accumulator's precision in a dot product ensures accurate calculations of the dot product, which is crucial for maintaining the integrity of the result and preventing errors due to floating-point imprecision. This precision is essential for reliable performance and correct interpretation of the"
+   }
+  },
+  {
+   "id": "qwen3-p1-cofda-f20-cs32-fused-fp8_tensor-native",
+   "task": "llm.generate",
+   "model": "Qwen/Qwen3-0.6B",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 20,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "prompt": "Explain in two sentences why an accumulator's precision matters in a dot product."
+   },
+   "title": "Qwen3-0.6B · 프롬프트 1 · CoFDA · F20 · CS32 · fused · FP8 E4M3 · 텐서 스케일",
+   "selection": "설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled (F2 23) F ∈ {5,7,9,11,13} · FP8 텐서 스케일 · greedy, max_new_tokens 48, seed 42",
+   "role": null,
+   "summary": {
+    "first_divergence": 8,
+    "prefix_match": 8,
+    "top1_agreement": 0.8958333333333334,
+    "kl_mean": 0.0286818913279554
+   },
+   "preview": {
+    "baseline": "An accumulator's precision in a dot product ensures accurate computation of the result, preventing rounding errors that could lead to incorrect precision in the final value. This is crucial for maintaining the accuracy of the dot product calculation, especially when dealing with large or",
+    "emulated": "An accumulator's precision in a dot product is crucial because it directly affects the accuracy of the result, ensuring that the computed value reflects the actual scalar product between vectors. A more precise accumulator allows for better handling of floating-point errors and maintains the"
+   }
+  },
+  {
+   "id": "qwen3-p1-cofda-f25-cs32-fused-fp8_tensor-native",
+   "task": "llm.generate",
+   "model": "Qwen/Qwen3-0.6B",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 25,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "prompt": "Explain in two sentences why an accumulator's precision matters in a dot product."
+   },
+   "title": "Qwen3-0.6B · 프롬프트 1 · CoFDA · F25 · CS32 · fused · FP8 E4M3 · 텐서 스케일 · preset Blackwell FP8",
+   "selection": "설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled (F2 23) F ∈ {5,7,9,11,13} · FP8 텐서 스케일 · greedy, max_new_tokens 48, seed 42",
+   "role": null,
+   "summary": {
+    "first_divergence": 8,
+    "prefix_match": 8,
+    "top1_agreement": 0.8958333333333334,
+    "kl_mean": 0.019135633588972786
+   },
+   "preview": {
+    "baseline": "An accumulator's precision in a dot product ensures accurate computation of the result, preventing rounding errors that could lead to incorrect precision in the final value. This is crucial for maintaining the accuracy of the dot product calculation, especially when dealing with large or",
+    "emulated": "An accumulator's precision in a dot product is crucial because it directly affects the accuracy of the result, ensuring that the computed value reflects the actual scalar product between vectors. A more precise accumulator allows for better handling of floating-point operations and reduces errors"
+   }
+  },
+  {
+   "id": "qwen3-p1-cofda-f5-cs32-decoupled-f2_23-fp8_tensor-native",
+   "task": "llm.generate",
+   "model": "Qwen/Qwen3-0.6B",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 5,
+    "chunk_size": 32,
+    "c_mode": "decoupled",
+    "f2_bits": 23,
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "prompt": "Explain in two sentences why an accumulator's precision matters in a dot product."
+   },
+   "title": "Qwen3-0.6B · 프롬프트 1 · CoFDA · F5 · CS32 · decoupled · F2 23 · FP8 E4M3 · 텐서 스케일",
+   "selection": "설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled (F2 23) F ∈ {5,7,9,11,13} · FP8 텐서 스케일 · greedy, max_new_tokens 48, seed 42",
+   "role": null,
+   "summary": {
+    "first_divergence": 8,
+    "prefix_match": 8,
+    "top1_agreement": 0.8541666666666666,
+    "kl_mean": 0.055449234598850185
+   },
+   "preview": {
+    "baseline": "An accumulator's precision in a dot product ensures accurate computation of the result, preventing rounding errors that could lead to incorrect precision in the final value. This is crucial for maintaining the accuracy of the dot product calculation, especially when dealing with large or",
+    "emulated": "An accumulator's precision in a dot product is crucial because it directly affects the accuracy of the result, ensuring that the computed value reflects the true relationship between the vectors. A more precise accumulator allows for better handling of floating-point errors and ensures the"
+   }
+  },
+  {
+   "id": "qwen3-p1-cofda-f7-cs32-decoupled-f2_23-fp8_tensor-native",
+   "task": "llm.generate",
+   "model": "Qwen/Qwen3-0.6B",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 7,
+    "chunk_size": 32,
+    "c_mode": "decoupled",
+    "f2_bits": 23,
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "prompt": "Explain in two sentences why an accumulator's precision matters in a dot product."
+   },
+   "title": "Qwen3-0.6B · 프롬프트 1 · CoFDA · F7 · CS32 · decoupled · F2 23 · FP8 E4M3 · 텐서 스케일 · preset F7 decoupled 설계점",
+   "selection": "설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled (F2 23) F ∈ {5,7,9,11,13} · FP8 텐서 스케일 · greedy, max_new_tokens 48, seed 42",
+   "role": null,
+   "summary": {
+    "first_divergence": 10,
+    "prefix_match": 10,
+    "top1_agreement": 0.8541666666666666,
+    "kl_mean": 0.027284398407984096
+   },
+   "preview": {
+    "baseline": "An accumulator's precision in a dot product ensures accurate computation of the result, preventing rounding errors that could lead to incorrect precision in the final value. This is crucial for maintaining the accuracy of the dot product calculation, especially when dealing with large or",
+    "emulated": "An accumulator's precision in a dot product ensures accurate results by minimizing rounding errors, which can lead to incorrect calculations and potential errors in the final output."
+   }
+  },
+  {
+   "id": "qwen3-p1-cofda-f9-cs32-decoupled-f2_23-fp8_tensor-native",
+   "task": "llm.generate",
+   "model": "Qwen/Qwen3-0.6B",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 9,
+    "chunk_size": 32,
+    "c_mode": "decoupled",
+    "f2_bits": 23,
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "prompt": "Explain in two sentences why an accumulator's precision matters in a dot product."
+   },
+   "title": "Qwen3-0.6B · 프롬프트 1 · CoFDA · F9 · CS32 · decoupled · F2 23 · FP8 E4M3 · 텐서 스케일",
+   "selection": "설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled (F2 23) F ∈ {5,7,9,11,13} · FP8 텐서 스케일 · greedy, max_new_tokens 48, seed 42",
+   "role": null,
+   "summary": {
+    "first_divergence": 8,
+    "prefix_match": 8,
+    "top1_agreement": 0.875,
+    "kl_mean": 0.03239646252550066
+   },
+   "preview": {
+    "baseline": "An accumulator's precision in a dot product ensures accurate computation of the result, preventing rounding errors that could lead to incorrect precision in the final value. This is crucial for maintaining the accuracy of the dot product calculation, especially when dealing with large or",
+    "emulated": "An accumulator's precision in a dot product is crucial because it directly affects the accuracy of the result. If the accumulator is not precise enough, the dot product may introduce rounding errors, leading to incorrect results. This precision is essential for maintaining the"
+   }
+  },
+  {
+   "id": "qwen3-p1-cofda-f11-cs32-decoupled-f2_23-fp8_tensor-native",
+   "task": "llm.generate",
+   "model": "Qwen/Qwen3-0.6B",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 11,
+    "chunk_size": 32,
+    "c_mode": "decoupled",
+    "f2_bits": 23,
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "prompt": "Explain in two sentences why an accumulator's precision matters in a dot product."
+   },
+   "title": "Qwen3-0.6B · 프롬프트 1 · CoFDA · F11 · CS32 · decoupled · F2 23 · FP8 E4M3 · 텐서 스케일",
+   "selection": "설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled (F2 23) F ∈ {5,7,9,11,13} · FP8 텐서 스케일 · greedy, max_new_tokens 48, seed 42",
+   "role": null,
+   "summary": {
+    "first_divergence": 8,
+    "prefix_match": 8,
+    "top1_agreement": 0.875,
+    "kl_mean": 0.02260475539839668
+   },
+   "preview": {
+    "baseline": "An accumulator's precision in a dot product ensures accurate computation of the result, preventing rounding errors that could lead to incorrect precision in the final value. This is crucial for maintaining the accuracy of the dot product calculation, especially when dealing with large or",
+    "emulated": "An accumulator's precision in a dot product is crucial because it directly affects the accuracy of the result, ensuring that the computed value reflects the actual scalar product between the vectors. A more precise accumulator allows for better handling of floating-point errors and maintains"
+   }
+  },
+  {
+   "id": "qwen3-p1-cofda-f13-cs32-decoupled-f2_23-fp8_tensor-native",
+   "task": "llm.generate",
+   "model": "Qwen/Qwen3-0.6B",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 13,
+    "chunk_size": 32,
+    "c_mode": "decoupled",
+    "f2_bits": 23,
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "prompt": "Explain in two sentences why an accumulator's precision matters in a dot product."
+   },
+   "title": "Qwen3-0.6B · 프롬프트 1 · CoFDA · F13 · CS32 · decoupled · F2 23 · FP8 E4M3 · 텐서 스케일",
+   "selection": "설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled (F2 23) F ∈ {5,7,9,11,13} · FP8 텐서 스케일 · greedy, max_new_tokens 48, seed 42",
+   "role": null,
+   "summary": {
+    "first_divergence": 10,
+    "prefix_match": 10,
+    "top1_agreement": 0.9166666666666666,
+    "kl_mean": 0.018015883263301065
+   },
+   "preview": {
+    "baseline": "An accumulator's precision in a dot product ensures accurate computation of the result, preventing rounding errors that could lead to incorrect precision in the final value. This is crucial for maintaining the accuracy of the dot product calculation, especially when dealing with large or",
+    "emulated": "An accumulator's precision in a dot product ensures accurate calculations of the dot product, preventing errors due to floating-point imprecision. This is crucial for maintaining the reliability and correctness of the result."
+   }
+  },
+  {
+   "id": "qwen3-p1-cofda-f13-cs16-fused-fp8_tensor-native",
+   "task": "llm.generate",
+   "model": "Qwen/Qwen3-0.6B",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 13,
+    "chunk_size": 16,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "prompt": "Explain in two sentences why an accumulator's precision matters in a dot product."
+   },
+   "title": "Qwen3-0.6B · 프롬프트 1 · CoFDA · F13 · CS16 · fused · FP8 E4M3 · 텐서 스케일 · preset Ada FP8",
+   "selection": "preset 점: 각 preset 이 전제하는 형식 · greedy, max_new_tokens 48, seed 42",
+   "role": null,
+   "summary": {
+    "first_divergence": 8,
+    "prefix_match": 8,
+    "top1_agreement": 0.9166666666666666,
+    "kl_mean": 0.020375713131388723
+   },
+   "preview": {
+    "baseline": "An accumulator's precision in a dot product ensures accurate computation of the result, preventing rounding errors that could lead to incorrect precision in the final value. This is crucial for maintaining the accuracy of the dot product calculation, especially when dealing with large or",
+    "emulated": "An accumulator's precision in a dot product is crucial because it directly affects the accuracy of the result, ensuring that the computed value reflects the exact relationship between the vectors. A more precise accumulator allows for better handling of floating-point operations and reduces errors"
+   }
+  },
+  {
+   "id": "qwen3-p1-cofda-f13-cs32-fused-p128-fp8_block128-native",
+   "task": "llm.generate",
+   "model": "Qwen/Qwen3-0.6B",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 13,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 128,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_block128",
+   "baseline": "native",
+   "input": {
+    "prompt": "Explain in two sentences why an accumulator's precision matters in a dot product."
+   },
+   "title": "Qwen3-0.6B · 프롬프트 1 · CoFDA · F13 · CS32 · fused · FP32 승격 128 · FP8 E4M3 · 블록 스케일 · preset DeepSeek-V3 FP8 승격",
+   "selection": "preset 점: 각 preset 이 전제하는 형식 · greedy, max_new_tokens 48, seed 42",
+   "role": null,
+   "summary": {
+    "first_divergence": 10,
+    "prefix_match": 10,
+    "top1_agreement": 0.9166666666666666,
+    "kl_mean": 0.020518108759346287
+   },
+   "preview": {
+    "baseline": "An accumulator's precision in a dot product ensures accurate computation of the result, preventing rounding errors that could lead to incorrect precision in the final value. This is crucial for maintaining the accuracy of the dot product calculation, especially when dealing with large or",
+    "emulated": "An accumulator's precision in a dot product ensures accurate representation of the dot product result, preventing rounding errors and maintaining the integrity of the computed value. This is crucial for reliable numerical computations and precise data handling."
+   }
+  },
+  {
+   "id": "qwen3-p1-gdfs-f35-g6-gs16-kt64-nvfp4-native",
+   "task": "llm.generate",
+   "model": "Qwen/Qwen3-0.6B",
+   "mma": {
+    "algorithm": "gdfs",
+    "f_bits": 35,
+    "g_bits": 6,
+    "group_size": 16,
+    "k_tile": 64,
+    "norm_rounding": "rtz"
+   },
+   "format": "nvfp4",
+   "baseline": "native",
+   "input": {
+    "prompt": "Explain in two sentences why an accumulator's precision matters in a dot product."
+   },
+   "title": "Qwen3-0.6B · 프롬프트 1 · GDFS · F35 · G6 · GS16 · KT64 · NVFP4 (E2M1) · preset Blackwell FP4",
+   "selection": "preset 점: 각 preset 이 전제하는 형식 · greedy, max_new_tokens 48, seed 42",
+   "role": null,
+   "summary": {
+    "first_divergence": 0,
+    "prefix_match": 0,
+    "top1_agreement": 0.7708333333333334,
+    "kl_mean": 0.3032551255091067
+   },
+   "preview": {
+    "baseline": "An accumulator's precision in a dot product ensures accurate computation of the result, preventing rounding errors that could lead to incorrect precision in the final value. This is crucial for maintaining the accuracy of the dot product calculation, especially when dealing with large or",
+    "emulated": "Accumulator precision is crucial in a dot product because it ensures accurate accumulation of the dot product values, which directly affects the final result. This precision is essential to maintain the accuracy of the dot product calculation, ensuring that the final result is"
+   }
+  },
+  {
+   "id": "qwen3-p1-fp64-fp8_tensor-native",
+   "task": "llm.generate",
+   "model": "Qwen/Qwen3-0.6B",
+   "mma": {
+    "algorithm": "fp64"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "prompt": "Explain in two sentences why an accumulator's precision matters in a dot product."
+   },
+   "title": "Qwen3-0.6B · 프롬프트 1 · FP64 정확 누산 · FP8 E4M3 · 텐서 스케일 · preset FP64 정확 누산",
+   "selection": "preset 점: 각 preset 이 전제하는 형식 · greedy, max_new_tokens 48, seed 42",
+   "role": null,
+   "summary": {
+    "first_divergence": 8,
+    "prefix_match": 8,
+    "top1_agreement": 0.875,
+    "kl_mean": 0.01828640578553929
+   },
+   "preview": {
+    "baseline": "An accumulator's precision in a dot product ensures accurate computation of the result, preventing rounding errors that could lead to incorrect precision in the final value. This is crucial for maintaining the accuracy of the dot product calculation, especially when dealing with large or",
+    "emulated": "An accumulator's precision in a dot product is crucial because it directly affects the accuracy of the result, ensuring that the computed value reflects the actual scalar product between the vectors. A more precise accumulator allows for better handling of floating-point errors and maintains"
+   }
+  },
+  {
+   "id": "qwen3-p1-cofda-f7-cs32-fused-fp8_tensor-same_quant_fp64",
+   "task": "llm.generate",
+   "model": "Qwen/Qwen3-0.6B",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 7,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "same_quant_fp64",
+   "input": {
+    "prompt": "Explain in two sentences why an accumulator's precision matters in a dot product."
+   },
+   "title": "Qwen3-0.6B · 프롬프트 1 · CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 · preset F7 fused 설계점 · 기준선 FP64 누산",
+   "selection": "누산만 비교: 같은 FP8 형식 + FP64 누산 기준선 · greedy, max_new_tokens 48, seed 42",
+   "role": null,
+   "summary": {
+    "first_divergence": 0,
+    "prefix_match": 0,
+    "top1_agreement": 0.7291666666666666,
+    "kl_mean": 0.3003895308389501
+   },
+   "preview": {
+    "baseline": "An accumulator's precision in a dot product is crucial because it directly affects the accuracy of the result, ensuring that the computed value reflects the actual scalar product between the vectors. A more precise accumulator allows for better handling of floating-point errors and maintains",
+    "emulated": "Accumulators' precision is crucial in a dot product because it ensures the result is accurate and reliable, which is essential for the precision of the dot product. This is important for the accuracy of the result, which is necessary for the performance"
+   }
+  },
+  {
+   "id": "qwen3-p1-cofda-f13-cs32-fused-fp8_tensor-same_quant_fp64",
+   "task": "llm.generate",
+   "model": "Qwen/Qwen3-0.6B",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 13,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "same_quant_fp64",
+   "input": {
+    "prompt": "Explain in two sentences why an accumulator's precision matters in a dot product."
+   },
+   "title": "Qwen3-0.6B · 프롬프트 1 · CoFDA · F13 · CS32 · fused · FP8 E4M3 · 텐서 스케일 · preset Hopper FP8 · 기준선 FP64 누산",
+   "selection": "누산만 비교: 같은 FP8 형식 + FP64 누산 기준선 · greedy, max_new_tokens 48, seed 42",
+   "role": null,
+   "summary": {
+    "first_divergence": 27,
+    "prefix_match": 27,
+    "top1_agreement": 0.9375,
+    "kl_mean": 0.017438474431935174
+   },
+   "preview": {
+    "baseline": "An accumulator's precision in a dot product is crucial because it directly affects the accuracy of the result, ensuring that the computed value reflects the actual scalar product between the vectors. A more precise accumulator allows for better handling of floating-point errors and maintains",
+    "emulated": "An accumulator's precision in a dot product is crucial because it directly affects the accuracy of the result, ensuring that the computed value reflects the exact relationship between the vectors. A more precise accumulator allows for better handling of floating-point operations, reducing errors"
+   }
+  },
+  {
+   "id": "qwen3-p2-cofda-f7-cs32-fused-fp8_tensor-native",
+   "task": "llm.generate",
+   "model": "Qwen/Qwen3-0.6B",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 7,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "prompt": "What is 17 × 23? Answer with the number first, then one short sentence."
+   },
+   "title": "Qwen3-0.6B · 프롬프트 2 · CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 · preset F7 fused 설계점",
+   "selection": "축소 스윕: CoFDA fused F ∈ {7,13,25}, decoupled F7, FP64 · FP8 텐서 스케일 · greedy, max_new_tokens 48, seed 42",
+   "role": null,
+   "summary": {
+    "first_divergence": 11,
+    "prefix_match": 11,
+    "top1_agreement": 0.9166666666666666,
+    "kl_mean": 0.18783126602627287
+   },
+   "preview": {
+    "baseline": "17 × 23 = 391  \n\n17 × 23 = 391",
+    "emulated": "17 × 23 = 391\n\nThe product is 391.  \nThe short sentence is: \"17 multiplied by 23 equals 391.\""
+   }
+  },
+  {
+   "id": "qwen3-p2-cofda-f13-cs32-fused-fp8_tensor-native",
+   "task": "llm.generate",
+   "model": "Qwen/Qwen3-0.6B",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 13,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "prompt": "What is 17 × 23? Answer with the number first, then one short sentence."
+   },
+   "title": "Qwen3-0.6B · 프롬프트 2 · CoFDA · F13 · CS32 · fused · FP8 E4M3 · 텐서 스케일 · preset Hopper FP8",
+   "selection": "축소 스윕: CoFDA fused F ∈ {7,13,25}, decoupled F7, FP64 · FP8 텐서 스케일 · greedy, max_new_tokens 48, seed 42",
+   "role": null,
+   "summary": {
+    "first_divergence": 11,
+    "prefix_match": 11,
+    "top1_agreement": 0.9583333333333334,
+    "kl_mean": 0.011359762931011324
+   },
+   "preview": {
+    "baseline": "17 × 23 = 391  \n\n17 × 23 = 391",
+    "emulated": "17 × 23 = 391\n\n17 × 23 = 391."
+   }
+  },
+  {
+   "id": "qwen3-p2-cofda-f25-cs32-fused-fp8_tensor-native",
+   "task": "llm.generate",
+   "model": "Qwen/Qwen3-0.6B",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 25,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "prompt": "What is 17 × 23? Answer with the number first, then one short sentence."
+   },
+   "title": "Qwen3-0.6B · 프롬프트 2 · CoFDA · F25 · CS32 · fused · FP8 E4M3 · 텐서 스케일 · preset Blackwell FP8",
+   "selection": "축소 스윕: CoFDA fused F ∈ {7,13,25}, decoupled F7, FP64 · FP8 텐서 스케일 · greedy, max_new_tokens 48, seed 42",
+   "role": null,
+   "summary": {
+    "first_divergence": null,
+    "prefix_match": 24,
+    "top1_agreement": 1.0,
+    "kl_mean": 0.005814592011151602
+   },
+   "preview": {
+    "baseline": "17 × 23 = 391  \n\n17 × 23 = 391",
+    "emulated": "17 × 23 = 391  \n\n17 × 23 = 391"
+   }
+  },
+  {
+   "id": "qwen3-p2-cofda-f7-cs32-decoupled-f2_23-fp8_tensor-native",
+   "task": "llm.generate",
+   "model": "Qwen/Qwen3-0.6B",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 7,
+    "chunk_size": 32,
+    "c_mode": "decoupled",
+    "f2_bits": 23,
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "prompt": "What is 17 × 23? Answer with the number first, then one short sentence."
+   },
+   "title": "Qwen3-0.6B · 프롬프트 2 · CoFDA · F7 · CS32 · decoupled · F2 23 · FP8 E4M3 · 텐서 스케일 · preset F7 decoupled 설계점",
+   "selection": "축소 스윕: CoFDA fused F ∈ {7,13,25}, decoupled F7, FP64 · FP8 텐서 스케일 · greedy, max_new_tokens 48, seed 42",
+   "role": null,
+   "summary": {
+    "first_divergence": 11,
+    "prefix_match": 11,
+    "top1_agreement": 0.9583333333333334,
+    "kl_mean": 0.0059568265614183815
+   },
+   "preview": {
+    "baseline": "17 × 23 = 391  \n\n17 × 23 = 391",
+    "emulated": "17 × 23 = 391\n\n17 × 23 = 391."
+   }
+  },
+  {
+   "id": "qwen3-p2-fp64-fp8_tensor-native",
+   "task": "llm.generate",
+   "model": "Qwen/Qwen3-0.6B",
+   "mma": {
+    "algorithm": "fp64"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "prompt": "What is 17 × 23? Answer with the number first, then one short sentence."
+   },
+   "title": "Qwen3-0.6B · 프롬프트 2 · FP64 정확 누산 · FP8 E4M3 · 텐서 스케일 · preset FP64 정확 누산",
+   "selection": "축소 스윕: CoFDA fused F ∈ {7,13,25}, decoupled F7, FP64 · FP8 텐서 스케일 · greedy, max_new_tokens 48, seed 42",
+   "role": null,
+   "summary": {
+    "first_divergence": null,
+    "prefix_match": 24,
+    "top1_agreement": 1.0,
+    "kl_mean": 0.018207145768392944
+   },
+   "preview": {
+    "baseline": "17 × 23 = 391  \n\n17 × 23 = 391",
+    "emulated": "17 × 23 = 391  \n\n17 × 23 = 391"
+   }
+  },
+  {
+   "id": "qwen3-p3-cofda-f7-cs32-fused-fp8_tensor-native",
+   "task": "llm.generate",
+   "model": "Qwen/Qwen3-0.6B",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 7,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "prompt": "내적에서 누산기 정밀도가 왜 중요한지 두 문장으로 설명해 줘."
+   },
+   "title": "Qwen3-0.6B · 프롬프트 3 · CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 · preset F7 fused 설계점",
+   "selection": "축소 스윕: CoFDA fused F ∈ {7,13,25}, decoupled F7, FP64 · FP8 텐서 스케일 · greedy, max_new_tokens 48, seed 42",
+   "role": null,
+   "summary": {
+    "first_divergence": 0,
+    "prefix_match": 0,
+    "top1_agreement": 0.875,
+    "kl_mean": 0.17960843139491534
+   },
+   "preview": {
+    "baseline": "내적에서 누산기 정밀도가 중요한 이유는 다음과 같습니다:\n\n1. **데이터의 신뢰성**: 누산기 정밀도는 데이터의 정확성과 신뢰성을 높이는 데",
+    "emulated": "1. **내적에서 누산기 정밀도**는 **내적**의 **누산기**의 **정밀도**를 말하는 데서, **내적**의 **누산기**가"
+   }
+  },
+  {
+   "id": "qwen3-p3-cofda-f13-cs32-fused-fp8_tensor-native",
+   "task": "llm.generate",
+   "model": "Qwen/Qwen3-0.6B",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 13,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "prompt": "내적에서 누산기 정밀도가 왜 중요한지 두 문장으로 설명해 줘."
+   },
+   "title": "Qwen3-0.6B · 프롬프트 3 · CoFDA · F13 · CS32 · fused · FP8 E4M3 · 텐서 스케일 · preset Hopper FP8",
+   "selection": "축소 스윕: CoFDA fused F ∈ {7,13,25}, decoupled F7, FP64 · FP8 텐서 스케일 · greedy, max_new_tokens 48, seed 42",
+   "role": null,
+   "summary": {
+    "first_divergence": 34,
+    "prefix_match": 34,
+    "top1_agreement": 0.9791666666666666,
+    "kl_mean": 0.02673259293733905
+   },
+   "preview": {
+    "baseline": "내적에서 누산기 정밀도가 중요한 이유는 다음과 같습니다:\n\n1. **데이터의 신뢰성**: 누산기 정밀도는 데이터의 정확성과 신뢰성을 높이는 데",
+    "emulated": "내적에서 누산기 정밀도가 중요한 이유는 다음과 같습니다:\n\n1. **데이터의 신뢰성**: 누산기 정밀도는 데이터가 정확하게 추출되었음을 나타내며, 이는"
+   }
+  },
+  {
+   "id": "qwen3-p3-cofda-f25-cs32-fused-fp8_tensor-native",
+   "task": "llm.generate",
+   "model": "Qwen/Qwen3-0.6B",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 25,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "prompt": "내적에서 누산기 정밀도가 왜 중요한지 두 문장으로 설명해 줘."
+   },
+   "title": "Qwen3-0.6B · 프롬프트 3 · CoFDA · F25 · CS32 · fused · FP8 E4M3 · 텐서 스케일 · preset Blackwell FP8",
+   "selection": "축소 스윕: CoFDA fused F ∈ {7,13,25}, decoupled F7, FP64 · FP8 텐서 스케일 · greedy, max_new_tokens 48, seed 42",
+   "role": null,
+   "summary": {
+    "first_divergence": 34,
+    "prefix_match": 34,
+    "top1_agreement": 0.9791666666666666,
+    "kl_mean": 0.02334214746532756
+   },
+   "preview": {
+    "baseline": "내적에서 누산기 정밀도가 중요한 이유는 다음과 같습니다:\n\n1. **데이터의 신뢰성**: 누산기 정밀도는 데이터의 정확성과 신뢰성을 높이는 데",
+    "emulated": "내적에서 누산기 정밀도가 중요한 이유는 다음과 같습니다:\n\n1. **데이터의 신뢰성**: 누산기 정밀도는 데이터가 정확하고 정확한 값을 추정할 수 있는 �"
+   }
+  },
+  {
+   "id": "qwen3-p3-cofda-f7-cs32-decoupled-f2_23-fp8_tensor-native",
+   "task": "llm.generate",
+   "model": "Qwen/Qwen3-0.6B",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 7,
+    "chunk_size": 32,
+    "c_mode": "decoupled",
+    "f2_bits": 23,
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "prompt": "내적에서 누산기 정밀도가 왜 중요한지 두 문장으로 설명해 줘."
+   },
+   "title": "Qwen3-0.6B · 프롬프트 3 · CoFDA · F7 · CS32 · decoupled · F2 23 · FP8 E4M3 · 텐서 스케일 · preset F7 decoupled 설계점",
+   "selection": "축소 스윕: CoFDA fused F ∈ {7,13,25}, decoupled F7, FP64 · FP8 텐서 스케일 · greedy, max_new_tokens 48, seed 42",
+   "role": null,
+   "summary": {
+    "first_divergence": 34,
+    "prefix_match": 34,
+    "top1_agreement": 0.9791666666666666,
+    "kl_mean": 0.013140681040920038
+   },
+   "preview": {
+    "baseline": "내적에서 누산기 정밀도가 중요한 이유는 다음과 같습니다:\n\n1. **데이터의 신뢰성**: 누산기 정밀도는 데이터의 정확성과 신뢰성을 높이는 데",
+    "emulated": "내적에서 누산기 정밀도가 중요한 이유는 다음과 같습니다:\n\n1. **데이터의 신뢰성**: 누산기 정밀도는 데이터가 정확하게 추출되었음을 나타내며, 이는"
+   }
+  },
+  {
+   "id": "qwen3-p3-fp64-fp8_tensor-native",
+   "task": "llm.generate",
+   "model": "Qwen/Qwen3-0.6B",
+   "mma": {
+    "algorithm": "fp64"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "prompt": "내적에서 누산기 정밀도가 왜 중요한지 두 문장으로 설명해 줘."
+   },
+   "title": "Qwen3-0.6B · 프롬프트 3 · FP64 정확 누산 · FP8 E4M3 · 텐서 스케일 · preset FP64 정확 누산",
+   "selection": "축소 스윕: CoFDA fused F ∈ {7,13,25}, decoupled F7, FP64 · FP8 텐서 스케일 · greedy, max_new_tokens 48, seed 42",
+   "role": null,
+   "summary": {
+    "first_divergence": null,
+    "prefix_match": 48,
+    "top1_agreement": 1.0,
+    "kl_mean": 0.02103916302870855
+   },
+   "preview": {
+    "baseline": "내적에서 누산기 정밀도가 중요한 이유는 다음과 같습니다:\n\n1. **데이터의 신뢰성**: 누산기 정밀도는 데이터의 정확성과 신뢰성을 높이는 데",
+    "emulated": "내적에서 누산기 정밀도가 중요한 이유는 다음과 같습니다:\n\n1. **데이터의 신뢰성**: 누산기 정밀도는 데이터의 정확성과 신뢰성을 높이는 데"
+   }
+  },
+  {
+   "id": "llama3.2-1b-p1-cofda-f7-cs32-fused-fp8_tensor-native",
+   "task": "llm.generate",
+   "model": "meta-llama/Llama-3.2-1B",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 7,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "prompt": "The precision of the accumulator in a dot product matters because"
+   },
+   "title": "Llama-3.2-1B · 프롬프트 1 · CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 · preset F7 fused 설계점",
+   "selection": "베이스 모델 이어 쓰기: CoFDA fused F ∈ {7,13,25}, decoupled F7, FP64 · FP8 텐서 스케일 · greedy, max_new_tokens 48, seed 42",
+   "role": null,
+   "summary": {
+    "first_divergence": 2,
+    "prefix_match": 2,
+    "top1_agreement": 0.7083333333333334,
+    "kl_mean": 1.803936084452426
+   },
+   "preview": {
+    "baseline": " it is the only way to determine the sign of the result. The sign of the result is important because it determines the direction of the vector. The sign of the result is also important because it determines the direction of the vector. The sign",
+    "emulated": " it is a."
+   }
+  },
+  {
+   "id": "llama3.2-1b-p1-cofda-f13-cs32-fused-fp8_tensor-native",
+   "task": "llm.generate",
+   "model": "meta-llama/Llama-3.2-1B",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 13,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "prompt": "The precision of the accumulator in a dot product matters because"
+   },
+   "title": "Llama-3.2-1B · 프롬프트 1 · CoFDA · F13 · CS32 · fused · FP8 E4M3 · 텐서 스케일 · preset Hopper FP8",
+   "selection": "베이스 모델 이어 쓰기: CoFDA fused F ∈ {7,13,25}, decoupled F7, FP64 · FP8 텐서 스케일 · greedy, max_new_tokens 48, seed 42",
+   "role": null,
+   "summary": {
+    "first_divergence": 6,
+    "prefix_match": 6,
+    "top1_agreement": 0.9791666666666666,
+    "kl_mean": 0.007530162683426447
+   },
+   "preview": {
+    "baseline": " it is the only way to determine the sign of the result. The sign of the result is important because it determines the direction of the vector. The sign of the result is also important because it determines the direction of the vector. The sign",
+    "emulated": " it is the only way to get the correct result when the dot product is zero. The dot product is the sum of the products of the corresponding elements of two vectors. The dot product is the sum of the products of the corresponding elements of"
+   }
+  },
+  {
+   "id": "llama3.2-1b-p1-cofda-f25-cs32-fused-fp8_tensor-native",
+   "task": "llm.generate",
+   "model": "meta-llama/Llama-3.2-1B",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 25,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "prompt": "The precision of the accumulator in a dot product matters because"
+   },
+   "title": "Llama-3.2-1B · 프롬프트 1 · CoFDA · F25 · CS32 · fused · FP8 E4M3 · 텐서 스케일 · preset Blackwell FP8",
+   "selection": "베이스 모델 이어 쓰기: CoFDA fused F ∈ {7,13,25}, decoupled F7, FP64 · FP8 텐서 스케일 · greedy, max_new_tokens 48, seed 42",
+   "role": null,
+   "summary": {
+    "first_divergence": 30,
+    "prefix_match": 30,
+    "top1_agreement": 0.9791666666666666,
+    "kl_mean": 0.007941640625776028
+   },
+   "preview": {
+    "baseline": " it is the only way to determine the sign of the result. The sign of the result is important because it determines the direction of the vector. The sign of the result is also important because it determines the direction of the vector. The sign",
+    "emulated": " it is the only way to determine the sign of the result. The sign of the result is important because it determines the direction of the vector. The dot product is a special case of the cross product, which is used to find the direction"
+   }
+  },
+  {
+   "id": "llama3.2-1b-p1-cofda-f7-cs32-decoupled-f2_23-fp8_tensor-native",
+   "task": "llm.generate",
+   "model": "meta-llama/Llama-3.2-1B",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 7,
+    "chunk_size": 32,
+    "c_mode": "decoupled",
+    "f2_bits": 23,
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "prompt": "The precision of the accumulator in a dot product matters because"
+   },
+   "title": "Llama-3.2-1B · 프롬프트 1 · CoFDA · F7 · CS32 · decoupled · F2 23 · FP8 E4M3 · 텐서 스케일 · preset F7 decoupled 설계점",
+   "selection": "베이스 모델 이어 쓰기: CoFDA fused F ∈ {7,13,25}, decoupled F7, FP64 · FP8 텐서 스케일 · greedy, max_new_tokens 48, seed 42",
+   "role": null,
+   "summary": {
+    "first_divergence": 2,
+    "prefix_match": 2,
+    "top1_agreement": 0.9583333333333334,
+    "kl_mean": 0.0069420708155206595
+   },
+   "preview": {
+    "baseline": " it is the only way to determine the sign of the result. The sign of the result is important because it determines the direction of the vector. The sign of the result is also important because it determines the direction of the vector. The sign",
+    "emulated": " it is used to calculate the dot product of two vectors. The dot product of two vectors is the sum of the products of the corresponding elements of the two vectors. The dot product of two vectors is the sum of the products of the corresponding"
+   }
+  },
+  {
+   "id": "llama3.2-1b-p1-fp64-fp8_tensor-native",
+   "task": "llm.generate",
+   "model": "meta-llama/Llama-3.2-1B",
+   "mma": {
+    "algorithm": "fp64"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "prompt": "The precision of the accumulator in a dot product matters because"
+   },
+   "title": "Llama-3.2-1B · 프롬프트 1 · FP64 정확 누산 · FP8 E4M3 · 텐서 스케일 · preset FP64 정확 누산",
+   "selection": "베이스 모델 이어 쓰기: CoFDA fused F ∈ {7,13,25}, decoupled F7, FP64 · FP8 텐서 스케일 · greedy, max_new_tokens 48, seed 42",
+   "role": null,
+   "summary": {
+    "first_divergence": 30,
+    "prefix_match": 30,
+    "top1_agreement": 0.9791666666666666,
+    "kl_mean": 0.008096040565398258
+   },
+   "preview": {
+    "baseline": " it is the only way to determine the sign of the result. The sign of the result is important because it determines the direction of the vector. The sign of the result is also important because it determines the direction of the vector. The sign",
+    "emulated": " it is the only way to determine the sign of the result. The sign of the result is important because it determines the direction of the vector. The dot product is a special case of the cross product, which is used to find the direction"
+   }
+  },
+  {
+   "id": "llama3.2-1b-p2-cofda-f7-cs32-fused-fp8_tensor-native",
+   "task": "llm.generate",
+   "model": "meta-llama/Llama-3.2-1B",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 7,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "prompt": "In one sentence, a tensor core computes"
+   },
+   "title": "Llama-3.2-1B · 프롬프트 2 · CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 · preset F7 fused 설계점",
+   "selection": "베이스 모델 이어 쓰기: CoFDA fused F ∈ {7,13,25}, decoupled F7, FP64 · FP8 텐서 스케일 · greedy, max_new_tokens 48, seed 42",
+   "role": null,
+   "summary": {
+    "first_divergence": 0,
+    "prefix_match": 0,
+    "top1_agreement": 0.7291666666666666,
+    "kl_mean": 0.8709171770055693
+   },
+   "preview": {
+    "baseline": " a tensor product of two tensors. In another, a tensor core computes a tensor product of two tensors. In yet another, a tensor core computes a tensor product of two tensors. In yet another, a tensor core computes a tensor product of",
+    "emulated": " the\nTheorem of\nTheorem of\nTheorem of\nTheorem of\nTheorem of\nTheorem of\nTheorem of\nTheorem of\nTheorem of\nTheorem of\nTheorem of\nTheorem"
+   }
+  },
+  {
+   "id": "llama3.2-1b-p2-cofda-f13-cs32-fused-fp8_tensor-native",
+   "task": "llm.generate",
+   "model": "meta-llama/Llama-3.2-1B",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 13,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "prompt": "In one sentence, a tensor core computes"
+   },
+   "title": "Llama-3.2-1B · 프롬프트 2 · CoFDA · F13 · CS32 · fused · FP8 E4M3 · 텐서 스케일 · preset Hopper FP8",
+   "selection": "베이스 모델 이어 쓰기: CoFDA fused F ∈ {7,13,25}, decoupled F7, FP64 · FP8 텐서 스케일 · greedy, max_new_tokens 48, seed 42",
+   "role": null,
+   "summary": {
+    "first_divergence": 0,
+    "prefix_match": 0,
+    "top1_agreement": 0.9375,
+    "kl_mean": 0.006679253511095833
+   },
+   "preview": {
+    "baseline": " a tensor product of two tensors. In another, a tensor core computes a tensor product of two tensors. In yet another, a tensor core computes a tensor product of two tensors. In yet another, a tensor core computes a tensor product of",
+    "emulated": " the tensor product of two tensors. The tensor core is a core that computes the tensor product of two tensors. The tensor core is a core that computes the tensor product of two tensors. The tensor core is a core that computes the tensor product"
+   }
+  },
+  {
+   "id": "llama3.2-1b-p2-cofda-f25-cs32-fused-fp8_tensor-native",
+   "task": "llm.generate",
+   "model": "meta-llama/Llama-3.2-1B",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 25,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "prompt": "In one sentence, a tensor core computes"
+   },
+   "title": "Llama-3.2-1B · 프롬프트 2 · CoFDA · F25 · CS32 · fused · FP8 E4M3 · 텐서 스케일 · preset Blackwell FP8",
+   "selection": "베이스 모델 이어 쓰기: CoFDA fused F ∈ {7,13,25}, decoupled F7, FP64 · FP8 텐서 스케일 · greedy, max_new_tokens 48, seed 42",
+   "role": null,
+   "summary": {
+    "first_divergence": 9,
+    "prefix_match": 9,
+    "top1_agreement": 0.9791666666666666,
+    "kl_mean": 0.006062050267070644
+   },
+   "preview": {
+    "baseline": " a tensor product of two tensors. In another, a tensor core computes a tensor product of two tensors. In yet another, a tensor core computes a tensor product of two tensors. In yet another, a tensor core computes a tensor product of",
+    "emulated": " a tensor product of two tensors. In another sentence, a tensor core is a tensor product of two tensors. In yet another sentence, a tensor core is a tensor product of two tensors. In yet another sentence, a tensor core is a"
+   }
+  },
+  {
+   "id": "llama3.2-1b-p2-cofda-f7-cs32-decoupled-f2_23-fp8_tensor-native",
+   "task": "llm.generate",
+   "model": "meta-llama/Llama-3.2-1B",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 7,
+    "chunk_size": 32,
+    "c_mode": "decoupled",
+    "f2_bits": 23,
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "prompt": "In one sentence, a tensor core computes"
+   },
+   "title": "Llama-3.2-1B · 프롬프트 2 · CoFDA · F7 · CS32 · decoupled · F2 23 · FP8 E4M3 · 텐서 스케일 · preset F7 decoupled 설계점",
+   "selection": "베이스 모델 이어 쓰기: CoFDA fused F ∈ {7,13,25}, decoupled F7, FP64 · FP8 텐서 스케일 · greedy, max_new_tokens 48, seed 42",
+   "role": null,
+   "summary": {
+    "first_divergence": null,
+    "prefix_match": 48,
+    "top1_agreement": 1.0,
+    "kl_mean": 0.00834258622677435
+   },
+   "preview": {
+    "baseline": " a tensor product of two tensors. In another, a tensor core computes a tensor product of two tensors. In yet another, a tensor core computes a tensor product of two tensors. In yet another, a tensor core computes a tensor product of",
+    "emulated": " a tensor product of two tensors. In another, a tensor core computes a tensor product of two tensors. In yet another, a tensor core computes a tensor product of two tensors. In yet another, a tensor core computes a tensor product of"
+   }
+  },
+  {
+   "id": "llama3.2-1b-p2-fp64-fp8_tensor-native",
+   "task": "llm.generate",
+   "model": "meta-llama/Llama-3.2-1B",
+   "mma": {
+    "algorithm": "fp64"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "prompt": "In one sentence, a tensor core computes"
+   },
+   "title": "Llama-3.2-1B · 프롬프트 2 · FP64 정확 누산 · FP8 E4M3 · 텐서 스케일 · preset FP64 정확 누산",
+   "selection": "베이스 모델 이어 쓰기: CoFDA fused F ∈ {7,13,25}, decoupled F7, FP64 · FP8 텐서 스케일 · greedy, max_new_tokens 48, seed 42",
+   "role": null,
+   "summary": {
+    "first_divergence": 7,
+    "prefix_match": 7,
+    "top1_agreement": 0.9583333333333334,
+    "kl_mean": 0.005116054358582408
+   },
+   "preview": {
+    "baseline": " a tensor product of two tensors. In another, a tensor core computes a tensor product of two tensors. In yet another, a tensor core computes a tensor product of two tensors. In yet another, a tensor core computes a tensor product of",
+    "emulated": " a tensor product of two tensors. The tensor core is a core of the tensor product. The tensor core is a core of the tensor product. The tensor core is a core of the tensor product. The tensor core is a core of the"
+   }
+  },
+  {
+   "id": "det-coco_000000005001-cofda-f5-cs32-fused-fp8_tensor-native",
+   "task": "vision.detect",
+   "model": "yolo11n",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 5,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000005001.jpg"
+   },
+   "title": "YOLO11n · COCO 5001 · CoFDA · F5 · CS32 · fused · FP8 E4M3 · 텐서 스케일",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 1위 (점수 21.000) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled F ∈ {5,7,9,13}, FP64",
+   "role": "차이 점수 1위 (21.0)",
+   "summary": {
+    "matched": 0,
+    "baseline_only": 19,
+    "emulated_only": 0,
+    "mean_iou": null
+   },
+   "preview": {
+    "baseline_boxes": 19,
+    "emulated_boxes": 0
+   }
+  },
+  {
+   "id": "det-coco_000000005001-cofda-f7-cs32-fused-fp8_tensor-native",
+   "task": "vision.detect",
+   "model": "yolo11n",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 7,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000005001.jpg"
+   },
+   "title": "YOLO11n · COCO 5001 · CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 · preset F7 fused 설계점",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 1위 (점수 21.000) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled F ∈ {5,7,9,13}, FP64",
+   "role": "차이 점수 1위 (21.0)",
+   "summary": {
+    "matched": 0,
+    "baseline_only": 19,
+    "emulated_only": 1,
+    "mean_iou": null
+   },
+   "preview": {
+    "baseline_boxes": 19,
+    "emulated_boxes": 1
+   }
+  },
+  {
+   "id": "det-coco_000000005001-cofda-f9-cs32-fused-fp8_tensor-native",
+   "task": "vision.detect",
+   "model": "yolo11n",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 9,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000005001.jpg"
+   },
+   "title": "YOLO11n · COCO 5001 · CoFDA · F9 · CS32 · fused · FP8 E4M3 · 텐서 스케일",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 1위 (점수 21.000) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled F ∈ {5,7,9,13}, FP64",
+   "role": "차이 점수 1위 (21.0)",
+   "summary": {
+    "matched": 14,
+    "baseline_only": 5,
+    "emulated_only": 0,
+    "mean_iou": 0.9325030387805275
+   },
+   "preview": {
+    "baseline_boxes": 19,
+    "emulated_boxes": 14
+   }
+  },
+  {
+   "id": "det-coco_000000005001-cofda-f11-cs32-fused-fp8_tensor-native",
+   "task": "vision.detect",
+   "model": "yolo11n",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 11,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000005001.jpg"
+   },
+   "title": "YOLO11n · COCO 5001 · CoFDA · F11 · CS32 · fused · FP8 E4M3 · 텐서 스케일",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 1위 (점수 21.000) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled F ∈ {5,7,9,13}, FP64",
+   "role": "차이 점수 1위 (21.0)",
+   "summary": {
+    "matched": 16,
+    "baseline_only": 3,
+    "emulated_only": 0,
+    "mean_iou": 0.8885512690969947
+   },
+   "preview": {
+    "baseline_boxes": 19,
+    "emulated_boxes": 16
+   }
+  },
+  {
+   "id": "det-coco_000000005001-cofda-f13-cs32-fused-fp8_tensor-native",
+   "task": "vision.detect",
+   "model": "yolo11n",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 13,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000005001.jpg"
+   },
+   "title": "YOLO11n · COCO 5001 · CoFDA · F13 · CS32 · fused · FP8 E4M3 · 텐서 스케일 · preset Hopper FP8",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 1위 (점수 21.000) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled F ∈ {5,7,9,13}, FP64",
+   "role": "차이 점수 1위 (21.0)",
+   "summary": {
+    "matched": 14,
+    "baseline_only": 5,
+    "emulated_only": 0,
+    "mean_iou": 0.9258896096142754
+   },
+   "preview": {
+    "baseline_boxes": 19,
+    "emulated_boxes": 14
+   }
+  },
+  {
+   "id": "det-coco_000000005001-cofda-f16-cs32-fused-fp8_tensor-native",
+   "task": "vision.detect",
+   "model": "yolo11n",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 16,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000005001.jpg"
+   },
+   "title": "YOLO11n · COCO 5001 · CoFDA · F16 · CS32 · fused · FP8 E4M3 · 텐서 스케일",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 1위 (점수 21.000) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled F ∈ {5,7,9,13}, FP64",
+   "role": "차이 점수 1위 (21.0)",
+   "summary": {
+    "matched": 15,
+    "baseline_only": 4,
+    "emulated_only": 1,
+    "mean_iou": 0.9208707842223468
+   },
+   "preview": {
+    "baseline_boxes": 19,
+    "emulated_boxes": 16
+   }
+  },
+  {
+   "id": "det-coco_000000005001-cofda-f20-cs32-fused-fp8_tensor-native",
+   "task": "vision.detect",
+   "model": "yolo11n",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 20,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000005001.jpg"
+   },
+   "title": "YOLO11n · COCO 5001 · CoFDA · F20 · CS32 · fused · FP8 E4M3 · 텐서 스케일",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 1위 (점수 21.000) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled F ∈ {5,7,9,13}, FP64",
+   "role": "차이 점수 1위 (21.0)",
+   "summary": {
+    "matched": 16,
+    "baseline_only": 3,
+    "emulated_only": 0,
+    "mean_iou": 0.9039184982811079
+   },
+   "preview": {
+    "baseline_boxes": 19,
+    "emulated_boxes": 16
+   }
+  },
+  {
+   "id": "det-coco_000000005001-cofda-f25-cs32-fused-fp8_tensor-native",
+   "task": "vision.detect",
+   "model": "yolo11n",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 25,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000005001.jpg"
+   },
+   "title": "YOLO11n · COCO 5001 · CoFDA · F25 · CS32 · fused · FP8 E4M3 · 텐서 스케일 · preset Blackwell FP8",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 1위 (점수 21.000) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled F ∈ {5,7,9,13}, FP64",
+   "role": "차이 점수 1위 (21.0)",
+   "summary": {
+    "matched": 15,
+    "baseline_only": 4,
+    "emulated_only": 1,
+    "mean_iou": 0.9260925646073412
+   },
+   "preview": {
+    "baseline_boxes": 19,
+    "emulated_boxes": 16
+   }
+  },
+  {
+   "id": "det-coco_000000005001-cofda-f5-cs32-decoupled-f2_23-fp8_tensor-native",
+   "task": "vision.detect",
+   "model": "yolo11n",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 5,
+    "chunk_size": 32,
+    "c_mode": "decoupled",
+    "f2_bits": 23,
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000005001.jpg"
+   },
+   "title": "YOLO11n · COCO 5001 · CoFDA · F5 · CS32 · decoupled · F2 23 · FP8 E4M3 · 텐서 스케일",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 1위 (점수 21.000) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled F ∈ {5,7,9,13}, FP64",
+   "role": "차이 점수 1위 (21.0)",
+   "summary": {
+    "matched": 9,
+    "baseline_only": 10,
+    "emulated_only": 1,
+    "mean_iou": 0.869523233178717
+   },
+   "preview": {
+    "baseline_boxes": 19,
+    "emulated_boxes": 10
+   }
+  },
+  {
+   "id": "det-coco_000000005001-cofda-f7-cs32-decoupled-f2_23-fp8_tensor-native",
+   "task": "vision.detect",
+   "model": "yolo11n",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 7,
+    "chunk_size": 32,
+    "c_mode": "decoupled",
+    "f2_bits": 23,
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000005001.jpg"
+   },
+   "title": "YOLO11n · COCO 5001 · CoFDA · F7 · CS32 · decoupled · F2 23 · FP8 E4M3 · 텐서 스케일 · preset F7 decoupled 설계점",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 1위 (점수 21.000) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled F ∈ {5,7,9,13}, FP64",
+   "role": "차이 점수 1위 (21.0)",
+   "summary": {
+    "matched": 14,
+    "baseline_only": 5,
+    "emulated_only": 0,
+    "mean_iou": 0.878670825219432
+   },
+   "preview": {
+    "baseline_boxes": 19,
+    "emulated_boxes": 14
+   }
+  },
+  {
+   "id": "det-coco_000000005001-cofda-f9-cs32-decoupled-f2_23-fp8_tensor-native",
+   "task": "vision.detect",
+   "model": "yolo11n",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 9,
+    "chunk_size": 32,
+    "c_mode": "decoupled",
+    "f2_bits": 23,
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000005001.jpg"
+   },
+   "title": "YOLO11n · COCO 5001 · CoFDA · F9 · CS32 · decoupled · F2 23 · FP8 E4M3 · 텐서 스케일",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 1위 (점수 21.000) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled F ∈ {5,7,9,13}, FP64",
+   "role": "차이 점수 1위 (21.0)",
+   "summary": {
+    "matched": 16,
+    "baseline_only": 3,
+    "emulated_only": 0,
+    "mean_iou": 0.9101258320855942
+   },
+   "preview": {
+    "baseline_boxes": 19,
+    "emulated_boxes": 16
+   }
+  },
+  {
+   "id": "det-coco_000000005001-cofda-f13-cs32-decoupled-f2_23-fp8_tensor-native",
+   "task": "vision.detect",
+   "model": "yolo11n",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 13,
+    "chunk_size": 32,
+    "c_mode": "decoupled",
+    "f2_bits": 23,
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000005001.jpg"
+   },
+   "title": "YOLO11n · COCO 5001 · CoFDA · F13 · CS32 · decoupled · F2 23 · FP8 E4M3 · 텐서 스케일",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 1위 (점수 21.000) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled F ∈ {5,7,9,13}, FP64",
+   "role": "차이 점수 1위 (21.0)",
+   "summary": {
+    "matched": 16,
+    "baseline_only": 3,
+    "emulated_only": 0,
+    "mean_iou": 0.8976306986867365
+   },
+   "preview": {
+    "baseline_boxes": 19,
+    "emulated_boxes": 16
+   }
+  },
+  {
+   "id": "det-coco_000000005001-fp64-fp8_tensor-native",
+   "task": "vision.detect",
+   "model": "yolo11n",
+   "mma": {
+    "algorithm": "fp64"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000005001.jpg"
+   },
+   "title": "YOLO11n · COCO 5001 · FP64 정확 누산 · FP8 E4M3 · 텐서 스케일 · preset FP64 정확 누산",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 1위 (점수 21.000) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled F ∈ {5,7,9,13}, FP64",
+   "role": "차이 점수 1위 (21.0)",
+   "summary": {
+    "matched": 16,
+    "baseline_only": 3,
+    "emulated_only": 0,
+    "mean_iou": 0.9165574200703177
+   },
+   "preview": {
+    "baseline_boxes": 19,
+    "emulated_boxes": 16
+   }
+  },
+  {
+   "id": "det-coco_000000001000-cofda-f5-cs32-fused-fp8_tensor-native",
+   "task": "vision.detect",
+   "model": "yolo11n",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 5,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000001000.jpg"
+   },
+   "title": "YOLO11n · COCO 1000 · CoFDA · F5 · CS32 · fused · FP8 E4M3 · 텐서 스케일",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 2위 (점수 13.091) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled F ∈ {5,7,9,13}, FP64",
+   "role": "차이 점수 2위 (13.1)",
+   "summary": {
+    "matched": 0,
+    "baseline_only": 19,
+    "emulated_only": 0,
+    "mean_iou": null
+   },
+   "preview": {
+    "baseline_boxes": 19,
+    "emulated_boxes": 0
+   }
+  },
+  {
+   "id": "det-coco_000000001000-cofda-f7-cs32-fused-fp8_tensor-native",
+   "task": "vision.detect",
+   "model": "yolo11n",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 7,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000001000.jpg"
+   },
+   "title": "YOLO11n · COCO 1000 · CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 · preset F7 fused 설계점",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 2위 (점수 13.091) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled F ∈ {5,7,9,13}, FP64",
+   "role": "차이 점수 2위 (13.1)",
+   "summary": {
+    "matched": 7,
+    "baseline_only": 12,
+    "emulated_only": 1,
+    "mean_iou": 0.9088817709716529
+   },
+   "preview": {
+    "baseline_boxes": 19,
+    "emulated_boxes": 8
+   }
+  },
+  {
+   "id": "det-coco_000000001000-cofda-f9-cs32-fused-fp8_tensor-native",
+   "task": "vision.detect",
+   "model": "yolo11n",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 9,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000001000.jpg"
+   },
+   "title": "YOLO11n · COCO 1000 · CoFDA · F9 · CS32 · fused · FP8 E4M3 · 텐서 스케일",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 2위 (점수 13.091) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled F ∈ {5,7,9,13}, FP64",
+   "role": "차이 점수 2위 (13.1)",
+   "summary": {
+    "matched": 17,
+    "baseline_only": 2,
+    "emulated_only": 0,
+    "mean_iou": 0.8935771176590259
+   },
+   "preview": {
+    "baseline_boxes": 19,
+    "emulated_boxes": 17
+   }
+  },
+  {
+   "id": "det-coco_000000001000-cofda-f11-cs32-fused-fp8_tensor-native",
+   "task": "vision.detect",
+   "model": "yolo11n",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 11,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000001000.jpg"
+   },
+   "title": "YOLO11n · COCO 1000 · CoFDA · F11 · CS32 · fused · FP8 E4M3 · 텐서 스케일",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 2위 (점수 13.091) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled F ∈ {5,7,9,13}, FP64",
+   "role": "차이 점수 2위 (13.1)",
+   "summary": {
+    "matched": 18,
+    "baseline_only": 1,
+    "emulated_only": 0,
+    "mean_iou": 0.9292297958449295
+   },
+   "preview": {
+    "baseline_boxes": 19,
+    "emulated_boxes": 18
+   }
+  },
+  {
+   "id": "det-coco_000000001000-cofda-f13-cs32-fused-fp8_tensor-native",
+   "task": "vision.detect",
+   "model": "yolo11n",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 13,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000001000.jpg"
+   },
+   "title": "YOLO11n · COCO 1000 · CoFDA · F13 · CS32 · fused · FP8 E4M3 · 텐서 스케일 · preset Hopper FP8",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 2위 (점수 13.091) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled F ∈ {5,7,9,13}, FP64",
+   "role": "차이 점수 2위 (13.1)",
+   "summary": {
+    "matched": 17,
+    "baseline_only": 2,
+    "emulated_only": 0,
+    "mean_iou": 0.9265913905915596
+   },
+   "preview": {
+    "baseline_boxes": 19,
+    "emulated_boxes": 17
+   }
+  },
+  {
+   "id": "det-coco_000000001000-cofda-f16-cs32-fused-fp8_tensor-native",
+   "task": "vision.detect",
+   "model": "yolo11n",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 16,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000001000.jpg"
+   },
+   "title": "YOLO11n · COCO 1000 · CoFDA · F16 · CS32 · fused · FP8 E4M3 · 텐서 스케일",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 2위 (점수 13.091) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled F ∈ {5,7,9,13}, FP64",
+   "role": "차이 점수 2위 (13.1)",
+   "summary": {
+    "matched": 17,
+    "baseline_only": 2,
+    "emulated_only": 0,
+    "mean_iou": 0.9197263744098629
+   },
+   "preview": {
+    "baseline_boxes": 19,
+    "emulated_boxes": 17
+   }
+  },
+  {
+   "id": "det-coco_000000001000-cofda-f20-cs32-fused-fp8_tensor-native",
+   "task": "vision.detect",
+   "model": "yolo11n",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 20,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000001000.jpg"
+   },
+   "title": "YOLO11n · COCO 1000 · CoFDA · F20 · CS32 · fused · FP8 E4M3 · 텐서 스케일",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 2위 (점수 13.091) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled F ∈ {5,7,9,13}, FP64",
+   "role": "차이 점수 2위 (13.1)",
+   "summary": {
+    "matched": 17,
+    "baseline_only": 2,
+    "emulated_only": 1,
+    "mean_iou": 0.9097944753680184
+   },
+   "preview": {
+    "baseline_boxes": 19,
+    "emulated_boxes": 18
+   }
+  },
+  {
+   "id": "det-coco_000000001000-cofda-f25-cs32-fused-fp8_tensor-native",
+   "task": "vision.detect",
+   "model": "yolo11n",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 25,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000001000.jpg"
+   },
+   "title": "YOLO11n · COCO 1000 · CoFDA · F25 · CS32 · fused · FP8 E4M3 · 텐서 스케일 · preset Blackwell FP8",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 2위 (점수 13.091) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled F ∈ {5,7,9,13}, FP64",
+   "role": "차이 점수 2위 (13.1)",
+   "summary": {
+    "matched": 18,
+    "baseline_only": 1,
+    "emulated_only": 0,
+    "mean_iou": 0.9327652729106745
+   },
+   "preview": {
+    "baseline_boxes": 19,
+    "emulated_boxes": 18
+   }
+  },
+  {
+   "id": "det-coco_000000001000-cofda-f5-cs32-decoupled-f2_23-fp8_tensor-native",
+   "task": "vision.detect",
+   "model": "yolo11n",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 5,
+    "chunk_size": 32,
+    "c_mode": "decoupled",
+    "f2_bits": 23,
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000001000.jpg"
+   },
+   "title": "YOLO11n · COCO 1000 · CoFDA · F5 · CS32 · decoupled · F2 23 · FP8 E4M3 · 텐서 스케일",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 2위 (점수 13.091) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled F ∈ {5,7,9,13}, FP64",
+   "role": "차이 점수 2위 (13.1)",
+   "summary": {
+    "matched": 11,
+    "baseline_only": 8,
+    "emulated_only": 0,
+    "mean_iou": 0.901096993970739
+   },
+   "preview": {
+    "baseline_boxes": 19,
+    "emulated_boxes": 11
+   }
+  },
+  {
+   "id": "det-coco_000000001000-cofda-f7-cs32-decoupled-f2_23-fp8_tensor-native",
+   "task": "vision.detect",
+   "model": "yolo11n",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 7,
+    "chunk_size": 32,
+    "c_mode": "decoupled",
+    "f2_bits": 23,
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000001000.jpg"
+   },
+   "title": "YOLO11n · COCO 1000 · CoFDA · F7 · CS32 · decoupled · F2 23 · FP8 E4M3 · 텐서 스케일 · preset F7 decoupled 설계점",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 2위 (점수 13.091) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled F ∈ {5,7,9,13}, FP64",
+   "role": "차이 점수 2위 (13.1)",
+   "summary": {
+    "matched": 17,
+    "baseline_only": 2,
+    "emulated_only": 0,
+    "mean_iou": 0.9130322256488614
+   },
+   "preview": {
+    "baseline_boxes": 19,
+    "emulated_boxes": 17
+   }
+  },
+  {
+   "id": "det-coco_000000001000-cofda-f9-cs32-decoupled-f2_23-fp8_tensor-native",
+   "task": "vision.detect",
+   "model": "yolo11n",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 9,
+    "chunk_size": 32,
+    "c_mode": "decoupled",
+    "f2_bits": 23,
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000001000.jpg"
+   },
+   "title": "YOLO11n · COCO 1000 · CoFDA · F9 · CS32 · decoupled · F2 23 · FP8 E4M3 · 텐서 스케일",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 2위 (점수 13.091) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled F ∈ {5,7,9,13}, FP64",
+   "role": "차이 점수 2위 (13.1)",
+   "summary": {
+    "matched": 17,
+    "baseline_only": 2,
+    "emulated_only": 1,
+    "mean_iou": 0.9304342290824384
+   },
+   "preview": {
+    "baseline_boxes": 19,
+    "emulated_boxes": 18
+   }
+  },
+  {
+   "id": "det-coco_000000001000-cofda-f13-cs32-decoupled-f2_23-fp8_tensor-native",
+   "task": "vision.detect",
+   "model": "yolo11n",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 13,
+    "chunk_size": 32,
+    "c_mode": "decoupled",
+    "f2_bits": 23,
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000001000.jpg"
+   },
+   "title": "YOLO11n · COCO 1000 · CoFDA · F13 · CS32 · decoupled · F2 23 · FP8 E4M3 · 텐서 스케일",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 2위 (점수 13.091) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled F ∈ {5,7,9,13}, FP64",
+   "role": "차이 점수 2위 (13.1)",
+   "summary": {
+    "matched": 17,
+    "baseline_only": 2,
+    "emulated_only": 0,
+    "mean_iou": 0.9265412504277004
+   },
+   "preview": {
+    "baseline_boxes": 19,
+    "emulated_boxes": 17
+   }
+  },
+  {
+   "id": "det-coco_000000001000-fp64-fp8_tensor-native",
+   "task": "vision.detect",
+   "model": "yolo11n",
+   "mma": {
+    "algorithm": "fp64"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000001000.jpg"
+   },
+   "title": "YOLO11n · COCO 1000 · FP64 정확 누산 · FP8 E4M3 · 텐서 스케일 · preset FP64 정확 누산",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 2위 (점수 13.091) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled F ∈ {5,7,9,13}, FP64",
+   "role": "차이 점수 2위 (13.1)",
+   "summary": {
+    "matched": 18,
+    "baseline_only": 1,
+    "emulated_only": 0,
+    "mean_iou": 0.9327652729106745
+   },
+   "preview": {
+    "baseline_boxes": 19,
+    "emulated_boxes": 18
+   }
+  },
+  {
+   "id": "det-coco_000000008021-cofda-f5-cs32-fused-fp8_tensor-native",
+   "task": "vision.detect",
+   "model": "yolo11n",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 5,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000008021.jpg"
+   },
+   "title": "YOLO11n · COCO 8021 · CoFDA · F5 · CS32 · fused · FP8 E4M3 · 텐서 스케일",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 중앙값 (점수 3.168) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled F ∈ {5,7,9,13}, FP64",
+   "role": "차이 점수 중앙값 (3.2)",
+   "summary": {
+    "matched": 0,
+    "baseline_only": 4,
+    "emulated_only": 0,
+    "mean_iou": null
+   },
+   "preview": {
+    "baseline_boxes": 4,
+    "emulated_boxes": 0
+   }
+  },
+  {
+   "id": "det-coco_000000008021-cofda-f7-cs32-fused-fp8_tensor-native",
+   "task": "vision.detect",
+   "model": "yolo11n",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 7,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000008021.jpg"
+   },
+   "title": "YOLO11n · COCO 8021 · CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 · preset F7 fused 설계점",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 중앙값 (점수 3.168) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled F ∈ {5,7,9,13}, FP64",
+   "role": "차이 점수 중앙값 (3.2)",
+   "summary": {
+    "matched": 1,
+    "baseline_only": 3,
+    "emulated_only": 0,
+    "mean_iou": 0.832081639667548
+   },
+   "preview": {
+    "baseline_boxes": 4,
+    "emulated_boxes": 1
+   }
+  },
+  {
+   "id": "det-coco_000000008021-cofda-f9-cs32-fused-fp8_tensor-native",
+   "task": "vision.detect",
+   "model": "yolo11n",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 9,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000008021.jpg"
+   },
+   "title": "YOLO11n · COCO 8021 · CoFDA · F9 · CS32 · fused · FP8 E4M3 · 텐서 스케일",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 중앙값 (점수 3.168) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled F ∈ {5,7,9,13}, FP64",
+   "role": "차이 점수 중앙값 (3.2)",
+   "summary": {
+    "matched": 4,
+    "baseline_only": 0,
+    "emulated_only": 0,
+    "mean_iou": 0.9401144671458617
+   },
+   "preview": {
+    "baseline_boxes": 4,
+    "emulated_boxes": 4
+   }
+  },
+  {
+   "id": "det-coco_000000008021-cofda-f11-cs32-fused-fp8_tensor-native",
+   "task": "vision.detect",
+   "model": "yolo11n",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 11,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000008021.jpg"
+   },
+   "title": "YOLO11n · COCO 8021 · CoFDA · F11 · CS32 · fused · FP8 E4M3 · 텐서 스케일",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 중앙값 (점수 3.168) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled F ∈ {5,7,9,13}, FP64",
+   "role": "차이 점수 중앙값 (3.2)",
+   "summary": {
+    "matched": 4,
+    "baseline_only": 0,
+    "emulated_only": 0,
+    "mean_iou": 0.9348755505730315
+   },
+   "preview": {
+    "baseline_boxes": 4,
+    "emulated_boxes": 4
+   }
+  },
+  {
+   "id": "det-coco_000000008021-cofda-f13-cs32-fused-fp8_tensor-native",
+   "task": "vision.detect",
+   "model": "yolo11n",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 13,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000008021.jpg"
+   },
+   "title": "YOLO11n · COCO 8021 · CoFDA · F13 · CS32 · fused · FP8 E4M3 · 텐서 스케일 · preset Hopper FP8",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 중앙값 (점수 3.168) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled F ∈ {5,7,9,13}, FP64",
+   "role": "차이 점수 중앙값 (3.2)",
+   "summary": {
+    "matched": 4,
+    "baseline_only": 0,
+    "emulated_only": 0,
+    "mean_iou": 0.9560975223400132
+   },
+   "preview": {
+    "baseline_boxes": 4,
+    "emulated_boxes": 4
+   }
+  },
+  {
+   "id": "det-coco_000000008021-cofda-f16-cs32-fused-fp8_tensor-native",
+   "task": "vision.detect",
+   "model": "yolo11n",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 16,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000008021.jpg"
+   },
+   "title": "YOLO11n · COCO 8021 · CoFDA · F16 · CS32 · fused · FP8 E4M3 · 텐서 스케일",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 중앙값 (점수 3.168) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled F ∈ {5,7,9,13}, FP64",
+   "role": "차이 점수 중앙값 (3.2)",
+   "summary": {
+    "matched": 4,
+    "baseline_only": 0,
+    "emulated_only": 0,
+    "mean_iou": 0.9486358942296342
+   },
+   "preview": {
+    "baseline_boxes": 4,
+    "emulated_boxes": 4
+   }
+  },
+  {
+   "id": "det-coco_000000008021-cofda-f20-cs32-fused-fp8_tensor-native",
+   "task": "vision.detect",
+   "model": "yolo11n",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 20,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000008021.jpg"
+   },
+   "title": "YOLO11n · COCO 8021 · CoFDA · F20 · CS32 · fused · FP8 E4M3 · 텐서 스케일",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 중앙값 (점수 3.168) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled F ∈ {5,7,9,13}, FP64",
+   "role": "차이 점수 중앙값 (3.2)",
+   "summary": {
+    "matched": 4,
+    "baseline_only": 0,
+    "emulated_only": 0,
+    "mean_iou": 0.9554880107693485
+   },
+   "preview": {
+    "baseline_boxes": 4,
+    "emulated_boxes": 4
+   }
+  },
+  {
+   "id": "det-coco_000000008021-cofda-f25-cs32-fused-fp8_tensor-native",
+   "task": "vision.detect",
+   "model": "yolo11n",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 25,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000008021.jpg"
+   },
+   "title": "YOLO11n · COCO 8021 · CoFDA · F25 · CS32 · fused · FP8 E4M3 · 텐서 스케일 · preset Blackwell FP8",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 중앙값 (점수 3.168) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled F ∈ {5,7,9,13}, FP64",
+   "role": "차이 점수 중앙값 (3.2)",
+   "summary": {
+    "matched": 4,
+    "baseline_only": 0,
+    "emulated_only": 0,
+    "mean_iou": 0.938979597827888
+   },
+   "preview": {
+    "baseline_boxes": 4,
+    "emulated_boxes": 4
+   }
+  },
+  {
+   "id": "det-coco_000000008021-cofda-f5-cs32-decoupled-f2_23-fp8_tensor-native",
+   "task": "vision.detect",
+   "model": "yolo11n",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 5,
+    "chunk_size": 32,
+    "c_mode": "decoupled",
+    "f2_bits": 23,
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000008021.jpg"
+   },
+   "title": "YOLO11n · COCO 8021 · CoFDA · F5 · CS32 · decoupled · F2 23 · FP8 E4M3 · 텐서 스케일",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 중앙값 (점수 3.168) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled F ∈ {5,7,9,13}, FP64",
+   "role": "차이 점수 중앙값 (3.2)",
+   "summary": {
+    "matched": 4,
+    "baseline_only": 0,
+    "emulated_only": 0,
+    "mean_iou": 0.9039334022264185
+   },
+   "preview": {
+    "baseline_boxes": 4,
+    "emulated_boxes": 4
+   }
+  },
+  {
+   "id": "det-coco_000000008021-cofda-f7-cs32-decoupled-f2_23-fp8_tensor-native",
+   "task": "vision.detect",
+   "model": "yolo11n",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 7,
+    "chunk_size": 32,
+    "c_mode": "decoupled",
+    "f2_bits": 23,
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000008021.jpg"
+   },
+   "title": "YOLO11n · COCO 8021 · CoFDA · F7 · CS32 · decoupled · F2 23 · FP8 E4M3 · 텐서 스케일 · preset F7 decoupled 설계점",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 중앙값 (점수 3.168) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled F ∈ {5,7,9,13}, FP64",
+   "role": "차이 점수 중앙값 (3.2)",
+   "summary": {
+    "matched": 4,
+    "baseline_only": 0,
+    "emulated_only": 0,
+    "mean_iou": 0.9467873919897057
+   },
+   "preview": {
+    "baseline_boxes": 4,
+    "emulated_boxes": 4
+   }
+  },
+  {
+   "id": "det-coco_000000008021-cofda-f9-cs32-decoupled-f2_23-fp8_tensor-native",
+   "task": "vision.detect",
+   "model": "yolo11n",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 9,
+    "chunk_size": 32,
+    "c_mode": "decoupled",
+    "f2_bits": 23,
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000008021.jpg"
+   },
+   "title": "YOLO11n · COCO 8021 · CoFDA · F9 · CS32 · decoupled · F2 23 · FP8 E4M3 · 텐서 스케일",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 중앙값 (점수 3.168) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled F ∈ {5,7,9,13}, FP64",
+   "role": "차이 점수 중앙값 (3.2)",
+   "summary": {
+    "matched": 4,
+    "baseline_only": 0,
+    "emulated_only": 0,
+    "mean_iou": 0.9414175830504419
+   },
+   "preview": {
+    "baseline_boxes": 4,
+    "emulated_boxes": 4
+   }
+  },
+  {
+   "id": "det-coco_000000008021-cofda-f13-cs32-decoupled-f2_23-fp8_tensor-native",
+   "task": "vision.detect",
+   "model": "yolo11n",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 13,
+    "chunk_size": 32,
+    "c_mode": "decoupled",
+    "f2_bits": 23,
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000008021.jpg"
+   },
+   "title": "YOLO11n · COCO 8021 · CoFDA · F13 · CS32 · decoupled · F2 23 · FP8 E4M3 · 텐서 스케일",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 중앙값 (점수 3.168) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled F ∈ {5,7,9,13}, FP64",
+   "role": "차이 점수 중앙값 (3.2)",
+   "summary": {
+    "matched": 4,
+    "baseline_only": 0,
+    "emulated_only": 0,
+    "mean_iou": 0.9459607293970972
+   },
+   "preview": {
+    "baseline_boxes": 4,
+    "emulated_boxes": 4
+   }
+  },
+  {
+   "id": "det-coco_000000008021-fp64-fp8_tensor-native",
+   "task": "vision.detect",
+   "model": "yolo11n",
+   "mma": {
+    "algorithm": "fp64"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000008021.jpg"
+   },
+   "title": "YOLO11n · COCO 8021 · FP64 정확 누산 · FP8 E4M3 · 텐서 스케일 · preset FP64 정확 누산",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 중앙값 (점수 3.168) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,11,13,16,20,25}, decoupled F ∈ {5,7,9,13}, FP64",
+   "role": "차이 점수 중앙값 (3.2)",
+   "summary": {
+    "matched": 4,
+    "baseline_only": 0,
+    "emulated_only": 0,
+    "mean_iou": 0.940969879465994
+   },
+   "preview": {
+    "baseline_boxes": 4,
+    "emulated_boxes": 4
+   }
+  },
+  {
+   "id": "cls-coco_000000005001-cofda-f5-cs32-fused-fp8_tensor-native",
+   "task": "vision.classify",
+   "model": "resnet18",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 5,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000005001.jpg"
+   },
+   "title": "ResNet18 · COCO 5001 · CoFDA · F5 · CS32 · fused · FP8 E4M3 · 텐서 스케일",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 1위 (점수 21.000) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,13,25}, FP64",
+   "role": "차이 점수 1위 (21.0)",
+   "summary": {
+    "top1_same": false,
+    "top5_overlap": 1,
+    "kl": 2.814781644499808
+   },
+   "preview": {
+    "baseline_top1": "drumstick",
+    "emulated_top1": "drum",
+    "emulated_top1_p": 0.26049360510649117
+   }
+  },
+  {
+   "id": "cls-coco_000000005001-cofda-f7-cs32-fused-fp8_tensor-native",
+   "task": "vision.classify",
+   "model": "resnet18",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 7,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000005001.jpg"
+   },
+   "title": "ResNet18 · COCO 5001 · CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 · preset F7 fused 설계점",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 1위 (점수 21.000) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,13,25}, FP64",
+   "role": "차이 점수 1위 (21.0)",
+   "summary": {
+    "top1_same": true,
+    "top5_overlap": 3,
+    "kl": 0.33471919801312716
+   },
+   "preview": {
+    "baseline_top1": "drumstick",
+    "emulated_top1": "drumstick",
+    "emulated_top1_p": 0.4129402007332797
+   }
+  },
+  {
+   "id": "cls-coco_000000005001-cofda-f9-cs32-fused-fp8_tensor-native",
+   "task": "vision.classify",
+   "model": "resnet18",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 9,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000005001.jpg"
+   },
+   "title": "ResNet18 · COCO 5001 · CoFDA · F9 · CS32 · fused · FP8 E4M3 · 텐서 스케일",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 1위 (점수 21.000) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,13,25}, FP64",
+   "role": "차이 점수 1위 (21.0)",
+   "summary": {
+    "top1_same": false,
+    "top5_overlap": 4,
+    "kl": 0.04776261032205604
+   },
+   "preview": {
+    "baseline_top1": "drumstick",
+    "emulated_top1": "parallel bars",
+    "emulated_top1_p": 0.26815802491748875
+   }
+  },
+  {
+   "id": "cls-coco_000000005001-cofda-f13-cs32-fused-fp8_tensor-native",
+   "task": "vision.classify",
+   "model": "resnet18",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 13,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000005001.jpg"
+   },
+   "title": "ResNet18 · COCO 5001 · CoFDA · F13 · CS32 · fused · FP8 E4M3 · 텐서 스케일 · preset Hopper FP8",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 1위 (점수 21.000) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,13,25}, FP64",
+   "role": "차이 점수 1위 (21.0)",
+   "summary": {
+    "top1_same": true,
+    "top5_overlap": 4,
+    "kl": 0.03827426411581006
+   },
+   "preview": {
+    "baseline_top1": "drumstick",
+    "emulated_top1": "drumstick",
+    "emulated_top1_p": 0.2228065337977447
+   }
+  },
+  {
+   "id": "cls-coco_000000005001-cofda-f25-cs32-fused-fp8_tensor-native",
+   "task": "vision.classify",
+   "model": "resnet18",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 25,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000005001.jpg"
+   },
+   "title": "ResNet18 · COCO 5001 · CoFDA · F25 · CS32 · fused · FP8 E4M3 · 텐서 스케일 · preset Blackwell FP8",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 1위 (점수 21.000) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,13,25}, FP64",
+   "role": "차이 점수 1위 (21.0)",
+   "summary": {
+    "top1_same": false,
+    "top5_overlap": 4,
+    "kl": 0.04515750009676961
+   },
+   "preview": {
+    "baseline_top1": "drumstick",
+    "emulated_top1": "parallel bars",
+    "emulated_top1_p": 0.17874592878244036
+   }
+  },
+  {
+   "id": "cls-coco_000000005001-fp64-fp8_tensor-native",
+   "task": "vision.classify",
+   "model": "resnet18",
+   "mma": {
+    "algorithm": "fp64"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000005001.jpg"
+   },
+   "title": "ResNet18 · COCO 5001 · FP64 정확 누산 · FP8 E4M3 · 텐서 스케일 · preset FP64 정확 누산",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 1위 (점수 21.000) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,13,25}, FP64",
+   "role": "차이 점수 1위 (21.0)",
+   "summary": {
+    "top1_same": true,
+    "top5_overlap": 4,
+    "kl": 0.038742788367426076
+   },
+   "preview": {
+    "baseline_top1": "drumstick",
+    "emulated_top1": "drumstick",
+    "emulated_top1_p": 0.16770675458110354
+   }
+  },
+  {
+   "id": "cls-coco_000000001000-cofda-f5-cs32-fused-fp8_tensor-native",
+   "task": "vision.classify",
+   "model": "resnet18",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 5,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000001000.jpg"
+   },
+   "title": "ResNet18 · COCO 1000 · CoFDA · F5 · CS32 · fused · FP8 E4M3 · 텐서 스케일",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 2위 (점수 13.091) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,13,25}, FP64",
+   "role": "차이 점수 2위 (13.1)",
+   "summary": {
+    "top1_same": true,
+    "top5_overlap": 2,
+    "kl": 2.369082340771195
+   },
+   "preview": {
+    "baseline_top1": "volleyball",
+    "emulated_top1": "volleyball",
+    "emulated_top1_p": 0.488070465910629
+   }
+  },
+  {
+   "id": "cls-coco_000000001000-cofda-f7-cs32-fused-fp8_tensor-native",
+   "task": "vision.classify",
+   "model": "resnet18",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 7,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000001000.jpg"
+   },
+   "title": "ResNet18 · COCO 1000 · CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 · preset F7 fused 설계점",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 2위 (점수 13.091) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,13,25}, FP64",
+   "role": "차이 점수 2위 (13.1)",
+   "summary": {
+    "top1_same": true,
+    "top5_overlap": 3,
+    "kl": 0.43218345081503684
+   },
+   "preview": {
+    "baseline_top1": "volleyball",
+    "emulated_top1": "volleyball",
+    "emulated_top1_p": 0.26308420353134937
+   }
+  },
+  {
+   "id": "cls-coco_000000001000-cofda-f9-cs32-fused-fp8_tensor-native",
+   "task": "vision.classify",
+   "model": "resnet18",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 9,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000001000.jpg"
+   },
+   "title": "ResNet18 · COCO 1000 · CoFDA · F9 · CS32 · fused · FP8 E4M3 · 텐서 스케일",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 2위 (점수 13.091) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,13,25}, FP64",
+   "role": "차이 점수 2위 (13.1)",
+   "summary": {
+    "top1_same": true,
+    "top5_overlap": 3,
+    "kl": 0.07262147807727207
+   },
+   "preview": {
+    "baseline_top1": "volleyball",
+    "emulated_top1": "volleyball",
+    "emulated_top1_p": 0.08263243269986639
+   }
+  },
+  {
+   "id": "cls-coco_000000001000-cofda-f13-cs32-fused-fp8_tensor-native",
+   "task": "vision.classify",
+   "model": "resnet18",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 13,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000001000.jpg"
+   },
+   "title": "ResNet18 · COCO 1000 · CoFDA · F13 · CS32 · fused · FP8 E4M3 · 텐서 스케일 · preset Hopper FP8",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 2위 (점수 13.091) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,13,25}, FP64",
+   "role": "차이 점수 2위 (13.1)",
+   "summary": {
+    "top1_same": false,
+    "top5_overlap": 3,
+    "kl": 0.07143308344913564
+   },
+   "preview": {
+    "baseline_top1": "volleyball",
+    "emulated_top1": "swimming trunks",
+    "emulated_top1_p": 0.0570075928564355
+   }
+  },
+  {
+   "id": "cls-coco_000000001000-cofda-f25-cs32-fused-fp8_tensor-native",
+   "task": "vision.classify",
+   "model": "resnet18",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 25,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000001000.jpg"
+   },
+   "title": "ResNet18 · COCO 1000 · CoFDA · F25 · CS32 · fused · FP8 E4M3 · 텐서 스케일 · preset Blackwell FP8",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 2위 (점수 13.091) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,13,25}, FP64",
+   "role": "차이 점수 2위 (13.1)",
+   "summary": {
+    "top1_same": true,
+    "top5_overlap": 3,
+    "kl": 0.06512806088795284
+   },
+   "preview": {
+    "baseline_top1": "volleyball",
+    "emulated_top1": "volleyball",
+    "emulated_top1_p": 0.05623790850495295
+   }
+  },
+  {
+   "id": "cls-coco_000000001000-fp64-fp8_tensor-native",
+   "task": "vision.classify",
+   "model": "resnet18",
+   "mma": {
+    "algorithm": "fp64"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000001000.jpg"
+   },
+   "title": "ResNet18 · COCO 1000 · FP64 정확 누산 · FP8 E4M3 · 텐서 스케일 · preset FP64 정확 누산",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 2위 (점수 13.091) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,13,25}, FP64",
+   "role": "차이 점수 2위 (13.1)",
+   "summary": {
+    "top1_same": true,
+    "top5_overlap": 3,
+    "kl": 0.068209506588467
+   },
+   "preview": {
+    "baseline_top1": "volleyball",
+    "emulated_top1": "volleyball",
+    "emulated_top1_p": 0.05976437736407936
+   }
+  },
+  {
+   "id": "cls-coco_000000008021-cofda-f5-cs32-fused-fp8_tensor-native",
+   "task": "vision.classify",
+   "model": "resnet18",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 5,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000008021.jpg"
+   },
+   "title": "ResNet18 · COCO 8021 · CoFDA · F5 · CS32 · fused · FP8 E4M3 · 텐서 스케일",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 중앙값 (점수 3.168) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,13,25}, FP64",
+   "role": "차이 점수 중앙값 (3.2)",
+   "summary": {
+    "top1_same": false,
+    "top5_overlap": 1,
+    "kl": 3.9686957606843327
+   },
+   "preview": {
+    "baseline_top1": "television",
+    "emulated_top1": "marimba",
+    "emulated_top1_p": 0.648351788982863
+   }
+  },
+  {
+   "id": "cls-coco_000000008021-cofda-f7-cs32-fused-fp8_tensor-native",
+   "task": "vision.classify",
+   "model": "resnet18",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 7,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000008021.jpg"
+   },
+   "title": "ResNet18 · COCO 8021 · CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 · preset F7 fused 설계점",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 중앙값 (점수 3.168) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,13,25}, FP64",
+   "role": "차이 점수 중앙값 (3.2)",
+   "summary": {
+    "top1_same": false,
+    "top5_overlap": 4,
+    "kl": 1.0846740475857912
+   },
+   "preview": {
+    "baseline_top1": "television",
+    "emulated_top1": "marimba",
+    "emulated_top1_p": 0.4692644650789743
+   }
+  },
+  {
+   "id": "cls-coco_000000008021-cofda-f9-cs32-fused-fp8_tensor-native",
+   "task": "vision.classify",
+   "model": "resnet18",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 9,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000008021.jpg"
+   },
+   "title": "ResNet18 · COCO 8021 · CoFDA · F9 · CS32 · fused · FP8 E4M3 · 텐서 스케일",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 중앙값 (점수 3.168) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,13,25}, FP64",
+   "role": "차이 점수 중앙값 (3.2)",
+   "summary": {
+    "top1_same": false,
+    "top5_overlap": 4,
+    "kl": 0.329294328338759
+   },
+   "preview": {
+    "baseline_top1": "television",
+    "emulated_top1": "marimba",
+    "emulated_top1_p": 0.17405104951564154
+   }
+  },
+  {
+   "id": "cls-coco_000000008021-cofda-f13-cs32-fused-fp8_tensor-native",
+   "task": "vision.classify",
+   "model": "resnet18",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 13,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000008021.jpg"
+   },
+   "title": "ResNet18 · COCO 8021 · CoFDA · F13 · CS32 · fused · FP8 E4M3 · 텐서 스케일 · preset Hopper FP8",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 중앙값 (점수 3.168) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,13,25}, FP64",
+   "role": "차이 점수 중앙값 (3.2)",
+   "summary": {
+    "top1_same": true,
+    "top5_overlap": 5,
+    "kl": 0.1573118465548533
+   },
+   "preview": {
+    "baseline_top1": "television",
+    "emulated_top1": "television",
+    "emulated_top1_p": 0.13685524310250274
+   }
+  },
+  {
+   "id": "cls-coco_000000008021-cofda-f25-cs32-fused-fp8_tensor-native",
+   "task": "vision.classify",
+   "model": "resnet18",
+   "mma": {
+    "algorithm": "cofda",
+    "f_bits": 25,
+    "chunk_size": 32,
+    "c_mode": "fused",
+    "promote_interval": 0,
+    "norm_rounding": "rtz"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000008021.jpg"
+   },
+   "title": "ResNet18 · COCO 8021 · CoFDA · F25 · CS32 · fused · FP8 E4M3 · 텐서 스케일 · preset Blackwell FP8",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 중앙값 (점수 3.168) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,13,25}, FP64",
+   "role": "차이 점수 중앙값 (3.2)",
+   "summary": {
+    "top1_same": true,
+    "top5_overlap": 4,
+    "kl": 0.2184080115183087
+   },
+   "preview": {
+    "baseline_top1": "television",
+    "emulated_top1": "television",
+    "emulated_top1_p": 0.11657585888473103
+   }
+  },
+  {
+   "id": "cls-coco_000000008021-fp64-fp8_tensor-native",
+   "task": "vision.classify",
+   "model": "resnet18",
+   "mma": {
+    "algorithm": "fp64"
+   },
+   "format": "fp8_tensor",
+   "baseline": "native",
+   "input": {
+    "image": "coco_000000008021.jpg"
+   },
+   "title": "ResNet18 · COCO 8021 · FP64 정확 누산 · FP8 E4M3 · 텐서 스케일 · preset FP64 정확 누산",
+   "selection": "COCO val2017 에서 license id ∈ {4,5,7,8} 인 이미지를 image id 순으로 앞 24장 골라 YOLO11n 을 CoFDA · F7 · CS32 · fused · FP8 E4M3 · 텐서 스케일 로 돌리고, 차이 점수 = baseline_only + emulated_only + (1 − mean_iou) (짝이 없으면 1, 양쪽 모두 상자가 없으면 0) 가 가장 큰 2장과 하위 중앙값 1장을 골랐다 (동점은 image id 가 작은 쪽). 전체 점수: demo_scores.json · 이 이미지: 차이 점수 중앙값 (점수 3.168) · 설계점 스윕: CoFDA CS32 fused F ∈ {5,7,9,13,25}, FP64",
+   "role": "차이 점수 중앙값 (3.2)",
+   "summary": {
+    "top1_same": true,
+    "top5_overlap": 4,
+    "kl": 0.2184080115183087
+   },
+   "preview": {
+    "baseline_top1": "television",
+    "emulated_top1": "television",
+    "emulated_top1_p": 0.11657585888473103
+   }
+  }
+ ]
+}

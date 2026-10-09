@@ -1,0 +1,8 @@
+# NADPE MMA-Emu oracle -> tests/data/nadpe golden vectors (FP8 + NVFP4/MXFP4)
+Upstream: NADPE artifact `micro26-ae` (Apache-2.0), `csrc/quantization/mma_emu/`, compiled **unmodified** and not vendored here; the zip has no git SHA, so per-file sha256 values are in `tests/data/nadpe/manifest.json`.
+Built on geneva A100 (sm_80): torch 2.8.0+cu128, nvcc 12.9 (`/usr/local/cuda`), ninja from `python -m pip install --target $WORK/_tools ninja`.
+1. Copy `mma_emu/` plus these files into `$WORK`, then run `bash run_build.sh fp8` and `fp4` (CPU only, about 5 min each). The nvcc flags are the torch JIT defaults plus `-U__CUDA_NO_{HALF,HALF2}_OPERATORS__ -U__CUDA_NO_{HALF,BFLOAT16}_CONVERSIONS__ -DENABLE_FP8`, which is vLLM's CUDA>=12 set.
+2. FP8: run `gpu_cap.sh run <label> -- bash run_gen.sh gen <run_dir>`, then again with `verify`. `gen` repeats the whole sweep twice and requires identical bits; `verify` re-runs the saved files in a fresh process.
+3. FP4: same flow with `run_gen_fp4.sh gen|verify <run_dir>`. Files store LOGICAL codes; `gen_vectors_fp4.kernel_inputs` rebuilds the kernel inputs: nibble packing, N padded to 32, and the vLLM `swizzle_blockscale` of the scales (see `manifest.json` `fp4.scale_swizzle`).
+4. `check_ref.py` / `check_ref_fp4.py [--mutations]` are independent numpy models and must match all cases. `discrim.py` measures what the FP8 vectors can detect. `smoke_fp4.py` checks that the FP4 ops launch on sm_80.
+Each schema is documented in its generator docstring. `out_bits` holds the bf16 bits as int16. FP8 computes fp32 `scale_a*(scale_b*acc)`, NVFP4 `acc*alpha`, and MXFP4 uses no alpha; each result is then rounded to bf16. NADPE treats E8M0 code 0 as a zero scale.

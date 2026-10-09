@@ -1,0 +1,12 @@
+# fp32 model, first 2 WikiText-2 windows: cache mode streamed one token at a time (pair of
+# qwen3_0.6b_kv_check_fp32_full.yaml).
+model: Qwen/Qwen3-0.6B
+dtype: float32
+device: cuda
+seed: 42
+native_baseline: true
+tasks:
+  ppl: {dataset: wikitext2, seqlen: 2048, max_windows: 2, streaming: true}
+recipes:
+  - kivi2_kv
+output_dir: ../../runs/e2e/qwen3_0.6b_kv_check_fp32_stream

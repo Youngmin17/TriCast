@@ -1,0 +1,15 @@
+# Qwen3-0.6B, full WikiText-2 test perplexity: the FP8 E4M3 per-tensor W8A8 operands of the
+# accumulator study with exact (fp64) accumulation, so each accumulator's cost can be read against
+# the cost of FP8 quantization alone.
+model: Qwen/Qwen3-0.6B
+dtype: bfloat16
+device: cuda
+seed: 42
+native_baseline: true
+tasks:
+  ppl: {dataset: wikitext2, seqlen: 2048}
+recipes:
+  - name: fp8_w8a8_fp64acc
+    description: FP8 E4M3 per-tensor weights and activations, fp64 FMA chain with one final rounding.
+    defaults: {weight: fp8_tensor, activation: fp8_tensor, mma: {preset: fp64, out_format: bf16}}
+output_dir: ../../runs/e2e/qwen3_0.6b_ppl_c

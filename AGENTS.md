@@ -8,11 +8,12 @@
 
 ## 1. 제품 맥락
 
-양자화 연구자와 NPU 연산기 개발자가 수 형식·양자화·MMA 누산 알고리즘·희소성·이상치 보존을 레시피로 정의하면,
-TriCast 가 그 산술을 CUDA core 에서 **비트 단위로 정확하게** 에뮬레이트해 Hugging Face 모델 품질(PPL·lm-eval)과
-누산기 오차를 근거와 함께 돌려준다 — 조합이 바뀔 때마다 커널을 다시 쓰지 않도록 (docs/research/interviews.md
-페인 P1·P2, 로그 01, 02, 03, 07). 핵심 가치는 "믿을 수 있는 산술 + 빠른 LLM 수준 평가". 이 저장소는
-AI캡스톤디자인 과제 저장소이기도 하다.
+v2.0 (2026-10-13): 칩에 올릴 모델의 **레이어마다 양자화 방법을 골라** (Quantizer 격자 · YAML · Python) 레시피 한 장으로
+적용하고, 레이어별 오차와 모델 품질(PPL · lm-eval 과제별)을 실행 환경 기록과 함께 돌려준다. Auto-tune 이 크기 예산 안에서
+층별 방법을 고른다 — 원인을 모른 채 레이어 배정을 손으로 전수 탐색하고, 원하던 조합의 일부만 평가하던 비용을 줄이려고
+(docs/research/interviews.md 페인 P3 · P9 · P2, 로그 07, 09, 10, 13). 칩의 수 형식 · 반올림 · MMA 누산 규칙은 같은 레시피의
+선택 축으로 CUDA core 에서 **비트 단위로 정확하게** 에뮬레이트한다 (P1, 로그 01, 02, 03). 핵심 가치는 "고르기 쉬운 레시피 +
+믿을 수 있는 평가". 이 저장소는 AI캡스톤디자인 과제 저장소이기도 하다.
 
 ## 2. 도메인 용어집 (어휘 발췌 — 인터뷰로 역추적되는 구조는 `docs/ontology.yaml`, 나머지는 코드 어휘)
 
@@ -34,6 +35,14 @@ AI캡스톤디자인 과제 저장소이기도 하다.
 - EmulationRequest: 자연어 요청의 구조화 결과, `assumptions` (기본값으로 채운 항목)
 - Reference (코드 `tricast.reference`, 비교 기준 `native` / `same_quant_fp64`), ErrorReport (코드
   `tricast.analysis.layer_report`: `mma_ulp`, 레이어별 오차)
+- Quantizer (온톨로지 `QuantMethod` · `SearchSpace` · `LayerSensitivity`): 방법 카탈로그 `app/quantizer_recipe.METHODS`
+  (`bf16` = 그 층 `skip`, 보정이 필요한 방법은 `CALIBRATED`), 격자 = 블록 × 레이어 종류 7 (`q/k/v/o/gate/up/down`) — 규칙은
+  칸 → 블록 → 종류 순서의 `overrides` (첫 일치), 칸에는 `scheme` 을 가진 완전한 명세만 (깊은 병합 누수 방지).
+  NVINT4 = `{scheme: nvfp4, format: int4}`. `mma_input: dequant` = BF16 로 되돌린 피연산자를 레시피 기본 누산(cofda F23)으로 곱함
+  (fake-quant, 칩 산술 아님). Quantizer 의 KV 는 `mode: fakequant`. 크기 = `app/export_quantizer_demo.WEIGHT_BITS` 로 센 Linear
+  가중치 평균 비트 (계산값). EvalRun 의 lm-eval 은 과제별 점수 · 표본 수 (`tasks`)
+- Auto-tune (`app/autotune.py`): `table` (층 하나만 양자화한 모델의 KL, 층 × 방법) → `solve` (크기 예산 안 다중 선택 배낭, 정확 DP)
+  → Quantizer 격자 · 레시피. 목적 함수는 모델 전체 KL — 레이어 국소 SQNR 은 쓰지 않는다 (docs/spikes)
 - 코드 객체가 없는 도메인 어휘: `Engineer`, `Chip`, `Symptom`, `RootCause` (`category`: accumulator_width /
   rounding / special_values / scale_granularity / …) — 정의는 `docs/ontology.yaml`
 
@@ -88,7 +97,9 @@ HardwarePreset 수치는 `provenance` 에 적힌 출처까지만 믿는다. Eval
 - 설치: `pip install -e ".[triton,eval,dev]"`. microxcaling 오라클 테스트는 클론을 `PYTHONPATH` 에 추가.
 
 자주 쓰는 명령
-- 테스트: `pytest -q` / GPU: `pytest tests/gpu -q` / 린트: `ruff check .` — 한 번에: `make check` (린트 + CPU 테스트)
+- 테스트: `pytest -q` / GPU: `pytest tests/gpu -q` / 린트: `ruff check .` — 한 번에: `make check` (린트 + CPU 테스트).
+  다른 머신에서 전체 CPU 스위트를 돌릴 때는 `MKL_CBWR=COMPATIBLE` 와 `PYTHONPATH=src` 를 준다 (없으면 정확 일치 비교
+  테스트와 자식 프로세스 테스트가 환경 탓으로 실패)
 - 골든 케이스: `pytest tests/test_golden.py tests/test_compare_golden.py -q -rs` (CPU 에서 GPU 전용 1건만 skip 이 정상) ·
   웹 앱: `make test-app`
   (`pip install -e ".[app]"`)
@@ -99,6 +110,12 @@ HardwarePreset 수치는 `provenance` 에 적힌 출처까지만 믿는다. Eval
 - 보정이 필요한 레시피 (GPTQ·AWQ·SmoothQuant·정적 observer): `--calib-dataset/--calib-samples/--calib-seqlen/--calib-seed`
 - 오차 분석: `tricast report --model … --recipe …` (레이어별 MSE·SQNR·코사인, 모델 logits KL)
 - 데모: `python examples/demo_qwen3.py --quick`
+- Quantizer: `python -m app.quantizer_recipe --preset qd_mixed` · `--from-json grid.json` (화면과 바이트 동일한 YAML) ·
+  레이어 지도 번들 `python -m app.export_layers` · 기록된 결과 번들 `python -m app.export_quantizer_demo` ·
+  브라우저 검사 `scripts/quantizer/` (헤드리스 Chrome, `pytest` 밖)
+- Auto-tune: `python -m app.autotune table --model Qwen/Qwen3-0.6B --revision … --out table.json` →
+  `solve --table table.json --budget-bits 9/2 --name … --out DIR` → `measure` / `predict` (검증) — 판정 분석은
+  `scripts/quantizer/autotune_c2.py`
 
 디렉터리
 - `src/tricast/` — 명세(`formats`, `rounding`, `quant/spec`, `mma/spec`), 레퍼런스(`reference/`), 커널
@@ -106,8 +123,11 @@ HardwarePreset 수치는 `provenance` 에 적힌 출처까지만 믿는다. Eval
 - `src/tricast/recipes/` — 이름으로 부르는 기본 레시피 (패키지에 포함, `tricast.recipe.list_recipes()`),
   `configs/sweeps/` — 스윕
 - `tests/` (CPU), `tests/gpu/` (Triton), `tests/data/nadpe/` (독립 구현 골든 벡터), `tests/harness/` (골든 케이스)
+- `app/` — 웹 (Studio · Quantizer · 레이어 지도), 생성기 `quantizer_recipe.py`, Auto-tune `autotune.py`, 테스트 `app/tests/`
+  (`make test-app`), 브라우저 검사 `scripts/quantizer/`
 - `docs/` — `PROBLEM.md` (왜), `SPEC.md` (무엇 · AC), `ontology.yaml` (도메인 구조, 분석은 `ontology.md`),
-  `research/interviews.md` (인터뷰 로그), `prompts/` (위임·검증 기록)
+  `research/interviews.md` (인터뷰 로그), `prompts/` (위임·검증 기록), `spikes/` (실험 전 판정 규칙 + 결과),
+  `evidence/` (실행 기록 · 해시)
 
 진행 상태
 - 구현 진행 상태는 여기에 적지 않는다 — `pytest` 결과와 `support_matrix.yaml` 이 원천이다.

@@ -186,6 +186,31 @@ Metrics (작업별, 정의는 `app/metrics.py`)
 {top1_same: boolean, top5_overlap: number, kl: number, baseline_top1_p: number, emulated_top1_p: number}
 ```
 
+## Quantizer · 레이어 지도 · Auto-tune (v2.0)
+
+| 화면 · 도구 | 무엇을 하나 | 코드 · 데이터 |
+|---|---|---|
+| `quantizer.html` | 블록 28 × 레이어 종류 7 격자에서 층마다 방법(9종 + BF16 유지)을 칠하고, 방법별 옵션 · KV · 보정을 정해 레시피 YAML 을 만든다. 기록된 결과는 레시피 해시가 같을 때만 프리셋 옆에 붙는다 | `web/js/quantizer.js` (생성기의 JS 포트), `quantizer_recipe.py` (기준 구현), `web/demo/quantizer/presets.json` (`export_quantizer_demo.py`) |
+| `layers.html` | `tricast report` 결과를 방법 × Linear 196 히트맵으로 (출력 · 가중치 · 활성 SQNR, MSE, 코사인) | `export_layers.py` → `web/demo/layers/` |
+| Auto-tune (CLI) | 층 하나만 양자화한 모델의 KL 표 → 크기 예산 안 배정 → 같은 격자 · 레시피 | `autotune.py` (`table` · `solve` · `predict` · `measure` · `random`) |
+
+모델은 지금 Qwen3-0.6B 하나다 (`quantizer_recipe.BLOCKS = 28`). 생성기가 두 벌(Python · JS)이라 바이트 동치를
+`scripts/quantizer/qz_check.mjs` 가 헤드리스 Chrome 으로 검사한다.
+
+`POST /api/quantizer/jobs` (라이브 CUDA 서버에서만 — 데모 모드 · CPU 라이브는 `409 live_mode_required` / `cuda_required`)
+```ts
+// 요청
+{name: string,            // [A-Za-z0-9][A-Za-z0-9._-]{0,63}
+ yaml: string,            // 레시피 YAML (≤ 64 KiB, tricast 스키마로 검증)
+ tasks: ("ppl" | "report" | "arc_easy" | "arc_challenge" | "piqa" | "winogrande" | "hellaswag")[],
+ limit?: number,          // lm-eval 과제당 문항 수, 최대 300 (기본 300)
+ calibration?: {dataset?, samples?, seqlen?, seed?, sequential?}}   // CLI --calib-* 와 같은 덮어쓰기, samples ≤ 512 · seqlen ≤ 4096
+// 응답: 202 {id, status} — 같은 요청이 이미 있으면 200 {id, status, cached: true}
+```
+`GET /api/quantizer/jobs/{id}` → `{id, status, stage, progress, request, recipe, env, evidence, error, results}`
+(`results` = PPL · 레이어 리포트 · lm-eval 과제별). 거부 경로는 CPU 테스트(`app/tests/test_quantizer_server.py`)로만
+검증했고, GPU 서버에서 끝까지 도는지는 아직 확인하지 않았다 (`docs/SPEC.md` AC20 · §10 R7).
+
 ## 데모 묶음 (`app/web/demo/`)
 
 - `catalog.json` — `GET /api/catalog` 와 같은 형식 (`mode: "demo"`)

@@ -20,10 +20,15 @@
 
 ## TriCast 한눈에
 
-칩(NPU·GPU 세대)의 **수 형식 · 양자화 · MMA 누산 규칙**을 레시피(YAML) 한 장으로 적으면, TriCast 가 그 산술을
-GPU 의 CUDA core 에서 **비트 단위로 똑같이** 에뮬레이트해 Hugging Face 모델을 돌리고, 품질(PPL · lm-eval · 검출
-AP)과 누산 오차(`mma_ulp`)를 실행 환경 기록(git SHA · 모델 revision · 레시피 해시)과 함께 돌려준다. 누산 모델
-(CoFDA · GDFS)은 NADPE 논문(MICRO'26)의 정의를 따르고, 레퍼런스는 그 독립 구현의 골든 벡터와 대조한다.
+**v2.0 — Quantizer.** 레이어마다 양자화 방법(GPTQ · AWQ · SmoothQuant · MXFP4/8 · NVFP4 · NVINT4 · INT8 · BFP)을
+웹 격자에서 클릭하거나 YAML 로 적으면, TriCast 가 레시피 한 장으로 모델에 적용하고 레이어별 오차(MSE · SQNR · 코사인)와
+모델 품질(PPL · lm-eval 과제별)을 실행 환경 기록(git SHA · 모델 revision · 레시피 해시)과 함께 돌려준다. **Auto-tune v1**
+은 크기 예산(가중치 평균 비트)을 주면 층마다 방법을 골라 같은 레시피를 만든다 (Qwen3-0.6B, 보정 없는 방법 7가지 —
+[스파이크](docs/spikes/2026-10-13_autotune_mckp.md)).
+
+칩(NPU·GPU 세대)의 수 형식 · 반올림 · MMA 누산 규칙은 같은 레시피의 선택 축이다 — TriCast 가 그 산술을 GPU 의 CUDA
+core 에서 **비트 단위로 똑같이** 에뮬레이트한다. 누산 모델(CoFDA · GDFS)은 NADPE 논문(MICRO'26)의 정의를 따르고,
+레퍼런스는 그 독립 구현의 골든 벡터와 대조한다. 위 슬라이드는 v1(칩 산술 중심) 발표 자료다.
 
 ## 설치와 빠른 시작
 
@@ -34,6 +39,9 @@ tricast cast --format fp8_e4m3 --rounding rne 464 465     # → 448 448 (포화)
 tricast recipe-check hopper_fp8_w8a8                      # 스키마 검증 + 레시피 SHA-256
 tricast ppl --model Qwen/Qwen3-0.6B --recipe hopper_fp8_w8a8
 python -m app.server --demo             # TriCast Studio — GPU 없이 기록된 실행을 탐색 (fastapi, uvicorn)
+                                        #   Quantizer 격자: /quantizer.html · 레이어 지도: /layers.html
+python -m app.quantizer_recipe --preset qd_mixed           # 화면과 바이트 동일한 레시피 YAML
+python -m app.autotune solve --table table.json --budget-bits 9/2 --name auto_4.50 --out out/   # Auto-tune
 make check                              # ruff + CPU 테스트
 ```
 
@@ -42,8 +50,9 @@ make check                              # ruff + CPU 테스트
 | 무엇 | 경로 |
 |---|---|
 | 왜 만드는가 — 문제 정의서 | [`docs/PROBLEM.md`](docs/PROBLEM.md) |
-| 무엇을 만드는가 — 제품 스펙과 수용 기준 (AC1–AC14) | [`docs/SPEC.md`](docs/SPEC.md) |
-| 기술 타당성 스파이크 — 비트 정확 에뮬레이션과 속도 | [`docs/spikes/cuda_core_bit_exact_emulation.md`](docs/spikes/cuda_core_bit_exact_emulation.md) |
+| 무엇을 만드는가 — 제품 스펙과 수용 기준 (AC1–AC21) | [`docs/SPEC.md`](docs/SPEC.md) |
+| 기술 타당성 스파이크 — 비트 정확 에뮬레이션과 속도 · 레이어 국소 지표 · Auto-tune | [`cuda_core_bit_exact_emulation.md`](docs/spikes/cuda_core_bit_exact_emulation.md) · [`2026-10-13_layer_sqnr_proxy.md`](docs/spikes/2026-10-13_layer_sqnr_proxy.md) · [`2026-10-13_autotune_mckp.md`](docs/spikes/2026-10-13_autotune_mckp.md) |
+| Quantizer 측정 기록 (실행 · 해시) | [`docs/evidence/2026-10-13_quantizer_runs.md`](docs/evidence/2026-10-13_quantizer_runs.md) |
 | 인터뷰 · 관찰 · Job Story | [`docs/research/interviews.md`](docs/research/interviews.md) |
 | 도메인 온톨로지 (정본 YAML / 분석) | [`docs/ontology.yaml`](docs/ontology.yaml) · [`docs/ontology.md`](docs/ontology.md) |
 | 코딩 에이전트 규칙 · 용어집 | [`AGENTS.md`](AGENTS.md) (Claude Code 는 [`CLAUDE.md`](CLAUDE.md) 가 import) |
@@ -52,7 +61,7 @@ make check                              # ruff + CPU 테스트
 | 위임 프롬프트 원본 · 검증 루프 기록 | [`docs/prompts/delegation_compare.md`](docs/prompts/delegation_compare.md) (AC13, 지침 순서 한 사이클) · [`docs/prompts/delegation_examples.md`](docs/prompts/delegation_examples.md) · [`docs/prompts/wave1/`](docs/prompts/wave1/) |
 | 골든 하니스 결함 주입 검사 · 용어집 작동 확인 | [`docs/prompts/delegation_golden_harness.md`](docs/prompts/delegation_golden_harness.md) · [`docs/prompts/glossary_check.md`](docs/prompts/glossary_check.md) |
 | RAG 설정 · evals | [`config/rag.yaml`](config/rag.yaml) · [`evals/`](evals/README.md) |
-| 웹 앱 (TriCast Studio) | [`app/README.md`](app/README.md) |
+| 웹 앱 (TriCast Studio · Quantizer · 레이어 지도) | [`app/README.md`](app/README.md) |
 | 구현 · 검증 상태의 원천 | [`support_matrix.yaml`](support_matrix.yaml) |
 
 ## 검증 상태 (`support_matrix.yaml` 기록)

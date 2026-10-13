@@ -1,0 +1,156 @@
+{
+ "backend": "auto",
+ "calibration": null,
+ "defaults": {
+  "activation": {
+   "block": [
+    0,
+    0
+   ],
+   "dequant_format": {
+    "bias": 127,
+    "ebits": 8,
+    "kind": "float",
+    "mbits": 7,
+    "name": "bf16",
+    "signed": true,
+    "special": "ieee",
+    "subnormals": true
+   },
+   "format": {
+    "bias": 1,
+    "ebits": 2,
+    "kind": "float",
+    "mbits": 1,
+    "name": "fp4_e2m1",
+    "signed": true,
+    "special": "none",
+    "subnormals": true
+   },
+   "granularity": "group",
+   "group_size": 32,
+   "mma_input": "dequant",
+   "observer": null,
+   "rounding": "rne",
+   "saturate": true,
+   "scale": {
+    "format": {
+     "bias": 127,
+     "ebits": 8,
+     "kind": "pow2",
+     "name": "e8m0"
+    },
+    "method": "pow2_floor",
+    "mse_grid": 20,
+    "percentile": 99.99,
+    "rounding": "rne",
+    "search": [],
+    "two_level": false
+   },
+   "sr_bits": 32,
+   "zero_point": "none"
+  },
+  "mma": {
+   "algorithm": "cofda",
+   "c_mode": "fused",
+   "chunk_size": 32,
+   "f2_bits": 23,
+   "f_bits": 23,
+   "g_bits": 32,
+   "group_size": 16,
+   "k_tile": 64,
+   "name": "",
+   "norm_rounding": "rtz",
+   "out_format": {
+    "bias": 127,
+    "ebits": 8,
+    "kind": "float",
+    "mbits": 7,
+    "name": "bf16",
+    "signed": true,
+    "special": "ieee",
+    "subnormals": true
+   },
+   "promote_interval": 0,
+   "provenance": "",
+   "scale_apply": "auto"
+  },
+  "transform": {
+   "alpha": 0.5,
+   "block": 0,
+   "grid": 20,
+   "kind": "none",
+   "seed": 0,
+   "share_inputs": true
+  },
+  "weight": {
+   "block": [
+    0,
+    0
+   ],
+   "dequant_format": {
+    "bias": 127,
+    "ebits": 8,
+    "kind": "float",
+    "mbits": 7,
+    "name": "bf16",
+    "signed": true,
+    "special": "ieee",
+    "subnormals": true
+   },
+   "format": {
+    "bias": 1,
+    "ebits": 2,
+    "kind": "float",
+    "mbits": 1,
+    "name": "fp4_e2m1",
+    "signed": true,
+    "special": "none",
+    "subnormals": true
+   },
+   "granularity": "group",
+   "group_size": 32,
+   "mma_input": "dequant",
+   "observer": null,
+   "rounding": "rne",
+   "saturate": true,
+   "scale": {
+    "format": {
+     "bias": 127,
+     "ebits": 8,
+     "kind": "pow2",
+     "name": "e8m0"
+    },
+    "method": "pow2_floor",
+    "mse_grid": 20,
+    "percentile": 99.99,
+    "rounding": "rne",
+    "search": [],
+    "two_level": false
+   },
+   "sr_bits": 32,
+   "zero_point": "none"
+  },
+  "weight_algo": {
+   "act_order": false,
+   "block_size": 128,
+   "damp": 0.01,
+   "kind": "rtn"
+  }
+ },
+ "description": "Built with the Tri-Cast Quantizer demo (one method per Linear layer).",
+ "exclude": [
+  "lm_head"
+ ],
+ "include": [
+  "*"
+ ],
+ "kv": null,
+ "name": "qd_mxfp4_ends_bf16",
+ "overrides": [
+  {
+   "layers": "0,27",
+   "skip": true
+  }
+ ]
+}

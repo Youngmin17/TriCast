@@ -1,0 +1,47 @@
+{
+ "env": {
+  "calibration_config": null,
+  "cuda": "12.8",
+  "dataset_fingerprints": {
+   "ppl": "a46124b21ac53738"
+  },
+  "device": "cuda",
+  "dtype": "bfloat16",
+  "git_dirty": false,
+  "git_sha": "ab489f17cdc01cbaa8074613ca30c89204ca6a9e",
+  "gpu_names": [
+   "NVIDIA A100-SXM4-80GB"
+  ],
+  "model_id": "Qwen/Qwen3-0.6B",
+  "model_kind": "hf",
+  "model_sha": "c1899de289a04d12100db370d81485cdf75e47ca",
+  "recipe_hash": "native",
+  "seed": 42,
+  "src_sha256": null,
+  "utc": "2026-10-13T05:10:51.112196+00:00",
+  "versions": {
+   "datasets": "4.8.5",
+   "lm_eval": "0.4.13",
+   "python": "3.12.14",
+   "torch": "2.8.0+cu128",
+   "transformers": "4.55.2",
+   "triton": "3.4.0"
+  }
+ },
+ "metrics": {
+  "ppl": {
+   "dataset_fingerprint": "a46124b21ac53738",
+   "forward_mode": "full_window",
+   "n_tokens": 298862,
+   "n_windows": 146,
+   "nll": 3.0429092713249264,
+   "ppl": 20.966150815155867
+  }
+ },
+ "recipe": {
+  "name": "native"
+ },
+ "recipe_hash": "native",
+ "status": "complete",
+ "wall_time_s": 17.092450043652207
+}

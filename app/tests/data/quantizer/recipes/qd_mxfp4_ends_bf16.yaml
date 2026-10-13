@@ -1,0 +1,15 @@
+name: qd_mxfp4_ends_bf16
+description: "Built with the Tri-Cast Quantizer demo (one method per Linear layer)."
+defaults:
+  weight:
+    scheme: mxfp4
+    mma_input: dequant
+  activation:
+    scheme: mxfp4
+    mma_input: dequant
+  transform: none
+  weight_algo: rtn
+overrides:
+  - layers: "0,27"
+    skip: true
+exclude: [lm_head]

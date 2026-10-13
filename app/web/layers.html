@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>레이어 지도 · TriCast Studio</title>
+<link rel="icon" type="image/png" href="assets/tricast-mark-64.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="layers.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <img class="brand-mark" src="assets/tricast-mark.png" alt="" width="32" height="32">
+    <span class="wordmark">TriCast Studio</span>
+    <h1 class="lm-title">레이어 지도</h1>
+    <span class="tagline">양자화 방법마다 Linear 레이어 하나하나의 오차를 나란히 봅니다</span>
+  </div>
+  <nav class="status" aria-label="페이지">
+    <a class="pill lm-back" href="quantizer.html">Quantizer</a>
+    <a class="pill lm-back" href="index.html">Studio로 돌아가기</a>
+  </nav>
+</header>
+<main class="lm" id="map"></main>
+<script>
+  if (location.protocol === "file:") {
+    document.getElementById("map").textContent = "이 페이지는 파일을 직접 열면 동작하지 않습니다. "
+      + "python -m app.server --demo 또는 python -m http.server -d app/web 로 띄운 주소에서 여세요.";
+  }
+</script>
+<script type="module" src="js/layers.js"></script>
+</body>
+</html>

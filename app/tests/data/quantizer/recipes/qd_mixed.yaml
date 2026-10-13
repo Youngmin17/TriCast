@@ -1,0 +1,36 @@
+name: qd_mixed
+description: "Built with the Tri-Cast Quantizer demo (one method per Linear layer)."
+defaults:
+  weight:
+    scheme: nvfp4
+    mma_input: dequant
+  activation:
+    scheme: nvfp4
+    mma_input: dequant
+  transform:
+    kind: awq
+    share_inputs: true
+  weight_algo: rtn
+overrides:
+  - layers: "0,27"
+    skip: true
+  - match: "*.self_attn.o_proj"
+    weight:
+      scheme: mxfp8_e4m3
+      mma_input: dequant
+    activation:
+      scheme: mxfp8_e4m3
+      mma_input: dequant
+    transform: none
+    weight_algo: rtn
+  - match: "*.mlp.down_proj"
+    weight: int4_g128_zp
+    activation: null
+    transform: none
+    weight_algo: gptq
+kv:
+  preset: kivi2
+  mode: fakequant
+exclude: [lm_head]
+calibration:
+  seed: 42

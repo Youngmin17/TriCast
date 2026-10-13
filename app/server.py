@@ -7,6 +7,9 @@ The API contract is app/README.md. Two modes answer it:
 - live builds the catalog with app.catalog and runs comparisons on ``--device`` through the sequential
   job queue in app/jobs.py. The compute modules are imported only in this mode.
 
+``/api/quantizer/jobs`` runs one Quantizer recipe (app/web/quantizer.html) through the same queue
+(app/runners/quantizer.py); it needs live mode on CUDA, and demo mode answers it with how to start one.
+
 Local tool: there is no authentication and no CORS. The server binds 127.0.0.1 by default; anyone who
 can reach the port can queue GPU work and read every run, so do not expose it on a shared network.
 """
@@ -62,6 +65,12 @@ _DATA_URL = re.compile(r"data:image/(?:jpeg|png);base64,(.+)")
 _NVIDIA_SMI = ("nvidia-smi", "--query-gpu=index,name,memory.total,memory.used,utilization.gpu",
                "--format=csv,noheader,nounits")
 _VISION_PACKAGES = {"vision.detect": "ultralytics", "vision.classify": "torchvision"}
+QUANTIZER_TASKS = ("ppl", "report", "arc_easy", "arc_challenge", "piqa", "winogrande", "hellaswag")
+MAX_QUANTIZER_LIMIT = 300  # documents per lm-eval task; the recorded demo runs use 300
+MAX_RECIPE_BYTES = 64 * 1024
+_RECIPE_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}")
+_LIVE_GPU_ONLY = ("서버 GPU 실행은 라이브 모드의 CUDA 서버에서만 됩니다. GPU 노드에서 "
+                  "python -m app.server --device cuda 로 서버를 띄우고 그 주소에서 Quantizer 를 여세요.")
 
 
 class RunInput(BaseModel):
@@ -96,7 +105,20 @@ class RunArgs:
     checkpoint: Path | None = None
 
 
+class QuantizerJobRequest(BaseModel):
+    """``POST /api/quantizer/jobs`` body: the page's recipe YAML and what to measure with it. ``calibration``
+    is what tricast's ``--calib-*`` / ``--sequential`` flags set (dataset, samples, seqlen, seed, sequential),
+    merged over the recipe's own ``calibration`` block."""
+
+    name: str
+    yaml: str
+    tasks: list[str]
+    limit: int | None = None
+    calibration: dict | None = None
+
+
 Runner = Callable[[RunArgs, Progress], dict]
+QuantizerRunner = Callable[..., dict]  # (app.runners.quantizer.QuantizerArgs, Progress) -> result
 
 
 class ApiError(Exception):
@@ -145,7 +167,8 @@ class LiveBackend:
     ``checkpoints`` maps a vision model id to the checkpoint given on the command line."""
 
     def __init__(self, device: str, demo_dir: Path, runner: Runner, runs_dir: Path,
-                 checkpoints: dict[str, Path], identity: dict | None = None) -> None:
+                 checkpoints: dict[str, Path], identity: dict | None = None,
+                 quantizer_runner: QuantizerRunner | None = None) -> None:
         self._compute = importlib.import_module("app.catalog")
         # Part of every run's cache key: a result from another device or other code is never reused.
         self._identity = identity or {"device": device}
@@ -155,6 +178,8 @@ class LiveBackend:
         self._uploads.mkdir(parents=True, exist_ok=True)
         self._demo_media = demo_dir / "media"
         self._runner = runner
+        self._quantizer_runner = quantizer_runner or run_quantizer_live
+        self._runs_dir = runs_dir
         self._checkpoints = checkpoints
         self._jobs = JobQueue(runs_dir)
         self._probe_lock = threading.Lock()
@@ -170,7 +195,7 @@ class LiveBackend:
         return {"mode": "live", "server": {**probe, "queue": self._jobs.counts()}}
 
     def list_runs(self) -> list[dict]:
-        return self._jobs.summaries()
+        return [run for run in self._jobs.summaries() if run.get("kind") != "quantizer"]
 
     def get_run(self, run_id: str) -> dict:
         record = self._jobs.get(run_id)
@@ -208,6 +233,38 @@ class LiveBackend:
         if status == "done":
             return JSONResponse({"id": job_id, "cached": True})
         return JSONResponse({"id": job_id}, status_code=202)
+
+    def create_quantizer_job(self, body: QuantizerJobRequest) -> JSONResponse:
+        """202 with a new or unfinished job's id; 200 and ``cached`` when the same request finished."""
+        from .runners.quantizer import QuantizerArgs
+
+        if self._device != "cuda":
+            raise ApiError(409, "cuda_required", _LIVE_GPU_ONLY)
+        if _RECIPE_NAME.fullmatch(body.name) is None:
+            raise _bad("레시피 이름은 영문·숫자로 시작하고 영문·숫자·_ - . 만 쓸 수 있습니다 (64자 이하): "
+                       f"{body.name!r}")
+        tasks = _quantizer_tasks(body.tasks)
+        limit = _quantizer_limit(body.limit, tasks)
+        calibration = _quantizer_calibration(body.calibration)
+        recipe, sha = _quantizer_recipe(body.yaml, body.name, calibration)
+        request = {"kind": "quantizer", "name": body.name, "recipe_sha256": sha, "tasks": tasks,
+                   "limit": limit, "calibration": calibration or None}
+        fields = {"request": request, "server": self._identity, "mma_label": None,
+                  "recipe": {"name": body.name, "sha256": sha, "yaml": body.yaml}}
+        out_dir = self._runs_dir / "quantizer" / f"{body.name}-{sha[:12]}"
+        args = QuantizerArgs(name=body.name, recipe=recipe, tasks=tuple(tasks), limit=limit,
+                             device=self._device, out_dir=out_dir, calibration=calibration or None)
+        job_id, status = self._jobs.submit(fields, partial(self._quantizer_runner, args))
+        if status == "done":
+            return JSONResponse({"id": job_id, "status": status, "cached": True})
+        return JSONResponse({"id": job_id, "status": status}, status_code=202)
+
+    def get_quantizer_job(self, job_id: str) -> dict:
+        record = self._jobs.get(job_id)
+        if record is None or (record.get("request") or {}).get("kind") != "quantizer":
+            raise ApiError(404, "not_found", f"Quantizer 실행을 찾을 수 없습니다: {job_id}")
+        keys = ("id", "status", "stage", "progress", "request", "recipe", "env", "evidence", "error")
+        return {key: record.get(key) for key in keys} | {"results": record.get("metrics")}
 
     def _check_selection(self, body: RunRequest) -> None:
         for value, items, what in ((body.task, "tasks", "작업"), (body.format, "formats", "형식"),
@@ -256,6 +313,107 @@ class LiveBackend:
         if not any(task in model["tasks"] and model["id"] in cached for model in self.catalog["models"]):
             return False
         return self._device == "cuda" if task.startswith("llm.") else _importable(_VISION_PACKAGES[task])
+
+
+def _quantizer_tasks(values: list[str]) -> list[str]:
+    unknown = [value for value in values if value not in QUANTIZER_TASKS]
+    if unknown or not values:
+        problem = (f"알 수 없는 작업입니다: {', '.join(unknown)}. " if unknown
+                   else "실행할 작업을 하나 이상 고르세요. ")
+        raise _bad(f"{problem}고를 수 있는 작업: {', '.join(QUANTIZER_TASKS)}")
+    return [task for task in QUANTIZER_TASKS if task in values]
+
+
+def _quantizer_limit(limit: int | None, tasks: list[str]) -> int | None:
+    """Documents per lm-eval task (default and cap MAX_QUANTIZER_LIMIT); None when no lm-eval task runs."""
+    if not set(tasks) - {"ppl", "report"}:
+        return None
+    if limit is None:
+        return MAX_QUANTIZER_LIMIT
+    if not 1 <= limit <= MAX_QUANTIZER_LIMIT:
+        raise _bad(f"limit 은 1 이상 {MAX_QUANTIZER_LIMIT} 이하여야 합니다 (지금 {limit}). "
+                   "과제마다 앞에서부터 그만큼의 문서만 평가합니다.")
+    return limit
+
+
+def _calibration_rule(key: str) -> str:
+    from . import quantizer_recipe as qr  # live mode only, like the other Quantizer helpers
+
+    spec = qr.CALIBRATION[key]
+    if spec["type"] == "choice":
+        return f"{', '.join(spec['choices'])} 중 하나"
+    if spec["type"] == "bool":
+        return "true 또는 false"
+    return f"{spec['min']} 이상 {spec['max']} 이하의 정수"
+
+
+def _quantizer_calibration(value: dict | None) -> dict:
+    """The request's calibration settings, checked against the page's limits
+    (app.quantizer_recipe.CALIBRATION: samples and seqlen are capped for one server job)."""
+    from . import quantizer_recipe as qr
+
+    if not value:
+        return {}
+    unknown = sorted(set(value) - set(qr.CALIBRATION))
+    if unknown:
+        raise _bad(f"calibration 에 모르는 항목이 있습니다: {', '.join(unknown)}. "
+                   f"쓸 수 있는 항목: {', '.join(qr.CALIBRATION)}")
+    checked = {}
+    for key, item in value.items():
+        try:
+            checked[key] = qr.check_value(f"calibration.{key}", qr.CALIBRATION[key], item)
+        except ValueError:
+            raise _bad(f"calibration.{key} 는 {_calibration_rule(key)}여야 합니다 (지금 {item!r}).") from None
+    return checked
+
+
+def _quantizer_recipe(text: str, name: str, calibration: dict | None = None) -> tuple[dict, str]:
+    """Parse the YAML and validate it with tricast (live mode only); the recipe mapping and the SHA-256 of the
+    recipe that runs, i.e. with ``calibration`` merged over its calibration block as ``--calib-*`` would."""
+    import yaml
+
+    from tricast.recipe import load_recipe
+
+    from . import quantizer_recipe as qr
+
+    if len(text.encode("utf-8")) > MAX_RECIPE_BYTES:
+        raise ApiError(413, "recipe_too_large",
+                       f"레시피 YAML 은 {MAX_RECIPE_BYTES // 1024} KB 이하여야 합니다.")
+    try:
+        data = yaml.safe_load(text)
+    except yaml.YAMLError as exc:
+        mark = getattr(exc, "problem_mark", None)
+        where = f" ({mark.line + 1}번째 줄)" if mark is not None else ""
+        raise ApiError(400, "invalid_recipe", f"YAML 을 읽을 수 없습니다{where}: "
+                                              f"{getattr(exc, 'problem', None) or exc}") from None
+    if not isinstance(data, dict):
+        raise ApiError(400, "invalid_recipe", "레시피 YAML 은 name, defaults 등을 담은 매핑이어야 합니다.")
+    if data.get("name") != name:
+        raise ApiError(400, "invalid_recipe", f"YAML 의 name({data.get('name')!r})이 요청한 이름"
+                                              f"({name!r})과 다릅니다. 같게 맞추세요.")
+    try:
+        recipe = load_recipe(data)
+        if calibration:
+            recipe = load_recipe({**recipe.to_dict(),
+                                  "calibration": {**(recipe.calibration or {}), **calibration}})
+    except (ValueError, TypeError) as exc:  # tricast names the field: "overrides[0].weight.scheme: ..."
+        raise ApiError(400, "invalid_recipe", f"레시피를 쓸 수 없습니다: {exc}") from None
+    if recipe.needs_calibration:
+        options = recipe.calibration_options
+        for key in ("samples", "seqlen"):
+            spec = qr.CALIBRATION[key]
+            if not spec["min"] <= options[key] <= spec["max"]:
+                raise ApiError(400, "invalid_recipe",
+                               f"서버 보정의 {key} 는 {spec['min']}–{spec['max']} 까지입니다 (이 레시피는 "
+                               f"{options[key]}). 레시피 calibration.{key} 를 줄이거나 "
+                               f"CLI 에서 --calib-{key} 로 돌리세요.")
+    return data, recipe.sha256
+
+
+def run_quantizer_live(args: object, progress: Progress) -> dict:
+    from .runners.quantizer import run_quantizer
+
+    return run_quantizer(args, progress)
 
 
 def _prompt(prompt: str | None) -> str:
@@ -443,14 +601,15 @@ def _add_run_routes(app: FastAPI, live: LiveBackend) -> None:
 
 def create_app(mode: str, device: str, demo_dir: Path, runner: Runner | None = None, *,
                runs_dir: Path = DEFAULT_RUNS_DIR, checkpoints: dict[str, Path] | None = None,
-               identity: dict | None = None) -> FastAPI:
-    """Build the app; ``mode`` is "demo" or "live", ``runner`` replaces :func:`run_live` (tests),
-    ``checkpoints`` maps vision model ids to checkpoint files and ``identity`` (device and code
-    hashes) joins the run cache key (live)."""
+               identity: dict | None = None, quantizer_runner: QuantizerRunner | None = None) -> FastAPI:
+    """Build the app; ``mode`` is "demo" or "live", ``runner`` replaces :func:`run_live` and
+    ``quantizer_runner`` :func:`run_quantizer_live` (tests), ``checkpoints`` maps vision model ids to
+    checkpoint files and ``identity`` (device and code hashes) joins the run cache key (live)."""
     if mode == "demo":
         backend: DemoBackend | LiveBackend = DemoBackend(demo_dir)
     else:
-        backend = LiveBackend(device, demo_dir, runner or run_live, runs_dir, checkpoints or {}, identity)
+        backend = LiveBackend(device, demo_dir, runner or run_live, runs_dir, checkpoints or {}, identity,
+                              quantizer_runner)
     app = FastAPI(title="TriCast Studio")
     _install_error_handlers(app)
 
@@ -468,6 +627,18 @@ def create_app(mode: str, device: str, demo_dir: Path, runner: Runner | None = N
 
     if isinstance(backend, LiveBackend):
         _add_run_routes(app, backend)
+
+    @app.post("/api/quantizer/jobs")
+    def create_quantizer_job(body: QuantizerJobRequest) -> JSONResponse:
+        if not isinstance(backend, LiveBackend):
+            raise ApiError(409, "live_mode_required", _LIVE_GPU_ONLY)
+        return backend.create_quantizer_job(body)
+
+    @app.get("/api/quantizer/jobs/{job_id}")
+    def get_quantizer_job(job_id: str) -> dict:
+        if not isinstance(backend, LiveBackend):
+            raise ApiError(409, "live_mode_required", _LIVE_GPU_ONLY)
+        return backend.get_quantizer_job(_safe_name(job_id))
 
     @app.api_route("/api/{path:path}", methods=["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE"])
     def unknown_api(path: str) -> None:

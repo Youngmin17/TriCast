@@ -1,0 +1,14 @@
+name: qd_nvint4
+description: "Built with the Tri-Cast Quantizer demo (one method per Linear layer)."
+defaults:
+  weight:
+    scheme: nvfp4
+    format: int4
+    mma_input: dequant
+  activation:
+    scheme: nvfp4
+    format: int4
+    mma_input: dequant
+  transform: none
+  weight_algo: rtn
+exclude: [lm_head]

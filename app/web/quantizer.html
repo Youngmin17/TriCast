@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Quantizer · TriCast Studio</title>
+<link rel="icon" type="image/png" href="assets/tricast-mark-64.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="quantizer.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <img class="brand-mark" src="assets/tricast-mark.png" alt="" width="32" height="32">
+    <span class="wordmark">TriCast Studio</span>
+    <h1 class="qz-title">Quantizer</h1>
+    <span class="tagline">Linear 레이어마다 양자화 방법을 골라 TriCast 레시피를 만듭니다</span>
+  </div>
+  <nav class="status" aria-label="페이지">
+    <a class="pill qz-nav" href="layers.html">레이어 지도</a>
+    <a class="pill qz-nav" href="index.html">Studio</a>
+  </nav>
+</header>
+<main class="qz" id="qz"></main>
+<div class="tip" id="tip" role="tooltip" hidden></div>
+<script>
+  if (location.protocol === "file:") {
+    document.getElementById("qz").textContent = "이 페이지는 파일을 직접 열면 동작하지 않습니다. "
+      + "python -m app.server --demo 또는 python -m http.server -d app/web 로 띄운 주소에서 여세요.";
+  }
+</script>
+<script type="module" src="js/quantizer.js"></script>
+</body>
+</html>

@@ -4,7 +4,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 ## [Unreleased]
 
+### Added
+- Quantizer page (`app/web/quantizer.html`) and its reference generator `app/quantizer_recipe.py`: pick one of
+  nine methods per Linear on a 28 × 7 grid (per-method options, KV cache, calibration) and get the same recipe
+  bytes from the browser and from `python -m app.quantizer_recipe`; recorded results attach only on a hash match.
+- Layer map (`app/web/layers.html`, `app/export_layers.py`): per-layer SQNR / MSE / cosine from `tricast report`.
+- `POST /api/quantizer/jobs` live job API (PPL, layer report, lm-eval); GPU execution is not verified yet.
+- Recorded Quantizer demo data for Qwen3-0.6B (five presets: PPL, layer reports, lm-eval 5 tasks × 300 docs).
+
 ### Changed
+- Docs v2.0: PROBLEM, SPEC and the ontology are reframed around choosing a quantization method per layer;
+  SPEC adds AC15–AC21, a layer-selection spike and the 2026-10-13 run record are added.
 - Interview record: the ten-log record of 2026-10-01 was replaced on 2026-10-08 by the 28-log record now in
   `docs/research/interviews.md`; old logs 9 and 10 are now logs 01 and 02, so earlier entries that cite
   "log 9" or "log 10" refer to 01 and 02. The PROBLEM falsification approved on 2026-10-01 belongs to the

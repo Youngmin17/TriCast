@@ -2,9 +2,9 @@
 
 # 🕸️ TriCast 도메인 온톨로지
 
-**Domain Ontology + 분석** · v1.0 · 2026-10-08
+**Domain Ontology + 분석** · v2.0 · 2026-10-13
 
-`클래스 17` `속성 51` `관계 25` `근거 인용 257건` `미정의 참조 0` `근거 없는 항목 0`
+`클래스 20` `속성 60` `관계 36` `근거 인용 315건` `미정의 참조 0` `근거 없는 항목 0`
 
 [문제 정의서](./PROBLEM.md) · [제품 스펙](./SPEC.md) · [인터뷰](./research/interviews.md) · [**온톨로지**](./ontology.md)
 
@@ -14,10 +14,12 @@
 
 > [!NOTE]
 > **이 문서는 무엇인가요?** 인터뷰에서 사람들이 쓴 말을 모아, TriCast가 다루는 세계의 **"단어장 + 관계도"** 로 정리한 문서입니다. 앞부분(§1–§7)은 어떻게 만들었고 무엇을 발견했는지에 대한 **분석**, 뒷부분(§8)은 그 결과인 **[`ontology.yaml`](./ontology.yaml)** 안내, 마지막(§9)은 자동 검증 결과입니다.
+>
+> **v2.0 (2026-10-13) 개정** — TriCast 를 "레이어마다 양자화 방법을 골라 바로 평가하는 Quantizer" 로 다시 세우면서, 같은 인터뷰 로그에서 *조합을 고르는* 개념 3개(`QuantMethod` · `SearchSpace` · `LayerSensitivity`)와 속성 `EvalRun.tasks` 를 추가했습니다. 인터뷰 기록은 바꾸지 않았고, v1 의 17개 클래스는 그대로입니다.
 
 ## 📌 한 줄 요약
 
-**인터뷰 로그 25건 (응답 24 + 거절 사유 1)에서 나온 말을 17개 개념과 25개 관계로 정리했고, 모든 항목은 인터뷰 로그 번호로 되짚을 수 있습니다. 칩의 계산 규칙에 관한 개념(누산·원인·레이어 오차)은 "긍정" 응답자들에게서만 나왔습니다.**
+**인터뷰 로그 25건 (응답 24 + 거절 사유 1)에서 나온 말을 20개 개념과 36개 관계로 정리했고, 모든 항목은 인터뷰 로그 번호로 되짚을 수 있습니다. 칩의 계산 규칙에 관한 개념(누산·원인·레이어 오차)과 조합을 고르는 개념(탐색 공간·레이어 민감도)은 "긍정" 응답자들에게서만 나왔습니다.**
 
 ### 🗺️ 쉽게 말하면 — 온톨로지는 "지도의 범례"
 
@@ -25,12 +27,12 @@
 
 | 핵심 숫자 | 값 |
 |---|---:|
-| 개념 (클래스) | **17** |
-| 속성 / 관계 | 51 / 25 |
+| 개념 (클래스) | **20** (v2 추가 3) |
+| 속성 / 관계 | 60 / 36 |
 | 근거로 인용된 로그 | 23건 (긍정 14 · 잘 모르겠음 6 · 부정 2 · 무응답 1) |
-| 근거 인용 총수 | 257건 |
+| 근거 인용 총수 | 315건 |
 | 근거가 한 로그뿐인 클래스 | 2개 (`WeightStructure` ← 02, `KVSpec` ← 13) — 다음 인터뷰에서 근거를 넓힐 대상 |
-| 코드와 대응되는 클래스 | 13 / 17 (나머지 4개는 사람·현상이라 코드 객체가 없음) |
+| 코드와 대응되는 클래스 | 16 / 20 (나머지 4개는 사람·현상이라 코드 객체가 없음) |
 
 ---
 
@@ -59,12 +61,13 @@ flowchart LR
 
 ## 2. 한눈에 보기
 
-17개 클래스는 세 묶음으로 나뉩니다.
+20개 클래스는 네 묶음으로 나뉩니다.
 
 | 묶음 | 질문 | 클래스 |
 |---|---|---|
 | 🧑‍🔧 **누가 · 무엇에** | 누가 어떤 칩·모델을 다루나? | `Engineer` · `Chip` · `Model` · `Layer` |
-| 📄 **어떤 규칙으로** | 칩의 계산 규칙을 어떻게 적나? | `Recipe` · `Format` · `QuantSpec` · `MMASpec` · `HardwarePreset` · `WeightStructure` · `KVSpec` · `LayerRule` |
+| 🎛️ **무엇을 고르나** (v2) | 레이어마다 어떤 방법을 쓰고, 어떤 조합까지 볼까? | `QuantMethod` · `SearchSpace` · `LayerSensitivity` |
+| 📄 **어떤 규칙으로** | 방법과 칩의 계산 규칙을 어떻게 적나? | `Recipe` · `Format` · `QuantSpec` · `MMASpec` · `HardwarePreset` · `WeightStructure` · `KVSpec` · `LayerRule` |
 | 🔎 **무엇을 보고 판단하나** | 문제를 어떻게 발견하고 원인을 찾나? | `Symptom` · `RootCause` · `Reference` · `EvalRun` · `ErrorReport` |
 
 ```mermaid
@@ -150,6 +153,20 @@ classDiagram
       per_layer
       sensitivity_rank
     }
+    class QuantMethod {
+      target
+      calibrated
+      options
+    }
+    class SearchSpace {
+      axes
+      coverage
+      cost_per_point
+    }
+    class LayerSensitivity {
+      measure
+      rank_transfers
+    }
     Engineer --> Chip : targets
     Engineer --> Recipe : defines
     Engineer --> Model : deploys
@@ -173,9 +190,20 @@ classDiagram
     RootCause --> Recipe : expressed_as
     ErrorReport --> EvalRun : part_of
     ErrorReport --> Layer : localizes
+    Engineer --> SearchSpace : explores
+    Recipe *-- QuantMethod : has
+    LayerRule --> QuantMethod : assigns
+    QuantMethod *-- QuantSpec : composed_of
+    QuantMethod *-- WeightStructure : composed_of
+    QuantMethod *-- KVSpec : composed_of
+    SearchSpace --> Recipe : spans
+    SearchSpace --> EvalRun : yields
+    LayerSensitivity --> Layer : of
+    LayerSensitivity --> EvalRun : measured_by
+    LayerSensitivity --> LayerRule : informs
 ```
 
-<sub>`*--` = 구성(레시피의 일부) · `-->` = 연관. 다이어그램에는 관계 23개를 그렸고, 역방향 2개(`Layer belongs_to Model`, `HardwarePreset describes Chip`)는 YAML에만 적었습니다.</sub>
+<sub>`*--` = 구성(레시피의 일부) · `-->` = 연관. 다이어그램에는 관계 34개를 그렸고, 역방향 2개(`Layer belongs_to Model`, `HardwarePreset describes Chip`)는 YAML에만 적었습니다. 아래 11개(`explores` 부터)가 v2 추가분입니다.</sub>
 
 ---
 
@@ -211,6 +239,17 @@ mindmap
       조합
       설정
       정밀도 조합
+    QuantMethod
+      희소 비율 · 이상치 보존 방식
+      보정 · 스케일 튜닝
+      클리핑 튜닝
+    SearchSpace
+      sweep · 30개 이상의 조합
+      설계 공간
+      레이어 전수 탐색
+    LayerSensitivity
+      민감도 분석
+      민감한 레이어
 ```
 
 | 대표어 | 인터뷰에서 쓰인 표현 (로그) | 주의할 혼동 |
@@ -224,6 +263,9 @@ mindmap
 | `LayerRule` | 이 레이어는 8비트 저 레이어는 16비트(09), 앞쪽 블록 두 개랑 맨 끝 블록(10), 민감한 레이어 16비트(14), 레이어별로 켜고 끄는 실험(13) | 실험용 on/off는 `LayerRule.skip`, 오차 분석은 `ErrorReport` |
 | `RootCause` | 원인(03·04·06), "칩 최적화 이슈"(18) | 18의 표현은 원인 유형을 특정하지 않아 `category` 없음 |
 | `Recipe` | 조합(07), 설정(11), 정밀도 조합(01) | 레시피 ≠ 프리셋 — 프리셋은 레시피의 `mma` 칸에 넣는 **값 묶음** |
+| `QuantMethod` | 희소 비율 · 이상치 보존 방식(02), 스케일 단위(05), 보정·스케일 튜닝(11), 클리핑 튜닝(12), KV 캐시(13), 흔한 INT8 구조(21) | 재학습(QAT, 12)은 방법이 아니라 범위 밖(`out_of_scope` 모델 학습 파이프라인). 방법 ≠ 형식: NVFP4 와 NVINT4 는 블록 16 · UE4M3 스케일 구조가 같고 원소 형식만 FP4 E2M1 ↔ INT4 로 다르다. GPTQ · AWQ 같은 **방법 이름은 인터뷰에 나오지 않았다** (§7-1) |
+| `SearchSpace` | sweep · 조합 서른 개(07), 설계 공간(07), 레이어 200곳 전수 탐색(10), 레이어별로 켜고 끄는 실험(13), 정밀도 조합(01) | "조합" 하나는 `Recipe`, 조합들의 집합이 `SearchSpace` — 스윕 · 격자는 레시피를 **여러 장** 만든다 |
+| `LayerSensitivity` | 민감도 분석(10), 민감한 레이어(14), 이 레이어는 8비트 저 레이어는 16비트(09) | 레이어 국소 오차(`ErrorReport`)의 순위 ≠ 모델 전체 민감도 (10 의 진술, W1 스파이크) |
 
 ---
 
@@ -234,9 +276,9 @@ mindmap
 ```mermaid
 xychart-beta horizontal
     title "클래스를 언급한 로그 수"
-    x-axis ["Engineer", "Chip", "Model", "Format", "Symptom", "EvalRun", "Reference", "QuantSpec", "RootCause", "Layer", "HardwarePreset", "ErrorReport", "Recipe", "MMASpec", "LayerRule", "WeightStructure", "KVSpec"]
+    x-axis ["Engineer", "Chip", "Model", "Format", "Symptom", "EvalRun", "Reference", "QuantSpec", "RootCause", "Layer", "HardwarePreset", "ErrorReport", "QuantMethod", "Recipe", "MMASpec", "LayerRule", "SearchSpace", "LayerSensitivity", "WeightStructure", "KVSpec"]
     y-axis "로그 수" 0 --> 25
-    bar [24, 23, 22, 20, 17, 14, 11, 9, 8, 6, 6, 6, 5, 5, 5, 1, 1]
+    bar [24, 23, 22, 20, 17, 14, 11, 9, 8, 6, 6, 6, 6, 5, 5, 5, 5, 4, 1, 1]
 ```
 
 ### 4-2. 클래스 × 로그 지도
@@ -262,23 +304,32 @@ xychart-beta horizontal
 | `Reference` | · | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | · | 🟩 | 🟩 | · | · | 🟩 | · | · | · | 🟨 | · | · | 🟨 | · | · | · | · | 🟥 | · | **11** | 73% |
 | `EvalRun` | · | · | 🟩 | 🟩 | · | 🟩 | 🟩 | · | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | · | · | 🟨 | 🟨 | 🟨 | 🟨 | · | 🟥 | · | · | · | · | **14** | 64% |
 | `ErrorReport` | 🟩 | 🟩 | 🟩 | · | · | · | 🟩 | · | · | 🟩 | · | · | 🟩 | · | · | · | · | · | · | · | · | · | · | · | · | **6** | 100% |
+| `QuantMethod` | · | 🟩 | · | · | 🟩 | · | · | · | · | · | 🟩 | 🟩 | 🟩 | · | · | · | · | · | · | · | 🟥 | · | · | · | · | **6** | 83% |
+| `SearchSpace` | 🟩 | 🟩 | · | · | · | · | 🟩 | · | · | 🟩 | · | · | 🟩 | · | · | · | · | · | · | · | · | · | · | · | · | **5** | 100% |
+| `LayerSensitivity` | · | · | · | · | · | · | · | · | 🟩 | 🟩 | · | · | 🟩 | 🟩 | · | · | · | · | · | · | · | · | · | · | · | **4** | 100% |
+
+<sub>v2 에 추가한 세 행은 v1 과 같은 방식으로 다시 코딩하지 않고, 각 클래스의 `evidence` 로그(로그 표 B-3 의 원문 · 태그 · 페인 열과 §3 의 정규화 표현)를 그대로 옮겼습니다. 두 번째 코더의 독립 코딩은 §10 의 다음 단계입니다.</sub>
 
 ### 4-3. 발견
 
 > [!IMPORTANT]
-> **① 칩 계산 어휘는 주로 1차 사용자에게서  나옵니다.** `MMASpec` · `RootCause` · `Layer` · `ErrorReport` · `LayerRule` · `Recipe`는 **긍정 로그에서만(100%)** 언급됐습니다. 반대로 `Engineer` · `Chip` · `Model`처럼 누구나 쓰는 말은 긍정 비율이 58~61%로 전체 판정 비율(58%)과 같습니다. → 온톨로지의 **핵심 규칙 묶음은 1차 사용자의 언어**에서 나왔다는 뜻이고, 이는 [문제 정의서의 대상 정의](./PROBLEM.md#2-대상과-비대상)를 뒷받침합니다.
+> **① 칩 계산 어휘는 주로 1차 사용자에게서  나옵니다.** `MMASpec` · `RootCause` · `Layer` · `ErrorReport` · `LayerRule` · `Recipe`는 **긍정 로그에서만(100%)** 언급됐습니다 (v2 의 `SearchSpace` · `LayerSensitivity` 도 100%). 반대로 `Engineer` · `Chip` · `Model`처럼 누구나 쓰는 말은 긍정 비율이 58~61%로 전체 판정 비율(58%)과 같습니다. → 온톨로지의 **핵심 규칙 묶음은 1차 사용자의 언어**에서 나왔다는 뜻이고, 이는 [문제 정의서의 대상 정의](./PROBLEM.md#2-대상과-비대상)를 뒷받침합니다.
 
 | 판정 그룹 | 로그 수 | 로그당 평균 개념 수 |
 |---|:-:|:-:|
-| 🟢 긍정 | 14 | **9.6** |
-| 🟡 잘 모르겠음 | 6 | 5.5 |
-| 🔴 부정 | 4 | 3.8 |
+| 🟢 긍정 | 14 | **10.6** (v1 9.6) |
+| 🟡 잘 모르겠음 | 6 | 5.5 (v1 5.5) |
+| 🔴 부정 | 4 | 4.0 (v1 3.8) |
 
 **② 증상(`Symptom`)은 17건인데 원인(`RootCause`)은 8건뿐입니다.** 차이를 본 사람의 절반 이상이 원인까지 가지 못했습니다. 이 빈칸이 TriCast가 `ErrorReport`(레이어 오차 · `mma_ulp`)와 `same_quant_fp64` 비교 기준으로 메우려는 자리입니다.
 
 **③ `Reference`(비교 기준)가 11건으로 많습니다.** 사람들은 "무엇과 비교해야 맞는지"를 계속 고민했습니다(06: 정답 기준을 직접 만들고 1주 검증, 16: 책임을 가릴 기준이 없음). 그래서 `EvalRun`은 반드시 `env`(실행 환경)를 가져야 근거가 된다는 규칙을 온톨로지에 넣었습니다.
 
 **④ 근거 로그가 1건인 클래스 2개** — `WeightStructure`(02)와 `KVSpec`(13). 코드에는 검증·구현되어 있고, 다음 인터뷰에서 희소성·이상치·KV 캐시를 다루는 사용자를 섭외해 근거를 넓힙니다.
+
+**⑤ (v2) 원인을 못 찾은 사람들은 레이어 배정을 손으로 찾았습니다.** `SearchSpace` · `LayerSensitivity` 를 말한 로그는 7건(01 02 07 09 10 13 14)이고 모두 긍정입니다. 원인을 특정하지 못한 응답자들은 레이어별 정밀도 · 보정을 손으로 전수 탐색했고(P3 — 10 은 레이어 200곳을 3개월, 13 은 레이어를 켜고 끄며 5주), 설계 단계의 07 은 원하던 조합 30개 이상 중 6개만 돌렸습니다(P9). 이것이 TriCast 를 **레이어별 방법 선택 도구(Quantizer)** 로 다시 세운 근거입니다 ([문제 정의서 v2](./PROBLEM.md)).
+
+**⑥ (v2) 한 곳에서 잰 순위를 그대로 믿을 수 없습니다.** 로그 10 의 "PC에서 한 민감도 분석이 칩에서 쓸모없음"은 PC 와 폰(칩) 사이의 **환경 간** 순위 불일치입니다 — fake-quant 만으로는 풀 수 없고 칩 산술 축이 필요한 유형입니다. 이와 다른 종류의 불일치(국소 지표 ↔ 모델 전체)를 제품 쪽 W1 스파이크가 봤습니다 — 레이어 국소 SQNR 이 가장 낮은 14개를 BF16 으로 둔 레시피의 PPL(33.12)이 무작위 14개 5회(31.85~33.38) 안이었습니다 (지킨 파라미터가 더 적었다는 교란이 있어 잠정, [스파이크](./spikes/2026-10-13_layer_sqnr_proxy.md)). 그래서 `LayerSensitivity` 는 `rank_transfers`(환경 간)와 `measure`(국소 · 전체)를 나눠 적습니다.
 
 ---
 
@@ -306,11 +357,36 @@ xychart-beta horizontal
 | `Reference` | 03 · 09 · 06 | `C모델20분` · `C모델느림` · `참조모델부재` |
 | `EvalRun` | 16 · 18 | "누구 책임인지 가릴 기준이 없다는 거죠" · "원인을 모르니 리스크를 숫자로 못 올리잖아요" |
 | `ErrorReport` | 01 · 10 | `ULP오차` · `200곳전수탐색` |
+| `QuantMethod` | 02 · 11 · 12 | "비트 폭 하나 바꾸고, 희소 비율 하나 틀고, 이상치 보존 방식 하나 수정할 때마다 CUDA 커널을 다시 깎아야 합니다" · `보정·스케일튜닝` · `클리핑튜닝` |
+| `SearchSpace` | 07 · 10 | "sweep하고 싶은 조합은 서른 개가 넘는데 실제로 돌린 건 여섯 개입니다" · `실험당4일` · `200곳전수탐색` · `반나절루프` |
+| `LayerSensitivity` | 10 · 13 · 09 | 페인 열 "PC에서 한 민감도 분석이 칩에서 쓸모없음" · `레이어별on/off` · `수동혼합정밀도` |
 
 어휘 정규화(§3)의 표현 일부와 속성 예시 일부(예: `Chip.memory_budget` 의 메모리 크기)는 로그 표의 한 줄 인용이 아니라 같은
 응답자의 인터뷰 기록 원문(「TriCast 인터뷰 사례 모음집」)에서 가져왔다.
 
-## 5. 진단 루프 — 증상에서 레시피로
+## 5. 두 개의 루프 — 고르기와 진단
+
+### 5-1. 고르기 루프 (v2) — 레이어마다 방법을 고르고 모델 전체로 확인
+
+v2 의 주 흐름은 "탐색 공간을 정한다 → 레이어마다 방법을 배정한 레시피를 만든다 → 모델 전체 점수로 잰다 → 그 결과로 레이어 배정을 고친다" 입니다. 원인을 찾는 진단 루프(§5-2)는 그 안에서 "왜 이 레이어가 민감한가"를 물을 때 씁니다.
+
+```mermaid
+flowchart LR
+    SS["SearchSpace<br/>방법 × 레이어 격자 · 스윕 축"] -- spans --> RE["Recipe<br/>레시피 한 장 (해시)"]
+    LR["LayerRule<br/>블록 · 레이어 종류 · 칸"] -- assigns --> QM["QuantMethod<br/>GPTQ · AWQ · MX · NVFP4 …"]
+    RE -- has --> LR
+    RE -- applied_to --> MO["Model"]
+    MO --> EV["EvalRun<br/>PPL · lm-eval 과제별 + env"]
+    SS -- yields --> EV
+    EV --> LS["LayerSensitivity<br/>국소 지표 ≠ 모델 전체"]
+    LS -- informs --> LR
+    ER["ErrorReport<br/>레이어별 MSE · SQNR · 코사인"] -- part_of --> EV
+    style SS fill:#e0f2fe,stroke:#0284c7,color:#0c4a6e
+    style LS fill:#fef3c7,stroke:#d97706,color:#78350f
+    style RE fill:#dcfce7,stroke:#16a34a,color:#14532d
+```
+
+### 5-2. 진단 루프 — 증상에서 레시피로
 
 온톨로지의 핵심 흐름은 "칩에서 이상한 결과를 봤다 → 원인 규칙을 찾는다 → 그 규칙을 레시피로 적는다 → 다시 평가한다"의 반복입니다.
 
@@ -375,6 +451,9 @@ pie showData
 | `Reference` | `reference` (fp64 · int64 · Fraction) · 비교 기준 `native` / `same_quant_fp64` | ✅ | 11 |
 | `EvalRun` | `eval.runner` · `eval.envinfo.capture_env` | 🟡 | 14 |
 | `ErrorReport` | `analysis.layer_report` · `ulp_error` | 🟡 | 6 |
+| `QuantMethod` (v2) | `app/quantizer_recipe.py` 의 `METHODS` 9종 → `Recipe` 의 `weight` · `activation` · `transform` · `weight_algo` | 🟡 | 6 |
+| `SearchSpace` (v2) | `eval.runner` 스윕 (`configs/sweeps/`) · Quantizer 격자 (`app/web/quantizer.html`, 블록 × 레이어 종류) | 🟡 | 5 |
+| `LayerSensitivity` (v2) | 국소: `analysis.layer_report` · 전체: `EvalRun` 의 PPL · lm-eval · 자동 탐색: 없음 (예정) | 🟠 | 4 |
 
 <sub>상태: ✅ 검증됨 · 🟡 구현됨 · 🟠 부분 (`support_matrix.yaml` 기준). 사람·현상을 나타내는 4개 클래스는 코드 객체가 없는 것이 정상입니다.</sub>
 
@@ -388,8 +467,12 @@ pie showData
 
 | 코드 어휘 | 위치 | 다음 인터뷰에서 확인할 것 |
 |---|---|---|
-| `TransformSpec` (Hadamard · SmoothQuant · AWQ) | `quant/spec.py` · `transforms.py` | 양자화 전처리를 칩 배포 때 실제로 쓰나? |
-| `WeightAlgoSpec` (GPTQ) | `weight_quant/gptq.py` | 가중치 반올림 알고리즘이 칩 차이 원인 분석에 영향을 주나? |
+| `TransformSpec` (Hadamard · SmoothQuant · AWQ) | `quant/spec.py` · `transforms.py` | 양자화 전처리를 칩 배포 때 실제로 쓰나? — v2 에서 `QuantMethod` 의 **값**(방법 이름)으로 화면에 나오지만, 이름 자체의 인터뷰 근거는 아직 없다 |
+| `WeightAlgoSpec` (GPTQ) | `weight_quant/gptq.py` | 가중치 반올림 알고리즘이 칩 차이 원인 분석에 영향을 주나? — 위와 같음 |
+| Quantizer 방법 이름 9종 (`bf16` · `gptq_int4` · `awq_nvfp4` · `smoothquant_nvfp4` · `nvfp4` · `nvint4` · `mxfp4` · `mxfp8` · `int8` · `bfp12` 중 BF16 제외) | `app/quantizer_recipe.py` | 어떤 방법 이름을 실제로 써 봤나? (v2 프로토콜에 질문 추가 제안) |
+| `nvint4` = `{scheme: nvfp4, format: int4}` (NVFP4 구조 + INT4 원소) · `mma_input: dequant` (BF16 로 되돌린 뒤 기본 누산으로 행렬곱) | `app/quantizer_recipe.py` · `quant/spec.py` | INT 원소 블록 형식을 쓰는 칩이 있나? |
+| 예정 방법 (Wanda · SparseGPT · AdaRound · TurboQuant · OMMX) | — (코드 없음) | 인터뷰 근거도 코드도 없다. 구현 전에 근거부터 찾는다 |
+| `LayerSensitivity.measure` 의 값 (`local_sqnr` · `local_mse` · `end_to_end_kl` · `end_to_end_ppl`) | `analysis/layer_report.py` · 스파이크 | 인터뷰 표현이 아니라 분석 어휘다. 클래스 근거는 10 · 13 의 진술, 값 이름은 코드에서 왔다 |
 | `zero_point` · 2단계 스케일 (NVFP4) | `quant/spec.py` | 비대칭 양자화·이중 스케일을 쓰는 칩이 있나? |
 | `ObserverSpec` (ema · history) | `quant/spec.py` | 정적 스케일을 쓰는 칩 배포가 있나? (21은 보정 이미지 300장만 언급) |
 | `promote_interval` (FP32 승격) | `mma/spec.py` | 소프트웨어로 누산을 넓히는 우회를 하나? (13의 "소프트웨어 우회"와 관련 가능) |
@@ -404,6 +487,7 @@ pie showData
 | 정수 재양자화(시프트 후 버림) 경로 | 04 | `rounding: rtz`로 일부만 표현 | 누산 후 재양자화 단계를 별도 규칙으로 둘지 검토 |
 | 평균에 안 보이는 실패 (긴 문맥 · 작은 물체) | 05 13 | 평균 지표 위주 | 문맥 길이·물체 크기 구간별 지표를 `EvalRun.metrics`에 |
 | 칩 리비전 이력 | 04 14 | `HardwarePreset`에 버전 필드 없음 | `Chip.revision`과 프리셋의 연결 방식 정의 |
+| 모델 전체 지표로 레이어 배정을 찾는 자동 탐색 (v2) | 07 10 13 | 코드 없음 — 격자와 스윕은 있으나 고르는 일은 사람이 함 | `LayerSensitivity.measure` 의 전체 지표(`end_to_end_kl` · `end_to_end_ppl`)를 목적 함수로 — W1 스파이크 결과대로 국소 지표는 쓰지 않는다 (파라미터를 맞춘 재판정 전까지 잠정) |
 
 ---
 
@@ -421,12 +505,12 @@ pie showData
 
 | 검사 | 결과 |
 |---|:-:|
-| 클래스 / 속성 / 관계 수 | 17 / 51 / 25 |
+| 클래스 / 속성 / 관계 수 | 20 / 60 / 36 (v1 17 / 51 / 25) |
 | 미정의 클래스를 가리키는 관계 | **0** ✅ |
 | 근거가 없는 클래스 · 속성 · 관계 (키 속성 제외) | **0** ✅ |
 | 형식이 잘못된 근거 (`로그 NN`, 01–28 밖) | **0** ✅ |
-| 인용된 로그 | 23건 / 근거 인용 총 257건 (클래스 · 속성 · 관계, `scope` 제외) |
-| 가장 많이 인용된 로그 | 03 (38회) · 07 (29회) · 06 (23회) · 05 (18회) · 13 (18회) |
+| 인용된 로그 | 23건 / 근거 인용 총 315건 (클래스 · 속성 · 관계, `scope` 제외) |
+| 가장 많이 인용된 로그 | 03 (38회) · 07 (36회) · 13 (32회) · 10 (26회) · 06 (23회) |
 | 인용되지 않은 로그 | 22 · 23 (부정 — 칩 배포·양자화 경험 없음), 25 · 26 · 28 (무응답) → 내용상 자연스러움 |
 | 근거 로그가 1건인 클래스 | `WeightStructure` (02) · `KVSpec` (13) → 다음 인터뷰에서 근거 확대 |
 
@@ -437,7 +521,9 @@ pie showData
 | 대상 | 다음 단계 |
 |---|---|
 | `WeightStructure` · `KVSpec` (근거 로그 각 1건) | 희소성·KV 캐시를 다루는 사용자 2명 이상을 v2 프로토콜로 인터뷰해 근거를 넓힌다 |
-| 클래스 추출 | 두 번째 코더가 같은 로그를 독립 코딩해 일치도를 잰다 |
+| 클래스 추출 | 두 번째 코더가 같은 로그를 독립 코딩해 일치도를 잰다 (v2 추가 3개 클래스 포함) |
+| `QuantMethod` 의 방법 이름 (§7-1) | v2 프로토콜에 "어떤 양자화 방법(GPTQ · AWQ · 블록 형식 등)을 실제로 써 봤나, 레이어마다 다르게 둔 적이 있나"를 더해 이름 수준의 근거를 모은다 |
+| `LayerSensitivity` | 국소 순위와 모델 전체 순위가 다르다는 진술(10)을 다른 응답자에게서도 확인한다 |
 | 코드 어휘 7종 (§7-1) | §7-1의 질문으로 근거를 찾고, 근거가 없으면 "코드 전용"으로 유지한다 |
 
 ---

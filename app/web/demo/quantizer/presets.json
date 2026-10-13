@@ -1,0 +1,5931 @@
+{
+ "benchmarks": [
+  {
+   "label": "ARC-Easy",
+   "metric": "acc_norm",
+   "task": "arc_easy"
+  },
+  {
+   "label": "ARC-Challenge",
+   "metric": "acc_norm",
+   "task": "arc_challenge"
+  },
+  {
+   "label": "PIQA",
+   "metric": "acc_norm",
+   "task": "piqa"
+  },
+  {
+   "label": "WinoGrande",
+   "metric": "acc",
+   "task": "winogrande"
+  },
+  {
+   "label": "HellaSwag",
+   "metric": "acc_norm",
+   "task": "hellaswag"
+  }
+ ],
+ "calibration_info": {
+  "dataset": {
+   "choices": {
+    "c4": "C4",
+    "pile": "Pile",
+    "wikitext2": "WikiText-2"
+   },
+   "label": "데이터셋"
+  },
+  "samples": {
+   "choices": null,
+   "label": "샘플 수 (창 개수)"
+  },
+  "seed": {
+   "choices": null,
+   "label": "seed"
+  },
+  "seqlen": {
+   "choices": null,
+   "label": "창 길이 (토큰)"
+  },
+  "sequential": {
+   "choices": null,
+   "label": "순차 보정 (앞 블록을 양자화한 상태로 다음 블록 통계)"
+  }
+ },
+ "generator": {
+  "blocks": 28,
+  "calibrated": [
+   "awq_nvfp4",
+   "gptq_int4",
+   "smoothquant_nvfp4"
+  ],
+  "calibrating_observers": [
+   "minmax",
+   "ema",
+   "percentile"
+  ],
+  "calibration": {
+   "items": [
+    [
+     "dataset",
+     {
+      "items": [
+       [
+        "type",
+        "choice"
+       ],
+       [
+        "choices",
+        [
+         "wikitext2",
+         "c4",
+         "pile"
+        ]
+       ],
+       [
+        "default",
+        "wikitext2"
+       ]
+      ]
+     }
+    ],
+    [
+     "samples",
+     {
+      "items": [
+       [
+        "type",
+        "int"
+       ],
+       [
+        "min",
+        1
+       ],
+       [
+        "max",
+        512
+       ],
+       [
+        "default",
+        128
+       ]
+      ]
+     }
+    ],
+    [
+     "seqlen",
+     {
+      "items": [
+       [
+        "type",
+        "int"
+       ],
+       [
+        "min",
+        2
+       ],
+       [
+        "max",
+        4096
+       ],
+       [
+        "default",
+        2048
+       ]
+      ]
+     }
+    ],
+    [
+     "seed",
+     {
+      "items": [
+       [
+        "type",
+        "int"
+       ],
+       [
+        "min",
+        0
+       ],
+       [
+        "max",
+        2147483647
+       ],
+       [
+        "default",
+        42
+       ]
+      ]
+     }
+    ],
+    [
+     "sequential",
+     {
+      "items": [
+       [
+        "type",
+        "bool"
+       ],
+       [
+        "default",
+        false
+       ]
+      ]
+     }
+    ]
+   ]
+  },
+  "complete": {
+   "items": [
+    [
+     "transform",
+     {
+      "items": [
+       [
+        "block",
+        0
+       ],
+       [
+        "seed",
+        0
+       ],
+       [
+        "alpha",
+        0.5
+       ],
+       [
+        "grid",
+        20
+       ],
+       [
+        "share_inputs",
+        true
+       ]
+      ]
+     }
+    ],
+    [
+     "weight_algo",
+     {
+      "items": [
+       [
+        "block_size",
+        128
+       ],
+       [
+        "damp",
+        0.01
+       ],
+       [
+        "act_order",
+        false
+       ]
+      ]
+     }
+    ]
+   ]
+  },
+  "description": "Built with the Tri-Cast Quantizer demo (one method per Linear layer).",
+  "float_min": 0.0001,
+  "kinds": [
+   "q_proj",
+   "k_proj",
+   "v_proj",
+   "o_proj",
+   "gate_proj",
+   "up_proj",
+   "down_proj"
+  ],
+  "kv": {
+   "items": [
+    [
+     "none",
+     null
+    ],
+    [
+     "kivi2",
+     {
+      "items": [
+       [
+        "preset",
+        "kivi2"
+       ],
+       [
+        "mode",
+        "fakequant"
+       ]
+      ]
+     }
+    ],
+    [
+     "kivi4",
+     {
+      "items": [
+       [
+        "preset",
+        "kivi4"
+       ],
+       [
+        "mode",
+        "fakequant"
+       ]
+      ]
+     }
+    ],
+    [
+     "kv_fp8",
+     {
+      "items": [
+       [
+        "preset",
+        "kv_fp8"
+       ],
+       [
+        "mode",
+        "fakequant"
+       ]
+      ]
+     }
+    ]
+   ]
+  },
+  "kv_options": {
+   "items": [
+    [
+     "none",
+     {
+      "items": []
+     }
+    ],
+    [
+     "kivi2",
+     {
+      "items": [
+       [
+        "residual",
+        {
+         "items": [
+          [
+           "type",
+           "int"
+          ],
+          [
+           "min",
+           32
+          ],
+          [
+           "max",
+           4096
+          ],
+          [
+           "multiple",
+           32
+          ],
+          [
+           "default",
+           128
+          ]
+         ]
+        }
+       ]
+      ]
+     }
+    ],
+    [
+     "kivi4",
+     {
+      "items": [
+       [
+        "residual",
+        {
+         "items": [
+          [
+           "type",
+           "int"
+          ],
+          [
+           "min",
+           32
+          ],
+          [
+           "max",
+           4096
+          ],
+          [
+           "multiple",
+           32
+          ],
+          [
+           "default",
+           128
+          ]
+         ]
+        }
+       ]
+      ]
+     }
+    ],
+    [
+     "kv_fp8",
+     {
+      "items": [
+       [
+        "residual",
+        {
+         "items": [
+          [
+           "type",
+           "int"
+          ],
+          [
+           "min",
+           0
+          ],
+          [
+           "max",
+           4096
+          ],
+          [
+           "default",
+           0
+          ]
+         ]
+        }
+       ]
+      ]
+     }
+    ]
+   ]
+  },
+  "method_options": {
+   "items": [
+    [
+     "bf16",
+     []
+    ],
+    [
+     "gptq_int4",
+     [
+      "weight.group_size",
+      "weight.rounding",
+      "weight_algo.damp",
+      "weight_algo.act_order",
+      "weight_algo.block_size"
+     ]
+    ],
+    [
+     "awq_nvfp4",
+     [
+      "weight.scale.method",
+      "weight.scale.percentile",
+      "weight.rounding",
+      "activation.scale.method",
+      "activation.scale.percentile",
+      "activation.rounding",
+      "transform.grid",
+      "transform.share_inputs"
+     ]
+    ],
+    [
+     "smoothquant_nvfp4",
+     [
+      "weight.scale.method",
+      "weight.scale.percentile",
+      "weight.rounding",
+      "activation.scale.method",
+      "activation.scale.percentile",
+      "activation.rounding",
+      "transform.alpha"
+     ]
+    ],
+    [
+     "nvfp4",
+     [
+      "weight.scale.method",
+      "weight.scale.percentile",
+      "weight.rounding",
+      "activation.scale.method",
+      "activation.scale.percentile",
+      "activation.rounding"
+     ]
+    ],
+    [
+     "nvint4",
+     [
+      "weight.scale.method",
+      "weight.scale.percentile",
+      "weight.rounding",
+      "activation.scale.method",
+      "activation.scale.percentile",
+      "activation.rounding"
+     ]
+    ],
+    [
+     "mxfp4",
+     [
+      "weight.rounding",
+      "activation.rounding"
+     ]
+    ],
+    [
+     "mxfp8",
+     [
+      "weight.rounding",
+      "activation.rounding"
+     ]
+    ],
+    [
+     "int8",
+     [
+      "weight.scale.method",
+      "weight.scale.percentile",
+      "weight.rounding",
+      "activation.granularity",
+      "activation.scale.method",
+      "activation.scale.percentile",
+      "activation.rounding",
+      "activation.observer.kind",
+      "activation.observer.decay",
+      "activation.observer.history_len",
+      "activation.observer.percentile"
+     ]
+    ],
+    [
+     "bfp12",
+     [
+      "weight.rounding",
+      "activation.rounding"
+     ]
+    ]
+   ]
+  },
+  "methods": {
+   "items": [
+    [
+     "bf16",
+     null
+    ],
+    [
+     "gptq_int4",
+     {
+      "items": [
+       [
+        "weight",
+        "int4_g128_zp"
+       ],
+       [
+        "activation",
+        null
+       ],
+       [
+        "transform",
+        "none"
+       ],
+       [
+        "weight_algo",
+        "gptq"
+       ]
+      ]
+     }
+    ],
+    [
+     "awq_nvfp4",
+     {
+      "items": [
+       [
+        "weight",
+        {
+         "items": [
+          [
+           "scheme",
+           "nvfp4"
+          ],
+          [
+           "mma_input",
+           "dequant"
+          ]
+         ]
+        }
+       ],
+       [
+        "activation",
+        {
+         "items": [
+          [
+           "scheme",
+           "nvfp4"
+          ],
+          [
+           "mma_input",
+           "dequant"
+          ]
+         ]
+        }
+       ],
+       [
+        "transform",
+        {
+         "items": [
+          [
+           "kind",
+           "awq"
+          ],
+          [
+           "share_inputs",
+           true
+          ]
+         ]
+        }
+       ],
+       [
+        "weight_algo",
+        "rtn"
+       ]
+      ]
+     }
+    ],
+    [
+     "smoothquant_nvfp4",
+     {
+      "items": [
+       [
+        "weight",
+        {
+         "items": [
+          [
+           "scheme",
+           "nvfp4"
+          ],
+          [
+           "mma_input",
+           "dequant"
+          ]
+         ]
+        }
+       ],
+       [
+        "activation",
+        {
+         "items": [
+          [
+           "scheme",
+           "nvfp4"
+          ],
+          [
+           "mma_input",
+           "dequant"
+          ]
+         ]
+        }
+       ],
+       [
+        "transform",
+        {
+         "items": [
+          [
+           "kind",
+           "smoothquant"
+          ],
+          [
+           "alpha",
+           0.5
+          ]
+         ]
+        }
+       ],
+       [
+        "weight_algo",
+        "rtn"
+       ]
+      ]
+     }
+    ],
+    [
+     "nvfp4",
+     {
+      "items": [
+       [
+        "weight",
+        {
+         "items": [
+          [
+           "scheme",
+           "nvfp4"
+          ],
+          [
+           "mma_input",
+           "dequant"
+          ]
+         ]
+        }
+       ],
+       [
+        "activation",
+        {
+         "items": [
+          [
+           "scheme",
+           "nvfp4"
+          ],
+          [
+           "mma_input",
+           "dequant"
+          ]
+         ]
+        }
+       ],
+       [
+        "transform",
+        "none"
+       ],
+       [
+        "weight_algo",
+        "rtn"
+       ]
+      ]
+     }
+    ],
+    [
+     "nvint4",
+     {
+      "items": [
+       [
+        "weight",
+        {
+         "items": [
+          [
+           "scheme",
+           "nvfp4"
+          ],
+          [
+           "format",
+           "int4"
+          ],
+          [
+           "mma_input",
+           "dequant"
+          ]
+         ]
+        }
+       ],
+       [
+        "activation",
+        {
+         "items": [
+          [
+           "scheme",
+           "nvfp4"
+          ],
+          [
+           "format",
+           "int4"
+          ],
+          [
+           "mma_input",
+           "dequant"
+          ]
+         ]
+        }
+       ],
+       [
+        "transform",
+        "none"
+       ],
+       [
+        "weight_algo",
+        "rtn"
+       ]
+      ]
+     }
+    ],
+    [
+     "mxfp4",
+     {
+      "items": [
+       [
+        "weight",
+        {
+         "items": [
+          [
+           "scheme",
+           "mxfp4"
+          ],
+          [
+           "mma_input",
+           "dequant"
+          ]
+         ]
+        }
+       ],
+       [
+        "activation",
+        {
+         "items": [
+          [
+           "scheme",
+           "mxfp4"
+          ],
+          [
+           "mma_input",
+           "dequant"
+          ]
+         ]
+        }
+       ],
+       [
+        "transform",
+        "none"
+       ],
+       [
+        "weight_algo",
+        "rtn"
+       ]
+      ]
+     }
+    ],
+    [
+     "mxfp8",
+     {
+      "items": [
+       [
+        "weight",
+        {
+         "items": [
+          [
+           "scheme",
+           "mxfp8_e4m3"
+          ],
+          [
+           "mma_input",
+           "dequant"
+          ]
+         ]
+        }
+       ],
+       [
+        "activation",
+        {
+         "items": [
+          [
+           "scheme",
+           "mxfp8_e4m3"
+          ],
+          [
+           "mma_input",
+           "dequant"
+          ]
+         ]
+        }
+       ],
+       [
+        "transform",
+        "none"
+       ],
+       [
+        "weight_algo",
+        "rtn"
+       ]
+      ]
+     }
+    ],
+    [
+     "int8",
+     {
+      "items": [
+       [
+        "weight",
+        {
+         "items": [
+          [
+           "scheme",
+           "int8_row"
+          ],
+          [
+           "mma_input",
+           "dequant"
+          ]
+         ]
+        }
+       ],
+       [
+        "activation",
+        {
+         "items": [
+          [
+           "scheme",
+           "int8_row"
+          ],
+          [
+           "mma_input",
+           "dequant"
+          ]
+         ]
+        }
+       ],
+       [
+        "transform",
+        "none"
+       ],
+       [
+        "weight_algo",
+        "rtn"
+       ]
+      ]
+     }
+    ],
+    [
+     "bfp12",
+     {
+      "items": [
+       [
+        "weight",
+        {
+         "items": [
+          [
+           "scheme",
+           "msfp12"
+          ],
+          [
+           "mma_input",
+           "dequant"
+          ]
+         ]
+        }
+       ],
+       [
+        "activation",
+        {
+         "items": [
+          [
+           "scheme",
+           "msfp12"
+          ],
+          [
+           "mma_input",
+           "dequant"
+          ]
+         ]
+        }
+       ],
+       [
+        "transform",
+        "none"
+       ],
+       [
+        "weight_algo",
+        "rtn"
+       ]
+      ]
+     }
+    ]
+   ]
+  },
+  "options": {
+   "items": [
+    [
+     "weight.group_size",
+     {
+      "items": [
+       [
+        "type",
+        "choice"
+       ],
+       [
+        "choices",
+        [
+         32,
+         64,
+         128,
+         256
+        ]
+       ],
+       [
+        "default",
+        128
+       ]
+      ]
+     }
+    ],
+    [
+     "weight.scale.method",
+     {
+      "items": [
+       [
+        "type",
+        "choice"
+       ],
+       [
+        "choices",
+        [
+         "absmax",
+         "mse",
+         "percentile"
+        ]
+       ],
+       [
+        "default",
+        "absmax"
+       ]
+      ]
+     }
+    ],
+    [
+     "weight.scale.percentile",
+     {
+      "items": [
+       [
+        "type",
+        "float"
+       ],
+       [
+        "min",
+        0
+       ],
+       [
+        "min_open",
+        true
+       ],
+       [
+        "max",
+        100
+       ],
+       [
+        "default",
+        99.99
+       ],
+       [
+        "when",
+        [
+         "weight.scale.method",
+         [
+          "percentile"
+         ]
+        ]
+       ]
+      ]
+     }
+    ],
+    [
+     "weight.rounding",
+     {
+      "items": [
+       [
+        "type",
+        "choice"
+       ],
+       [
+        "choices",
+        [
+         "rne",
+         "rtz",
+         "sr"
+        ]
+       ],
+       [
+        "default",
+        "rne"
+       ]
+      ]
+     }
+    ],
+    [
+     "activation.granularity",
+     {
+      "items": [
+       [
+        "type",
+        "choice"
+       ],
+       [
+        "choices",
+        [
+         "row",
+         "tensor"
+        ]
+       ],
+       [
+        "default",
+        "row"
+       ]
+      ]
+     }
+    ],
+    [
+     "activation.scale.method",
+     {
+      "items": [
+       [
+        "type",
+        "choice"
+       ],
+       [
+        "choices",
+        [
+         "absmax",
+         "mse",
+         "percentile"
+        ]
+       ],
+       [
+        "default",
+        "absmax"
+       ],
+       [
+        "when",
+        [
+         "activation.observer.kind",
+         [
+          "none"
+         ]
+        ]
+       ]
+      ]
+     }
+    ],
+    [
+     "activation.scale.percentile",
+     {
+      "items": [
+       [
+        "type",
+        "float"
+       ],
+       [
+        "min",
+        0
+       ],
+       [
+        "min_open",
+        true
+       ],
+       [
+        "max",
+        100
+       ],
+       [
+        "default",
+        99.99
+       ],
+       [
+        "when",
+        [
+         "activation.scale.method",
+         [
+          "percentile"
+         ]
+        ]
+       ]
+      ]
+     }
+    ],
+    [
+     "activation.rounding",
+     {
+      "items": [
+       [
+        "type",
+        "choice"
+       ],
+       [
+        "choices",
+        [
+         "rne",
+         "rtz",
+         "sr"
+        ]
+       ],
+       [
+        "default",
+        "rne"
+       ]
+      ]
+     }
+    ],
+    [
+     "activation.observer.kind",
+     {
+      "items": [
+       [
+        "type",
+        "choice"
+       ],
+       [
+        "default",
+        "none"
+       ],
+       [
+        "choices",
+        [
+         "none",
+         "minmax",
+         "ema",
+         "history",
+         "percentile"
+        ]
+       ],
+       [
+        "when",
+        [
+         "activation.granularity",
+         [
+          "tensor"
+         ]
+        ]
+       ]
+      ]
+     }
+    ],
+    [
+     "activation.observer.decay",
+     {
+      "items": [
+       [
+        "type",
+        "float"
+       ],
+       [
+        "min",
+        0
+       ],
+       [
+        "max",
+        1
+       ],
+       [
+        "max_open",
+        true
+       ],
+       [
+        "default",
+        0.99
+       ],
+       [
+        "when",
+        [
+         "activation.observer.kind",
+         [
+          "ema"
+         ]
+        ]
+       ]
+      ]
+     }
+    ],
+    [
+     "activation.observer.history_len",
+     {
+      "items": [
+       [
+        "type",
+        "int"
+       ],
+       [
+        "min",
+        1
+       ],
+       [
+        "max",
+        1024
+       ],
+       [
+        "default",
+        16
+       ],
+       [
+        "when",
+        [
+         "activation.observer.kind",
+         [
+          "history"
+         ]
+        ]
+       ]
+      ]
+     }
+    ],
+    [
+     "activation.observer.percentile",
+     {
+      "items": [
+       [
+        "type",
+        "float"
+       ],
+       [
+        "min",
+        0
+       ],
+       [
+        "min_open",
+        true
+       ],
+       [
+        "max",
+        100
+       ],
+       [
+        "default",
+        99.99
+       ],
+       [
+        "when",
+        [
+         "activation.observer.kind",
+         [
+          "percentile"
+         ]
+        ]
+       ]
+      ]
+     }
+    ],
+    [
+     "transform.alpha",
+     {
+      "items": [
+       [
+        "type",
+        "float"
+       ],
+       [
+        "min",
+        0
+       ],
+       [
+        "max",
+        1
+       ],
+       [
+        "default",
+        0.5
+       ]
+      ]
+     }
+    ],
+    [
+     "transform.grid",
+     {
+      "items": [
+       [
+        "type",
+        "int"
+       ],
+       [
+        "min",
+        1
+       ],
+       [
+        "max",
+        100
+       ],
+       [
+        "default",
+        20
+       ]
+      ]
+     }
+    ],
+    [
+     "transform.share_inputs",
+     {
+      "items": [
+       [
+        "type",
+        "bool"
+       ],
+       [
+        "default",
+        true
+       ]
+      ]
+     }
+    ],
+    [
+     "weight_algo.damp",
+     {
+      "items": [
+       [
+        "type",
+        "float"
+       ],
+       [
+        "min",
+        0
+       ],
+       [
+        "max",
+        1
+       ],
+       [
+        "default",
+        0.01
+       ]
+      ]
+     }
+    ],
+    [
+     "weight_algo.act_order",
+     {
+      "items": [
+       [
+        "type",
+        "bool"
+       ],
+       [
+        "default",
+        false
+       ]
+      ]
+     }
+    ],
+    [
+     "weight_algo.block_size",
+     {
+      "items": [
+       [
+        "type",
+        "choice"
+       ],
+       [
+        "choices",
+        [
+         32,
+         64,
+         128,
+         256
+        ]
+       ],
+       [
+        "default",
+        128
+       ]
+      ]
+     }
+    ]
+   ]
+  },
+  "parent": {
+   "items": [
+    [
+     "q_proj",
+     "self_attn"
+    ],
+    [
+     "k_proj",
+     "self_attn"
+    ],
+    [
+     "v_proj",
+     "self_attn"
+    ],
+    [
+     "o_proj",
+     "self_attn"
+    ],
+    [
+     "gate_proj",
+     "mlp"
+    ],
+    [
+     "up_proj",
+     "mlp"
+    ],
+    [
+     "down_proj",
+     "mlp"
+    ]
+   ]
+  }
+ },
+ "kinds": [
+  {
+   "id": "q_proj",
+   "in_features": 1024,
+   "out_features": 2048,
+   "params": 2097152,
+   "parent": "self_attn"
+  },
+  {
+   "id": "k_proj",
+   "in_features": 1024,
+   "out_features": 1024,
+   "params": 1048576,
+   "parent": "self_attn"
+  },
+  {
+   "id": "v_proj",
+   "in_features": 1024,
+   "out_features": 1024,
+   "params": 1048576,
+   "parent": "self_attn"
+  },
+  {
+   "id": "o_proj",
+   "in_features": 2048,
+   "out_features": 1024,
+   "params": 2097152,
+   "parent": "self_attn"
+  },
+  {
+   "id": "gate_proj",
+   "in_features": 1024,
+   "out_features": 3072,
+   "params": 3145728,
+   "parent": "mlp"
+  },
+  {
+   "id": "up_proj",
+   "in_features": 1024,
+   "out_features": 3072,
+   "params": 3145728,
+   "parent": "mlp"
+  },
+  {
+   "id": "down_proj",
+   "in_features": 3072,
+   "out_features": 1024,
+   "params": 3145728,
+   "parent": "mlp"
+  }
+ ],
+ "kv": [
+  {
+   "description": "KV 캐시는 BF16 그대로",
+   "id": "none",
+   "label": "없음",
+   "short": "BF16"
+  },
+  {
+   "description": "K·V 를 UINT2 로, 32개 그룹마다 FP16 스케일과 영점",
+   "id": "kivi2",
+   "label": "KIVI-2",
+   "short": "UINT2 · 그룹 32"
+  },
+  {
+   "description": "K·V 를 UINT4 로, 32개 그룹마다 FP16 스케일과 영점",
+   "id": "kivi4",
+   "label": "KIVI-4",
+   "short": "UINT4 · 그룹 32"
+  },
+  {
+   "description": "K·V 를 FP8(E4M3)로, 텐서마다 스케일 하나",
+   "id": "kv_fp8",
+   "label": "FP8",
+   "short": "E4M3 · 텐서"
+  }
+ ],
+ "kv_option_info": {
+  "residual": {
+   "label": "residual (원정밀로 두는 최근 토큰 수)"
+  }
+ },
+ "lmeval_native": {
+  "batch_size": 16,
+  "env": {
+   "cuda": "12.8",
+   "dtype": "bfloat16",
+   "git_dirty": false,
+   "git_sha": "ab489f17cdc01cbaa8074613ca30c89204ca6a9e",
+   "gpu_names": [
+    "NVIDIA H100 NVL"
+   ],
+   "model_id": "Qwen/Qwen3-0.6B",
+   "model_sha": "c1899de289a04d12100db370d81485cdf75e47ca",
+   "seed": 42,
+   "utc": "2026-10-13T10:28:51.228802+00:00"
+  },
+  "limit": 300,
+  "lm_eval_version": "0.4.13",
+  "macro": 0.536,
+  "macro_delta_pts": null,
+  "recipe_hash": "native",
+  "source": "runs/20261013_quantizer_w3/lmeval_A/native.json",
+  "tasks": [
+   {
+    "delta_pts": null,
+    "label": "ARC-Easy",
+    "metric": "acc_norm",
+    "n": 300,
+    "num_fewshot": 0,
+    "stderr": 0.028706798281217784,
+    "task": "arc_easy",
+    "value": 0.56
+   },
+   {
+    "delta_pts": null,
+    "label": "ARC-Challenge",
+    "metric": "acc_norm",
+    "n": 300,
+    "num_fewshot": 0,
+    "stderr": 0.02732941756218688,
+    "task": "arc_challenge",
+    "value": 0.33666666666666667
+   },
+   {
+    "delta_pts": null,
+    "label": "PIQA",
+    "metric": "acc_norm",
+    "n": 300,
+    "num_fewshot": 0,
+    "stderr": 0.027050608391385764,
+    "task": "piqa",
+    "value": 0.6766666666666666
+   },
+   {
+    "delta_pts": null,
+    "label": "WinoGrande",
+    "metric": "acc",
+    "n": 300,
+    "num_fewshot": 0,
+    "stderr": 0.02829149642514491,
+    "task": "winogrande",
+    "value": 0.6033333333333334
+   },
+   {
+    "delta_pts": null,
+    "label": "HellaSwag",
+    "metric": "acc_norm",
+    "n": 300,
+    "num_fewshot": 0,
+    "stderr": 0.02891510401902553,
+    "task": "hellaswag",
+    "value": 0.5033333333333333
+   }
+  ],
+  "wall_time_s": 74.18699911981821
+ },
+ "lmeval_native_status": "기록됨",
+ "methods": [
+  {
+   "bits": [
+    4,
+    8,
+    16
+   ],
+   "bits_note": "4 + 8/16",
+   "calibration": false,
+   "code": "NV4",
+   "description": "FP4(E2M1) 원소 16개마다 UE4M3 스케일, 텐서마다 FP32 스케일",
+   "family": "fp4",
+   "fixed": "블록 16 · UE4M3 블록 스케일 + FP32 텐서 스케일 (NVFP4 정의)",
+   "id": "nvfp4",
+   "label": "NVFP4",
+   "note": null,
+   "skip": false,
+   "wa_bits": "W4 · A4",
+   "weight_bits": {
+    "down_proj": 4.5,
+    "gate_proj": 4.5,
+    "k_proj": 4.5,
+    "o_proj": 4.5,
+    "q_proj": 4.5,
+    "up_proj": 4.5,
+    "v_proj": 4.5
+   }
+  },
+  {
+   "bits": [
+    4,
+    8,
+    16
+   ],
+   "bits_note": "4 + 8/16",
+   "calibration": true,
+   "code": "AWQ",
+   "description": "보정 데이터로 찾은 AWQ 채널 스케일을 적용한 뒤 NVFP4",
+   "family": "fp4",
+   "fixed": "블록 16 · UE4M3 블록 스케일 + FP32 텐서 스케일 (NVFP4 정의)",
+   "id": "awq_nvfp4",
+   "label": "AWQ + NVFP4",
+   "note": null,
+   "skip": false,
+   "wa_bits": "W4 · A4",
+   "weight_bits": {
+    "down_proj": 4.5,
+    "gate_proj": 4.5,
+    "k_proj": 4.5,
+    "o_proj": 4.5,
+    "q_proj": 4.5,
+    "up_proj": 4.5,
+    "v_proj": 4.5
+   }
+  },
+  {
+   "bits": [
+    4,
+    8,
+    16
+   ],
+   "bits_note": "4 + 8/16",
+   "calibration": true,
+   "code": "SQ",
+   "description": "활성 이상치를 가중치 쪽으로 옮긴 뒤(α 0.5) NVFP4",
+   "family": "fp4",
+   "fixed": "블록 16 · UE4M3 블록 스케일 + FP32 텐서 스케일 (NVFP4 정의)",
+   "id": "smoothquant_nvfp4",
+   "label": "SmoothQuant + NVFP4",
+   "note": null,
+   "skip": false,
+   "wa_bits": "W4 · A4",
+   "weight_bits": {
+    "down_proj": 4.5,
+    "gate_proj": 4.5,
+    "k_proj": 4.5,
+    "o_proj": 4.5,
+    "q_proj": 4.5,
+    "up_proj": 4.5,
+    "v_proj": 4.5
+   }
+  },
+  {
+   "bits": [
+    4,
+    8,
+    32
+   ],
+   "bits_note": "4 + 8/32",
+   "calibration": false,
+   "code": "MX4",
+   "description": "FP4(E2M1) 원소 32개마다 E8M0(2의 거듭제곱) 스케일",
+   "family": "fp4",
+   "fixed": "블록 32 · E8M0 스케일 pow2_floor (OCP MX 정의)",
+   "id": "mxfp4",
+   "label": "MXFP4",
+   "note": null,
+   "skip": false,
+   "wa_bits": "W4 · A4",
+   "weight_bits": {
+    "down_proj": 4.25,
+    "gate_proj": 4.25,
+    "k_proj": 4.25,
+    "o_proj": 4.25,
+    "q_proj": 4.25,
+    "up_proj": 4.25,
+    "v_proj": 4.25
+   }
+  },
+  {
+   "bits": [
+    4,
+    20,
+    128
+   ],
+   "bits_note": "4 + 20/128",
+   "calibration": true,
+   "code": "GQ",
+   "description": "가중치만 GPTQ 로 UINT4(128개 그룹, FP16 스케일 + 영점), 활성은 BF16",
+   "family": "int4",
+   "fixed": "UINT4 · FP16 스케일 + 영점 — 범위를 [min, max] 로 정해 스케일 고르기가 없음 · 활성 BF16",
+   "id": "gptq_int4",
+   "label": "GPTQ INT4",
+   "note": null,
+   "skip": false,
+   "wa_bits": "W4 · A16",
+   "weight_bits": {
+    "down_proj": 4.15625,
+    "gate_proj": 4.15625,
+    "k_proj": 4.15625,
+    "o_proj": 4.15625,
+    "q_proj": 4.15625,
+    "up_proj": 4.15625,
+    "v_proj": 4.15625
+   }
+  },
+  {
+   "bits": [
+    4,
+    8,
+    16
+   ],
+   "bits_note": "4 + 8/16",
+   "calibration": false,
+   "code": "NI4",
+   "description": "NVFP4 의 블록 구조(16개마다 UE4M3 스케일)에 대칭 INT4 원소",
+   "family": "int4",
+   "fixed": "블록 16 · UE4M3 + FP32 스케일 (NVFP4 구조, 원소만 INT4)",
+   "id": "nvint4",
+   "label": "NVINT4",
+   "note": "새 형식 · NVFP4 구조 + INT4",
+   "skip": false,
+   "wa_bits": "W4 · A4",
+   "weight_bits": {
+    "down_proj": 4.5,
+    "gate_proj": 4.5,
+    "k_proj": 4.5,
+    "o_proj": 4.5,
+    "q_proj": 4.5,
+    "up_proj": 4.5,
+    "v_proj": 4.5
+   }
+  },
+  {
+   "bits": [
+    8,
+    8,
+    32
+   ],
+   "bits_note": "8 + 8/32",
+   "calibration": false,
+   "code": "MX8",
+   "description": "FP8(E4M3) 원소 32개마다 E8M0 스케일",
+   "family": "8bit",
+   "fixed": "블록 32 · E8M0 스케일 pow2_floor (OCP MX 정의)",
+   "id": "mxfp8",
+   "label": "MXFP8",
+   "note": null,
+   "skip": false,
+   "wa_bits": "W8 · A8",
+   "weight_bits": {
+    "down_proj": 8.25,
+    "gate_proj": 8.25,
+    "k_proj": 8.25,
+    "o_proj": 8.25,
+    "q_proj": 8.25,
+    "up_proj": 8.25,
+    "v_proj": 8.25
+   }
+  },
+  {
+   "bits": [
+    8,
+    32,
+    null
+   ],
+   "bits_note": "8 + 32/in_features",
+   "calibration": false,
+   "code": "I8",
+   "description": "가중치는 출력 행마다, 활성은 토큰마다 FP32 스케일 하나인 INT8",
+   "family": "8bit",
+   "fixed": "가중치는 출력 행마다 FP32 스케일 하나",
+   "id": "int8",
+   "label": "INT8",
+   "note": null,
+   "skip": false,
+   "wa_bits": "W8 · A8",
+   "weight_bits": {
+    "down_proj": 8.010416666666666,
+    "gate_proj": 8.03125,
+    "k_proj": 8.03125,
+    "o_proj": 8.015625,
+    "q_proj": 8.03125,
+    "up_proj": 8.03125,
+    "v_proj": 8.03125
+   }
+  },
+  {
+   "bits": [
+    4,
+    8,
+    16
+   ],
+   "bits_note": "4 + 8/16",
+   "calibration": false,
+   "code": "B12",
+   "description": "4비트 원소 16개가 8비트 지수 하나를 공유하는 블록 부동소수점",
+   "family": "bfp",
+   "fixed": "블록 16 · 8비트 공유 지수 (MSFP12 정의)",
+   "id": "bfp12",
+   "label": "BFP (MSFP12)",
+   "note": null,
+   "skip": false,
+   "wa_bits": "W4 · A4",
+   "weight_bits": {
+    "down_proj": 4.5,
+    "gate_proj": 4.5,
+    "k_proj": 4.5,
+    "o_proj": 4.5,
+    "q_proj": 4.5,
+    "up_proj": 4.5,
+    "v_proj": 4.5
+   }
+  },
+  {
+   "bits": [
+    16,
+    0,
+    1
+   ],
+   "bits_note": "16",
+   "calibration": false,
+   "code": "BF",
+   "description": "양자화하지 않고 원래 BF16 으로 둡니다",
+   "family": "bf16",
+   "fixed": null,
+   "id": "bf16",
+   "label": "BF16 유지",
+   "note": null,
+   "skip": true,
+   "wa_bits": "W16 · A16",
+   "weight_bits": {
+    "down_proj": 16.0,
+    "gate_proj": 16.0,
+    "k_proj": 16.0,
+    "o_proj": 16.0,
+    "q_proj": 16.0,
+    "up_proj": 16.0,
+    "v_proj": 16.0
+   }
+  }
+ ],
+ "model": {
+  "blocks": 28,
+  "id": "Qwen/Qwen3-0.6B"
+ },
+ "native": {
+  "dataset_fingerprint": "a46124b21ac53738",
+  "env": {
+   "cuda": "12.8",
+   "dtype": "bfloat16",
+   "git_dirty": false,
+   "git_sha": "ab489f17cdc01cbaa8074613ca30c89204ca6a9e",
+   "gpu_names": [
+    "NVIDIA A100-SXM4-80GB"
+   ],
+   "model_id": "Qwen/Qwen3-0.6B",
+   "model_sha": "c1899de289a04d12100db370d81485cdf75e47ca",
+   "seed": 42,
+   "utc": "2026-10-13T05:10:51.112196+00:00"
+  },
+  "forward_mode": "full_window",
+  "n_tokens": 298862,
+  "n_windows": 146,
+  "ppl": 20.966150815155867,
+  "ppl_delta_pct": null,
+  "recipe_hash": "native",
+  "source": "runs/20261013_quantizer_w1/ppl_base/native.json",
+  "wall_time_s": 17.092450043652207
+ },
+ "native_status": "기록됨",
+ "option_info": {
+  "activation.granularity": {
+   "choices": {
+    "row": "토큰마다 (row)",
+    "tensor": "텐서 하나 (tensor)"
+   },
+   "label": "활성 스케일 단위",
+   "unavailable": null
+  },
+  "activation.observer.decay": {
+   "choices": null,
+   "label": "EMA decay (0 이상 1 미만)",
+   "unavailable": null
+  },
+  "activation.observer.history_len": {
+   "choices": null,
+   "label": "history 길이 (호출 수)",
+   "unavailable": null
+  },
+  "activation.observer.kind": {
+   "choices": {
+    "ema": "ema (이동 평균)",
+    "history": "history (지난 호출, 보정 없음)",
+    "minmax": "minmax (보정 최댓값)",
+    "none": "없음 (동적, 호출마다)",
+    "percentile": "percentile (보정 분위수)"
+   },
+   "label": "활성 observer (스케일 출처)",
+   "unavailable": "정적 observer 는 텐서 하나의 스케일에서만 됩니다 — 활성 스케일 단위를 '텐서 하나'로 바꾸세요"
+  },
+  "activation.observer.percentile": {
+   "choices": null,
+   "label": "observer 분위수 (%)",
+   "unavailable": null
+  },
+  "activation.rounding": {
+   "choices": {
+    "rne": "rne (최근접, 동률 짝수)",
+    "rtz": "rtz (0 쪽 버림)",
+    "sr": "sr (확률적)"
+   },
+   "label": "활성 원소 반올림",
+   "unavailable": null
+  },
+  "activation.scale.method": {
+   "choices": {
+    "absmax": "absmax (최댓값)",
+    "mse": "mse (오차 최소 비율)",
+    "percentile": "percentile (분위수)"
+   },
+   "label": "활성 스케일 고르기",
+   "unavailable": "정적 observer 가 amax 를 정하므로 활성 스케일은 absmax 로만 계산됩니다"
+  },
+  "activation.scale.percentile": {
+   "choices": null,
+   "label": "활성 분위수 (%)",
+   "unavailable": null
+  },
+  "transform.alpha": {
+   "choices": null,
+   "label": "SmoothQuant α (0–1, 가중치로 옮기는 비율)",
+   "unavailable": null
+  },
+  "transform.grid": {
+   "choices": null,
+   "label": "AWQ 탐색 점 수 (α 0–1)",
+   "unavailable": null
+  },
+  "transform.share_inputs": {
+   "choices": null,
+   "label": "같은 입력을 받는 Linear 끼리 스케일 공유 (q·k·v, gate·up)",
+   "unavailable": null
+  },
+  "weight.group_size": {
+   "choices": null,
+   "label": "가중치 그룹 크기 (원소 수)",
+   "unavailable": null
+  },
+  "weight.rounding": {
+   "choices": {
+    "rne": "rne (최근접, 동률 짝수)",
+    "rtz": "rtz (0 쪽 버림)",
+    "sr": "sr (확률적)"
+   },
+   "label": "가중치 원소 반올림",
+   "unavailable": null
+  },
+  "weight.scale.method": {
+   "choices": {
+    "absmax": "absmax (최댓값)",
+    "mse": "mse (오차 최소 비율)",
+    "percentile": "percentile (분위수)"
+   },
+   "label": "가중치 스케일 고르기",
+   "unavailable": null
+  },
+  "weight.scale.percentile": {
+   "choices": null,
+   "label": "가중치 분위수 (%)",
+   "unavailable": null
+  },
+  "weight_algo.act_order": {
+   "choices": null,
+   "label": "GPTQ act_order (헤시안 대각이 큰 열부터)",
+   "unavailable": null
+  },
+  "weight_algo.block_size": {
+   "choices": null,
+   "label": "GPTQ 블록 크기 (한 번에 갱신하는 열 수)",
+   "unavailable": null
+  },
+  "weight_algo.damp": {
+   "choices": null,
+   "label": "GPTQ damp (헤시안 대각 평균의 비율)",
+   "unavailable": null
+  }
+ },
+ "presets": [
+  {
+   "default": "mxfp4",
+   "grid": [
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ]
+   ],
+   "id": "qd_mxfp4",
+   "kv": "none",
+   "label": "MXFP4 전체",
+   "lmeval": {
+    "batch_size": 16,
+    "env": {
+     "cuda": "12.8",
+     "dtype": "bfloat16",
+     "git_dirty": false,
+     "git_sha": "ab489f17cdc01cbaa8074613ca30c89204ca6a9e",
+     "gpu_names": [
+      "NVIDIA H100 NVL"
+     ],
+     "model_id": "Qwen/Qwen3-0.6B",
+     "model_sha": "c1899de289a04d12100db370d81485cdf75e47ca",
+     "seed": 42,
+     "utc": "2026-10-13T10:28:51.228802+00:00"
+    },
+    "limit": 300,
+    "lm_eval_version": "0.4.13",
+    "macro": 0.4646666666666667,
+    "macro_delta_pts": -7.133333333333336,
+    "recipe_hash": "e6f0c97f769b840eef7d2bd2e8d7df7dc04fc1dd7455c16e22598702c315bb2d",
+    "source": "runs/20261013_quantizer_w3/lmeval_A/qd_mxfp4.json",
+    "tasks": [
+     {
+      "delta_pts": -14.333333333333337,
+      "label": "ARC-Easy",
+      "metric": "acc_norm",
+      "n": 300,
+      "num_fewshot": 0,
+      "stderr": 0.028511310643917525,
+      "task": "arc_easy",
+      "value": 0.4166666666666667
+     },
+     {
+      "delta_pts": -5.333333333333334,
+      "label": "ARC-Challenge",
+      "metric": "acc_norm",
+      "n": 300,
+      "num_fewshot": 0,
+      "stderr": 0.026059845940064916,
+      "task": "arc_challenge",
+      "value": 0.2833333333333333
+     },
+     {
+      "delta_pts": -6.333333333333336,
+      "label": "PIQA",
+      "metric": "acc_norm",
+      "n": 300,
+      "num_fewshot": 0,
+      "stderr": 0.028163138908196883,
+      "task": "piqa",
+      "value": 0.6133333333333333
+     },
+     {
+      "delta_pts": -3.6666666666666736,
+      "label": "WinoGrande",
+      "metric": "acc",
+      "n": 300,
+      "num_fewshot": 0,
+      "stderr": 0.028657565120703166,
+      "task": "winogrande",
+      "value": 0.5666666666666667
+     },
+     {
+      "delta_pts": -5.999999999999995,
+      "label": "HellaSwag",
+      "metric": "acc_norm",
+      "n": 300,
+      "num_fewshot": 0,
+      "stderr": 0.028729443073160024,
+      "task": "hellaswag",
+      "value": 0.44333333333333336
+     }
+    ],
+    "wall_time_s": 372.0438739443198
+   },
+   "lmeval_rejected": null,
+   "lmeval_status": "기록됨",
+   "recipe_sha256": "e6f0c97f769b840eef7d2bd2e8d7df7dc04fc1dd7455c16e22598702c315bb2d",
+   "report": {
+    "dataset_fingerprint": "e392e473036660f992761e23b95b79b80a8feabe10d313b524140cc83852a38b",
+    "env": {
+     "cuda": "12.8",
+     "dtype": "bfloat16",
+     "git_dirty": false,
+     "git_sha": "ab489f17cdc01cbaa8074613ca30c89204ca6a9e",
+     "gpu_names": [
+      "NVIDIA H100 NVL"
+     ],
+     "model_id": "Qwen/Qwen3-0.6B",
+     "model_sha": "c1899de289a04d12100db370d81485cdf75e47ca",
+     "seed": 42,
+     "utc": "2026-10-13T11:12:55.005742+00:00"
+    },
+    "logits_kl": 0.586426635253436,
+    "measured": [
+     "model.layers.0.mlp.down_proj",
+     "model.layers.0.mlp.gate_proj",
+     "model.layers.0.mlp.up_proj",
+     "model.layers.0.self_attn.k_proj",
+     "model.layers.0.self_attn.o_proj",
+     "model.layers.0.self_attn.q_proj",
+     "model.layers.0.self_attn.v_proj",
+     "model.layers.1.mlp.down_proj",
+     "model.layers.1.mlp.gate_proj",
+     "model.layers.1.mlp.up_proj",
+     "model.layers.1.self_attn.k_proj",
+     "model.layers.1.self_attn.o_proj",
+     "model.layers.1.self_attn.q_proj",
+     "model.layers.1.self_attn.v_proj",
+     "model.layers.10.mlp.down_proj",
+     "model.layers.10.mlp.gate_proj",
+     "model.layers.10.mlp.up_proj",
+     "model.layers.10.self_attn.k_proj",
+     "model.layers.10.self_attn.o_proj",
+     "model.layers.10.self_attn.q_proj",
+     "model.layers.10.self_attn.v_proj",
+     "model.layers.11.mlp.down_proj",
+     "model.layers.11.mlp.gate_proj",
+     "model.layers.11.mlp.up_proj",
+     "model.layers.11.self_attn.k_proj",
+     "model.layers.11.self_attn.o_proj",
+     "model.layers.11.self_attn.q_proj",
+     "model.layers.11.self_attn.v_proj",
+     "model.layers.12.mlp.down_proj",
+     "model.layers.12.mlp.gate_proj",
+     "model.layers.12.mlp.up_proj",
+     "model.layers.12.self_attn.k_proj",
+     "model.layers.12.self_attn.o_proj",
+     "model.layers.12.self_attn.q_proj",
+     "model.layers.12.self_attn.v_proj",
+     "model.layers.13.mlp.down_proj",
+     "model.layers.13.mlp.gate_proj",
+     "model.layers.13.mlp.up_proj",
+     "model.layers.13.self_attn.k_proj",
+     "model.layers.13.self_attn.o_proj",
+     "model.layers.13.self_attn.q_proj",
+     "model.layers.13.self_attn.v_proj",
+     "model.layers.14.mlp.down_proj",
+     "model.layers.14.mlp.gate_proj",
+     "model.layers.14.mlp.up_proj",
+     "model.layers.14.self_attn.k_proj",
+     "model.layers.14.self_attn.o_proj",
+     "model.layers.14.self_attn.q_proj",
+     "model.layers.14.self_attn.v_proj",
+     "model.layers.15.mlp.down_proj",
+     "model.layers.15.mlp.gate_proj",
+     "model.layers.15.mlp.up_proj",
+     "model.layers.15.self_attn.k_proj",
+     "model.layers.15.self_attn.o_proj",
+     "model.layers.15.self_attn.q_proj",
+     "model.layers.15.self_attn.v_proj",
+     "model.layers.16.mlp.down_proj",
+     "model.layers.16.mlp.gate_proj",
+     "model.layers.16.mlp.up_proj",
+     "model.layers.16.self_attn.k_proj",
+     "model.layers.16.self_attn.o_proj",
+     "model.layers.16.self_attn.q_proj",
+     "model.layers.16.self_attn.v_proj",
+     "model.layers.17.mlp.down_proj",
+     "model.layers.17.mlp.gate_proj",
+     "model.layers.17.mlp.up_proj",
+     "model.layers.17.self_attn.k_proj",
+     "model.layers.17.self_attn.o_proj",
+     "model.layers.17.self_attn.q_proj",
+     "model.layers.17.self_attn.v_proj",
+     "model.layers.18.mlp.down_proj",
+     "model.layers.18.mlp.gate_proj",
+     "model.layers.18.mlp.up_proj",
+     "model.layers.18.self_attn.k_proj",
+     "model.layers.18.self_attn.o_proj",
+     "model.layers.18.self_attn.q_proj",
+     "model.layers.18.self_attn.v_proj",
+     "model.layers.19.mlp.down_proj",
+     "model.layers.19.mlp.gate_proj",
+     "model.layers.19.mlp.up_proj",
+     "model.layers.19.self_attn.k_proj",
+     "model.layers.19.self_attn.o_proj",
+     "model.layers.19.self_attn.q_proj",
+     "model.layers.19.self_attn.v_proj",
+     "model.layers.2.mlp.down_proj",
+     "model.layers.2.mlp.gate_proj",
+     "model.layers.2.mlp.up_proj",
+     "model.layers.2.self_attn.k_proj",
+     "model.layers.2.self_attn.o_proj",
+     "model.layers.2.self_attn.q_proj",
+     "model.layers.2.self_attn.v_proj",
+     "model.layers.20.mlp.down_proj",
+     "model.layers.20.mlp.gate_proj",
+     "model.layers.20.mlp.up_proj",
+     "model.layers.20.self_attn.k_proj",
+     "model.layers.20.self_attn.o_proj",
+     "model.layers.20.self_attn.q_proj",
+     "model.layers.20.self_attn.v_proj",
+     "model.layers.21.mlp.down_proj",
+     "model.layers.21.mlp.gate_proj",
+     "model.layers.21.mlp.up_proj",
+     "model.layers.21.self_attn.k_proj",
+     "model.layers.21.self_attn.o_proj",
+     "model.layers.21.self_attn.q_proj",
+     "model.layers.21.self_attn.v_proj",
+     "model.layers.22.mlp.down_proj",
+     "model.layers.22.mlp.gate_proj",
+     "model.layers.22.mlp.up_proj",
+     "model.layers.22.self_attn.k_proj",
+     "model.layers.22.self_attn.o_proj",
+     "model.layers.22.self_attn.q_proj",
+     "model.layers.22.self_attn.v_proj",
+     "model.layers.23.mlp.down_proj",
+     "model.layers.23.mlp.gate_proj",
+     "model.layers.23.mlp.up_proj",
+     "model.layers.23.self_attn.k_proj",
+     "model.layers.23.self_attn.o_proj",
+     "model.layers.23.self_attn.q_proj",
+     "model.layers.23.self_attn.v_proj",
+     "model.layers.24.mlp.down_proj",
+     "model.layers.24.mlp.gate_proj",
+     "model.layers.24.mlp.up_proj",
+     "model.layers.24.self_attn.k_proj",
+     "model.layers.24.self_attn.o_proj",
+     "model.layers.24.self_attn.q_proj",
+     "model.layers.24.self_attn.v_proj",
+     "model.layers.25.mlp.down_proj",
+     "model.layers.25.mlp.gate_proj",
+     "model.layers.25.mlp.up_proj",
+     "model.layers.25.self_attn.k_proj",
+     "model.layers.25.self_attn.o_proj",
+     "model.layers.25.self_attn.q_proj",
+     "model.layers.25.self_attn.v_proj",
+     "model.layers.26.mlp.down_proj",
+     "model.layers.26.mlp.gate_proj",
+     "model.layers.26.mlp.up_proj",
+     "model.layers.26.self_attn.k_proj",
+     "model.layers.26.self_attn.o_proj",
+     "model.layers.26.self_attn.q_proj",
+     "model.layers.26.self_attn.v_proj",
+     "model.layers.27.mlp.down_proj",
+     "model.layers.27.mlp.gate_proj",
+     "model.layers.27.mlp.up_proj",
+     "model.layers.27.self_attn.k_proj",
+     "model.layers.27.self_attn.o_proj",
+     "model.layers.27.self_attn.q_proj",
+     "model.layers.27.self_attn.v_proj",
+     "model.layers.3.mlp.down_proj",
+     "model.layers.3.mlp.gate_proj",
+     "model.layers.3.mlp.up_proj",
+     "model.layers.3.self_attn.k_proj",
+     "model.layers.3.self_attn.o_proj",
+     "model.layers.3.self_attn.q_proj",
+     "model.layers.3.self_attn.v_proj",
+     "model.layers.4.mlp.down_proj",
+     "model.layers.4.mlp.gate_proj",
+     "model.layers.4.mlp.up_proj",
+     "model.layers.4.self_attn.k_proj",
+     "model.layers.4.self_attn.o_proj",
+     "model.layers.4.self_attn.q_proj",
+     "model.layers.4.self_attn.v_proj",
+     "model.layers.5.mlp.down_proj",
+     "model.layers.5.mlp.gate_proj",
+     "model.layers.5.mlp.up_proj",
+     "model.layers.5.self_attn.k_proj",
+     "model.layers.5.self_attn.o_proj",
+     "model.layers.5.self_attn.q_proj",
+     "model.layers.5.self_attn.v_proj",
+     "model.layers.6.mlp.down_proj",
+     "model.layers.6.mlp.gate_proj",
+     "model.layers.6.mlp.up_proj",
+     "model.layers.6.self_attn.k_proj",
+     "model.layers.6.self_attn.o_proj",
+     "model.layers.6.self_attn.q_proj",
+     "model.layers.6.self_attn.v_proj",
+     "model.layers.7.mlp.down_proj",
+     "model.layers.7.mlp.gate_proj",
+     "model.layers.7.mlp.up_proj",
+     "model.layers.7.self_attn.k_proj",
+     "model.layers.7.self_attn.o_proj",
+     "model.layers.7.self_attn.q_proj",
+     "model.layers.7.self_attn.v_proj",
+     "model.layers.8.mlp.down_proj",
+     "model.layers.8.mlp.gate_proj",
+     "model.layers.8.mlp.up_proj",
+     "model.layers.8.self_attn.k_proj",
+     "model.layers.8.self_attn.o_proj",
+     "model.layers.8.self_attn.q_proj",
+     "model.layers.8.self_attn.v_proj",
+     "model.layers.9.mlp.down_proj",
+     "model.layers.9.mlp.gate_proj",
+     "model.layers.9.mlp.up_proj",
+     "model.layers.9.self_attn.k_proj",
+     "model.layers.9.self_attn.o_proj",
+     "model.layers.9.self_attn.q_proj",
+     "model.layers.9.self_attn.v_proj"
+    ],
+    "n_tokens": 4088,
+    "ppl_emulated": 67.67943594682737,
+    "ppl_reference": 43.75868193325478,
+    "recipe_hash": "e6f0c97f769b840eef7d2bd2e8d7df7dc04fc1dd7455c16e22598702c315bb2d",
+    "samples": 8,
+    "seqlen": 512,
+    "source": "runs/20261013_quantizer_w2/report/qd_mxfp4/report.json",
+    "sqnr_db": [
+     18.92571764233339,
+     19.192128206285375,
+     15.019895340682973,
+     17.256761097218295,
+     17.372661153795683,
+     14.815393893195948,
+     15.052608815703172,
+     17.299032885190137,
+     17.720824188596055,
+     15.452831907871508,
+     16.62401544872957,
+     18.417086504606566,
+     13.3758212110229,
+     15.319371879374215,
+     17.627403964600973,
+     18.46782451303203,
+     15.053774676532202,
+     16.269824324063634,
+     17.7797778458496,
+     13.473234960220031,
+     14.892950354085471,
+     17.711872950535597,
+     16.280049442339475,
+     14.318629636872924,
+     16.13985449739961,
+     18.367321559414634,
+     13.960395705256886,
+     14.853885216321732,
+     17.811740020353874,
+     17.545201983750275,
+     14.260731594082962,
+     14.891148390957769,
+     18.66980498491832,
+     14.643625027501383,
+     14.707277291876448,
+     17.744546034165396,
+     17.195922926651374,
+     14.118838977263422,
+     15.79469179680552,
+     17.621127601259015,
+     14.824650676424602,
+     14.865419644653048,
+     18.193400442843174,
+     16.901945744521015,
+     14.502418324153135,
+     15.810101640703959,
+     17.898315067659528,
+     14.740642194690587,
+     14.752874886137768,
+     17.97024502806685,
+     17.195083695791002,
+     14.607808174725774,
+     14.9578187092227,
+     18.16025807214158,
+     14.781323226230164,
+     14.600288720949926,
+     17.40363617649139,
+     18.25227216523479,
+     16.368846292094382,
+     14.688217244016828,
+     17.906348040241518,
+     14.70490176756185,
+     14.66042060882164,
+     18.260573927502612,
+     16.837407262077523,
+     14.189033191625484,
+     14.691731593978659,
+     17.685020457510273,
+     14.73430968854133,
+     14.553750434461232,
+     17.83094363839933,
+     16.739277106561005,
+     14.432124204829142,
+     14.90885348238308,
+     17.445428511553107,
+     15.306835314619349,
+     14.817520138700036,
+     18.854804254228135,
+     17.331689998446073,
+     15.375370989306969,
+     14.70802435895746,
+     17.068892919639193,
+     14.800343365910395,
+     14.542028828188078,
+     17.89120079288706,
+     19.335207567160715,
+     18.261395754772707,
+     14.204992727382425,
+     16.900110599550672,
+     14.474997735708385,
+     15.114935087082575,
+     18.098948968346836,
+     18.973386559812646,
+     17.70114742577959,
+     13.04424306696406,
+     16.891152340687764,
+     14.781756495319044,
+     14.618437149551509,
+     18.042977799432443,
+     19.24183641878768,
+     17.336558911812144,
+     14.463966025801064,
+     16.998313539696674,
+     15.107805169441086,
+     14.801312385809307,
+     17.76764581931883,
+     16.54799155476852,
+     14.437334291136013,
+     15.39858190461329,
+     17.324364533790614,
+     15.446091457045268,
+     15.098259312466574,
+     17.877145486599076,
+     16.746372852858368,
+     14.724387808523442,
+     14.66352473685999,
+     17.58337721350029,
+     15.832837724145545,
+     15.193680316508738,
+     18.02650576132359,
+     17.011781707411163,
+     13.964829291260239,
+     13.845596098600888,
+     16.97077875982047,
+     15.913184173723135,
+     14.529088693699334,
+     18.34703608097056,
+     17.088993822079143,
+     13.791690571053053,
+     15.941228475718907,
+     17.209176248997633,
+     16.260900016256482,
+     14.604218559258147,
+     18.161550921953147,
+     17.139740292185444,
+     13.794520281516077,
+     15.637316320012102,
+     17.6738660632229,
+     16.73071542843918,
+     14.717568268086643,
+     17.883299609022426,
+     16.602167463944816,
+     13.701032456044073,
+     16.712203490986628,
+     17.536589013956316,
+     16.53226835312942,
+     15.078225324104405,
+     17.529182229641222,
+     16.34861431624961,
+     14.66198288052742,
+     15.706791544228318,
+     17.737728425634632,
+     16.195204732087145,
+     15.302929151129083,
+     17.889575345047213,
+     16.70953872168383,
+     14.58583881058555,
+     15.65864787213911,
+     17.842658189078836,
+     15.7223465864354,
+     15.71046835555351,
+     18.236542165373816,
+     16.89640594844105,
+     14.418004948516877,
+     15.22453731235621,
+     17.797362000037857,
+     15.370269926344672,
+     15.226400909871863,
+     18.3741287598173,
+     17.24143675337919,
+     14.628208512660901,
+     17.576664733739584,
+     17.576156316129506,
+     15.26648882126574,
+     15.667172900620612,
+     18.39546567193258,
+     17.168183546955575,
+     14.937900021729076,
+     16.948628248402596,
+     16.9723108526013,
+     15.236024360726752,
+     15.16939009440726,
+     17.517609617039408,
+     17.130190804469958,
+     15.153563633784248,
+     16.191196315398063,
+     17.51172385033752,
+     16.12858506771046,
+     14.82295562485919,
+     18.831146578379872,
+     19.18977946443371,
+     13.997456970825882,
+     14.923697360818064,
+     18.53622074544913,
+     16.43484914193415,
+     16.36362542887093
+    ],
+    "top1_agreement": 0.619384765625
+   },
+   "report_rejected": null,
+   "report_status": "기록됨",
+   "run": {
+    "dataset_fingerprint": "a46124b21ac53738",
+    "env": {
+     "cuda": "12.8",
+     "dtype": "bfloat16",
+     "git_dirty": false,
+     "git_sha": "ab489f17cdc01cbaa8074613ca30c89204ca6a9e",
+     "gpu_names": [
+      "NVIDIA A100-SXM4-80GB"
+     ],
+     "model_id": "Qwen/Qwen3-0.6B",
+     "model_sha": "c1899de289a04d12100db370d81485cdf75e47ca",
+     "seed": 42,
+     "utc": "2026-10-13T10:28:35.901249+00:00"
+    },
+    "forward_mode": "full_window",
+    "n_tokens": 298862,
+    "n_windows": 146,
+    "ppl": 33.94094089039902,
+    "ppl_delta_pct": 61.88446410422663,
+    "recipe_hash": "e6f0c97f769b840eef7d2bd2e8d7df7dc04fc1dd7455c16e22598702c315bb2d",
+    "source": "runs/20261013_quantizer_w2/ppl_all/qd_mxfp4.json",
+    "wall_time_s": 983.1853543738835
+   },
+   "run_rejected": null,
+   "run_status": "기록됨",
+   "yaml": "name: qd_mxfp4\ndescription: \"Built with the Tri-Cast Quantizer demo (one method per Linear layer).\"\ndefaults:\n  weight:\n    scheme: mxfp4\n    mma_input: dequant\n  activation:\n    scheme: mxfp4\n    mma_input: dequant\n  transform: none\n  weight_algo: rtn\nexclude: [lm_head]"
+  },
+  {
+   "default": "mxfp4",
+   "grid": [
+    [
+     "bf16",
+     "bf16",
+     "bf16",
+     "bf16",
+     "bf16",
+     "bf16",
+     "bf16"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4",
+     "mxfp4"
+    ],
+    [
+     "bf16",
+     "bf16",
+     "bf16",
+     "bf16",
+     "bf16",
+     "bf16",
+     "bf16"
+    ]
+   ],
+   "id": "qd_mxfp4_ends_bf16",
+   "kv": "none",
+   "label": "MXFP4 + 첫·마지막 블록 BF16",
+   "lmeval": {
+    "batch_size": 16,
+    "env": {
+     "cuda": "12.8",
+     "dtype": "bfloat16",
+     "git_dirty": false,
+     "git_sha": "ab489f17cdc01cbaa8074613ca30c89204ca6a9e",
+     "gpu_names": [
+      "NVIDIA H100 NVL"
+     ],
+     "model_id": "Qwen/Qwen3-0.6B",
+     "model_sha": "c1899de289a04d12100db370d81485cdf75e47ca",
+     "seed": 42,
+     "utc": "2026-10-13T10:28:54.295726+00:00"
+    },
+    "limit": 300,
+    "lm_eval_version": "0.4.13",
+    "macro": 0.45999999999999996,
+    "macro_delta_pts": -7.600000000000007,
+    "recipe_hash": "483ec568f4a06eb819cb40f3c544b5106f38e7607793d060fedd40e2631e0bad",
+    "source": "runs/20261013_quantizer_w3/lmeval_B/qd_mxfp4_ends_bf16.json",
+    "tasks": [
+     {
+      "delta_pts": -11.66666666666667,
+      "label": "ARC-Easy",
+      "metric": "acc_norm",
+      "n": 300,
+      "num_fewshot": 0,
+      "stderr": 0.028729443073160024,
+      "task": "arc_easy",
+      "value": 0.44333333333333336
+     },
+     {
+      "delta_pts": -5.333333333333334,
+      "label": "ARC-Challenge",
+      "metric": "acc_norm",
+      "n": 300,
+      "num_fewshot": 0,
+      "stderr": 0.026059845940064916,
+      "task": "arc_challenge",
+      "value": 0.2833333333333333
+     },
+     {
+      "delta_pts": -5.999999999999995,
+      "label": "PIQA",
+      "metric": "acc_norm",
+      "n": 300,
+      "num_fewshot": 0,
+      "stderr": 0.02811757974289911,
+      "task": "piqa",
+      "value": 0.6166666666666667
+     },
+     {
+      "delta_pts": -13.666666666666671,
+      "label": "WinoGrande",
+      "metric": "acc",
+      "n": 300,
+      "num_fewshot": 0,
+      "stderr": 0.028851417827642025,
+      "task": "winogrande",
+      "value": 0.4666666666666667
+     },
+     {
+      "delta_pts": -1.3333333333333308,
+      "label": "HellaSwag",
+      "metric": "acc_norm",
+      "n": 300,
+      "num_fewshot": 0,
+      "stderr": 0.028909962870561724,
+      "task": "hellaswag",
+      "value": 0.49
+     }
+    ],
+    "wall_time_s": 390.565282673575
+   },
+   "lmeval_rejected": null,
+   "lmeval_status": "기록됨",
+   "recipe_sha256": "483ec568f4a06eb819cb40f3c544b5106f38e7607793d060fedd40e2631e0bad",
+   "report": {
+    "dataset_fingerprint": "e392e473036660f992761e23b95b79b80a8feabe10d313b524140cc83852a38b",
+    "env": {
+     "cuda": "12.8",
+     "dtype": "bfloat16",
+     "git_dirty": false,
+     "git_sha": "ab489f17cdc01cbaa8074613ca30c89204ca6a9e",
+     "gpu_names": [
+      "NVIDIA H100 NVL"
+     ],
+     "model_id": "Qwen/Qwen3-0.6B",
+     "model_sha": "c1899de289a04d12100db370d81485cdf75e47ca",
+     "seed": 42,
+     "utc": "2026-10-13T11:14:30.670365+00:00"
+    },
+    "logits_kl": 0.47619359903536007,
+    "measured": [
+     "model.layers.1.mlp.down_proj",
+     "model.layers.1.mlp.gate_proj",
+     "model.layers.1.mlp.up_proj",
+     "model.layers.1.self_attn.k_proj",
+     "model.layers.1.self_attn.o_proj",
+     "model.layers.1.self_attn.q_proj",
+     "model.layers.1.self_attn.v_proj",
+     "model.layers.10.mlp.down_proj",
+     "model.layers.10.mlp.gate_proj",
+     "model.layers.10.mlp.up_proj",
+     "model.layers.10.self_attn.k_proj",
+     "model.layers.10.self_attn.o_proj",
+     "model.layers.10.self_attn.q_proj",
+     "model.layers.10.self_attn.v_proj",
+     "model.layers.11.mlp.down_proj",
+     "model.layers.11.mlp.gate_proj",
+     "model.layers.11.mlp.up_proj",
+     "model.layers.11.self_attn.k_proj",
+     "model.layers.11.self_attn.o_proj",
+     "model.layers.11.self_attn.q_proj",
+     "model.layers.11.self_attn.v_proj",
+     "model.layers.12.mlp.down_proj",
+     "model.layers.12.mlp.gate_proj",
+     "model.layers.12.mlp.up_proj",
+     "model.layers.12.self_attn.k_proj",
+     "model.layers.12.self_attn.o_proj",
+     "model.layers.12.self_attn.q_proj",
+     "model.layers.12.self_attn.v_proj",
+     "model.layers.13.mlp.down_proj",
+     "model.layers.13.mlp.gate_proj",
+     "model.layers.13.mlp.up_proj",
+     "model.layers.13.self_attn.k_proj",
+     "model.layers.13.self_attn.o_proj",
+     "model.layers.13.self_attn.q_proj",
+     "model.layers.13.self_attn.v_proj",
+     "model.layers.14.mlp.down_proj",
+     "model.layers.14.mlp.gate_proj",
+     "model.layers.14.mlp.up_proj",
+     "model.layers.14.self_attn.k_proj",
+     "model.layers.14.self_attn.o_proj",
+     "model.layers.14.self_attn.q_proj",
+     "model.layers.14.self_attn.v_proj",
+     "model.layers.15.mlp.down_proj",
+     "model.layers.15.mlp.gate_proj",
+     "model.layers.15.mlp.up_proj",
+     "model.layers.15.self_attn.k_proj",
+     "model.layers.15.self_attn.o_proj",
+     "model.layers.15.self_attn.q_proj",
+     "model.layers.15.self_attn.v_proj",
+     "model.layers.16.mlp.down_proj",
+     "model.layers.16.mlp.gate_proj",
+     "model.layers.16.mlp.up_proj",
+     "model.layers.16.self_attn.k_proj",
+     "model.layers.16.self_attn.o_proj",
+     "model.layers.16.self_attn.q_proj",
+     "model.layers.16.self_attn.v_proj",
+     "model.layers.17.mlp.down_proj",
+     "model.layers.17.mlp.gate_proj",
+     "model.layers.17.mlp.up_proj",
+     "model.layers.17.self_attn.k_proj",
+     "model.layers.17.self_attn.o_proj",
+     "model.layers.17.self_attn.q_proj",
+     "model.layers.17.self_attn.v_proj",
+     "model.layers.18.mlp.down_proj",
+     "model.layers.18.mlp.gate_proj",
+     "model.layers.18.mlp.up_proj",
+     "model.layers.18.self_attn.k_proj",
+     "model.layers.18.self_attn.o_proj",
+     "model.layers.18.self_attn.q_proj",
+     "model.layers.18.self_attn.v_proj",
+     "model.layers.19.mlp.down_proj",
+     "model.layers.19.mlp.gate_proj",
+     "model.layers.19.mlp.up_proj",
+     "model.layers.19.self_attn.k_proj",
+     "model.layers.19.self_attn.o_proj",
+     "model.layers.19.self_attn.q_proj",
+     "model.layers.19.self_attn.v_proj",
+     "model.layers.2.mlp.down_proj",
+     "model.layers.2.mlp.gate_proj",
+     "model.layers.2.mlp.up_proj",
+     "model.layers.2.self_attn.k_proj",
+     "model.layers.2.self_attn.o_proj",
+     "model.layers.2.self_attn.q_proj",
+     "model.layers.2.self_attn.v_proj",
+     "model.layers.20.mlp.down_proj",
+     "model.layers.20.mlp.gate_proj",
+     "model.layers.20.mlp.up_proj",
+     "model.layers.20.self_attn.k_proj",
+     "model.layers.20.self_attn.o_proj",
+     "model.layers.20.self_attn.q_proj",
+     "model.layers.20.self_attn.v_proj",
+     "model.layers.21.mlp.down_proj",
+     "model.layers.21.mlp.gate_proj",
+     "model.layers.21.mlp.up_proj",
+     "model.layers.21.self_attn.k_proj",
+     "model.layers.21.self_attn.o_proj",
+     "model.layers.21.self_attn.q_proj",
+     "model.layers.21.self_attn.v_proj",
+     "model.layers.22.mlp.down_proj",
+     "model.layers.22.mlp.gate_proj",
+     "model.layers.22.mlp.up_proj",
+     "model.layers.22.self_attn.k_proj",
+     "model.layers.22.self_attn.o_proj",
+     "model.layers.22.self_attn.q_proj",
+     "model.layers.22.self_attn.v_proj",
+     "model.layers.23.mlp.down_proj",
+     "model.layers.23.mlp.gate_proj",
+     "model.layers.23.mlp.up_proj",
+     "model.layers.23.self_attn.k_proj",
+     "model.layers.23.self_attn.o_proj",
+     "model.layers.23.self_attn.q_proj",
+     "model.layers.23.self_attn.v_proj",
+     "model.layers.24.mlp.down_proj",
+     "model.layers.24.mlp.gate_proj",
+     "model.layers.24.mlp.up_proj",
+     "model.layers.24.self_attn.k_proj",
+     "model.layers.24.self_attn.o_proj",
+     "model.layers.24.self_attn.q_proj",
+     "model.layers.24.self_attn.v_proj",
+     "model.layers.25.mlp.down_proj",
+     "model.layers.25.mlp.gate_proj",
+     "model.layers.25.mlp.up_proj",
+     "model.layers.25.self_attn.k_proj",
+     "model.layers.25.self_attn.o_proj",
+     "model.layers.25.self_attn.q_proj",
+     "model.layers.25.self_attn.v_proj",
+     "model.layers.26.mlp.down_proj",
+     "model.layers.26.mlp.gate_proj",
+     "model.layers.26.mlp.up_proj",
+     "model.layers.26.self_attn.k_proj",
+     "model.layers.26.self_attn.o_proj",
+     "model.layers.26.self_attn.q_proj",
+     "model.layers.26.self_attn.v_proj",
+     "model.layers.3.mlp.down_proj",
+     "model.layers.3.mlp.gate_proj",
+     "model.layers.3.mlp.up_proj",
+     "model.layers.3.self_attn.k_proj",
+     "model.layers.3.self_attn.o_proj",
+     "model.layers.3.self_attn.q_proj",
+     "model.layers.3.self_attn.v_proj",
+     "model.layers.4.mlp.down_proj",
+     "model.layers.4.mlp.gate_proj",
+     "model.layers.4.mlp.up_proj",
+     "model.layers.4.self_attn.k_proj",
+     "model.layers.4.self_attn.o_proj",
+     "model.layers.4.self_attn.q_proj",
+     "model.layers.4.self_attn.v_proj",
+     "model.layers.5.mlp.down_proj",
+     "model.layers.5.mlp.gate_proj",
+     "model.layers.5.mlp.up_proj",
+     "model.layers.5.self_attn.k_proj",
+     "model.layers.5.self_attn.o_proj",
+     "model.layers.5.self_attn.q_proj",
+     "model.layers.5.self_attn.v_proj",
+     "model.layers.6.mlp.down_proj",
+     "model.layers.6.mlp.gate_proj",
+     "model.layers.6.mlp.up_proj",
+     "model.layers.6.self_attn.k_proj",
+     "model.layers.6.self_attn.o_proj",
+     "model.layers.6.self_attn.q_proj",
+     "model.layers.6.self_attn.v_proj",
+     "model.layers.7.mlp.down_proj",
+     "model.layers.7.mlp.gate_proj",
+     "model.layers.7.mlp.up_proj",
+     "model.layers.7.self_attn.k_proj",
+     "model.layers.7.self_attn.o_proj",
+     "model.layers.7.self_attn.q_proj",
+     "model.layers.7.self_attn.v_proj",
+     "model.layers.8.mlp.down_proj",
+     "model.layers.8.mlp.gate_proj",
+     "model.layers.8.mlp.up_proj",
+     "model.layers.8.self_attn.k_proj",
+     "model.layers.8.self_attn.o_proj",
+     "model.layers.8.self_attn.q_proj",
+     "model.layers.8.self_attn.v_proj",
+     "model.layers.9.mlp.down_proj",
+     "model.layers.9.mlp.gate_proj",
+     "model.layers.9.mlp.up_proj",
+     "model.layers.9.self_attn.k_proj",
+     "model.layers.9.self_attn.o_proj",
+     "model.layers.9.self_attn.q_proj",
+     "model.layers.9.self_attn.v_proj"
+    ],
+    "n_tokens": 4088,
+    "ppl_emulated": 58.473081025910815,
+    "ppl_reference": 43.75868193325478,
+    "recipe_hash": "483ec568f4a06eb819cb40f3c544b5106f38e7607793d060fedd40e2631e0bad",
+    "samples": 8,
+    "seqlen": 512,
+    "source": "runs/20261013_quantizer_w2/report/qd_mxfp4_ends_bf16/report.json",
+    "sqnr_db": [
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     17.41756459966513,
+     17.806619902524154,
+     15.487296256385166,
+     16.642827348173878,
+     18.564014207959385,
+     13.355354380208038,
+     15.343867545037412,
+     17.565955900446045,
+     18.509565744751498,
+     15.015543448255324,
+     16.401989051402357,
+     17.80509419689318,
+     13.320145778642072,
+     14.934144150766222,
+     17.6229497339922,
+     16.222751293198442,
+     14.187907661597897,
+     16.229170626052326,
+     18.191492974551178,
+     13.859009451890788,
+     14.810100595825887,
+     17.7534441194182,
+     17.515120468677953,
+     14.184982223537183,
+     14.815914354276387,
+     18.684229258218906,
+     14.554440502934245,
+     14.648329712369021,
+     17.606110752214022,
+     17.1216480586922,
+     14.053899014713425,
+     15.783353866124369,
+     17.599393557993906,
+     14.719545486214026,
+     14.839352637774079,
+     18.121443791454784,
+     16.884200709300583,
+     14.391854482671256,
+     15.793383583042909,
+     17.860147496359954,
+     14.65944397930251,
+     14.691651834956277,
+     17.862588368462312,
+     17.137178014046356,
+     14.554196562355743,
+     14.967547620990292,
+     18.18671849863353,
+     14.715128464376797,
+     14.630851504724458,
+     17.35198928721131,
+     18.131583191683493,
+     16.26642491211086,
+     14.665747219739615,
+     17.918371614808827,
+     14.652730614507636,
+     14.637173028797026,
+     18.226342518917008,
+     16.834223397661546,
+     14.155384643370255,
+     14.678691676557051,
+     17.73368689804158,
+     14.690335139034886,
+     14.520797575157452,
+     17.76690515804321,
+     16.765957630954684,
+     14.410154356527627,
+     14.901215232395327,
+     17.43988190842149,
+     15.280296032166692,
+     14.803686573848962,
+     18.81671985001314,
+     17.323311425556795,
+     15.349650269411008,
+     14.731425640519937,
+     17.09029877895688,
+     14.768755881072567,
+     14.555944799401185,
+     17.86621225605169,
+     19.197545591763664,
+     18.131715505404333,
+     14.16636115627962,
+     16.93360215933299,
+     14.470713164640614,
+     15.078562642709933,
+     18.029245831700713,
+     18.863621023606598,
+     17.617579088310613,
+     13.00667351126821,
+     16.92858334069278,
+     14.771957280914801,
+     14.566106447752215,
+     17.95213863634239,
+     19.16090408804437,
+     17.255706431454115,
+     14.466173135884768,
+     17.026621933759998,
+     15.100399252261852,
+     14.751681077420526,
+     17.757809922909075,
+     16.599694736397314,
+     14.431251815523298,
+     15.409475072114551,
+     17.269308926312476,
+     15.420095743572857,
+     15.053439053669798,
+     17.857906533549787,
+     16.74852402946804,
+     14.712415649649735,
+     14.633135668198758,
+     17.497348307491325,
+     15.792508461730472,
+     15.166510809165693,
+     17.985782096457545,
+     17.009574856777782,
+     13.923517112814475,
+     13.814797509060837,
+     16.918801691056117,
+     15.848966814880184,
+     14.52577074898834,
+     18.326865109667985,
+     17.08070744131327,
+     13.760583334949265,
+     15.906363922996116,
+     17.197019239589352,
+     16.21696531918319,
+     14.58035363024818,
+     18.08388895035073,
+     17.076428353719056,
+     13.787636896702612,
+     15.673345985829627,
+     17.68312049147073,
+     16.698638144803702,
+     14.711384155150562,
+     17.86357633619747,
+     16.579103904730204,
+     13.67163886904661,
+     16.748059462367323,
+     17.55280986987821,
+     16.498225897039646,
+     15.053823294842989,
+     17.483406818458803,
+     16.332235785347038,
+     14.650138613477267,
+     15.725736117796906,
+     17.726713059321796,
+     16.160889240904034,
+     15.244989848346027,
+     17.815519295729732,
+     16.68732733636107,
+     14.557978860347642,
+     15.657267848677957,
+     17.816384777346826,
+     15.703816136531385,
+     15.677553060846737,
+     18.213572401012115,
+     16.882583183872274,
+     14.41415300452739,
+     15.185644070388078,
+     17.837704990135485,
+     15.36570847978079,
+     15.196928112780249,
+     18.300380232139787,
+     17.221034597177475,
+     14.595224314079452,
+     17.552081892833176,
+     17.573419550120942,
+     15.28334048557385,
+     15.59793206823687,
+     18.32722038363357,
+     17.14436733794975,
+     14.909939372499409,
+     16.93359347229144,
+     16.979967237714643,
+     15.249961579693942,
+     15.094696108628291,
+     17.43393195680959,
+     17.07427877515958,
+     15.143405035861694,
+     16.161342314826378,
+     17.497693603237515,
+     16.10906709298279,
+     14.815661976872212,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "top1_agreement": 0.65478515625
+   },
+   "report_rejected": null,
+   "report_status": "기록됨",
+   "run": {
+    "dataset_fingerprint": "a46124b21ac53738",
+    "env": {
+     "cuda": "12.8",
+     "dtype": "bfloat16",
+     "git_dirty": false,
+     "git_sha": "ab489f17cdc01cbaa8074613ca30c89204ca6a9e",
+     "gpu_names": [
+      "NVIDIA A100-SXM4-80GB"
+     ],
+     "model_id": "Qwen/Qwen3-0.6B",
+     "model_sha": "c1899de289a04d12100db370d81485cdf75e47ca",
+     "seed": 42,
+     "utc": "2026-10-13T10:28:35.901249+00:00"
+    },
+    "forward_mode": "full_window",
+    "n_tokens": 298862,
+    "n_windows": 146,
+    "ppl": 29.688274598024794,
+    "ppl_delta_pct": 41.600977975241584,
+    "recipe_hash": "483ec568f4a06eb819cb40f3c544b5106f38e7607793d060fedd40e2631e0bad",
+    "source": "runs/20261013_quantizer_w2/ppl_all/qd_mxfp4_ends_bf16.json",
+    "wall_time_s": 913.8938689264469
+   },
+   "run_rejected": null,
+   "run_status": "기록됨",
+   "yaml": "name: qd_mxfp4_ends_bf16\ndescription: \"Built with the Tri-Cast Quantizer demo (one method per Linear layer).\"\ndefaults:\n  weight:\n    scheme: mxfp4\n    mma_input: dequant\n  activation:\n    scheme: mxfp4\n    mma_input: dequant\n  transform: none\n  weight_algo: rtn\noverrides:\n  - layers: \"0,27\"\n    skip: true\nexclude: [lm_head]"
+  },
+  {
+   "default": "nvfp4",
+   "grid": [
+    [
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4"
+    ],
+    [
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4"
+    ],
+    [
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4"
+    ],
+    [
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4"
+    ],
+    [
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4"
+    ],
+    [
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4"
+    ],
+    [
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4"
+    ],
+    [
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4"
+    ],
+    [
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4"
+    ],
+    [
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4"
+    ],
+    [
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4"
+    ],
+    [
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4"
+    ],
+    [
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4"
+    ],
+    [
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4"
+    ],
+    [
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4"
+    ],
+    [
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4"
+    ],
+    [
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4"
+    ],
+    [
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4"
+    ],
+    [
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4"
+    ],
+    [
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4"
+    ],
+    [
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4"
+    ],
+    [
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4"
+    ],
+    [
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4"
+    ],
+    [
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4"
+    ],
+    [
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4"
+    ],
+    [
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4"
+    ],
+    [
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4"
+    ],
+    [
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4",
+     "nvfp4"
+    ]
+   ],
+   "id": "qd_nvfp4",
+   "kv": "none",
+   "label": "NVFP4 전체",
+   "lmeval": {
+    "batch_size": 1,
+    "env": {
+     "cuda": "12.8",
+     "dtype": "bfloat16",
+     "git_dirty": false,
+     "git_sha": "ab489f17cdc01cbaa8074613ca30c89204ca6a9e",
+     "gpu_names": [
+      "NVIDIA H100 NVL"
+     ],
+     "model_id": "Qwen/Qwen3-0.6B",
+     "model_sha": "c1899de289a04d12100db370d81485cdf75e47ca",
+     "seed": 42,
+     "utc": "2026-10-13T10:28:54.295726+00:00"
+    },
+    "limit": 300,
+    "lm_eval_version": "0.4.13",
+    "macro": 0.47666666666666674,
+    "macro_delta_pts": -5.933333333333329,
+    "recipe_hash": "9f2612422bcc5f145620219bdf23aaf768198f816b4dbe12454a55fbb30e9c48",
+    "source": "runs/20261013_quantizer_w3/lmeval_B/qd_nvfp4.json",
+    "tasks": [
+     {
+      "delta_pts": -4.666666666666675,
+      "label": "ARC-Easy",
+      "metric": "acc_norm",
+      "n": 300,
+      "num_fewshot": 0,
+      "stderr": 0.02890546361555501,
+      "task": "arc_easy",
+      "value": 0.5133333333333333
+     },
+     {
+      "delta_pts": -4.999999999999999,
+      "label": "ARC-Challenge",
+      "metric": "acc_norm",
+      "n": 300,
+      "num_fewshot": 0,
+      "stderr": 0.02615166012679861,
+      "task": "arc_challenge",
+      "value": 0.2866666666666667
+     },
+     {
+      "delta_pts": -6.999999999999995,
+      "label": "PIQA",
+      "metric": "acc_norm",
+      "n": 300,
+      "num_fewshot": 0,
+      "stderr": 0.028250090846760858,
+      "task": "piqa",
+      "value": 0.6066666666666667
+     },
+     {
+      "delta_pts": -9.666666666666668,
+      "label": "WinoGrande",
+      "metric": "acc",
+      "n": 300,
+      "num_fewshot": 0,
+      "stderr": 0.028913176195480287,
+      "task": "winogrande",
+      "value": 0.5066666666666667
+     },
+     {
+      "delta_pts": -3.3333333333333326,
+      "label": "HellaSwag",
+      "metric": "acc_norm",
+      "n": 300,
+      "num_fewshot": 0,
+      "stderr": 0.028863651326417043,
+      "task": "hellaswag",
+      "value": 0.47
+     }
+    ],
+    "wall_time_s": 1303.8797370884567
+   },
+   "lmeval_rejected": null,
+   "lmeval_status": "기록됨",
+   "recipe_sha256": "9f2612422bcc5f145620219bdf23aaf768198f816b4dbe12454a55fbb30e9c48",
+   "report": {
+    "dataset_fingerprint": "e392e473036660f992761e23b95b79b80a8feabe10d313b524140cc83852a38b",
+    "env": {
+     "cuda": "12.8",
+     "dtype": "bfloat16",
+     "git_dirty": false,
+     "git_sha": "ab489f17cdc01cbaa8074613ca30c89204ca6a9e",
+     "gpu_names": [
+      "NVIDIA H100 NVL"
+     ],
+     "model_id": "Qwen/Qwen3-0.6B",
+     "model_sha": "c1899de289a04d12100db370d81485cdf75e47ca",
+     "seed": 42,
+     "utc": "2026-10-13T11:08:43.351361+00:00"
+    },
+    "logits_kl": 0.2995980802901802,
+    "measured": [
+     "model.layers.0.mlp.down_proj",
+     "model.layers.0.mlp.gate_proj",
+     "model.layers.0.mlp.up_proj",
+     "model.layers.0.self_attn.k_proj",
+     "model.layers.0.self_attn.o_proj",
+     "model.layers.0.self_attn.q_proj",
+     "model.layers.0.self_attn.v_proj",
+     "model.layers.1.mlp.down_proj",
+     "model.layers.1.mlp.gate_proj",
+     "model.layers.1.mlp.up_proj",
+     "model.layers.1.self_attn.k_proj",
+     "model.layers.1.self_attn.o_proj",
+     "model.layers.1.self_attn.q_proj",
+     "model.layers.1.self_attn.v_proj",
+     "model.layers.10.mlp.down_proj",
+     "model.layers.10.mlp.gate_proj",
+     "model.layers.10.mlp.up_proj",
+     "model.layers.10.self_attn.k_proj",
+     "model.layers.10.self_attn.o_proj",
+     "model.layers.10.self_attn.q_proj",
+     "model.layers.10.self_attn.v_proj",
+     "model.layers.11.mlp.down_proj",
+     "model.layers.11.mlp.gate_proj",
+     "model.layers.11.mlp.up_proj",
+     "model.layers.11.self_attn.k_proj",
+     "model.layers.11.self_attn.o_proj",
+     "model.layers.11.self_attn.q_proj",
+     "model.layers.11.self_attn.v_proj",
+     "model.layers.12.mlp.down_proj",
+     "model.layers.12.mlp.gate_proj",
+     "model.layers.12.mlp.up_proj",
+     "model.layers.12.self_attn.k_proj",
+     "model.layers.12.self_attn.o_proj",
+     "model.layers.12.self_attn.q_proj",
+     "model.layers.12.self_attn.v_proj",
+     "model.layers.13.mlp.down_proj",
+     "model.layers.13.mlp.gate_proj",
+     "model.layers.13.mlp.up_proj",
+     "model.layers.13.self_attn.k_proj",
+     "model.layers.13.self_attn.o_proj",
+     "model.layers.13.self_attn.q_proj",
+     "model.layers.13.self_attn.v_proj",
+     "model.layers.14.mlp.down_proj",
+     "model.layers.14.mlp.gate_proj",
+     "model.layers.14.mlp.up_proj",
+     "model.layers.14.self_attn.k_proj",
+     "model.layers.14.self_attn.o_proj",
+     "model.layers.14.self_attn.q_proj",
+     "model.layers.14.self_attn.v_proj",
+     "model.layers.15.mlp.down_proj",
+     "model.layers.15.mlp.gate_proj",
+     "model.layers.15.mlp.up_proj",
+     "model.layers.15.self_attn.k_proj",
+     "model.layers.15.self_attn.o_proj",
+     "model.layers.15.self_attn.q_proj",
+     "model.layers.15.self_attn.v_proj",
+     "model.layers.16.mlp.down_proj",
+     "model.layers.16.mlp.gate_proj",
+     "model.layers.16.mlp.up_proj",
+     "model.layers.16.self_attn.k_proj",
+     "model.layers.16.self_attn.o_proj",
+     "model.layers.16.self_attn.q_proj",
+     "model.layers.16.self_attn.v_proj",
+     "model.layers.17.mlp.down_proj",
+     "model.layers.17.mlp.gate_proj",
+     "model.layers.17.mlp.up_proj",
+     "model.layers.17.self_attn.k_proj",
+     "model.layers.17.self_attn.o_proj",
+     "model.layers.17.self_attn.q_proj",
+     "model.layers.17.self_attn.v_proj",
+     "model.layers.18.mlp.down_proj",
+     "model.layers.18.mlp.gate_proj",
+     "model.layers.18.mlp.up_proj",
+     "model.layers.18.self_attn.k_proj",
+     "model.layers.18.self_attn.o_proj",
+     "model.layers.18.self_attn.q_proj",
+     "model.layers.18.self_attn.v_proj",
+     "model.layers.19.mlp.down_proj",
+     "model.layers.19.mlp.gate_proj",
+     "model.layers.19.mlp.up_proj",
+     "model.layers.19.self_attn.k_proj",
+     "model.layers.19.self_attn.o_proj",
+     "model.layers.19.self_attn.q_proj",
+     "model.layers.19.self_attn.v_proj",
+     "model.layers.2.mlp.down_proj",
+     "model.layers.2.mlp.gate_proj",
+     "model.layers.2.mlp.up_proj",
+     "model.layers.2.self_attn.k_proj",
+     "model.layers.2.self_attn.o_proj",
+     "model.layers.2.self_attn.q_proj",
+     "model.layers.2.self_attn.v_proj",
+     "model.layers.20.mlp.down_proj",
+     "model.layers.20.mlp.gate_proj",
+     "model.layers.20.mlp.up_proj",
+     "model.layers.20.self_attn.k_proj",
+     "model.layers.20.self_attn.o_proj",
+     "model.layers.20.self_attn.q_proj",
+     "model.layers.20.self_attn.v_proj",
+     "model.layers.21.mlp.down_proj",
+     "model.layers.21.mlp.gate_proj",
+     "model.layers.21.mlp.up_proj",
+     "model.layers.21.self_attn.k_proj",
+     "model.layers.21.self_attn.o_proj",
+     "model.layers.21.self_attn.q_proj",
+     "model.layers.21.self_attn.v_proj",
+     "model.layers.22.mlp.down_proj",
+     "model.layers.22.mlp.gate_proj",
+     "model.layers.22.mlp.up_proj",
+     "model.layers.22.self_attn.k_proj",
+     "model.layers.22.self_attn.o_proj",
+     "model.layers.22.self_attn.q_proj",
+     "model.layers.22.self_attn.v_proj",
+     "model.layers.23.mlp.down_proj",
+     "model.layers.23.mlp.gate_proj",
+     "model.layers.23.mlp.up_proj",
+     "model.layers.23.self_attn.k_proj",
+     "model.layers.23.self_attn.o_proj",
+     "model.layers.23.self_attn.q_proj",
+     "model.layers.23.self_attn.v_proj",
+     "model.layers.24.mlp.down_proj",
+     "model.layers.24.mlp.gate_proj",
+     "model.layers.24.mlp.up_proj",
+     "model.layers.24.self_attn.k_proj",
+     "model.layers.24.self_attn.o_proj",
+     "model.layers.24.self_attn.q_proj",
+     "model.layers.24.self_attn.v_proj",
+     "model.layers.25.mlp.down_proj",
+     "model.layers.25.mlp.gate_proj",
+     "model.layers.25.mlp.up_proj",
+     "model.layers.25.self_attn.k_proj",
+     "model.layers.25.self_attn.o_proj",
+     "model.layers.25.self_attn.q_proj",
+     "model.layers.25.self_attn.v_proj",
+     "model.layers.26.mlp.down_proj",
+     "model.layers.26.mlp.gate_proj",
+     "model.layers.26.mlp.up_proj",
+     "model.layers.26.self_attn.k_proj",
+     "model.layers.26.self_attn.o_proj",
+     "model.layers.26.self_attn.q_proj",
+     "model.layers.26.self_attn.v_proj",
+     "model.layers.27.mlp.down_proj",
+     "model.layers.27.mlp.gate_proj",
+     "model.layers.27.mlp.up_proj",
+     "model.layers.27.self_attn.k_proj",
+     "model.layers.27.self_attn.o_proj",
+     "model.layers.27.self_attn.q_proj",
+     "model.layers.27.self_attn.v_proj",
+     "model.layers.3.mlp.down_proj",
+     "model.layers.3.mlp.gate_proj",
+     "model.layers.3.mlp.up_proj",
+     "model.layers.3.self_attn.k_proj",
+     "model.layers.3.self_attn.o_proj",
+     "model.layers.3.self_attn.q_proj",
+     "model.layers.3.self_attn.v_proj",
+     "model.layers.4.mlp.down_proj",
+     "model.layers.4.mlp.gate_proj",
+     "model.layers.4.mlp.up_proj",
+     "model.layers.4.self_attn.k_proj",
+     "model.layers.4.self_attn.o_proj",
+     "model.layers.4.self_attn.q_proj",
+     "model.layers.4.self_attn.v_proj",
+     "model.layers.5.mlp.down_proj",
+     "model.layers.5.mlp.gate_proj",
+     "model.layers.5.mlp.up_proj",
+     "model.layers.5.self_attn.k_proj",
+     "model.layers.5.self_attn.o_proj",
+     "model.layers.5.self_attn.q_proj",
+     "model.layers.5.self_attn.v_proj",
+     "model.layers.6.mlp.down_proj",
+     "model.layers.6.mlp.gate_proj",
+     "model.layers.6.mlp.up_proj",
+     "model.layers.6.self_attn.k_proj",
+     "model.layers.6.self_attn.o_proj",
+     "model.layers.6.self_attn.q_proj",
+     "model.layers.6.self_attn.v_proj",
+     "model.layers.7.mlp.down_proj",
+     "model.layers.7.mlp.gate_proj",
+     "model.layers.7.mlp.up_proj",
+     "model.layers.7.self_attn.k_proj",
+     "model.layers.7.self_attn.o_proj",
+     "model.layers.7.self_attn.q_proj",
+     "model.layers.7.self_attn.v_proj",
+     "model.layers.8.mlp.down_proj",
+     "model.layers.8.mlp.gate_proj",
+     "model.layers.8.mlp.up_proj",
+     "model.layers.8.self_attn.k_proj",
+     "model.layers.8.self_attn.o_proj",
+     "model.layers.8.self_attn.q_proj",
+     "model.layers.8.self_attn.v_proj",
+     "model.layers.9.mlp.down_proj",
+     "model.layers.9.mlp.gate_proj",
+     "model.layers.9.mlp.up_proj",
+     "model.layers.9.self_attn.k_proj",
+     "model.layers.9.self_attn.o_proj",
+     "model.layers.9.self_attn.q_proj",
+     "model.layers.9.self_attn.v_proj"
+    ],
+    "n_tokens": 4088,
+    "ppl_emulated": 52.15692295489574,
+    "ppl_reference": 43.75868193325478,
+    "recipe_hash": "9f2612422bcc5f145620219bdf23aaf768198f816b4dbe12454a55fbb30e9c48",
+    "samples": 8,
+    "seqlen": 512,
+    "source": "runs/20261013_quantizer_w2/report/qd_nvfp4/report.json",
+    "sqnr_db": [
+     22.368096301792875,
+     23.111634430517395,
+     16.843438837907684,
+     19.6364538193242,
+     21.73746037207131,
+     17.09610631994671,
+     18.372742602062356,
+     20.53972132782418,
+     21.697627461714863,
+     17.636016943496116,
+     18.893323608059845,
+     22.804071431914004,
+     15.589656150808144,
+     18.489050616552262,
+     20.118168655793053,
+     21.656238308968195,
+     17.234586632043904,
+     18.472234801205982,
+     21.64790656673222,
+     15.619478071718218,
+     32.72322840011409,
+     20.72974735380778,
+     19.463044848113515,
+     16.783588877174523,
+     18.422649938658047,
+     21.565596532320505,
+     15.916652335563876,
+     17.942865438178785,
+     20.62684868609398,
+     20.869958712504744,
+     16.611690713314967,
+     16.627108447958413,
+     22.054558182645266,
+     16.854320851687056,
+     17.833887021337908,
+     20.206240160819462,
+     19.83055309386493,
+     16.229943061357904,
+     17.835419509530738,
+     20.860427765009533,
+     16.978198589092507,
+     17.671843963255824,
+     20.862074883861908,
+     19.905556122012335,
+     16.786151490202773,
+     18.08987964189218,
+     21.151565323825743,
+     16.99142739947487,
+     17.57925507713239,
+     20.30011231549033,
+     19.891822882088256,
+     16.81491170881488,
+     16.887337521641307,
+     21.450888784645777,
+     17.099953248061873,
+     17.746832174519028,
+     19.741497135010512,
+     21.343989953711326,
+     18.745025783189078,
+     16.737518473507148,
+     21.170567248803785,
+     17.011648975456364,
+     17.50958972981707,
+     20.41842781214799,
+     19.33689064946957,
+     16.585906324247315,
+     16.198237643802006,
+     20.761075537647148,
+     17.019810643756138,
+     17.426356304839,
+     20.2916267904156,
+     19.735979067529207,
+     16.93698343066699,
+     16.78825860149313,
+     20.381949924018553,
+     17.586250690597748,
+     17.75115557557897,
+     21.22791490913773,
+     20.099186953486146,
+     17.57973757206362,
+     16.501169105189025,
+     20.375053141169378,
+     17.091455645821828,
+     17.42747797278208,
+     20.55956567498818,
+     22.60960887611916,
+     20.79362296044607,
+     16.132456626565354,
+     20.317591663023236,
+     16.829440024111182,
+     17.626825059708096,
+     20.5410841241345,
+     21.893778016883793,
+     20.091776799252266,
+     14.501970327819883,
+     20.090456353002764,
+     17.071975053208984,
+     17.226917023005726,
+     20.401896278070858,
+     22.157591659881856,
+     19.564018977328026,
+     16.477072939290252,
+     20.11593988439854,
+     17.529400118825123,
+     17.441065236063174,
+     20.346604302626844,
+     19.59493184595471,
+     16.59222687494455,
+     17.392853690109092,
+     20.194410260449335,
+     17.713999255864376,
+     17.59947360437704,
+     20.679636853059677,
+     19.65768033874594,
+     16.796265183866236,
+     16.34151126309248,
+     20.794397476328438,
+     18.25253507860019,
+     18.010525905908985,
+     20.35789550245606,
+     20.265673984405595,
+     16.05334141045222,
+     15.432873044214963,
+     20.277799880506638,
+     18.529225748636186,
+     17.82824318281667,
+     20.647917962522087,
+     19.718272847542863,
+     16.032219314360145,
+     18.364133208351248,
+     20.647500434304973,
+     19.075725257474026,
+     17.86730157673093,
+     20.544562916286555,
+     19.74742517887629,
+     16.0288295382321,
+     17.542404494978033,
+     21.084266108251107,
+     19.41952790581839,
+     18.134095808553873,
+     20.194070812901987,
+     19.04379985439839,
+     15.811033581182087,
+     19.17260739545463,
+     20.699994133118867,
+     19.154890794496026,
+     18.72161238246295,
+     19.627067161104577,
+     18.943536128070065,
+     16.72348410960337,
+     17.715846634247203,
+     20.908781565648336,
+     18.59484672492791,
+     18.83453927078331,
+     19.85372040588072,
+     18.9822258255593,
+     16.698469210561647,
+     18.039971967601552,
+     20.85640180832231,
+     17.965343252049752,
+     19.320437838174833,
+     20.43790612017231,
+     19.325985211344396,
+     16.58111394186473,
+     17.521249611789983,
+     20.907357496280596,
+     17.771718575486652,
+     19.13499545017891,
+     20.649475655609702,
+     19.710886302266545,
+     16.746968793181583,
+     20.191512814666194,
+     20.557324641510156,
+     17.42135288956057,
+     19.341710878268067,
+     20.603647015561837,
+     19.661198414104135,
+     17.054933811577275,
+     19.656197021442384,
+     20.222310461621994,
+     17.708017589911808,
+     18.651959297274516,
+     19.41904322535855,
+     19.376405790795285,
+     17.117394667815176,
+     18.01952825926188,
+     20.2130642846558,
+     18.29148457674126,
+     18.337275812589134,
+     21.35687928213757,
+     22.2708943538038,
+     16.059688613566607,
+     17.08651227063456,
+     22.817499430078936,
+     19.29810303112669,
+     20.572133674666134
+    ],
+    "top1_agreement": 0.71875
+   },
+   "report_rejected": null,
+   "report_status": "기록됨",
+   "run": {
+    "dataset_fingerprint": "a46124b21ac53738",
+    "env": {
+     "cuda": "12.8",
+     "dtype": "bfloat16",
+     "git_dirty": false,
+     "git_sha": "ab489f17cdc01cbaa8074613ca30c89204ca6a9e",
+     "gpu_names": [
+      "NVIDIA A100-SXM4-80GB"
+     ],
+     "model_id": "Qwen/Qwen3-0.6B",
+     "model_sha": "c1899de289a04d12100db370d81485cdf75e47ca",
+     "seed": 42,
+     "utc": "2026-10-13T10:28:35.901249+00:00"
+    },
+    "forward_mode": "full_window",
+    "n_tokens": 298862,
+    "n_windows": 146,
+    "ppl": 26.15988887580222,
+    "ppl_delta_pct": 24.772015170719563,
+    "recipe_hash": "9f2612422bcc5f145620219bdf23aaf768198f816b4dbe12454a55fbb30e9c48",
+    "source": "runs/20261013_quantizer_w2/ppl_all/qd_nvfp4.json",
+    "wall_time_s": 989.6317193000577
+   },
+   "run_rejected": null,
+   "run_status": "기록됨",
+   "yaml": "name: qd_nvfp4\ndescription: \"Built with the Tri-Cast Quantizer demo (one method per Linear layer).\"\ndefaults:\n  weight:\n    scheme: nvfp4\n    mma_input: dequant\n  activation:\n    scheme: nvfp4\n    mma_input: dequant\n  transform: none\n  weight_algo: rtn\nexclude: [lm_head]"
+  },
+  {
+   "default": "nvint4",
+   "grid": [
+    [
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4"
+    ],
+    [
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4"
+    ],
+    [
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4"
+    ],
+    [
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4"
+    ],
+    [
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4"
+    ],
+    [
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4"
+    ],
+    [
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4"
+    ],
+    [
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4"
+    ],
+    [
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4"
+    ],
+    [
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4"
+    ],
+    [
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4"
+    ],
+    [
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4"
+    ],
+    [
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4"
+    ],
+    [
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4"
+    ],
+    [
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4"
+    ],
+    [
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4"
+    ],
+    [
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4"
+    ],
+    [
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4"
+    ],
+    [
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4"
+    ],
+    [
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4"
+    ],
+    [
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4"
+    ],
+    [
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4"
+    ],
+    [
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4"
+    ],
+    [
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4"
+    ],
+    [
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4"
+    ],
+    [
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4"
+    ],
+    [
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4"
+    ],
+    [
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4",
+     "nvint4"
+    ]
+   ],
+   "id": "qd_nvint4",
+   "kv": "none",
+   "label": "NVINT4 전체",
+   "lmeval": {
+    "batch_size": 1,
+    "env": {
+     "cuda": "12.8",
+     "dtype": "bfloat16",
+     "git_dirty": false,
+     "git_sha": "ab489f17cdc01cbaa8074613ca30c89204ca6a9e",
+     "gpu_names": [
+      "NVIDIA H100 NVL"
+     ],
+     "model_id": "Qwen/Qwen3-0.6B",
+     "model_sha": "c1899de289a04d12100db370d81485cdf75e47ca",
+     "seed": 42,
+     "utc": "2026-10-13T10:28:54.295726+00:00"
+    },
+    "limit": 300,
+    "lm_eval_version": "0.4.13",
+    "macro": 0.4766666666666667,
+    "macro_delta_pts": -5.933333333333335,
+    "recipe_hash": "ba9c8928b96f286d1f83935af0ccd8335b283c626f4f3aadf21c38d74d1f0dc9",
+    "source": "runs/20261013_quantizer_w3/lmeval_B/qd_nvint4.json",
+    "tasks": [
+     {
+      "delta_pts": -11.33333333333334,
+      "label": "ARC-Easy",
+      "metric": "acc_norm",
+      "n": 300,
+      "num_fewshot": 0,
+      "stderr": 0.02875077754106669,
+      "task": "arc_easy",
+      "value": 0.44666666666666666
+     },
+     {
+      "delta_pts": -4.666666666666669,
+      "label": "ARC-Challenge",
+      "metric": "acc_norm",
+      "n": 300,
+      "num_fewshot": 0,
+      "stderr": 0.026241737033622717,
+      "task": "arc_challenge",
+      "value": 0.29
+     },
+     {
+      "delta_pts": -3.6666666666666625,
+      "label": "PIQA",
+      "metric": "acc_norm",
+      "n": 300,
+      "num_fewshot": 0,
+      "stderr": 0.02775911673437953,
+      "task": "piqa",
+      "value": 0.64
+     },
+     {
+      "delta_pts": -6.333333333333336,
+      "label": "WinoGrande",
+      "metric": "acc",
+      "n": 300,
+      "num_fewshot": 0,
+      "stderr": 0.02882306768491568,
+      "task": "winogrande",
+      "value": 0.54
+     },
+     {
+      "delta_pts": -3.6666666666666625,
+      "label": "HellaSwag",
+      "metric": "acc_norm",
+      "n": 300,
+      "num_fewshot": 0,
+      "stderr": 0.028851417827642025,
+      "task": "hellaswag",
+      "value": 0.4666666666666667
+     }
+    ],
+    "wall_time_s": 1354.749293897301
+   },
+   "lmeval_rejected": null,
+   "lmeval_status": "기록됨",
+   "recipe_sha256": "ba9c8928b96f286d1f83935af0ccd8335b283c626f4f3aadf21c38d74d1f0dc9",
+   "report": {
+    "dataset_fingerprint": "e392e473036660f992761e23b95b79b80a8feabe10d313b524140cc83852a38b",
+    "env": {
+     "cuda": "12.8",
+     "dtype": "bfloat16",
+     "git_dirty": false,
+     "git_sha": "ab489f17cdc01cbaa8074613ca30c89204ca6a9e",
+     "gpu_names": [
+      "NVIDIA H100 NVL"
+     ],
+     "model_id": "Qwen/Qwen3-0.6B",
+     "model_sha": "c1899de289a04d12100db370d81485cdf75e47ca",
+     "seed": 42,
+     "utc": "2026-10-13T11:07:05.638463+00:00"
+    },
+    "logits_kl": 0.4146139018486653,
+    "measured": [
+     "model.layers.0.mlp.down_proj",
+     "model.layers.0.mlp.gate_proj",
+     "model.layers.0.mlp.up_proj",
+     "model.layers.0.self_attn.k_proj",
+     "model.layers.0.self_attn.o_proj",
+     "model.layers.0.self_attn.q_proj",
+     "model.layers.0.self_attn.v_proj",
+     "model.layers.1.mlp.down_proj",
+     "model.layers.1.mlp.gate_proj",
+     "model.layers.1.mlp.up_proj",
+     "model.layers.1.self_attn.k_proj",
+     "model.layers.1.self_attn.o_proj",
+     "model.layers.1.self_attn.q_proj",
+     "model.layers.1.self_attn.v_proj",
+     "model.layers.10.mlp.down_proj",
+     "model.layers.10.mlp.gate_proj",
+     "model.layers.10.mlp.up_proj",
+     "model.layers.10.self_attn.k_proj",
+     "model.layers.10.self_attn.o_proj",
+     "model.layers.10.self_attn.q_proj",
+     "model.layers.10.self_attn.v_proj",
+     "model.layers.11.mlp.down_proj",
+     "model.layers.11.mlp.gate_proj",
+     "model.layers.11.mlp.up_proj",
+     "model.layers.11.self_attn.k_proj",
+     "model.layers.11.self_attn.o_proj",
+     "model.layers.11.self_attn.q_proj",
+     "model.layers.11.self_attn.v_proj",
+     "model.layers.12.mlp.down_proj",
+     "model.layers.12.mlp.gate_proj",
+     "model.layers.12.mlp.up_proj",
+     "model.layers.12.self_attn.k_proj",
+     "model.layers.12.self_attn.o_proj",
+     "model.layers.12.self_attn.q_proj",
+     "model.layers.12.self_attn.v_proj",
+     "model.layers.13.mlp.down_proj",
+     "model.layers.13.mlp.gate_proj",
+     "model.layers.13.mlp.up_proj",
+     "model.layers.13.self_attn.k_proj",
+     "model.layers.13.self_attn.o_proj",
+     "model.layers.13.self_attn.q_proj",
+     "model.layers.13.self_attn.v_proj",
+     "model.layers.14.mlp.down_proj",
+     "model.layers.14.mlp.gate_proj",
+     "model.layers.14.mlp.up_proj",
+     "model.layers.14.self_attn.k_proj",
+     "model.layers.14.self_attn.o_proj",
+     "model.layers.14.self_attn.q_proj",
+     "model.layers.14.self_attn.v_proj",
+     "model.layers.15.mlp.down_proj",
+     "model.layers.15.mlp.gate_proj",
+     "model.layers.15.mlp.up_proj",
+     "model.layers.15.self_attn.k_proj",
+     "model.layers.15.self_attn.o_proj",
+     "model.layers.15.self_attn.q_proj",
+     "model.layers.15.self_attn.v_proj",
+     "model.layers.16.mlp.down_proj",
+     "model.layers.16.mlp.gate_proj",
+     "model.layers.16.mlp.up_proj",
+     "model.layers.16.self_attn.k_proj",
+     "model.layers.16.self_attn.o_proj",
+     "model.layers.16.self_attn.q_proj",
+     "model.layers.16.self_attn.v_proj",
+     "model.layers.17.mlp.down_proj",
+     "model.layers.17.mlp.gate_proj",
+     "model.layers.17.mlp.up_proj",
+     "model.layers.17.self_attn.k_proj",
+     "model.layers.17.self_attn.o_proj",
+     "model.layers.17.self_attn.q_proj",
+     "model.layers.17.self_attn.v_proj",
+     "model.layers.18.mlp.down_proj",
+     "model.layers.18.mlp.gate_proj",
+     "model.layers.18.mlp.up_proj",
+     "model.layers.18.self_attn.k_proj",
+     "model.layers.18.self_attn.o_proj",
+     "model.layers.18.self_attn.q_proj",
+     "model.layers.18.self_attn.v_proj",
+     "model.layers.19.mlp.down_proj",
+     "model.layers.19.mlp.gate_proj",
+     "model.layers.19.mlp.up_proj",
+     "model.layers.19.self_attn.k_proj",
+     "model.layers.19.self_attn.o_proj",
+     "model.layers.19.self_attn.q_proj",
+     "model.layers.19.self_attn.v_proj",
+     "model.layers.2.mlp.down_proj",
+     "model.layers.2.mlp.gate_proj",
+     "model.layers.2.mlp.up_proj",
+     "model.layers.2.self_attn.k_proj",
+     "model.layers.2.self_attn.o_proj",
+     "model.layers.2.self_attn.q_proj",
+     "model.layers.2.self_attn.v_proj",
+     "model.layers.20.mlp.down_proj",
+     "model.layers.20.mlp.gate_proj",
+     "model.layers.20.mlp.up_proj",
+     "model.layers.20.self_attn.k_proj",
+     "model.layers.20.self_attn.o_proj",
+     "model.layers.20.self_attn.q_proj",
+     "model.layers.20.self_attn.v_proj",
+     "model.layers.21.mlp.down_proj",
+     "model.layers.21.mlp.gate_proj",
+     "model.layers.21.mlp.up_proj",
+     "model.layers.21.self_attn.k_proj",
+     "model.layers.21.self_attn.o_proj",
+     "model.layers.21.self_attn.q_proj",
+     "model.layers.21.self_attn.v_proj",
+     "model.layers.22.mlp.down_proj",
+     "model.layers.22.mlp.gate_proj",
+     "model.layers.22.mlp.up_proj",
+     "model.layers.22.self_attn.k_proj",
+     "model.layers.22.self_attn.o_proj",
+     "model.layers.22.self_attn.q_proj",
+     "model.layers.22.self_attn.v_proj",
+     "model.layers.23.mlp.down_proj",
+     "model.layers.23.mlp.gate_proj",
+     "model.layers.23.mlp.up_proj",
+     "model.layers.23.self_attn.k_proj",
+     "model.layers.23.self_attn.o_proj",
+     "model.layers.23.self_attn.q_proj",
+     "model.layers.23.self_attn.v_proj",
+     "model.layers.24.mlp.down_proj",
+     "model.layers.24.mlp.gate_proj",
+     "model.layers.24.mlp.up_proj",
+     "model.layers.24.self_attn.k_proj",
+     "model.layers.24.self_attn.o_proj",
+     "model.layers.24.self_attn.q_proj",
+     "model.layers.24.self_attn.v_proj",
+     "model.layers.25.mlp.down_proj",
+     "model.layers.25.mlp.gate_proj",
+     "model.layers.25.mlp.up_proj",
+     "model.layers.25.self_attn.k_proj",
+     "model.layers.25.self_attn.o_proj",
+     "model.layers.25.self_attn.q_proj",
+     "model.layers.25.self_attn.v_proj",
+     "model.layers.26.mlp.down_proj",
+     "model.layers.26.mlp.gate_proj",
+     "model.layers.26.mlp.up_proj",
+     "model.layers.26.self_attn.k_proj",
+     "model.layers.26.self_attn.o_proj",
+     "model.layers.26.self_attn.q_proj",
+     "model.layers.26.self_attn.v_proj",
+     "model.layers.27.mlp.down_proj",
+     "model.layers.27.mlp.gate_proj",
+     "model.layers.27.mlp.up_proj",
+     "model.layers.27.self_attn.k_proj",
+     "model.layers.27.self_attn.o_proj",
+     "model.layers.27.self_attn.q_proj",
+     "model.layers.27.self_attn.v_proj",
+     "model.layers.3.mlp.down_proj",
+     "model.layers.3.mlp.gate_proj",
+     "model.layers.3.mlp.up_proj",
+     "model.layers.3.self_attn.k_proj",
+     "model.layers.3.self_attn.o_proj",
+     "model.layers.3.self_attn.q_proj",
+     "model.layers.3.self_attn.v_proj",
+     "model.layers.4.mlp.down_proj",
+     "model.layers.4.mlp.gate_proj",
+     "model.layers.4.mlp.up_proj",
+     "model.layers.4.self_attn.k_proj",
+     "model.layers.4.self_attn.o_proj",
+     "model.layers.4.self_attn.q_proj",
+     "model.layers.4.self_attn.v_proj",
+     "model.layers.5.mlp.down_proj",
+     "model.layers.5.mlp.gate_proj",
+     "model.layers.5.mlp.up_proj",
+     "model.layers.5.self_attn.k_proj",
+     "model.layers.5.self_attn.o_proj",
+     "model.layers.5.self_attn.q_proj",
+     "model.layers.5.self_attn.v_proj",
+     "model.layers.6.mlp.down_proj",
+     "model.layers.6.mlp.gate_proj",
+     "model.layers.6.mlp.up_proj",
+     "model.layers.6.self_attn.k_proj",
+     "model.layers.6.self_attn.o_proj",
+     "model.layers.6.self_attn.q_proj",
+     "model.layers.6.self_attn.v_proj",
+     "model.layers.7.mlp.down_proj",
+     "model.layers.7.mlp.gate_proj",
+     "model.layers.7.mlp.up_proj",
+     "model.layers.7.self_attn.k_proj",
+     "model.layers.7.self_attn.o_proj",
+     "model.layers.7.self_attn.q_proj",
+     "model.layers.7.self_attn.v_proj",
+     "model.layers.8.mlp.down_proj",
+     "model.layers.8.mlp.gate_proj",
+     "model.layers.8.mlp.up_proj",
+     "model.layers.8.self_attn.k_proj",
+     "model.layers.8.self_attn.o_proj",
+     "model.layers.8.self_attn.q_proj",
+     "model.layers.8.self_attn.v_proj",
+     "model.layers.9.mlp.down_proj",
+     "model.layers.9.mlp.gate_proj",
+     "model.layers.9.mlp.up_proj",
+     "model.layers.9.self_attn.k_proj",
+     "model.layers.9.self_attn.o_proj",
+     "model.layers.9.self_attn.q_proj",
+     "model.layers.9.self_attn.v_proj"
+    ],
+    "n_tokens": 4088,
+    "ppl_emulated": 57.889083766342175,
+    "ppl_reference": 43.75868193325478,
+    "recipe_hash": "ba9c8928b96f286d1f83935af0ccd8335b283c626f4f3aadf21c38d74d1f0dc9",
+    "samples": 8,
+    "seqlen": 512,
+    "source": "runs/20261013_quantizer_w2/report/qd_nvint4/report.json",
+    "sqnr_db": [
+     22.098975878797084,
+     23.185596732094904,
+     16.286676162437523,
+     19.55534577530407,
+     21.15069511695721,
+     16.017518315051,
+     17.527083247122402,
+     19.5965126600861,
+     21.125347409382023,
+     16.564682035497054,
+     18.688537119316642,
+     23.316359058837698,
+     14.143267855288375,
+     17.4812746822951,
+     18.873517783713268,
+     20.776334337405853,
+     15.889852396035213,
+     18.712859713300983,
+     21.90330018472606,
+     14.306290252612396,
+     31.555686767365977,
+     19.254718551619852,
+     18.084285730831127,
+     15.393063982078045,
+     18.09751261134124,
+     21.21356892365334,
+     14.49823614539687,
+     17.165453596302335,
+     19.029881494928784,
+     19.607605337064303,
+     14.98219214151607,
+     16.526446664433777,
+     21.497930343313726,
+     15.37152031143979,
+     16.966004771951344,
+     18.41426102523905,
+     18.6830728594532,
+     14.538798075270545,
+     17.846660307921418,
+     20.340021601698922,
+     15.6711673979661,
+     16.82025875185717,
+     19.620968536165424,
+     18.516961571584815,
+     15.161964253927952,
+     17.661963235853488,
+     20.76670126167449,
+     15.63768185948669,
+     16.69553558496937,
+     18.858651494365134,
+     18.729366877123365,
+     15.206194660562424,
+     16.784469719485198,
+     20.616688530597646,
+     15.609020439329333,
+     16.79030861255525,
+     18.258346486524445,
+     19.83861275903477,
+     17.244672490854494,
+     16.263312406831126,
+     20.340459875564733,
+     15.561019606826074,
+     16.594774466813092,
+     18.899943109974693,
+     17.82140537701639,
+     14.717355940161836,
+     16.155800868006228,
+     19.83788096238878,
+     15.34019142724304,
+     16.305823001011852,
+     18.616683520975183,
+     17.9764967428082,
+     15.049026225660649,
+     16.268004441369506,
+     19.360164619727467,
+     16.06309793903561,
+     16.555628609776175,
+     19.3747300710239,
+     18.528073858770707,
+     15.904053903610492,
+     16.349334706268195,
+     19.589631592953083,
+     15.83012702518027,
+     16.393856626522794,
+     19.362611353764972,
+     21.38623681227889,
+     19.459848658436428,
+     15.02655842930962,
+     19.607604035137026,
+     15.49089501594134,
+     17.107068054621642,
+     18.81650498220391,
+     20.29839571687278,
+     18.430817743336043,
+     14.00273159929382,
+     19.36639913948207,
+     15.801226301200131,
+     16.259187477285725,
+     18.87114006660426,
+     20.641763125752412,
+     18.04915273523186,
+     16.382093831278446,
+     19.241381215540954,
+     16.18081560563592,
+     16.388260041664257,
+     18.858537754552934,
+     18.172332824364492,
+     14.862306507204433,
+     16.939436200627235,
+     19.26100060180402,
+     16.298833183536168,
+     16.515877583432577,
+     19.116760697148468,
+     18.328011527132013,
+     14.985136730148723,
+     16.236944296926165,
+     19.930683086425706,
+     16.846426534789448,
+     17.19267256124953,
+     19.294306452300745,
+     19.11164704179142,
+     14.299873881262206,
+     15.404711850974216,
+     19.307038693836752,
+     17.22092799129886,
+     16.556579672278865,
+     19.72060322362056,
+     18.4142913981847,
+     14.282246306069933,
+     17.741495894054523,
+     19.829701350062116,
+     17.937465539206173,
+     16.75523093881028,
+     19.372537994695723,
+     18.480110709189052,
+     14.35869716368214,
+     17.168192430939342,
+     20.481893523682043,
+     18.37324605510129,
+     17.020903665573375,
+     19.02940350522142,
+     17.456939580100112,
+     14.361470736969677,
+     18.715846719518865,
+     19.90094638931283,
+     18.00521967308262,
+     17.55968254059925,
+     18.465534408324743,
+     17.49327734115616,
+     15.453066842768967,
+     17.186441840893163,
+     20.176472623637764,
+     17.505468080954977,
+     17.710561010298754,
+     18.735065274988486,
+     17.7606082746177,
+     15.448956677325294,
+     17.83674660707659,
+     20.190784944671165,
+     16.92816510665521,
+     18.02433624333434,
+     19.091257807840776,
+     17.734884989187144,
+     15.164992772634493,
+     17.070010594552496,
+     20.2190922057753,
+     16.68589136396198,
+     18.089949526047693,
+     19.57393148318317,
+     18.560415254580317,
+     15.543050626978163,
+     19.15941544521528,
+     19.928035753386894,
+     16.446949120632773,
+     18.07910675760652,
+     19.671286826002465,
+     18.56170338078347,
+     16.23646678560547,
+     18.99708780535155,
+     19.397163013695938,
+     16.611896548846314,
+     17.295338637309612,
+     17.959606020896786,
+     18.200725478991778,
+     16.466854169738742,
+     18.39133955613944,
+     19.0234826371336,
+     16.9899668145154,
+     17.322554697143573,
+     20.148070157205176,
+     21.48476030895077,
+     14.777691015562478,
+     16.852659090291723,
+     21.17044774077158,
+     17.101987587885475,
+     18.310033992496507
+    ],
+    "top1_agreement": 0.670654296875
+   },
+   "report_rejected": null,
+   "report_status": "기록됨",
+   "run": {
+    "dataset_fingerprint": "a46124b21ac53738",
+    "env": {
+     "cuda": "12.8",
+     "dtype": "bfloat16",
+     "git_dirty": false,
+     "git_sha": "ab489f17cdc01cbaa8074613ca30c89204ca6a9e",
+     "gpu_names": [
+      "NVIDIA A100-SXM4-80GB"
+     ],
+     "model_id": "Qwen/Qwen3-0.6B",
+     "model_sha": "c1899de289a04d12100db370d81485cdf75e47ca",
+     "seed": 42,
+     "utc": "2026-10-13T10:28:35.901249+00:00"
+    },
+    "forward_mode": "full_window",
+    "n_tokens": 298862,
+    "n_windows": 146,
+    "ppl": 27.949799121612646,
+    "ppl_delta_pct": 33.30915802345793,
+    "recipe_hash": "ba9c8928b96f286d1f83935af0ccd8335b283c626f4f3aadf21c38d74d1f0dc9",
+    "source": "runs/20261013_quantizer_w2/ppl_all/qd_nvint4.json",
+    "wall_time_s": 988.8118852679618
+   },
+   "run_rejected": null,
+   "run_status": "기록됨",
+   "yaml": "name: qd_nvint4\ndescription: \"Built with the Tri-Cast Quantizer demo (one method per Linear layer).\"\ndefaults:\n  weight:\n    scheme: nvfp4\n    format: int4\n    mma_input: dequant\n  activation:\n    scheme: nvfp4\n    format: int4\n    mma_input: dequant\n  transform: none\n  weight_algo: rtn\nexclude: [lm_head]"
+  },
+  {
+   "default": "awq_nvfp4",
+   "grid": [
+    [
+     "bf16",
+     "bf16",
+     "bf16",
+     "bf16",
+     "bf16",
+     "bf16",
+     "bf16"
+    ],
+    [
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "mxfp8",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "gptq_int4"
+    ],
+    [
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "mxfp8",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "gptq_int4"
+    ],
+    [
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "mxfp8",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "gptq_int4"
+    ],
+    [
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "mxfp8",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "gptq_int4"
+    ],
+    [
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "mxfp8",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "gptq_int4"
+    ],
+    [
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "mxfp8",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "gptq_int4"
+    ],
+    [
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "mxfp8",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "gptq_int4"
+    ],
+    [
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "mxfp8",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "gptq_int4"
+    ],
+    [
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "mxfp8",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "gptq_int4"
+    ],
+    [
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "mxfp8",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "gptq_int4"
+    ],
+    [
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "mxfp8",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "gptq_int4"
+    ],
+    [
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "mxfp8",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "gptq_int4"
+    ],
+    [
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "mxfp8",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "gptq_int4"
+    ],
+    [
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "mxfp8",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "gptq_int4"
+    ],
+    [
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "mxfp8",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "gptq_int4"
+    ],
+    [
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "mxfp8",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "gptq_int4"
+    ],
+    [
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "mxfp8",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "gptq_int4"
+    ],
+    [
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "mxfp8",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "gptq_int4"
+    ],
+    [
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "mxfp8",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "gptq_int4"
+    ],
+    [
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "mxfp8",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "gptq_int4"
+    ],
+    [
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "mxfp8",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "gptq_int4"
+    ],
+    [
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "mxfp8",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "gptq_int4"
+    ],
+    [
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "mxfp8",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "gptq_int4"
+    ],
+    [
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "mxfp8",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "gptq_int4"
+    ],
+    [
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "mxfp8",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "gptq_int4"
+    ],
+    [
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "mxfp8",
+     "awq_nvfp4",
+     "awq_nvfp4",
+     "gptq_int4"
+    ],
+    [
+     "bf16",
+     "bf16",
+     "bf16",
+     "bf16",
+     "bf16",
+     "bf16",
+     "bf16"
+    ]
+   ],
+   "id": "qd_mixed",
+   "kv": "kivi2",
+   "label": "혼합: AWQ+NVFP4 · GPTQ down · MXFP8 o · KIVI-2",
+   "lmeval": {
+    "batch_size": 1,
+    "env": {
+     "cuda": "12.8",
+     "dtype": "bfloat16",
+     "git_dirty": false,
+     "git_sha": "ab489f17cdc01cbaa8074613ca30c89204ca6a9e",
+     "gpu_names": [
+      "NVIDIA H100 NVL"
+     ],
+     "model_id": "Qwen/Qwen3-0.6B",
+     "model_sha": "c1899de289a04d12100db370d81485cdf75e47ca",
+     "seed": 42,
+     "utc": "2026-10-13T10:28:51.228802+00:00"
+    },
+    "limit": 300,
+    "lm_eval_version": "0.4.13",
+    "macro": 0.5146666666666666,
+    "macro_delta_pts": -2.1333333333333426,
+    "recipe_hash": "11b6ac48769499219789f04e3012f2b13cb163f36dd72d849acba12ff65634e4",
+    "source": "runs/20261013_quantizer_w3/lmeval_A/qd_mixed.json",
+    "tasks": [
+     {
+      "delta_pts": -1.6666666666666718,
+      "label": "ARC-Easy",
+      "metric": "acc_norm",
+      "n": 300,
+      "num_fewshot": 0,
+      "stderr": 0.028806947219396185,
+      "task": "arc_easy",
+      "value": 0.5433333333333333
+     },
+     {
+      "delta_pts": -2.666666666666667,
+      "label": "ARC-Challenge",
+      "metric": "acc_norm",
+      "n": 300,
+      "num_fewshot": 0,
+      "stderr": 0.026746674847251857,
+      "task": "arc_challenge",
+      "value": 0.31
+     },
+     {
+      "delta_pts": 0.666666666666671,
+      "label": "PIQA",
+      "metric": "acc_norm",
+      "n": 300,
+      "num_fewshot": 0,
+      "stderr": 0.026901833738451123,
+      "task": "piqa",
+      "value": 0.6833333333333333
+     },
+     {
+      "delta_pts": -7.333333333333336,
+      "label": "WinoGrande",
+      "metric": "acc",
+      "n": 300,
+      "num_fewshot": 0,
+      "stderr": 0.028863651326417043,
+      "task": "winogrande",
+      "value": 0.53
+     },
+     {
+      "delta_pts": 0.33333333333334103,
+      "label": "HellaSwag",
+      "metric": "acc_norm",
+      "n": 300,
+      "num_fewshot": 0,
+      "stderr": 0.028913176195480287,
+      "task": "hellaswag",
+      "value": 0.5066666666666667
+     }
+    ],
+    "wall_time_s": 1583.515940762125
+   },
+   "lmeval_rejected": null,
+   "lmeval_status": "기록됨",
+   "recipe_sha256": "11b6ac48769499219789f04e3012f2b13cb163f36dd72d849acba12ff65634e4",
+   "report": {
+    "dataset_fingerprint": "e392e473036660f992761e23b95b79b80a8feabe10d313b524140cc83852a38b",
+    "env": {
+     "cuda": "12.8",
+     "dtype": "bfloat16",
+     "git_dirty": false,
+     "git_sha": "ab489f17cdc01cbaa8074613ca30c89204ca6a9e",
+     "gpu_names": [
+      "NVIDIA H100 NVL"
+     ],
+     "model_id": "Qwen/Qwen3-0.6B",
+     "model_sha": "c1899de289a04d12100db370d81485cdf75e47ca",
+     "seed": 42,
+     "utc": "2026-10-13T11:10:14.878777+00:00"
+    },
+    "logits_kl": 0.24058171715965598,
+    "measured": [
+     "model.layers.1.mlp.down_proj",
+     "model.layers.1.mlp.gate_proj",
+     "model.layers.1.mlp.up_proj",
+     "model.layers.1.self_attn.k_proj",
+     "model.layers.1.self_attn.o_proj",
+     "model.layers.1.self_attn.q_proj",
+     "model.layers.1.self_attn.v_proj",
+     "model.layers.10.mlp.down_proj",
+     "model.layers.10.mlp.gate_proj",
+     "model.layers.10.mlp.up_proj",
+     "model.layers.10.self_attn.k_proj",
+     "model.layers.10.self_attn.o_proj",
+     "model.layers.10.self_attn.q_proj",
+     "model.layers.10.self_attn.v_proj",
+     "model.layers.11.mlp.down_proj",
+     "model.layers.11.mlp.gate_proj",
+     "model.layers.11.mlp.up_proj",
+     "model.layers.11.self_attn.k_proj",
+     "model.layers.11.self_attn.o_proj",
+     "model.layers.11.self_attn.q_proj",
+     "model.layers.11.self_attn.v_proj",
+     "model.layers.12.mlp.down_proj",
+     "model.layers.12.mlp.gate_proj",
+     "model.layers.12.mlp.up_proj",
+     "model.layers.12.self_attn.k_proj",
+     "model.layers.12.self_attn.o_proj",
+     "model.layers.12.self_attn.q_proj",
+     "model.layers.12.self_attn.v_proj",
+     "model.layers.13.mlp.down_proj",
+     "model.layers.13.mlp.gate_proj",
+     "model.layers.13.mlp.up_proj",
+     "model.layers.13.self_attn.k_proj",
+     "model.layers.13.self_attn.o_proj",
+     "model.layers.13.self_attn.q_proj",
+     "model.layers.13.self_attn.v_proj",
+     "model.layers.14.mlp.down_proj",
+     "model.layers.14.mlp.gate_proj",
+     "model.layers.14.mlp.up_proj",
+     "model.layers.14.self_attn.k_proj",
+     "model.layers.14.self_attn.o_proj",
+     "model.layers.14.self_attn.q_proj",
+     "model.layers.14.self_attn.v_proj",
+     "model.layers.15.mlp.down_proj",
+     "model.layers.15.mlp.gate_proj",
+     "model.layers.15.mlp.up_proj",
+     "model.layers.15.self_attn.k_proj",
+     "model.layers.15.self_attn.o_proj",
+     "model.layers.15.self_attn.q_proj",
+     "model.layers.15.self_attn.v_proj",
+     "model.layers.16.mlp.down_proj",
+     "model.layers.16.mlp.gate_proj",
+     "model.layers.16.mlp.up_proj",
+     "model.layers.16.self_attn.k_proj",
+     "model.layers.16.self_attn.o_proj",
+     "model.layers.16.self_attn.q_proj",
+     "model.layers.16.self_attn.v_proj",
+     "model.layers.17.mlp.down_proj",
+     "model.layers.17.mlp.gate_proj",
+     "model.layers.17.mlp.up_proj",
+     "model.layers.17.self_attn.k_proj",
+     "model.layers.17.self_attn.o_proj",
+     "model.layers.17.self_attn.q_proj",
+     "model.layers.17.self_attn.v_proj",
+     "model.layers.18.mlp.down_proj",
+     "model.layers.18.mlp.gate_proj",
+     "model.layers.18.mlp.up_proj",
+     "model.layers.18.self_attn.k_proj",
+     "model.layers.18.self_attn.o_proj",
+     "model.layers.18.self_attn.q_proj",
+     "model.layers.18.self_attn.v_proj",
+     "model.layers.19.mlp.down_proj",
+     "model.layers.19.mlp.gate_proj",
+     "model.layers.19.mlp.up_proj",
+     "model.layers.19.self_attn.k_proj",
+     "model.layers.19.self_attn.o_proj",
+     "model.layers.19.self_attn.q_proj",
+     "model.layers.19.self_attn.v_proj",
+     "model.layers.2.mlp.down_proj",
+     "model.layers.2.mlp.gate_proj",
+     "model.layers.2.mlp.up_proj",
+     "model.layers.2.self_attn.k_proj",
+     "model.layers.2.self_attn.o_proj",
+     "model.layers.2.self_attn.q_proj",
+     "model.layers.2.self_attn.v_proj",
+     "model.layers.20.mlp.down_proj",
+     "model.layers.20.mlp.gate_proj",
+     "model.layers.20.mlp.up_proj",
+     "model.layers.20.self_attn.k_proj",
+     "model.layers.20.self_attn.o_proj",
+     "model.layers.20.self_attn.q_proj",
+     "model.layers.20.self_attn.v_proj",
+     "model.layers.21.mlp.down_proj",
+     "model.layers.21.mlp.gate_proj",
+     "model.layers.21.mlp.up_proj",
+     "model.layers.21.self_attn.k_proj",
+     "model.layers.21.self_attn.o_proj",
+     "model.layers.21.self_attn.q_proj",
+     "model.layers.21.self_attn.v_proj",
+     "model.layers.22.mlp.down_proj",
+     "model.layers.22.mlp.gate_proj",
+     "model.layers.22.mlp.up_proj",
+     "model.layers.22.self_attn.k_proj",
+     "model.layers.22.self_attn.o_proj",
+     "model.layers.22.self_attn.q_proj",
+     "model.layers.22.self_attn.v_proj",
+     "model.layers.23.mlp.down_proj",
+     "model.layers.23.mlp.gate_proj",
+     "model.layers.23.mlp.up_proj",
+     "model.layers.23.self_attn.k_proj",
+     "model.layers.23.self_attn.o_proj",
+     "model.layers.23.self_attn.q_proj",
+     "model.layers.23.self_attn.v_proj",
+     "model.layers.24.mlp.down_proj",
+     "model.layers.24.mlp.gate_proj",
+     "model.layers.24.mlp.up_proj",
+     "model.layers.24.self_attn.k_proj",
+     "model.layers.24.self_attn.o_proj",
+     "model.layers.24.self_attn.q_proj",
+     "model.layers.24.self_attn.v_proj",
+     "model.layers.25.mlp.down_proj",
+     "model.layers.25.mlp.gate_proj",
+     "model.layers.25.mlp.up_proj",
+     "model.layers.25.self_attn.k_proj",
+     "model.layers.25.self_attn.o_proj",
+     "model.layers.25.self_attn.q_proj",
+     "model.layers.25.self_attn.v_proj",
+     "model.layers.26.mlp.down_proj",
+     "model.layers.26.mlp.gate_proj",
+     "model.layers.26.mlp.up_proj",
+     "model.layers.26.self_attn.k_proj",
+     "model.layers.26.self_attn.o_proj",
+     "model.layers.26.self_attn.q_proj",
+     "model.layers.26.self_attn.v_proj",
+     "model.layers.3.mlp.down_proj",
+     "model.layers.3.mlp.gate_proj",
+     "model.layers.3.mlp.up_proj",
+     "model.layers.3.self_attn.k_proj",
+     "model.layers.3.self_attn.o_proj",
+     "model.layers.3.self_attn.q_proj",
+     "model.layers.3.self_attn.v_proj",
+     "model.layers.4.mlp.down_proj",
+     "model.layers.4.mlp.gate_proj",
+     "model.layers.4.mlp.up_proj",
+     "model.layers.4.self_attn.k_proj",
+     "model.layers.4.self_attn.o_proj",
+     "model.layers.4.self_attn.q_proj",
+     "model.layers.4.self_attn.v_proj",
+     "model.layers.5.mlp.down_proj",
+     "model.layers.5.mlp.gate_proj",
+     "model.layers.5.mlp.up_proj",
+     "model.layers.5.self_attn.k_proj",
+     "model.layers.5.self_attn.o_proj",
+     "model.layers.5.self_attn.q_proj",
+     "model.layers.5.self_attn.v_proj",
+     "model.layers.6.mlp.down_proj",
+     "model.layers.6.mlp.gate_proj",
+     "model.layers.6.mlp.up_proj",
+     "model.layers.6.self_attn.k_proj",
+     "model.layers.6.self_attn.o_proj",
+     "model.layers.6.self_attn.q_proj",
+     "model.layers.6.self_attn.v_proj",
+     "model.layers.7.mlp.down_proj",
+     "model.layers.7.mlp.gate_proj",
+     "model.layers.7.mlp.up_proj",
+     "model.layers.7.self_attn.k_proj",
+     "model.layers.7.self_attn.o_proj",
+     "model.layers.7.self_attn.q_proj",
+     "model.layers.7.self_attn.v_proj",
+     "model.layers.8.mlp.down_proj",
+     "model.layers.8.mlp.gate_proj",
+     "model.layers.8.mlp.up_proj",
+     "model.layers.8.self_attn.k_proj",
+     "model.layers.8.self_attn.o_proj",
+     "model.layers.8.self_attn.q_proj",
+     "model.layers.8.self_attn.v_proj",
+     "model.layers.9.mlp.down_proj",
+     "model.layers.9.mlp.gate_proj",
+     "model.layers.9.mlp.up_proj",
+     "model.layers.9.self_attn.k_proj",
+     "model.layers.9.self_attn.o_proj",
+     "model.layers.9.self_attn.q_proj",
+     "model.layers.9.self_attn.v_proj"
+    ],
+    "n_tokens": 4088,
+    "ppl_emulated": 49.486939238540096,
+    "ppl_reference": 43.75868193325478,
+    "recipe_hash": "11b6ac48769499219789f04e3012f2b13cb163f36dd72d849acba12ff65634e4",
+    "samples": 8,
+    "seqlen": 512,
+    "source": "runs/20261013_quantizer_w2/report/qd_mixed/report.json",
+    "sqnr_db": [
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     21.52260132960025,
+     22.73646744268397,
+     18.64500569613539,
+     28.843990452610434,
+     25.907422020571367,
+     18.44349096866558,
+     22.092057495749657,
+     21.369347894455085,
+     22.74815511349498,
+     18.455999142731415,
+     28.353638778845145,
+     24.803094803251145,
+     18.250207233466227,
+     40.586413865352064,
+     22.078073427935337,
+     20.66800179790562,
+     18.17600437933295,
+     28.380594215229195,
+     24.203129716825718,
+     18.295310687337206,
+     21.359371376309845,
+     22.172959307699248,
+     22.292827694370242,
+     18.322150650785233,
+     26.73474536165771,
+     23.845347345584685,
+     18.46923328290326,
+     21.240486054185688,
+     21.870268866373838,
+     21.671031604090167,
+     18.245021730507467,
+     27.87724545519698,
+     22.427372629247323,
+     18.211026955953734,
+     21.150398428670524,
+     22.280739960511816,
+     21.22339813998124,
+     18.218149608690428,
+     27.96421812567636,
+     22.791182249878084,
+     18.177414252136515,
+     21.103402280674363,
+     21.721068588116417,
+     21.32886371702613,
+     18.22662690075784,
+     26.904900176196172,
+     22.7685038825736,
+     18.371193472119703,
+     20.71261146552532,
+     21.098574516573088,
+     22.967997441392725,
+     20.17538283281036,
+     27.037616878544824,
+     22.717343504528387,
+     18.21266559840312,
+     20.978230104526773,
+     22.17928381538101,
+     21.129942634530394,
+     18.298754573697018,
+     26.534072389952552,
+     22.710278289638545,
+     18.688176881932065,
+     20.99082122885929,
+     22.094362969451346,
+     21.490784830956663,
+     18.698756080420967,
+     27.035232929069558,
+     22.448701420251,
+     19.367751922151157,
+     21.64894188129386,
+     22.833080146843926,
+     21.893299294361167,
+     19.197429488731895,
+     26.532587953761787,
+     22.042886931413225,
+     18.57729731940714,
+     21.483106101331508,
+     21.60504914300506,
+     23.923604795501326,
+     21.89357048764968,
+     26.198841171246485,
+     22.06527343786101,
+     18.252488034661976,
+     21.842942685900624,
+     21.93381911161657,
+     23.600728499037725,
+     21.63837886616086,
+     25.112198932488962,
+     21.714776613031926,
+     18.41276584147527,
+     21.05704619530993,
+     21.986542229480342,
+     23.73131224571956,
+     21.142536382626016,
+     26.821288472027597,
+     21.718899295799417,
+     18.864322128124865,
+     21.275057033984833,
+     21.859915763808374,
+     20.96837626017311,
+     18.241736494625304,
+     27.682511660639555,
+     22.07032289062036,
+     19.28113368973354,
+     21.733485273678923,
+     22.25875773181133,
+     21.143712549071985,
+     18.780882144790432,
+     26.633679411719147,
+     22.679801404819727,
+     19.981851456637624,
+     22.454375235963933,
+     22.04512599479754,
+     21.53940675071191,
+     17.862554571815714,
+     25.671946335844524,
+     22.1311821911217,
+     20.259060717948564,
+     21.769638284353654,
+     22.329889471527252,
+     21.110913736837897,
+     18.17827474619629,
+     28.23092263948392,
+     22.38178513166085,
+     20.656499231889086,
+     21.413223680762016,
+     22.08791045542152,
+     21.066490410819632,
+     18.058523395010504,
+     27.943881421386678,
+     22.60737910603771,
+     20.779321828625342,
+     21.56098784894806,
+     21.539957602795834,
+     20.243655592091024,
+     17.508900453089606,
+     28.94880105915251,
+     22.077929026848718,
+     20.46158757952086,
+     21.662711687912157,
+     20.65629010459378,
+     19.79057131538027,
+     17.850950517376564,
+     27.77057882259306,
+     22.206612889835803,
+     19.74676246196238,
+     22.135554717205732,
+     20.97439878540177,
+     19.96209527798141,
+     17.865804940443425,
+     28.21586660122057,
+     22.06663880886964,
+     19.027296158603306,
+     22.303394469619224,
+     21.797492431020977,
+     20.577712888693,
+     17.88197963246531,
+     27.720274781252133,
+     22.085413841570286,
+     18.834294524390913,
+     21.74880035329284,
+     21.82087316288988,
+     20.7244631777529,
+     17.86053591964589,
+     29.623004330181715,
+     21.63950771805347,
+     18.402933861530148,
+     22.572006371336947,
+     21.831172274104972,
+     20.432862477573728,
+     17.8726782491712,
+     29.54151529384496,
+     21.309326365997183,
+     18.68279276362477,
+     21.77486327512092,
+     20.608795582714393,
+     20.068346184078404,
+     17.829440804677052,
+     28.00672415488269,
+     21.889868028618142,
+     20.044216328884502,
+     22.190832562494695,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "top1_agreement": 0.74755859375
+   },
+   "report_rejected": null,
+   "report_status": "기록됨",
+   "run": {
+    "dataset_fingerprint": "a46124b21ac53738",
+    "env": {
+     "cuda": "12.8",
+     "dtype": "bfloat16",
+     "git_dirty": false,
+     "git_sha": "ab489f17cdc01cbaa8074613ca30c89204ca6a9e",
+     "gpu_names": [
+      "NVIDIA A100-SXM4-80GB"
+     ],
+     "model_id": "Qwen/Qwen3-0.6B",
+     "model_sha": "c1899de289a04d12100db370d81485cdf75e47ca",
+     "seed": 42,
+     "utc": "2026-10-13T10:28:35.901249+00:00"
+    },
+    "forward_mode": "full_window",
+    "n_tokens": 298862,
+    "n_windows": 146,
+    "ppl": 25.979711383911784,
+    "ppl_delta_pct": 23.91264191962097,
+    "recipe_hash": "11b6ac48769499219789f04e3012f2b13cb163f36dd72d849acba12ff65634e4",
+    "source": "runs/20261013_quantizer_w2/ppl_all/qd_mixed.json",
+    "wall_time_s": 1069.904693781864
+   },
+   "run_rejected": null,
+   "run_status": "기록됨",
+   "yaml": "name: qd_mixed\ndescription: \"Built with the Tri-Cast Quantizer demo (one method per Linear layer).\"\ndefaults:\n  weight:\n    scheme: nvfp4\n    mma_input: dequant\n  activation:\n    scheme: nvfp4\n    mma_input: dequant\n  transform:\n    kind: awq\n    share_inputs: true\n  weight_algo: rtn\noverrides:\n  - layers: \"0,27\"\n    skip: true\n  - match: \"*.self_attn.o_proj\"\n    weight:\n      scheme: mxfp8_e4m3\n      mma_input: dequant\n    activation:\n      scheme: mxfp8_e4m3\n      mma_input: dequant\n    transform: none\n    weight_algo: rtn\n  - match: \"*.mlp.down_proj\"\n    weight: int4_g128_zp\n    activation: null\n    transform: none\n    weight_algo: gptq\nkv:\n  preset: kivi2\n  mode: fakequant\nexclude: [lm_head]\ncalibration:\n  seed: 42"
+  }
+ ],
+ "schema": "tricast.quantizer_demo/1"
+}

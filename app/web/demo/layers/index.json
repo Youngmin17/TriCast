@@ -1,0 +1,453 @@
+{
+ "columns": [
+  "name",
+  "block",
+  "kind",
+  "status",
+  "weight.mse",
+  "weight.sqnr_db",
+  "weight.max_abs_error",
+  "weight.relative_frobenius",
+  "weight.cosine",
+  "activation.mse",
+  "activation.sqnr_db",
+  "activation.max_abs_error",
+  "activation.relative_frobenius",
+  "activation.cosine",
+  "output.mse",
+  "output.sqnr_db",
+  "output.max_abs_error",
+  "output.relative_frobenius",
+  "output.cosine",
+  "mma_ulp.mean",
+  "mma_ulp.max",
+  "mma_ulp.p99",
+  "mma_ulp.exact_fraction"
+ ],
+ "reports": [
+  {
+   "dataset_fingerprint": "e392e473036660f992761e23b95b79b80a8feabe10d313b524140cc83852a38b",
+   "description": "INT8 per-row operands with exact integer dot products.",
+   "env": {
+    "cuda": "12.8",
+    "dtype": "bfloat16",
+    "git_dirty": false,
+    "git_sha": "ab489f17cdc01cbaa8074613ca30c89204ca6a9e",
+    "gpu_names": [
+     "Tesla V100-PCIE-16GB"
+    ],
+    "seed": 42,
+    "src_sha256": null,
+    "utc": "2026-10-13T05:23:24.753296+00:00",
+    "versions": {
+     "datasets": "4.8.5",
+     "lm_eval": "0.4.13",
+     "python": "3.12.14",
+     "torch": "2.8.0+cu128",
+     "transformers": "4.55.2",
+     "triton": "3.4.0"
+    }
+   },
+   "file": "int8_row_w8a8.json",
+   "forward_mode": "full_window",
+   "id": "int8_row_w8a8",
+   "label": "INT8 W8A8",
+   "layers": 196,
+   "metrics": {
+    "logits_kl": 0.03390258323851297,
+    "n_tokens": 4088,
+    "ppl_emulated": 44.47925635030616,
+    "ppl_reference": 43.725908976614704,
+    "top1_agreement": 0.896728515625
+   },
+   "model": {
+    "id": "Qwen/Qwen3-0.6B",
+    "sha": "c1899de289a04d12100db370d81485cdf75e47ca"
+   },
+   "nonfinite": {},
+   "recipe_hash": "78f8822fe0423a56e2596b0c931bf2c36c8d57b2d7565461df82da5b5945e9c2",
+   "samples": 8,
+   "seqlen": 512,
+   "skipped": [
+    "lm_head"
+   ]
+  },
+  {
+   "dataset_fingerprint": "e392e473036660f992761e23b95b79b80a8feabe10d313b524140cc83852a38b",
+   "description": "OCP MXFP8_E4M3 operands with block-32 E8M0 scales.",
+   "env": {
+    "cuda": "12.8",
+    "dtype": "bfloat16",
+    "git_dirty": false,
+    "git_sha": "ab489f17cdc01cbaa8074613ca30c89204ca6a9e",
+    "gpu_names": [
+     "Tesla V100-PCIE-16GB"
+    ],
+    "seed": 42,
+    "src_sha256": null,
+    "utc": "2026-10-13T05:26:42.408165+00:00",
+    "versions": {
+     "datasets": "4.8.5",
+     "lm_eval": "0.4.13",
+     "python": "3.12.14",
+     "torch": "2.8.0+cu128",
+     "transformers": "4.55.2",
+     "triton": "3.4.0"
+    }
+   },
+   "file": "mxfp8_w_a.json",
+   "forward_mode": "full_window",
+   "id": "mxfp8_w_a",
+   "label": "MXFP8",
+   "layers": 196,
+   "metrics": {
+    "logits_kl": 0.03229911377245415,
+    "n_tokens": 4088,
+    "ppl_emulated": 44.56859762762025,
+    "ppl_reference": 43.725908976614704,
+    "top1_agreement": 0.9052734375
+   },
+   "model": {
+    "id": "Qwen/Qwen3-0.6B",
+    "sha": "c1899de289a04d12100db370d81485cdf75e47ca"
+   },
+   "nonfinite": {},
+   "recipe_hash": "a5103a05d0870372220c8c70628077037efe5625f02b3ab9c87d4b7d51fb8c97",
+   "samples": 8,
+   "seqlen": 512,
+   "skipped": [
+    "lm_head"
+   ]
+  },
+  {
+   "dataset_fingerprint": "e392e473036660f992761e23b95b79b80a8feabe10d313b524140cc83852a38b",
+   "description": "GPTQ UINT4 group-128 weights, zero points, and unquantized activations.",
+   "env": {
+    "cuda": "12.8",
+    "dtype": "bfloat16",
+    "git_dirty": false,
+    "git_sha": "ab489f17cdc01cbaa8074613ca30c89204ca6a9e",
+    "gpu_names": [
+     "Tesla V100-PCIE-16GB"
+    ],
+    "seed": 42,
+    "src_sha256": null,
+    "utc": "2026-10-13T05:17:23.436667+00:00",
+    "versions": {
+     "datasets": "4.8.5",
+     "lm_eval": "0.4.13",
+     "python": "3.12.14",
+     "torch": "2.8.0+cu128",
+     "transformers": "4.55.2",
+     "triton": "3.4.0"
+    }
+   },
+   "file": "w4a16_g128_zp_gptq.json",
+   "forward_mode": "full_window",
+   "id": "w4a16_g128_zp_gptq",
+   "label": "GPTQ INT4 (W4)",
+   "layers": 196,
+   "metrics": {
+    "logits_kl": 0.19733868572893015,
+    "n_tokens": 4088,
+    "ppl_emulated": 51.421563075331406,
+    "ppl_reference": 43.725908976614704,
+    "top1_agreement": 0.77490234375
+   },
+   "model": {
+    "id": "Qwen/Qwen3-0.6B",
+    "sha": "c1899de289a04d12100db370d81485cdf75e47ca"
+   },
+   "nonfinite": {},
+   "recipe_hash": "637ecdc4d0e90f770340796dd1dfde39b54805648318d8cddaa1e455ee464ef5",
+   "samples": 8,
+   "seqlen": 512,
+   "skipped": [
+    "lm_head"
+   ]
+  },
+  {
+   "dataset_fingerprint": "e392e473036660f992761e23b95b79b80a8feabe10d313b524140cc83852a38b",
+   "description": "NVFP4 operands after AWQ scaling shared by sibling projections.",
+   "env": {
+    "cuda": "12.8",
+    "dtype": "bfloat16",
+    "git_dirty": false,
+    "git_sha": "ab489f17cdc01cbaa8074613ca30c89204ca6a9e",
+    "gpu_names": [
+     "Tesla V100-PCIE-16GB"
+    ],
+    "seed": 42,
+    "src_sha256": null,
+    "utc": "2026-10-13T05:17:22.835695+00:00",
+    "versions": {
+     "datasets": "4.8.5",
+     "lm_eval": "0.4.13",
+     "python": "3.12.14",
+     "torch": "2.8.0+cu128",
+     "transformers": "4.55.2",
+     "triton": "3.4.0"
+    }
+   },
+   "file": "nvfp4_awq_shared.json",
+   "forward_mode": "full_window",
+   "id": "nvfp4_awq_shared",
+   "label": "AWQ + NVFP4",
+   "layers": 196,
+   "metrics": {
+    "logits_kl": 0.21474423917007818,
+    "n_tokens": 4088,
+    "ppl_emulated": 50.68799486038459,
+    "ppl_reference": 43.725908976614704,
+    "top1_agreement": 0.760498046875
+   },
+   "model": {
+    "id": "Qwen/Qwen3-0.6B",
+    "sha": "c1899de289a04d12100db370d81485cdf75e47ca"
+   },
+   "nonfinite": {},
+   "recipe_hash": "28d7a5dd177ae06ab62b912db6c4055ae72be3d309c2bcbae6d98b17d9a741ba",
+   "samples": 8,
+   "seqlen": 512,
+   "skipped": [
+    "lm_head"
+   ]
+  },
+  {
+   "dataset_fingerprint": "e392e473036660f992761e23b95b79b80a8feabe10d313b524140cc83852a38b",
+   "description": "NVFP4 W4A4 after SmoothQuant diagonal scaling with alpha=0.5.",
+   "env": {
+    "cuda": "12.8",
+    "dtype": "bfloat16",
+    "git_dirty": false,
+    "git_sha": "ab489f17cdc01cbaa8074613ca30c89204ca6a9e",
+    "gpu_names": [
+     "Tesla V100-PCIE-16GB"
+    ],
+    "seed": 42,
+    "src_sha256": null,
+    "utc": "2026-10-13T05:25:54.952936+00:00",
+    "versions": {
+     "datasets": "4.8.5",
+     "lm_eval": "0.4.13",
+     "python": "3.12.14",
+     "torch": "2.8.0+cu128",
+     "transformers": "4.55.2",
+     "triton": "3.4.0"
+    }
+   },
+   "file": "nvfp4_smoothquant.json",
+   "forward_mode": "full_window",
+   "id": "nvfp4_smoothquant",
+   "label": "SmoothQuant + NVFP4",
+   "layers": 196,
+   "metrics": {
+    "logits_kl": 0.24365485157449254,
+    "n_tokens": 4088,
+    "ppl_emulated": 53.93496281483257,
+    "ppl_reference": 43.725908976614704,
+    "top1_agreement": 0.746826171875
+   },
+   "model": {
+    "id": "Qwen/Qwen3-0.6B",
+    "sha": "c1899de289a04d12100db370d81485cdf75e47ca"
+   },
+   "nonfinite": {},
+   "recipe_hash": "a9617c515020037cb31de041e844c1547f9a655805acf654b0919973f5ff02a7",
+   "samples": 8,
+   "seqlen": 512,
+   "skipped": [
+    "lm_head"
+   ]
+  },
+  {
+   "dataset_fingerprint": "e392e473036660f992761e23b95b79b80a8feabe10d313b524140cc83852a38b",
+   "description": "NVFP4 W4A4 with block-16 UE4M3 and tensor fp32 scales.",
+   "env": {
+    "cuda": "12.8",
+    "dtype": "bfloat16",
+    "git_dirty": false,
+    "git_sha": "ab489f17cdc01cbaa8074613ca30c89204ca6a9e",
+    "gpu_names": [
+     "Tesla V100-PCIE-16GB"
+    ],
+    "seed": 42,
+    "src_sha256": null,
+    "utc": "2026-10-13T05:12:26.935063+00:00",
+    "versions": {
+     "datasets": "4.8.5",
+     "lm_eval": "0.4.13",
+     "python": "3.12.14",
+     "torch": "2.8.0+cu128",
+     "transformers": "4.55.2",
+     "triton": "3.4.0"
+    }
+   },
+   "file": "nvfp4_w_a.json",
+   "forward_mode": "full_window",
+   "id": "nvfp4_w_a",
+   "label": "NVFP4",
+   "layers": 196,
+   "metrics": {
+    "logits_kl": 0.2963635452680258,
+    "n_tokens": 4088,
+    "ppl_emulated": 52.6876005008356,
+    "ppl_reference": 43.725908976614704,
+    "top1_agreement": 0.724365234375
+   },
+   "model": {
+    "id": "Qwen/Qwen3-0.6B",
+    "sha": "c1899de289a04d12100db370d81485cdf75e47ca"
+   },
+   "nonfinite": {},
+   "recipe_hash": "7c25643a2d88ae427fc997f61202936d3f8d9efc6b66402b2f5da1dfbca92fa2",
+   "samples": 8,
+   "seqlen": 512,
+   "skipped": [
+    "lm_head"
+   ]
+  },
+  {
+   "dataset_fingerprint": "e392e473036660f992761e23b95b79b80a8feabe10d313b524140cc83852a38b",
+   "description": "Built with the Tri-Cast Quantizer demo (one method per Linear layer).",
+   "env": {
+    "cuda": "12.8",
+    "dtype": "bfloat16",
+    "git_dirty": false,
+    "git_sha": "ab489f17cdc01cbaa8074613ca30c89204ca6a9e",
+    "gpu_names": [
+     "NVIDIA H100 NVL"
+    ],
+    "seed": 42,
+    "src_sha256": null,
+    "utc": "2026-10-13T11:07:05.638463+00:00",
+    "versions": {
+     "datasets": "4.8.5",
+     "lm_eval": "0.4.13",
+     "python": "3.12.14",
+     "torch": "2.8.0+cu128",
+     "transformers": "4.55.2",
+     "triton": "3.4.0"
+    }
+   },
+   "file": "qd_nvint4.json",
+   "forward_mode": "full_window",
+   "id": "qd_nvint4",
+   "label": "NVINT4",
+   "layers": 196,
+   "metrics": {
+    "logits_kl": 0.4146139018486653,
+    "n_tokens": 4088,
+    "ppl_emulated": 57.889083766342175,
+    "ppl_reference": 43.75868193325478,
+    "top1_agreement": 0.670654296875
+   },
+   "model": {
+    "id": "Qwen/Qwen3-0.6B",
+    "sha": "c1899de289a04d12100db370d81485cdf75e47ca"
+   },
+   "nonfinite": {},
+   "recipe_hash": "ba9c8928b96f286d1f83935af0ccd8335b283c626f4f3aadf21c38d74d1f0dc9",
+   "samples": 8,
+   "seqlen": 512,
+   "skipped": [
+    "lm_head"
+   ]
+  },
+  {
+   "dataset_fingerprint": "e392e473036660f992761e23b95b79b80a8feabe10d313b524140cc83852a38b",
+   "description": "OCP MXFP4 operands with block-32 E8M0 scales.",
+   "env": {
+    "cuda": "12.8",
+    "dtype": "bfloat16",
+    "git_dirty": false,
+    "git_sha": "ab489f17cdc01cbaa8074613ca30c89204ca6a9e",
+    "gpu_names": [
+     "Tesla V100-PCIE-16GB"
+    ],
+    "seed": 42,
+    "src_sha256": null,
+    "utc": "2026-10-13T05:12:26.911771+00:00",
+    "versions": {
+     "datasets": "4.8.5",
+     "lm_eval": "0.4.13",
+     "python": "3.12.14",
+     "torch": "2.8.0+cu128",
+     "transformers": "4.55.2",
+     "triton": "3.4.0"
+    }
+   },
+   "file": "mxfp4_w_a.json",
+   "forward_mode": "full_window",
+   "id": "mxfp4_w_a",
+   "label": "MXFP4",
+   "layers": 196,
+   "metrics": {
+    "logits_kl": 0.5936831848529991,
+    "n_tokens": 4088,
+    "ppl_emulated": 68.20536771569742,
+    "ppl_reference": 43.725908976614704,
+    "top1_agreement": 0.6083984375
+   },
+   "model": {
+    "id": "Qwen/Qwen3-0.6B",
+    "sha": "c1899de289a04d12100db370d81485cdf75e47ca"
+   },
+   "nonfinite": {},
+   "recipe_hash": "a40da150ce58a451186c2116dd0e3608126dfdaf7f88b4e79595c3e6e15ca209",
+   "samples": 8,
+   "seqlen": 512,
+   "skipped": [
+    "lm_head"
+   ]
+  },
+  {
+   "dataset_fingerprint": "e392e473036660f992761e23b95b79b80a8feabe10d313b524140cc83852a38b",
+   "description": "Block floating point with 4-bit mantissas and shared E8M0 per 16 values.",
+   "env": {
+    "cuda": "12.8",
+    "dtype": "bfloat16",
+    "git_dirty": false,
+    "git_sha": "ab489f17cdc01cbaa8074613ca30c89204ca6a9e",
+    "gpu_names": [
+     "Tesla V100-PCIE-16GB"
+    ],
+    "seed": 42,
+    "src_sha256": null,
+    "utc": "2026-10-13T05:31:02.311870+00:00",
+    "versions": {
+     "datasets": "4.8.5",
+     "lm_eval": "0.4.13",
+     "python": "3.12.14",
+     "torch": "2.8.0+cu128",
+     "transformers": "4.55.2",
+     "triton": "3.4.0"
+    }
+   },
+   "file": "msfp12_bfp.json",
+   "forward_mode": "full_window",
+   "id": "msfp12_bfp",
+   "label": "BFP (MSFP12)",
+   "layers": 196,
+   "metrics": {
+    "logits_kl": 0.6953405997110013,
+    "n_tokens": 4088,
+    "ppl_emulated": 72.8546001815258,
+    "ppl_reference": 43.725908976614704,
+    "top1_agreement": 0.59521484375
+   },
+   "model": {
+    "id": "Qwen/Qwen3-0.6B",
+    "sha": "c1899de289a04d12100db370d81485cdf75e47ca"
+   },
+   "nonfinite": {},
+   "recipe_hash": "5e34d0a5478f0334c24eddf0a8feb7f468430ef6f78b1c8da109a9b8e3e9fe8b",
+   "samples": 8,
+   "seqlen": 512,
+   "skipped": [
+    "lm_head"
+   ]
+  }
+ ],
+ "schema": "tricast.layer_map/1"
+}

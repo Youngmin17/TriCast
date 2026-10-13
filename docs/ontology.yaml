@@ -274,7 +274,7 @@ classes:
     description: 레이어 하나의 양자화가 모델 전체 품질을 얼마나 바꾸는가 — 레이어 국소 오차의 순위와 다를 수 있다
     synonyms: [민감도 분석, 민감한 레이어]   # 인터뷰 원문 표현 (ontology.md §3)
     evidence: [로그 09, 로그 10, 로그 13, 로그 14]
-    code: tricast.analysis.layer_report (국소 SQNR · MSE) · EvalRun 의 PPL · lm-eval (모델 전체) — 자동 탐색은 예정
+    code: tricast.analysis.layer_report (국소 SQNR · MSE) · EvalRun 의 PPL · lm-eval (모델 전체) · app/autotune.py (Auto-tune v1 — 층 하나만 줄인 모델의 KL 표 → 예산 안 배정)
     attributes:
       measure: {type: enum, values: [local_sqnr, local_mse, end_to_end_kl, end_to_end_ppl], note: "값은 분석 코드 어휘 (ontology.md §7-1). W1 스파이크 (docs/spikes/2026-10-13_layer_sqnr_proxy.md): 국소 SQNR 하위 14개를 보호해도 무작위 14개와 구분되지 않음 — 지킨 파라미터가 더 적었다는 교란이 있어 잠정", evidence: [로그 10, 로그 13]}
       rank_transfers: {type: bool, note: "한 환경에서 잰 순위가 다른 환경(칩·다른 방법)에서도 맞는가 — 로그 10 은 PC 순위가 폰에서 맞지 않음", evidence: [로그 10]}

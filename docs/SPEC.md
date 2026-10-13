@@ -42,7 +42,7 @@
 
 ## 3. 핵심 기능 (한 문장)
 
-> **레이어별 방법 고르기** (웹 격자 · YAML · Python) → **레시피 한 장** (SHA-256) → **레이어 오차 지도 + PPL · lm-eval 과제별 점수** (같은 실행 환경 기록) → *(예정)* **자동 튜닝** — 칩의 누산 · 반올림 규칙은 같은 레시피의 선택 축
+> **레이어별 방법 고르기** (웹 격자 · YAML · Python) → **레시피 한 장** (SHA-256) → **레이어 오차 지도 + PPL · lm-eval 과제별 점수** (같은 실행 환경 기록) → **Auto-tune** (크기 예산 → 층별 방법, v1) — 칩의 누산 · 반올림 규칙은 같은 레시피의 선택 축
 
 ## 4. 범위
 
@@ -57,7 +57,9 @@
 | 평가 — 레이어별 MSE · SQNR · 코사인 · logits KL, PPL, lm-eval 과제별 점수 · 표본 수, 검출 + 실행 환경 기록 | 칩 컴파일러·배포 |
 | 인터페이스 — 웹 (Quantizer · 레이어 지도 · Studio), CLI, Python API, lm-eval 어댑터, 자연어 레시피 에이전트 | 모델 학습 파이프라인 (QAT는 STE 수준만) |
 
-> ⬜ **포함하되 아직 없는 것** (§8): 자동 튜닝 (레이어 배정 탐색), Wanda · SparseGPT, AdaRound, TurboQuant, OMMX. 문서에서 결과가 아니라 **예정**으로만 표시합니다 (화면에는 아직 언급이 없습니다). TurboQuant · OMMX 는 사용자가 요청한 후보로, 정의 · 참고 문헌은 아직 정하지 않았습니다.
+> **Auto-tune v1** 은 구현됐다 (보정 없는 방법 7가지 · Qwen3-0.6B · 가중치 비트 예산, [스파이크](./spikes/2026-10-13_autotune_mckp.md) 채택). 보정 방법 · KV 를 넣는 v2 는 예정.
+>
+> ⬜ **포함하되 아직 없는 것** (§8): Auto-tune v2 (보정 방법 · KV 항), Wanda · SparseGPT, AdaRound, TurboQuant, OMMX. 문서에서 결과가 아니라 **예정**으로만 표시합니다 (화면에는 아직 언급이 없습니다). TurboQuant · OMMX 는 사용자가 요청한 후보로, 정의 · 참고 문헌은 아직 정하지 않았습니다.
 
 ---
 
@@ -85,7 +87,7 @@ flowchart TB
     end
     subgraph L4["④ 결과 + 근거"]
       O["레이어 지도 · 과제별 표 · JSON/Markdown<br/>git SHA · 모델 revision · 레시피 해시"]
-      AT["⬜ 자동 튜닝 (예정)<br/>전체 지표로 레이어 배정 탐색"]
+      AT["🎚️ Auto-tune v1<br/>층 하나 KL 표 → 예산 안 배정<br/>(v2: 보정 방법 · KV 예정)"]
     end
     Q & C & P & I --> R
     MC --> R
@@ -98,7 +100,7 @@ flowchart TB
     classDef plan fill:#f1f5f9,stroke:#94a3b8,color:#334155,stroke-dasharray: 4 3
     class Q,LM,C,P,I,MC,R,QZ,MM,MP,E,O impl
     class H part
-    class AT plan
+    class AT impl
 ```
 
 <sub>색: 파랑 = 구현됨(하위 기능마다 검증 · 구현 · 예정이 섞임 — 수 형식 · 반올림 · MMA 에뮬레이터는 ✅, 변환 · GPTQ · KV 는 🟡, §8 참고) · 주황 = 부분 (프리셋 출처는 8/8, 실제 칩 확인은 일부) · 점선 = 예정</sub>
@@ -170,6 +172,7 @@ sequenceDiagram
 | `formats` · `schemes` · `presets` | — | 등록된 수 형식 20 · 양자화 방식 27(+`bfp<m>_b<n>`) · 프리셋 8 목록 | 🟡 |
 | `recipe-check <이름\|경로>` | 레시피 | 통과 또는 필드 경로가 담긴 오류 | 🟡 |
 | `report --model M --recipe R` | 모델·레시피 | 레이어별 MSE·SQNR·코사인·mma_ulp + 모델 logits KL · top-1 (JSON·Markdown) | 🟡 |
+| `python -m app.autotune table` → `solve --budget-bits 9/2` → `predict` · `measure` | 모델 · 크기 예산 (가중치 평균 비트, 분수 가능) · KV | 층 × 방법 KL 표 → 예산 안 배정의 Quantizer 격자 · 레시피 · 근거(solution.json) | 🟡 (v1, AC22) |
 | `run <config.yaml>` | 레시피 목록 + `tasks: {ppl, lm_eval: {tasks, batch_size, limit}}` | `runs/<UTC>/` 에 레시피별 결과 + `summary.md` + env, 같은 조건이면 이어서 실행 | 🟡 |
 | `ppl` · `eval --tasks …` | 모델 · 레시피 · lm-eval 과제 | PPL · 과제별 점수 + 데이터셋 지문 | 🟡 |
 | `cast` · `agent "<자연어>"` | 형식 · 값 / 자연어 요청 | 형식 눈금 위 값 / `EmulationRequest` JSON (모르는 값은 `null` + `assumptions`) | 🟡 |
@@ -377,7 +380,7 @@ calibration: {seed: 42}
 | 이미지 분류 | top-1 · top-5 · KL | ImageNet-1k | ⬜ 보류 (인가된 데이터 필요) |
 | 음성 | WER | — | ⬜ 예정 |
 
-> **국소 지표와 전체 지표를 나눠 읽습니다**: 레이어 리포트의 SQNR 은 *그 레이어의 출력이 얼마나 망가졌나*이고, 그 레이어를 지켰을 때 *모델 전체가 얼마나 좋아지나*와 다릅니다 — W1 스파이크에서 국소 SQNR 하위 14개를 지킨 PPL(33.12)은 무작위 14개 5회(31.85~33.38) 안이었습니다 — 단, 그 14개는 지킨 파라미터가 무작위 평균보다 약 24% 적었습니다 ([스파이크](./spikes/2026-10-13_layer_sqnr_proxy.md)). 그래서 자동 튜닝(예정)의 목적 함수는 모델 전체 지표입니다.
+> **국소 지표와 전체 지표를 나눠 읽습니다**: 레이어 리포트의 SQNR 은 *그 레이어의 출력이 얼마나 망가졌나*이고, 그 레이어를 지켰을 때 *모델 전체가 얼마나 좋아지나*와 다릅니다 — W1 스파이크에서 국소 SQNR 하위 14개를 지킨 PPL(33.12)은 무작위 14개 5회(31.85~33.38) 안이었습니다 — 단, 그 14개는 지킨 파라미터가 무작위 평균보다 약 24% 적었습니다 ([스파이크](./spikes/2026-10-13_layer_sqnr_proxy.md)). 그래서 Auto-tune 의 목적 함수는 모델 전체 지표(층 하나만 줄인 모델의 KL)이고, v1 스파이크에서 그 합이 레시피 11개의 실측 KL 순서를 맞혔습니다 (Spearman 0.973).
 
 ### 5-5. ④ 결과 + 근거 계층
 
@@ -417,7 +420,7 @@ calibration: {seed: 42}
 
 ## 6. 수용 기준
 
-각 기준은 EARS 문형 "[조건]일 때, TriCast는 [동작]한다"로 쓰고, 조건 유형을 [ ]에 표시했습니다. **모든 기준은 테스트나 측정으로 판정합니다.** AC1–AC14 는 v1.0 그대로이고, AC15–AC21 이 Quantizer 개편의 기준입니다 (판정 테스트는 `app/tests/` 와 `scripts/quantizer/`).
+각 기준은 EARS 문형 "[조건]일 때, TriCast는 [동작]한다"로 쓰고, 조건 유형을 [ ]에 표시했습니다. **모든 기준은 테스트나 측정으로 판정합니다.** AC1–AC14 는 v1.0 그대로이고, AC15–AC22 가 Quantizer 개편의 기준입니다 (판정 테스트는 `app/tests/` 와 `scripts/quantizer/`).
 
 | AC | 유형 | 수용 기준 (EARS) | 판정 방법 (테스트 · 측정) | 현재 결과 | 인터뷰 |
 |:-:|:-:|---|---|---|:-:|
@@ -442,11 +445,12 @@ calibration: {seed: 42}
 | **AC19** | 이벤트 기반 | 레이어 리포트를 레이어 지도 번들로 내보내면, 번들은 리포트의 모든 레이어와 지도에 쓰는 지표 값(출력 · 가중치 · 활성 SQNR · MSE · 코사인 등 — `mma_ulp.n` · `nonfinite_mismatch` 는 내보내지 않음)을 그대로 담고, 유한하지 않은 값(inf · NaN)은 버리지 않고 표시한다. | `app/tests/test_layers_export.py::test_every_exported_metric_round_trips` · `test_nonfinite_metrics_are_flagged_not_dropped` · `scripts/quantizer/cdp_check.mjs` (헤드리스 Chrome) | ✅ CPU 통과 · `CDP_CHECKS 44/44` | 01 03 10 13 |
 | **AC20** | 예외 대응 | 서버 GPU 실행 요청이 데모 모드나 CPU 라이브 서버로 오거나, 요청 필드 · YAML 크기가 한도를 어기거나 보정이 필요한 레시피의 보정 설정(samples ≤ 512, seqlen ≤ 4096)이 한도를 어기면, 서버는 작업을 만들지 않고 고칠 내용을 담아 거부한다. | `app/tests/test_quantizer_server.py::test_demo_mode_refuses_with_how_to_start_a_gpu_server` · `test_live_cpu_server_refuses` · `test_bad_requests_say_what_to_fix` · `test_oversized_yaml_is_refused` · `test_bad_calibration_settings_say_what_to_fix` · `test_a_recipe_calibration_beyond_the_server_limits_is_refused` | ✅ CPU 통과 (거부 경로) · GPU 에서 실제 실행은 **미검증** (§10 R7) | 11 |
 | **AC21** | 선택 기능 | 방법별 옵션(그룹 크기 · 반올림 · 스케일 방법 · 변환 값 · GPTQ 값 · observer · KV 잔여 창 · 보정)이 지정된 경우, TriCast는 그 값을 해석된 레이어 명세(`patch_model` 이 쓰는 `spec_for`)까지 그대로 전달하고 보정 설정은 실행(보정 창)까지 전달하며, 그 방법에 해당하지 않거나 범위 밖인 옵션은 무시하지 않고 거부한다. | `app/tests/test_quantizer_recipe.py::test_every_option_field_reaches_the_resolved_spec` · `test_options_that_do_not_apply_or_are_out_of_range_are_refused` · `app/tests/test_quantizer_runner.py::test_a_static_observer_calibrates_with_the_requested_windows` | ✅ CPU 통과 (옵션 필드 18개) | 11 12 |
+| **AC22** | 이벤트 기반 | 크기 예산(Linear 가중치 평균 비트)이 주어지면, Auto-tune 은 층 × 방법 KL 표에서 예산을 넘지 않으면서 KL 합이 최소인 배정을 정확히 찾고 (작은 문제에서 완전 탐색과 같음, 예산이 불가능하면 거부), 그 배정을 Quantizer 격자 · 레시피로 내며 모든 층이 고른 방법의 단독 명세를 받는다. | `app/tests/test_autotune.py::test_solver_equals_brute_force_on_random_instances` · `test_infeasible_budgets_are_refused` · `test_solved_grid_resolves_to_each_chosen_methods_own_spec` · `test_tiny_table_is_complete_deterministic_and_resumable` · `test_tiny_solve_predict_and_measure` | ✅ CPU 통과 · GPU 스파이크 채택 (C2 ρ 0.973, 4.50 비트 PPL 25.53 < 균일 NVFP4 26.16) | 07 09 10 13 |
 
 ```mermaid
 pie showData
-    title 수용 기준 21개의 현재 판정
-    "✅ 통과" : 20
+    title 수용 기준 22개의 현재 판정
+    "✅ 통과" : 21
     "⬜ 예정" : 1
 ```
 
@@ -462,7 +466,7 @@ pie showData
 | **결정론** | 시드 고정, 동률 규칙 명시 (예: 희소화는 낮은 인덱스 우선, 격자 규칙은 칸 → 블록 → 종류). 같은 입력에 결과가 흔들리면 완료 아님 | `quant/structure.py` · 러너 `seed` · `app/quantizer_recipe.py` |
 | **재현성** | 같은 실행 식별자(`run_hash`)면 결과 재사용, 하나라도 바뀌면 새로 실행. 같은 격자 → 같은 YAML → 같은 레시피 해시 (브라우저 = Python) | AC3 · AC15 |
 | **정직성** | 기록된 결과는 해시가 같을 때만 보여 주고, 예정 기능은 결과 자리에 두지 않음 | AC17 · §4 |
-| **처리량 (Quantizer)** | Qwen3-0.6B WikiText-2 전체 PPL (298,862 토큰): dequant 프리셋 레시피 1개 **914~1,070초** (A100) · lm-eval 5과제 × 300문항: 원본 74초, MXFP4 372초, NVFP4 1,304초, NVINT4 1,355초, `qd_mixed` 1,584초 (H100 NVL) · 레이어 리포트 (8 × 512 토큰): 방법당 198~510초 (V100) | [측정 기록](./evidence/2026-10-13_quantizer_runs.md) |
+| **처리량 (Quantizer)** | Qwen3-0.6B WikiText-2 전체 PPL (298,862 토큰): dequant 프리셋 레시피 1개 **914~1,070초** (A100) · lm-eval 5과제 × 300문항: 원본 74초, MXFP4 372초, NVFP4 1,304초, NVINT4 1,355초, `qd_mixed` 1,584초 (H100 NVL) · 레이어 리포트 (8 × 512 토큰): 방법당 198~510초 (V100) · Auto-tune 표 (196층 × 6방법, 8 × 512 토큰) 668초 (A100) / 1,455초 (V100), 풀이 1초 미만 | [측정 기록](./evidence/2026-10-13_quantizer_runs.md) |
 | **처리량 (칩 산술 축)** | A100에서 CoFDA F=13 **0.15 TMAC/s** (NADPE 0.15와 동급) · Qwen3-0.6B 디코드 1스텝 **101 ms** · Qwen3-0.6B WikiText-2 전체 PPL 평가 (`hopper_fp8_w8a8`) **14.8분** — 스파이크 합격선 30분 이내 | `support_matrix.yaml` · [스파이크](./spikes/cuda_core_bit_exact_emulation.md) |
 | **체감 속도** | 48토큰 생성: Qwen3-0.6B **13.7초** (원본 2.6초, 5.2배) · Llama-3.2-1B **7.6초** (원본 1.2초, 6.2배) — A100 | `app/web/demo/runs/*.json` |
 | **이식성** | Python ≥ 3.10, torch ≥ 2.4. Triton 커널은 Linux + CUDA GPU (A100 · H200 · V100에서 레퍼런스와 비트 일치 확인), 그 외에는 레퍼런스로 동작. Quantizer 화면과 레이어 지도는 정적 파일이라 GPU 없이 열림 | `pyproject.toml` · `app/web/` |
@@ -511,15 +515,15 @@ pie showData
 | | 음성 (WER) | ⬜ | — |
 | | 레이어 오차 · ULP | 🟡 | CPU · Qwen3-0.6B 9방법 리포트 |
 | 결과 · 튜닝 | 실행 환경 기록 · JSON/Markdown | 🟡 | AC3 |
-| | 자동 튜닝 (레이어 배정 탐색, 전체 지표 목적 함수) | ⬜ | 설계만 — W1 스파이크가 목적 함수를 정함 |
+| | Auto-tune v1 (층 하나 KL 표 + 다중 선택 배낭, 보정 없는 방법 7가지) | 🟡 | `app/tests/test_autotune.py` · 스파이크 채택 (C1 · C2 · C3), C4 미달 |
 
 ```mermaid
 pie showData
     title 구성요소 36개의 구현 상태
     "✅ 검증됨" : 12
-    "🟡 구현됨" : 17
+    "🟡 구현됨" : 18
     "🟠 부분" : 2
-    "⬜ 예정·보류" : 5
+    "⬜ 예정·보류" : 4
 ```
 
 **규모** (v1.0 기준 Python 줄 수, 2026-10-08): 라이브러리 `src/` **11,004줄** · 테스트 **12,811줄** · 웹 앱 4,761줄 + JS 2,915줄 · 검증 스크립트 5,843줄. Quantizer 개편으로 앱 테스트는 161 → **308** 통과 (2026-10-13, 로컬 CPU).
@@ -565,7 +569,7 @@ flowchart LR
 
 | 인터뷰 페인 | 로그 | 스펙 위치 | AC | 테스트 |
 |---|---|---|:-:|---|
-| P3 레이어별 전수 탐색 (v2 의 주 문제) | 09 10 11 12 13 14 | §5-2 Quantizer 격자 · 레이어 지도 · §5-3 `overrides` · `report` | AC15 · AC19 · AC10 | `app/tests/test_quantizer_recipe.py` · `app/tests/test_layers_export.py` · `tests/test_nn_patch.py::test_layer_selectors_skip_and_report` |
+| P3 레이어별 전수 탐색 (v2 의 주 문제) | 09 10 11 12 13 14 | §5-2 Quantizer 격자 · 레이어 지도 · §5-3 `overrides` · `report` | AC15 · AC19 · AC10 · AC22 | `app/tests/test_quantizer_recipe.py` · `app/tests/test_layers_export.py` · `app/tests/test_autotune.py` · `tests/test_nn_patch.py::test_layer_selectors_skip_and_report` |
 | P9 설계 공간의 일부만 탐색 | 07 | §5-2 격자 · §5-3 방법 카탈로그 · `run` 스윕 | AC15 · AC21 | `app/tests/test_quantizer_recipe.py::test_random_grids_resolve_to_each_methods_own_spec` · `tests/test_eval.py::test_sweep_cartesian_product` |
 | P2 조합·세대마다 코드 재작성 | 01 02 03 07 11 24 | §5-3 레시피 · 방법 옵션 · 스윕 | AC5 · AC16 · AC21 | `tests/test_recipe.py` · `app/tests/test_quantizer_recipe.py::test_every_option_field_reaches_the_resolved_spec` |
 | P12 평균에 안 보이는 실패 | 05 13 | §5-4 Evaluator (lm-eval 과제별) · KV 캐시 · 검출 평가 | AC18 | `app/tests/test_quantizer_export.py::test_lmeval_runs_attach_with_points_against_bf16` · `tests/test_kv_generation.py` |
@@ -590,8 +594,9 @@ flowchart LR
 | R7 | 서버 GPU 실행 경로 미검증 — 거부 · 큐 · 결과 형태는 CPU 테스트(AC20)만 | 버튼 한 번 실행이 GPU 에서 실패하거나 기록과 다를 수 있음 | GPU 서버에서 프리셋 1개를 돌려 기록된 PPL 과 대조한 뒤 ✅ 로 올림. 그 전까지 화면 문구는 "서버 GPU 모드" 로만 |
 | R8 | 기록된 Quantizer PPL · lm-eval 은 dequant (fake-quant) 경로이고, 레이어 지도는 줄마다 경로가 다름 (7줄 scaled + 칩 프리셋, 2줄 dequant) | "이 칩에서 이 숫자" 로 오해하거나 줄끼리 조건이 같다고 오해 | 문서는 §5-4 경로 표에 명시. 화면 표기는 ⬜ 예정 (지금은 YAML 미리보기에만 `mma_input` 이 보임). 칩 축이 필요하면 같은 레시피에 `mma` 를 적고 `scaled` 로 다시 |
 | R9 | 이미 있는 도구 — NVIDIA Model Optimizer 는 AutoQuantize(레이어별 혼합 정밀도 자동 배정)와 NVFP4 를 [[M1]](#참고-자료), llm-compressor 는 GPTQ · AWQ · SmoothQuant · AutoRound, NVFP4 · MXFP4 와 레시피의 `targets` · `ignore` 를 제공 [[M2]](#참고-자료) | "방법 라이브러리 + 레이어 지정"만으로는 차별이 없음 | 차별을 잴 수 있는 것으로 둔다: ① 레이어 오차 지도와 PPL · lm-eval 을 같은 해시 · 환경 기록으로 (AC3 · AC17), ② 칩 산술 축 (AC1), ③ 코드 없는 격자 (AC15). 사용자에게 바꿀 만한 차이인지는 [PROBLEM §7](./PROBLEM.md#7-열린-질문) 3번으로 관찰 |
-| R10 | 국소 지표로 레이어를 고르면 무작위와 구별되지 않음 (W1 스파이크) | 레이어 지도의 빨간 칸을 "지킬 레이어"로 오해 | 문서에 "국소 오차 ≠ 전체 민감도" 명시 (화면 문구는 ⬜ 예정), 자동 튜닝 목적 함수는 전체 지표. 스파이크의 교란(지킨 파라미터 비율 차이)은 파라미터를 맞춘 재판정으로. 평가 횟수 비용(레이어 하나씩만 바꿔도 1,764회 — 현재 경로 약 450~520 GPU 시간, 원본 속도면 약 8.4 GPU 시간)은 짧은 보정 KL 로 후보를 줄이는 실험부터 |
+| R10 | 국소 지표로 레이어를 고르면 무작위와 구별되지 않음 (W1 스파이크) | 레이어 지도의 빨간 칸을 "지킬 레이어"로 오해 | 문서에 "국소 오차 ≠ 전체 민감도" 명시 (화면 문구는 ⬜ 예정). Auto-tune 은 모델 전체 KL 을 쓴다 — 층 하나만 줄인 모델의 짧은 순전파 1,176회 (A100 668초) 로 PPL 1,764회를 대신했다 (v1 스파이크). 스파이크의 교란(지킨 파라미터 비율 차이)은 파라미터를 맞춘 재판정으로 |
 | R12 | Quantizer 가 Qwen3-0.6B 전용 (`app/quantizer_recipe.py` `BLOCKS = 28`, `app/runners/quantizer.py` 의 고정 모델) | 다른 모델 사용자는 격자를 쓸 수 없음 | 블록 수 · 레이어 종류를 모델 설정에서 읽도록 일반화 (⬜ 예정). 그 전까지 화면 · 문서에 모델을 명시 |
+| R13 | Auto-tune v1 의 한계 — 표의 층 하나 KL 에 양자화와 무관한 패치 바닥(층당 약 0.0009, A100)이 섞이고, KV 항이 없고(KIVI-2 가 같은 배정의 PPL 을 23.16 → 26.15 로 올림), 보정 방법이 후보에 없음 | 예측 합이 실측의 1.4~2.1배 · KV 를 쓰는 예산에서 사람 레시피보다 나쁨 (C4 미달) | v2: 층별 바닥 차감 · KV 항 · 보정 방법 후보 ([스파이크 §6](./spikes/2026-10-13_autotune_mckp.md)) |
 | R11 | 생성기가 두 벌 (Python · 브라우저 JS) | 한쪽만 고치면 레시피가 어긋남 | 바이트 동치 검사 (AC15) — 브라우저 검사는 Chrome 이 필요해 `pytest` 밖에서 돈다 (`scripts/quantizer/`) |
 
 ---

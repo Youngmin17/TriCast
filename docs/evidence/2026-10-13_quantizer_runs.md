@@ -97,6 +97,32 @@ YOLO11n (체크포인트 sha256 `0ebbc80d4a76…`), 안전 시나리오 사진 1
 - 읽을 때: RTN(그냥 반올림) 4비트이고 GPTQ · AWQ 같은 보정 방법은 Conv2d 에 쓰지 않았다 (TriCast 의 Conv2d 는 RTN · 동적
   양자화만 지원). "4비트로 줄이면 반드시 이렇게 된다"가 아니라 "아무 방법 없이 4비트로 줄이면 이렇게 될 수 있다"의 예시다.
 
+## W5 — Auto-tune v1 스파이크 (2026-10-13 14:20~16:27 UTC)
+
+판정 규칙: [스파이크](../spikes/2026-10-13_autotune_mckp.md) 1~4절 (커밋 `6893e32`) · 보충 2 와 분석 스크립트 (커밋 `ae8bf10`,
+measure 결과가 생기기 전). 코드: TriCast `73f7893` 의 수정 없는 클론 `/scratch/uceeeee/tricast/qz_at_73f7893`. 로컬 사본:
+`runs/20261014_autotune/{a100,v100}/` (git 밖).
+
+| 실행 | 호스트 · GPU | 결과 | 원자료 (sha256) |
+|---|---|---|---|
+| 층 × 방법 KL 표 | turin · A100 80GB PCIe | 196 × 7, 668초, 메타 `git_sha 73f7893` · `git_dirty false` · `model_sha c1899de` | `a100/table.json` (`d2280062…`) |
+| 같은 표 (교차 확인) | cork · V100-PCIE-16GB | 1,455초, A100 표와 Spearman 0.9995 | `v100/table.json` |
+| 풀이 5개 | (CPU) | `auto_4.25` · `auto_4.50` · `auto_5.09` (285/56) · `auto_5.72` (1831/320) · `auto_5.72_kivi2` | `a100/auto_*/solution.json` |
+| 동치 증거 | turin | 표 값과 정확히 같음 | `a100/kl_equiv_seed42.json` |
+| 검증 KL (seed 43, 11개) + 예측 | turin | C2 ρ 0.973 · 대역 ρ 1.000 · 쌍 3/3 · 중복 0 · 창 겹침 0 | `a100/kl_seed43.json` (`9de91330…`) · `a100/predict.json` (`f5048bff…`) · `a100/c2.json` (`9e5a0fe8…`) |
+| PPL (WikiText-2 test 전체) | turin | 아래 표 | `a100/ppl_auto/*.json` · `a100/ppl_followup/*.json` |
+| 패치 바닥 대조군 | cork · turin | V100 층 1개 0.00079 · A100 0.00086 | `{v100,a100}/floor/kl_floor_seed42.json` |
+
+| 레시피 | 레시피 해시 | PPL (turin A100) |
+|---|---|:-:|
+| `auto_4.50` | `624ff1d50b67…` | 25.5308 |
+| `auto_5.09` | `41bf10258478…` | 23.8655 |
+| `auto_5.72` (KV 없음) | `f1aa6f6c0fbd…` | 23.1649 |
+| `auto_5.72_kivi2` | `3b09f59b6928…` | 26.1453 |
+| `qd_nvfp4` (같은 GPU 재측정) | `9f2612422bcc…` | 26.1599 — W2 (geneva A100-SXM4) 와 같음 |
+| `qd_mixed` (같은 GPU 재측정) | `11b6ac487694…` | 25.9797 — W2 와 같음 |
+| `qd_mixed_nokv` (사후 진단 — `qd_mixed` 에서 KV 만 뺌) | `5670837d062d…` | 23.0293 |
+
 ## 로컬 검증 (2026-10-13, macOS CPU, repo `.venv`)
 
 | 단계 | 명령 | 결과 (출력 원문) |

@@ -453,7 +453,7 @@ pie showData
 | `ErrorReport` | `analysis.layer_report` · `ulp_error` | 🟡 | 6 |
 | `QuantMethod` (v2) | `app/quantizer_recipe.py` 의 `METHODS` 9종 → `Recipe` 의 `weight` · `activation` · `transform` · `weight_algo` | 🟡 | 6 |
 | `SearchSpace` (v2) | `eval.runner` 스윕 (`configs/sweeps/`) · Quantizer 격자 (`app/web/quantizer.html`, 블록 × 레이어 종류) | 🟡 | 5 |
-| `LayerSensitivity` (v2) | 국소: `analysis.layer_report` · 전체: `EvalRun` 의 PPL · lm-eval · 자동 탐색: 없음 (예정) | 🟠 | 4 |
+| `LayerSensitivity` (v2) | 국소: `analysis.layer_report` · 전체: `EvalRun` 의 PPL · lm-eval · 자동 탐색: `app/autotune.py` (v1, 보정 없는 방법) | 🟡 | 4 |
 
 <sub>상태: ✅ 검증됨 · 🟡 구현됨 · 🟠 부분 (`support_matrix.yaml` 기준). 사람·현상을 나타내는 4개 클래스는 코드 객체가 없는 것이 정상입니다.</sub>
 
@@ -487,7 +487,7 @@ pie showData
 | 정수 재양자화(시프트 후 버림) 경로 | 04 | `rounding: rtz`로 일부만 표현 | 누산 후 재양자화 단계를 별도 규칙으로 둘지 검토 |
 | 평균에 안 보이는 실패 (긴 문맥 · 작은 물체) | 05 13 | 평균 지표 위주 | 문맥 길이·물체 크기 구간별 지표를 `EvalRun.metrics`에 |
 | 칩 리비전 이력 | 04 14 | `HardwarePreset`에 버전 필드 없음 | `Chip.revision`과 프리셋의 연결 방식 정의 |
-| 모델 전체 지표로 레이어 배정을 찾는 자동 탐색 (v2) | 07 10 13 | 코드 없음 — 격자와 스윕은 있으나 고르는 일은 사람이 함 | `LayerSensitivity.measure` 의 전체 지표(`end_to_end_kl` · `end_to_end_ppl`)를 목적 함수로 — W1 스파이크 결과대로 국소 지표는 쓰지 않는다 (파라미터를 맞춘 재판정 전까지 잠정) |
+| 모델 전체 지표로 레이어 배정을 찾는 자동 탐색 (v2) | 07 10 13 | `app/autotune.py` v1 — 보정 없는 방법 7가지 · Qwen3-0.6B, 스파이크 채택 (C1~C3) | 보정 방법 · KV 항 · 층별 패치 바닥 차감 (v2), 다른 모델 |
 
 ---
 

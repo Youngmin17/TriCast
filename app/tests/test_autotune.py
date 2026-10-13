@@ -12,7 +12,9 @@ import hashlib
 import io
 import json
 import math
+import os
 import random
+import socket
 import subprocess
 import sys
 from fractions import Fraction
@@ -23,6 +25,7 @@ import pytest
 import torch
 import yaml
 
+import tricast
 from app import autotune as at
 from app import export_quantizer_demo as ex
 from app import quantizer_recipe as qr
@@ -109,6 +112,17 @@ def test_infeasible_budgets_are_refused(tmp_path: Path) -> None:
     assert rc == 2
     assert "4.2 bits is below the cheapest assignment of these methods, 4.25 bits" in err.getvalue()
     assert not (tmp_path / "s").exists()
+
+
+def test_tie_rules_pick_the_smaller_cost_then_the_earlier_option() -> None:
+    assert at.solve_mckp([[2, 1]], [[0.0, 0.0]], 5).choice == [1]  # same value: the smaller total cost
+    assert at.solve_mckp([[1, 1, 1]], [[0.5, 0.5, 0.5]], 5).choice == [0]  # same value and cost: the earliest
+    # [0, 0] and [1, 1] both cost 3 with value 0.1 (budget 3): the last row decides first, earliest option
+    assert at.solve_mckp([[1, 2], [2, 1]], [[0.1, 0.0], [0.0, 0.1]], 3).choice == [0, 0]
+    # the grid default: most frequent non-BF16 choice, ties to the earlier method in METHODS
+    assert at.default_method(["mxfp8", "nvfp4", "mxfp8", "nvfp4", "bf16", "bf16", "bf16"], at.FREE) == "nvfp4"
+    assert at.default_method(["bf16"], at.FREE) == "nvfp4"
+    assert at.default_method(["bf16"], ["bf16", "int8"]) == "int8"
 
 
 # ---------- sizes ----------
@@ -205,6 +219,64 @@ def test_predict_sums_the_table_and_refuses_methods_it_lacks(tmp_path: Path) -> 
     with contextlib.redirect_stderr(err), contextlib.redirect_stdout(io.StringIO()):
         assert at.main(["predict", "--table", str(table_path), "qd_mixed"]) == 2
     assert "['awq_nvfp4', 'gptq_int4'], which the table has no KL for" in err.getvalue()
+    env = json.loads(out.read_text(encoding="utf-8"))["env"]  # predict's own run, next to the table's sha
+    assert env["git_sha"] and env["git_dirty"] is not None and env["hostname"] and env["utc"]
+    assert env["versions"]["torch"] and len(env["app_sha256"]) == 3 and env["tricast_path"]
+
+
+@pytest.mark.parametrize("extra", [{"options": {"nvfp4": {"weight.rounding": "rtz"}}},
+                                   {"kv": "kivi2", "kv_options": {"residual": 256}},
+                                   {"calibration": {"samples": 16}}])
+def test_predict_refuses_grids_with_options_the_table_has_no_entries_for(tmp_path: Path,
+                                                                         extra: dict) -> None:
+    table_path = write_qwen_table(tmp_path / "table.json")
+    path = tmp_path / "grid.json"
+    spec = {"name": "opt", "default": "nvfp4", "grid": qr.uniform("nvfp4"), "kv": "none", **extra}
+    path.write_text(json.dumps(spec), encoding="utf-8")
+    from_json(path)  # a valid Quantizer spec
+    err = io.StringIO()
+    with contextlib.redirect_stderr(err), contextlib.redirect_stdout(io.StringIO()):
+        assert at.main(["predict", "--table", str(table_path), str(path)]) == 2
+    key = next(key for key in ("options", "kv_options", "calibration") if key in extra)
+    words = f"opt sets ['{key}']; the v1 table has entries only for the methods without options"
+    assert words in err.getvalue()
+    path.write_text(json.dumps({**spec, key: {}}), encoding="utf-8")  # empty: nothing ignored, accepted
+    with contextlib.redirect_stdout(io.StringIO()):
+        assert at.main(["predict", "--table", str(table_path), str(path)]) == 0
+
+
+def test_default_names_encode_the_exact_budget_and_kv(tmp_path: Path) -> None:
+    table_path = write_qwen_table(tmp_path / "table.json")
+    cases = [(["--budget-bits", "285/56"], "auto_285-56"),  # qd_mxfp4_ends_bf16's exact size
+             (["--budget-bits", "5.0892857"], "auto_50892857-10000000"),  # both were auto_5.08929
+             (["--budget-bits", "5.0892857", "--kv", "kivi2"], "auto_50892857-10000000_kivi2"),
+             (["--budget-bits", "4.50"], "auto_9-2"), (["--budget-fraction", "0.28125"], "auto_9-2"),
+             (["--budget-bits", "16", "--kv", "kv_fp8"], "auto_16_kv_fp8")]
+    for index, (budget, name) in enumerate(cases):
+        out = tmp_path / f"s{index}"
+        with contextlib.redirect_stdout(io.StringIO()):
+            assert at.main(["solve", "--table", str(table_path), *budget, "--out", str(out)]) == 0
+        assert json.loads((out / "grid.json").read_text(encoding="utf-8"))["name"] == name
+        assert json.loads((out / "solution.json").read_text(encoding="utf-8"))["name"] == name
+        assert f"\nname: {name}\n" in (out / "recipe.yaml").read_text(encoding="utf-8")
+    assert len({name for _, name in cases}) == len(cases) - 1  # only the same exact budget (9/2) shares one
+
+
+def test_measure_refuses_a_kv_cache_mode_recipe_before_the_model_loads(tmp_path: Path) -> None:
+    data = qr.build("cache", "nvfp4", qr.uniform("nvfp4"), "kivi2")
+    data["kv"]["mode"] = "cache"
+    path = tmp_path / "cache.yaml"
+    path.write_text(qr.to_yaml(data) + "\n", encoding="utf-8")
+    load_recipe(path)  # a valid tricast recipe
+
+    def no_model(*args: object) -> tuple[object, object]:
+        raise AssertionError("the model must not load")
+
+    err = io.StringIO()
+    with contextlib.redirect_stderr(err):
+        assert at.main(["measure", "--out", str(tmp_path / "kl.json"), str(path), *TINY_ARGS],
+                       model_factory=no_model) == 2
+    assert "kv mode 'cache' streams token by token; use mode fakequant" in err.getvalue()
 
 
 def test_calibrated_methods_and_recipes_are_refused_before_any_model_loads(tmp_path: Path) -> None:
@@ -256,12 +328,18 @@ def tiny_qwen3(model_id: str, dtype: str, device: str, revision: str | None) -> 
     return transformers.Qwen3ForCausalLM(cfg).eval(), ByteTokenizer()
 
 
+def table_main(root: Path, out: Path, *extra: str) -> tuple[int, str, str]:
+    stdout, stderr = io.StringIO(), io.StringIO()
+    with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+        rc = at.main(["table", "--model", str(root / "model"), "--text", str(root / "text.txt"), *TINY_ARGS,
+                      "--out", str(out), *extra], model_factory=tiny_qwen3)
+    return rc, stdout.getvalue(), stderr.getvalue()
+
+
 def run_table(root: Path, out: Path) -> list[str]:
-    stdout = io.StringIO()
-    with contextlib.redirect_stdout(stdout):
-        assert at.main(["table", "--model", str(root / "model"), "--text", str(root / "text.txt"), *TINY_ARGS,
-                        "--out", str(out)], model_factory=tiny_qwen3) == 0
-    return stdout.getvalue().splitlines()
+    rc, stdout, stderr = table_main(root, out)
+    assert rc == 0, stderr
+    return stdout.splitlines()
 
 
 def kl_values(path: Path) -> dict[str, dict[str, float]]:
@@ -296,6 +374,13 @@ def test_tiny_table_is_complete_deterministic_and_resumable(tiny: Path, tmp_path
     assert len(meta["dataset_fingerprint"]) == 64 and meta["model_kind"] == "local" and meta["wall_s"] > 0
     assert meta["entries"] == meta["entries_computed_this_run"] == 84
     assert set(meta["method_recipe_sha256"]) == set(at.FREE[1:])
+    modules = ("autotune.py", "quantizer_recipe.py", "export_quantizer_demo.py")
+    assert meta["app_sha256"] == {f"app/{name}": hashlib.sha256((REPO / "app" / name).read_bytes())
+                                  .hexdigest() for name in modules}
+    assert meta["tricast_path"] == str(Path(tricast.__file__).resolve().parent)
+    assert {"app_sha256", "tricast_path"} <= set(at.RESUME_KEYS)  # a resume after code edits is refused
+    assert [run["device"] for run in meta["runs"]] == ["cpu"] and meta["runs"][0]["hostname"]
+    assert not list(tiny.glob("*.lock")) and not list(tiny.glob(".*.tmp")) and not list(tiny.glob("*.tmp"))
 
     run_table(tiny, tmp_path / "again.json")
     assert kl_values(tmp_path / "again.json") == first  # same seed: the same values, exactly
@@ -315,8 +400,9 @@ def test_tiny_table_is_complete_deterministic_and_resumable(tiny: Path, tmp_path
     with pytest.raises(Killed), contextlib.redirect_stdout(io.StringIO()):
         run_table(tiny, tmp_path / "resumed.json")
     entries = tmp_path / "resumed.entries.jsonl"
-    assert len(entries.read_text(encoding="utf-8").splitlines()) == 1 + 10  # header + the finished entries
-    assert not (tmp_path / "resumed.json").exists()
+    lines = entries.read_text(encoding="utf-8").splitlines()
+    assert len(lines) == 1 + 1 + 10  # header, the run's record, the finished entries
+    assert not (tmp_path / "resumed.json").exists() and not (tmp_path / "resumed.lock").exists()
     with entries.open("a", encoding="utf-8") as log:
         log.write('{"layer": "model.layers.1.mlp.up')  # a line cut off by the kill
     calls.clear()
@@ -327,6 +413,60 @@ def test_tiny_table_is_complete_deterministic_and_resumable(tiny: Path, tmp_path
     assert kl_values(tmp_path / "resumed.json") == first
     resumed = json.loads((tmp_path / "resumed.json").read_text(encoding="utf-8"))["meta"]
     assert resumed["entries_computed_this_run"] == 74
+    assert len(resumed["runs"]) == 2 and all(run["utc"] and run["hostname"] for run in resumed["runs"])
+
+
+def test_resume_is_refused_for_another_configuration_code_or_method_recipe(tiny: Path,
+                                                                           tmp_path: Path) -> None:
+    source = (tiny / "table.entries.jsonl").read_text(encoding="utf-8")
+
+    def tampered(edit: object, *extra: str) -> str:
+        entries = tmp_path / "copy.entries.jsonl"
+        entries.write_text(edit(source) if callable(edit) else source, encoding="utf-8")
+        before = entries.read_bytes()
+        rc, _, stderr = table_main(tiny, tmp_path / "copy.json", *extra)
+        assert rc == 2 and entries.read_bytes() == before  # refused before anything is written
+        assert not (tmp_path / "copy.json").exists() and not (tmp_path / "copy.lock").exists()
+        return stderr
+
+    assert "differs in ['dataset_fingerprint', 'seed']" in tampered(None, "--seed", "7")
+
+    def code_edit(text: str) -> str:
+        lines = text.splitlines(keepends=True)
+        header = json.loads(lines[0])
+        header["config"]["app_sha256"]["app/autotune.py"] = "0" * 64  # entries written by other code
+        return json.dumps(header) + "\n" + "".join(lines[1:])
+
+    assert "differs in ['app_sha256']" in tampered(code_edit)
+
+    def recipe_edit(text: str) -> str:
+        lines = text.splitlines(keepends=True)
+        index = next(i for i, line in enumerate(lines) if '"method": "nvfp4"' in line)
+        entry = json.loads(lines[index])
+        entry["recipe_sha256"] = "0" * 64
+        lines[index] = json.dumps(entry) + "\n"
+        return "".join(lines)
+
+    assert "the nvfp4 recipe changed since its entries were written" in tampered(recipe_edit)
+
+
+def test_a_held_lock_refuses_a_table_run_and_a_dead_runs_lock_is_taken_over(tiny: Path,
+                                                                            tmp_path: Path) -> None:
+    out, lock = tmp_path / "t.json", tmp_path / "t.lock"
+    small = ("--methods", "bf16,int8", "--blocks", "1")
+    here = socket.gethostname()
+    for holder in ({"hostname": "elsewhere", "pid": 1}, {"hostname": here, "pid": os.getpid()}):
+        lock.write_text(json.dumps(holder), encoding="utf-8")
+        rc, _, stderr = table_main(tiny, out, *small)
+        assert rc == 2 and "is held by" in stderr and json.loads(lock.read_text(encoding="utf-8")) == holder
+        assert not (tmp_path / "t.entries.jsonl").exists()
+    dead = subprocess.Popen([sys.executable, "-c", "pass"])
+    dead.wait()
+    lock.write_text(json.dumps({"hostname": here, "pid": dead.pid}), encoding="utf-8")
+    rc, stdout, stderr = table_main(tiny, out, *small)
+    assert rc == 0, stderr
+    assert stdout.splitlines()[-1].startswith("AUTOTUNE_TABLE_DONE layers=7 methods=2")
+    assert not lock.exists() and out.exists()
 
 
 def test_tiny_solve_predict_and_measure(tiny: Path, tmp_path: Path) -> None:
@@ -338,6 +478,8 @@ def test_tiny_solve_predict_and_measure(tiny: Path, tmp_path: Path) -> None:
     assert from_json(tmp_path / "auto" / "grid.json") == (tmp_path / "auto" / "recipe.yaml").read_text()
     assert solution["achieved"]["avg_bits"] <= 6 and solution["resolution"]["bound_bits_params"] == 0
     assert solution["table_blocks"] == [0, 1] and solution["model_blocks"] == 2
+    assert solution["name"] == "auto_6" and solution["env"]["git_sha"] and solution["env"]["hostname"]
+    assert solution["env"]["app_sha256"] == table["meta"]["app_sha256"]  # solved by the code that measured
     expected = 0.0
     for entry, chosen in zip(table["layers"], solution["layers"], strict=True):
         assert chosen["kl"] == entry["kl"][chosen["method"]]

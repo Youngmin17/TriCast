@@ -13,28 +13,32 @@ quantization method, only that layer with that method: the method's recipe from
 ``app.quantizer_recipe.build`` with tricast's ``Recipe.include`` narrowed to the layer, so the spec is the
 one any Quantizer grid gives that layer. The value is KL(native || quantized) of the next-token
 distributions (OBJECTIVE). BF16 is 0 by definition and not run. Each entry is appended to
-``<out stem>.entries.jsonl`` when it finishes; a rerun with the same configuration skips the entries
-already there.
+``<out stem>.entries.jsonl`` when it finishes; a rerun with the same configuration (code hashes included)
+skips the entries already there, and ``<out stem>.lock`` keeps a second run off the same --out.
 
 solve: minimise sum kl(layer, method) subject to sum params x bits(layer, method) <= budget, bits from
 ``app.export_quantizer_demo.WEIGHT_BITS`` (the deck's Linear-weighted average bits). Exact DP on costs rounded
 up to multiples of the resolution (default: the exact GCD of all costs, so nothing is rounded). Writes the
 Quantizer's --from-json grid (grid.json), the YAML that ``--from-json grid.json`` prints (recipe.yaml) and
-solution.json. The grid default is the most frequent non-BF16 choice (``default_method``).
+solution.json. The grid default is the most frequent non-BF16 choice (``default_method``); the recipe
+name defaults to ``default_name`` (exact budget and KV preset).
 """
 
 from __future__ import annotations
 
 import argparse
+import contextlib
 import hashlib
 import json
 import math
 import os
 import random
+import socket
 import sys
+import tempfile
 import time
 from collections import Counter
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from dataclasses import dataclass, replace
 from fractions import Fraction
 from pathlib import Path
@@ -50,10 +54,11 @@ FREE = tuple(m for m in qr.METHODS if m not in qr.CALIBRATED)  # bf16 nvfp4 nvin
 OBJECTIVE = ("KL(native || quantized) of the next-token distributions, mean over every position of every "
              "window, fp64, negative roundoff clamped to 0 (tricast report's logits_kl)")
 MAX_DP_CELLS = 1 << 28  # layers x budget units of the DP's backtracking table (one byte each)
-# The table configuration a resumed run must share with the entries already written.
+# The table configuration a resumed run must share with the entries already written (code included: the
+# app modules that define methods, grids and bits, and the tricast package actually imported).
 RESUME_KEYS = ("model_id", "revision", "model_sha", "dtype", "device", "gpu_names", "windows", "seqlen",
                "seed", "source", "dataset_fingerprint", "git_sha", "git_dirty", "src_sha256", "torch",
-               "transformers", "triton")
+               "transformers", "triton", "app_sha256", "tricast_path")
 
 # (model_id, dtype, device, revision) -> (model, tokenizer), as app/runners/quantizer.py; tests inject one.
 ModelFactory = Callable[[str, str, str, str | None], tuple[Any, Any]]
@@ -61,6 +66,32 @@ ModelFactory = Callable[[str, str, str, str | None], tuple[Any, Any]]
 
 class AutotuneError(ValueError):
     """A refused input; the CLI prints it and exits with status 2."""
+
+
+def provenance() -> dict[str, Any]:
+    """sha256 of this module and the app modules it takes methods, grids and bits from, and the directory of
+    the tricast package actually imported."""
+    import tricast
+
+    files = {"app/autotune.py": Path(__file__), "app/quantizer_recipe.py": Path(qr.__file__),
+             "app/export_quantizer_demo.py": Path(ex.__file__)}
+    hashes = {name: hashlib.sha256(path.read_bytes()).hexdigest() for name, path in files.items()}
+    return {"app_sha256": hashes, "tricast_path": str(Path(tricast.__file__).resolve().parent)}
+
+
+def run_env() -> dict[str, Any]:
+    """This run's own environment (tricast's capture_env without a model: git sha / dirty, host, utc,
+    versions) and provenance."""
+    from tricast.eval.envinfo import capture_env
+
+    return {**capture_env(None), **provenance()}
+
+
+def default_name(bits: Fraction, kv: str) -> str:
+    """auto_<numerator>[-<denominator>][_<kv>]: the exact budget in bits (9/2 -> auto_9-2) and the KV preset,
+    so different budgets or KV presets never share a name."""
+    budget = str(bits.numerator) if bits.denominator == 1 else f"{bits.numerator}-{bits.denominator}"
+    return f"auto_{budget}" + ("" if kv == "none" else f"_{kv}")
 
 
 @dataclass(frozen=True)
@@ -186,9 +217,8 @@ def write_grid(out_dir: Path, name: str, default: str, grid: qr.Grid, kv: str) -
     """grid.json (the Quantizer's --from-json spec) and recipe.yaml (what ``--from-json grid.json``
     prints)."""
     recipe = qr.build(name, default, grid, kv)
-    out_dir.mkdir(parents=True, exist_ok=True)
     _dump(out_dir / "grid.json", {"name": name, "default": default, "grid": grid, "kv": kv})
-    (out_dir / "recipe.yaml").write_text(f"---\n{qr.to_yaml(recipe)}\n", encoding="utf-8")
+    _write_atomic(out_dir / "recipe.yaml", f"---\n{qr.to_yaml(recipe)}\n")
     return recipe
 
 
@@ -323,7 +353,7 @@ def open_session(args: argparse.Namespace, model_factory: ModelFactory | None = 
             "git_sha": env.get("git_sha"), "git_dirty": env.get("git_dirty"),
             "src_sha256": env.get("src_sha256"),
             **{name: env["versions"].get(name) for name in ("torch", "transformers", "triton")},
-            "native_wall_s": time.perf_counter() - started, "env": env}
+            **provenance(), "native_wall_s": time.perf_counter() - started, "env": env}
     return Session(model, windows, native, meta)
 
 
@@ -376,14 +406,13 @@ def _entry_kl(session: Session, recipe: Any, layer: Layer, seed: int) -> float:
 
 
 def _resume(path: Path, config: dict[str, Any],
-            shas: dict[str, str]) -> dict[tuple[str, str], dict[str, Any]]:
-    """Entries already in ``path`` ({(layer, method): entry}); starts the file (header = configuration) if
-    it is missing, refuses a different configuration or method recipe, and drops a last line cut off by a
-    kill."""
+            shas: dict[str, str]) -> tuple[dict[tuple[str, str], dict[str, Any]], list[dict[str, Any]]]:
+    """Entries already in ``path`` ({(layer, method): entry}) and the runs that wrote them; starts the file
+    (header = configuration) if it is missing, refuses a different configuration or method recipe, and
+    drops a last line cut off by a kill."""
     if not path.exists():
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps({"config": config}) + "\n", encoding="utf-8")
-        return {}
+        _write_atomic(path, json.dumps({"config": config}) + "\n")
+        return {}, []
     lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
     header = json.loads(lines[0])["config"]
     if header != config:
@@ -392,32 +421,88 @@ def _resume(path: Path, config: dict[str, Any],
                             "use another --out")
     complete = [line for line in lines if line.endswith("\n")]
     if len(complete) != len(lines):
-        path.write_text("".join(complete), encoding="utf-8")
-    done = {}
+        _write_atomic(path, "".join(complete))
+    done, runs = {}, []
     for line in complete[1:]:
         entry = json.loads(line)
+        if "run" in entry:
+            runs.append(entry["run"])
+            continue
         if entry["method"] in shas and entry["recipe_sha256"] != shas[entry["method"]]:
             raise AutotuneError(f"{path}: the {entry['method']} recipe changed since its entries were "
                                 "written; use another --out")
         done[(entry["layer"], entry["method"])] = entry
-    return done
+    return done, runs
+
+
+def _alive(pid: Any) -> bool:
+    try:
+        os.kill(int(pid), 0)
+    except ProcessLookupError:
+        return False
+    except (PermissionError, TypeError, ValueError, OverflowError):
+        return True  # someone else's process, or a lock we cannot read: treat it as held
+    return True
+
+
+@contextlib.contextmanager
+def _locked(path: Path) -> Iterator[None]:
+    """Hold ``path`` (created exclusively) for one table run. A lock left by a dead process of this host is
+    taken over; any other existing lock refuses the run."""
+    me = {"hostname": socket.gethostname(), "pid": os.getpid(), "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ",
+                                                                                     time.gmtime())}
+    path.parent.mkdir(parents=True, exist_ok=True)
+    for attempt in range(2):
+        try:
+            fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
+            break
+        except FileExistsError:
+            try:
+                holder = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                holder = None
+            stale = (isinstance(holder, dict) and holder.get("hostname") == me["hostname"]
+                     and not _alive(holder.get("pid")))
+            if attempt or not stale:
+                raise AutotuneError(f"{path} is held by {holder}: another table run is writing this --out "
+                                    "(delete the lock if that run is gone)") from None
+            path.unlink(missing_ok=True)
+    with os.fdopen(fd, "w", encoding="utf-8") as handle:
+        json.dump(me, handle)
+    try:
+        yield
+    finally:
+        path.unlink(missing_ok=True)
 
 
 def cmd_table(args: argparse.Namespace, model_factory: ModelFactory | None = None) -> int:
-    started = time.perf_counter()
     methods = parse_methods(args.methods)
     out = Path(args.out)
+    with _locked(out.with_name(out.stem + ".lock")):
+        return _table(args, model_factory, methods, out)
+
+
+def _table(args: argparse.Namespace, model_factory: ModelFactory | None, methods: list[str],
+           out: Path) -> int:
+    started = time.perf_counter()
     session = open_session(args, model_factory)
     layers, model_blocks = model_layers(session.model, args.blocks)
     recipes = {method: method_recipe(method) for method in methods if method != "bf16"}
     shas = {method: recipe.sha256 for method, recipe in recipes.items()}
     entries_path = out.with_name(out.stem + ".entries.jsonl")
-    done = _resume(entries_path, {key: session.meta[key] for key in RESUME_KEYS}, shas)
+    done, runs = _resume(entries_path, {key: session.meta[key] for key in RESUME_KEYS}, shas)
+    env = session.meta["env"]
+    runs.append({"utc": env.get("utc"), "hostname": env.get("hostname"), "device": args.device,
+                 "gpu_names": env.get("gpu_names"),
+                 "cuda_visible_devices": env.get("environment", {}).get("CUDA_VISIBLE_DEVICES"),
+                 "pid": os.getpid()})
     todo = [(layer, method) for layer in layers for method in recipes]
     print(f"AUTOTUNE_TABLE_START layers={len(layers)} methods={len(methods)} entries={len(todo)} "
           f"done={sum(1 for layer, method in todo if (layer.name, method) in done)} out={out}", flush=True)
     computed = 0
     with entries_path.open("a", encoding="utf-8") as log:
+        log.write(json.dumps({"run": runs[-1]}) + "\n")
+        log.flush()
         for index, layer in enumerate(layers):
             layer_started = time.perf_counter()
             for method in recipes:
@@ -445,7 +530,7 @@ def cmd_table(args: argparse.Namespace, model_factory: ModelFactory | None = Non
             "model_blocks": model_blocks, "method_recipe_sha256": shas, "entries": len(todo),
             "entries_computed_this_run": computed,
             "entries_wall_s": sum(done[(layer.name, method)]["wall_s"] for layer, method in todo),
-            "entries_path": str(entries_path), "wall_s": wall}
+            "entries_path": str(entries_path), "runs": runs, "wall_s": wall}
     _dump(out, {"schema": TABLE_SCHEMA, "status": "complete", "objective": OBJECTIVE, "meta": meta,
                 "layers": rows})
     print(f"AUTOTUNE_TABLE_DONE layers={len(layers)} methods={len(methods)} wall_s={wall:.1f}", flush=True)
@@ -514,7 +599,7 @@ def cmd_solve(args: argparse.Namespace) -> int:
     grid = qr.uniform(default)
     for layer, method in zip(layers, chosen, strict=True):
         grid[layer.block][qr.KINDS.index(layer.kind)] = method
-    name = args.name or f"auto_{float(bits):g}"
+    name = args.name or default_name(bits, args.kv)
     out = Path(args.out)
     write_grid(out, name, default, grid, args.kv)
     achieved = solution.cost / params
@@ -549,6 +634,7 @@ def cmd_solve(args: argparse.Namespace) -> int:
                     "bits": float(weight_bits(method, layer.in_features))}
                    for layer, method in zip(layers, chosen, strict=True)],
         "solver_wall_s": time.perf_counter() - started,
+        "env": run_env(),
     }
     _dump(out / "solution.json", result)
     if meta.get("model_blocks") is not None and meta["model_blocks"] > len(tabled):
@@ -574,6 +660,10 @@ def cmd_predict(args: argparse.Namespace) -> int:
     results = []
     for item in args.grids:
         for spec in _grid_specs(item):
+            carried = [key for key in ("options", "kv_options", "calibration") if spec.get(key)]
+            if carried:
+                raise AutotuneError(f"{item}: {spec['name']} sets {carried}; the v1 table has entries only "
+                                    "for the methods without options")
             total, bits = predict(table, layers, methods, spec["grid"])
             kv = spec.get("kv", "none")
             results.append({"source": item, "name": spec["name"], "kl_sum": total, "avg_bits": float(bits),
@@ -582,7 +672,7 @@ def cmd_predict(args: argparse.Namespace) -> int:
             print(f"PREDICT {spec['name']} kl_sum={total:.6g} avg_bits={float(bits):.6f} kv={kv}{note}")
     if args.out:
         _dump(Path(args.out), {"table": args.table, "table_sha256": hashlib.sha256(raw).hexdigest(),
-                               "results": results})
+                               "env": run_env(), "results": results})
     print(f"AUTOTUNE_PREDICT_DONE n={len(results)}", flush=True)
     return 0
 
@@ -601,12 +691,22 @@ def cmd_random(args: argparse.Namespace) -> int:
     return 0
 
 
-def _dump(path: Path, value: Any) -> None:
+def _write_atomic(path: Path, text: str) -> None:
+    """Write ``text`` to a temporary file of a unique name next to ``path``, then rename it over ``path``."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_name(path.name + ".tmp")
-    temporary.write_text(json.dumps(value, indent=1, ensure_ascii=False, allow_nan=False) + "\n",
-                         encoding="utf-8")
-    temporary.replace(path)
+    fd, temporary = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            handle.write(text)
+        os.chmod(temporary, 0o644)
+        os.replace(temporary, path)
+    except BaseException:
+        Path(temporary).unlink(missing_ok=True)
+        raise
+
+
+def _dump(path: Path, value: Any) -> None:
+    _write_atomic(path, json.dumps(value, indent=1, ensure_ascii=False, allow_nan=False) + "\n")
 
 
 def _seeds(text: str) -> list[int]:

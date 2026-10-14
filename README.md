@@ -1,20 +1,22 @@
-<p align="center"><img src="assets/readme/slide-01.png" alt="Tri-Cast: 양자화된 AI 서비스를 임베디드 플랫폼에 정확히 배포하는 프레임워크" width="100%"></p>
+<p align="center"><img src="assets/readme/slide-01.png" alt="Tri-Cast: 양자화된 AI 서비스를 온디바이스에 배포하기 전에 성능을 미리 확인하는 프레임워크" width="100%"></p>
 
 <p align="center"><img src="assets/readme/slide-02.png" alt="온디바이스 AI 서비스는 이렇게 만들어집니다" width="100%"></p>
 
-<p align="center"><img src="assets/readme/slide-03.png" alt="같은 모델이어도, 칩이 다르면 결과가 달라집니다" width="100%"></p>
+<p align="center"><img src="assets/readme/slide-03.png" alt="양자화란? 숫자 하나에 쓰는 칸(비트)을 줄이는 일입니다" width="100%"></p>
 
-<p align="center"><img src="assets/readme/slide-04.png" alt="현업은 칩의 계산을 시뮬레이션 코드로 직접 만들어야 합니다" width="100%"></p>
+<p align="center"><img src="assets/readme/slide-04.png" alt="같은 모델도 4비트로 줄이면 결과가 달라집니다" width="100%"></p>
 
-<p align="center"><img src="assets/readme/slide-05.png" alt="Tri-Cast: 칩의 계산 방식을 Python 몇 줄로 정의합니다" width="100%"></p>
+<p align="center"><img src="assets/readme/slide-05.png" alt="성능을 지키는 방법은 많지만, 내 모델엔 직접 구현·튜닝해야 합니다" width="100%"></p>
 
-<p align="center"><img src="assets/readme/slide-06.png" alt="칩 모델링 코드 1,296줄 → 18줄, 98.6% 감소" width="100%"></p>
+<p align="center"><img src="assets/readme/slide-06.gif" alt="Tri-Cast: 웹에서 방법을 클릭하면 그대로 양자화합니다" width="100%"></p>
 
-<p align="center"><img src="assets/readme/slide-07.gif" alt="Tri-Cast 플랫폼 시연: 파라미터를 바꾸면 결과가 바로 바뀝니다" width="100%"></p>
+<p align="center"><img src="assets/readme/slide-07.png" alt="Auto-tune 은 층마다 하나씩 줄여 보고, 덜 예민한 층부터 줄입니다" width="100%"></p>
 
-<p align="center"><img src="assets/readme/slide-08.png" alt="Tri-Cast 소프트웨어 구조: 레시피 하나로 양자화부터 평가까지" width="100%"></p>
+<p align="center"><img src="assets/readme/slide-08.png" alt="Auto-tune: 크기 예산만 정하면, 층마다 비트를 골라 줍니다" width="100%"></p>
 
-<p align="center"><img src="assets/readme/slide-09.png" alt="오픈소스로 공개하고, 산업 현장 도입을 준비합니다" width="100%"></p>
+<p align="center"><img src="assets/readme/slide-09.png" alt="Tri-Cast 소프트웨어 구조: 레시피 하나로 양자화부터 평가까지" width="100%"></p>
+
+<p align="center"><img src="assets/readme/slide-10.png" alt="STM 멘토와 PoC 를 진행 중이고, 오픈소스로 공개할 예정입니다" width="100%"></p>
 
 ---
 
@@ -28,7 +30,7 @@
 
 칩(NPU·GPU 세대)의 수 형식 · 반올림 · MMA 누산 규칙은 같은 레시피의 선택 축이다 — TriCast 가 그 산술을 GPU 의 CUDA
 core 에서 **비트 단위로 똑같이** 에뮬레이트한다. 누산 모델(CoFDA · GDFS)은 NADPE 논문(MICRO'26)의 정의를 따르고,
-레퍼런스는 그 독립 구현의 골든 벡터와 대조한다. 위 슬라이드는 v1(칩 산술 중심) 발표 자료다.
+레퍼런스는 그 독립 구현의 골든 벡터와 대조한다. 위 슬라이드는 v2(Quantizer · Auto-tune) 발표 자료다 (v7 덱, 6장은 Quantizer 화면 녹화).
 
 ## 설치와 빠른 시작
 

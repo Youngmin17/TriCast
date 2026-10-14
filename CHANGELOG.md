@@ -13,6 +13,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 - Recorded Quantizer demo data for Qwen3-0.6B (five presets: PPL, layer reports, lm-eval 5 tasks × 300 docs).
 
 ### Changed
+- README slides now show the 10-slide v7 business deck (Quantizer and Auto-tune), slide 6 animated with the
+  Quantizer page recording; the v1 chip-arithmetic slide images were removed.
 - Docs v2.0: PROBLEM, SPEC and the ontology are reframed around choosing a quantization method per layer;
   SPEC adds AC15–AC21, a layer-selection spike and the 2026-10-13 run record are added.
 - Interview record: the ten-log record of 2026-10-01 was replaced on 2026-10-08 by the 28-log record now in

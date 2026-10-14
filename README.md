@@ -8,13 +8,13 @@
 
 <p align="center"><img src="assets/readme/slide-05.png" alt="성능을 지키는 방법은 많지만, 내 모델엔 직접 구현·튜닝해야 합니다" width="100%"></p>
 
-<p align="center"><img src="assets/readme/slide-06.gif" alt="Tri-Cast: 웹에서 방법을 클릭하면 그대로 양자화합니다" width="100%"></p>
+<p align="center"><img src="assets/readme/slide-06.gif" alt="Tri-Cast: 버튼 하나로 양자화하고 옵션을 조정하며, 결과를 시각화" width="100%"></p>
 
-<p align="center"><img src="assets/readme/slide-07.png" alt="Auto-tune 은 층마다 하나씩 줄여 보고, 덜 예민한 층부터 줄입니다" width="100%"></p>
+<p align="center"><img src="assets/readme/slide-07.png" alt="Auto-tune V1: 같은 크기에서 PPL 최대 20% 개선" width="100%"></p>
 
-<p align="center"><img src="assets/readme/slide-08.png" alt="Auto-tune: 크기 예산만 정하면, 층마다 비트를 골라 줍니다" width="100%"></p>
+<p align="center"><img src="assets/readme/slide-08.png" alt="Auto-tune V2: Agent가 후보를 고르고, 사용자는 대화로 조정합니다" width="100%"></p>
 
-<p align="center"><img src="assets/readme/slide-09.png" alt="Tri-Cast 소프트웨어 구조: 레시피 하나로 양자화부터 평가까지" width="100%"></p>
+<p align="center"><img src="assets/readme/slide-09.png" alt="Tri-Cast 소프트웨어: 양자화부터 최적화 · 평가 · 배포까지 한 번에" width="100%"></p>
 
 <p align="center"><img src="assets/readme/slide-10.png" alt="STM 멘토와 PoC 를 진행 중이고, 오픈소스로 공개할 예정입니다" width="100%"></p>
 

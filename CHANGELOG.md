@@ -20,6 +20,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   runtime, calibration windows and spec; bit-identical to a fresh calibration, no forward when every layer hits.
 - Grids for models deeper than the page's 28 blocks (Llama-3.1-8B, Qwen3-8B): one row per decoder block in
   `quantizer_recipe.build`, auto-tune tables, `solve` and the tune loop; 28-block grids are unchanged.
+- One GPU model per tune session (loop.json `gpu`, `tune_agent.pin_gpu`): KL measured on another GPU model is
+  neither ranked nor accepted, since A100 and H200 differ by up to 5.5% on the same recipe.
 - Comparison arms for the tune loop: Optuna TPE (`--proposer tpe`, study rebuilt from the session each round),
   option-only coordinate search (`option-greedy`), LLM-seeded TPE (`claude-then-tpe`), analysis masks for the
   Claude proposer (`llm.mask`) and the no-check ablation (`checks: false`, budget still enforced).

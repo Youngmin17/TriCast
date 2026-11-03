@@ -6,7 +6,7 @@ measurement -> ingest -> next round, with no human step (docs/SPEC.md AC27, docs
 
 loop.json (paths relative to the repository root):
     {"session": "runs/<s>", "table": "runs/<t>/table.json", "budget_bits": "9/2",
-     "ledger": "runs/ledger.jsonl",
+     "ledger": "runs/ledger.jsonl", "gpu": "NVIDIA H200 NVL",
      "llm": {"model": null, "max_budget_usd": 2, "timeout_s": 900},
      "remote": {"jump": "ucl-jump", "host": "ucl-geneva-a100", "session": "/scratch/.../<s>",
                 "tree": "/scratch/.../qz_<sha>", "logs": "/scratch/.../logs", "label": "tune_<s>"}}
@@ -706,6 +706,9 @@ def check_measurement(config: dict[str, Any], root: Path, data: Any, names: Sequ
         raise LoopError(f"kl.json model {meta.get('model_sha')} is not the session's {fixed['model_sha']}")
     if not fixed.get("model_sha") and meta.get("model_id") != fixed["model_id"]:
         raise LoopError(f"kl.json model {meta.get('model_id')} is not the session's {fixed['model_id']}")
+    gpu = measure.get("gpu")
+    if gpu is not None and ta.gpu_name(meta) != gpu:
+        raise LoopError(f"kl.json ran on {ta.gpu_name(meta)}, the session measures on {gpu}")
 
 
 def measure_remote(config: dict[str, Any], root: Path, round_number: int, names: Sequence[str],
@@ -756,6 +759,8 @@ def run(config: dict[str, Any], root: Path, rounds: int, per_round: int, propose
     docstring. A rerun continues the session: it refuses a round folder without kl.json (an unfinished
     round), and appends to loop/summary.json, starting from its stale count and last refusals."""
     session, ledger = root / config["session"], root / config.get("ledger", "runs/ledger.jsonl")
+    if config.get("gpu"):  # one GPU model per session: other GPU models' measurements are not used or taken
+        ta.pin_gpu(session, config["gpu"])
     started = sorted(int(path.parent.name) for path in (session / "rounds").glob("*/round.json"))
     unfinished = [number for number in started
                   if not (session / "rounds" / str(number) / "kl.json").is_file()]

@@ -113,3 +113,26 @@ def test_the_shared_reply_check_accepts_lowbit_changes_from_the_black_box_arms()
         tl.check_reply(reply("no_such_method"))
     assert set(tl.REPLY_SCHEMA["properties"]["proposals"]["items"]["properties"]["changes"]["items"]
                ["properties"]["method"]["enum"]) == set(qr.PYTHON_METHODS)
+
+
+def test_a_session_pins_one_gpu_model(tmp_path: Path) -> None:
+    """Cross-GPU finding 2026-11-03: KL differs between A100 and H200 by up to 5.5%, so a session with a GPU
+    model neither ranks nor accepts measurements from another one."""
+    config, ledger = _session(tmp_path)  # the start's KL was measured on ENV's A100
+    assert tl.analyze(config, tmp_path)["best"]["name"] == "start"
+    ta.pin_gpu(tmp_path / "s", "NVIDIA H200 NVL")
+    ta.pin_gpu(tmp_path / "s", "NVIDIA H200 NVL")  # idempotent
+    with pytest.raises(ta.TuneError, match="measures on NVIDIA H200 NVL"):
+        ta.pin_gpu(tmp_path / "s", "NVIDIA A100 80GB PCIe")
+    assert not [row for row in ta.state(tmp_path / "s", ledger)["proposals"] if row["measured_kl"]]
+    with pytest.raises(tl.LoopError, match="no measured proposal"):
+        tl.analyze(config, tmp_path)  # the A100 measurement no longer counts
+    proposal = ta.read_proposal(tmp_path / "s", "start")
+    meta = {"model_id": "Qwen/Qwen3-0.6B", "model_sha": "c1899de", "seed": 43, "windows": 8, "seqlen": 512,
+            "source": {"split": "validation"}, "gpu_names": ["NVIDIA A100 80GB PCIe"]}
+    data = {"schema": "tricast.autotune.measure/2", "meta": meta,
+            "results": [{"name": "start", "recipe_sha256": proposal["recipe_sha256"], "kl": 0.3}]}
+    with pytest.raises(tl.LoopError, match="the session measures on NVIDIA H200 NVL"):
+        tl.check_measurement(config, tmp_path, data, ["start"])
+    tl.check_measurement(config, tmp_path, {**data, "meta": {**meta, "gpu_names": ["NVIDIA H200 NVL"]}},
+                         ["start"])

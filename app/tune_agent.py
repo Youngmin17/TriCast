@@ -400,10 +400,34 @@ def round_script(session: Path, names: Sequence[str], number: int) -> Path:
     return folder / "measure.sh"
 
 
+def gpu_name(env: dict[str, Any] | None) -> str | None:
+    """The GPU model a measurement ran on, as recorded (``gpu_names`` joined), or None."""
+    names = (env or {}).get("gpu_names")
+    return ",".join(names) if names else None
+
+
+def pin_gpu(session: Path, gpu: str) -> dict[str, Any]:
+    """Fix the session's GPU model (once): KL on the same windows differs between GPU models by more than
+    the effects being compared (docs/evidence/2026-11-03_v2_agent_runs.md), so a session never mixes them."""
+    fixed = read_session(session)
+    current = fixed["measure"].get("gpu")
+    if current is not None and current != gpu:
+        raise TuneError(f"the session measures on {current}, not {gpu}")
+    if current is None:
+        fixed["measure"]["gpu"] = gpu
+        (session / "session.json").write_text(json.dumps(fixed, indent=1) + "\n", encoding="utf-8")
+    return fixed
+
+
 def _matches(record: dict[str, Any], fixed: dict[str, Any]) -> bool:
-    """A ledger measurement of the session's model, and for whole-recipe KL on the session's windows."""
+    """A ledger measurement of the session's model, and for whole-recipe KL on the session's windows; when the
+    session has a GPU model, measurements (KL, PPL, lm-eval) only from that GPU model."""
     if (record.get("model_sha") != fixed["model_sha"]) if fixed.get("model_sha") \
             else (record.get("model_id") != fixed["model_id"]):
+        return False
+    gpu = fixed["measure"].get("gpu")
+    measured = record["kind"] in ("recipe_kl", "ppl", "lmeval")
+    if gpu is not None and measured and gpu_name(record.get("env")) != gpu:
         return False
     if record["kind"] != "recipe_kl":
         return True

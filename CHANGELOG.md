@@ -5,6 +5,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 ## [Unreleased]
 
 ### Added
+- Evidence ledger (`app/ledger.py`, SPEC AC23): every measured number of auto-tune tables, measures, solutions,
+  `tricast run` and `tricast report` records becomes one record with its environment and source pointer;
+  `tricast.rag.search_evidence` ranks per-layer, per-recipe and per-method documents plus the method catalog.
+- Agent tune tools (`app/tune_agent.py`, AC24) and their protocol (`docs/prompts/tune_agent.md`): proposals are
+  refused unless they build, fit the budget, cite ledger records and state only supported numbers.
+- Auto-tune v2 (`app/autotune.py`): per-layer patch floor, calibrated methods (GPTQ; AWQ and SmoothQuant on
+  `o_proj`/`down_proj`), per-block KV entries, models with fewer blocks, calibrated `measure`.
+- Official-code pruning (`src/tricast/official`, recipe `prune:`, AC25): Wanda, SparseGPT and magnitude from
+  locuslab/wanda at a pinned commit, called unchanged through a transformers ≥ 4.48 compat shim.
+- Method catalog (`docs/research/methods_catalog.yaml`): 91 quantization and sparsity methods with official
+  code, license, per-layer entry point and TriCast status; pre-registered spikes for auto-tune v2 and the agent.
 - Quantizer page (`app/web/quantizer.html`) and its reference generator `app/quantizer_recipe.py`: pick one of
   nine methods per Linear on a 28 × 7 grid (per-method options, KV cache, calibration) and get the same recipe
   bytes from the browser and from `python -m app.quantizer_recipe`; recorded results attach only on a hash match.

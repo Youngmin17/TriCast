@@ -385,7 +385,9 @@ def round_script(session: Path, names: Sequence[str], number: int) -> Path:
         "# S = this session directory on the cluster; T = a clean TriCast tree; PY = its python.",
         'S=${S:?set S to the session directory}; T=${T:?set T to the TriCast tree}; PY=${PY:-python}',
         'cd "$T" || exit 3',
-        f'"$PY" -m app.autotune measure {command} --out "$S/rounds/{number}/kl.json" {recipes} '
+        # CALIB_CACHE (remote.env): tricast calibrate's per-layer result cache, shared by sessions of a model
+        f'"$PY" -m app.autotune measure {command} ${{CALIB_CACHE:+--calib-cache "$CALIB_CACHE"}} '
+        f'--out "$S/rounds/{number}/kl.json" {recipes} '
         f'|| {{ rc=$?; echo "TUNE_ROUND_FAIL round={number} rc=$rc"; exit "$rc"; }}',
         f'echo "TUNE_ROUND_DONE round={number}"', ""])
     (folder / "measure.sh").write_text(script, encoding="utf-8")

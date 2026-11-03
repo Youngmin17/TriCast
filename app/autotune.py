@@ -913,8 +913,14 @@ def cmd_measure(args: argparse.Namespace, model_factory: ModelFactory | None = N
             if recipe.needs_calibration:  # on the recipe's calibration windows, never the measured ones
                 from tricast.calibration import calibrate
 
-                fitted = calibrate(session.model, recipe, tokenizer=session.tokenizer)
+                fitted = calibrate(session.model, recipe, tokenizer=session.tokenizer,
+                                   cache_dir=args.calib_cache)
                 calibration = {key: fitted[key] for key in (*CALIBRATION_SUMMARY, "groups")}
+                if args.calib_cache is not None:  # what was loaded, fitted, or could not be cached
+                    cache = fitted["cache"]
+                    calibration["cache"] = {"dir": cache["dir"], "hits": len(cache["hits"]),
+                                            "misses": cache["misses"], "uncacheable": cache["uncacheable"],
+                                            "source_sha256": cache["source_sha256"]}
                 assert overlap is not None
                 replayed = overlap["calibration_windows"].get("dataset_fingerprint")
                 if replayed is not None and calibration["dataset_fingerprint"] != replayed:
@@ -1159,6 +1165,8 @@ def main(argv: Sequence[str] | None = None, model_factory: ModelFactory | None =
         measure.add_argument(f"--calib-{key}", choices=spec.get("choices"),
                              type=str if spec["type"] == "choice" else int,
                              help=f"override the recipe's calibration {key} (as tricast run --calib-{key})")
+    measure.add_argument("--calib-cache", metavar="DIR",
+                         help="tricast calibrate's per-layer result cache (bit-identical, reused by runs)")
     measure.add_argument("recipes", nargs="+", metavar="RECIPE")
     solve = commands.add_parser("solve", help="multiple-choice knapsack over a table")
     solve.add_argument("--table", required=True)

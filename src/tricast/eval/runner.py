@@ -343,6 +343,12 @@ def run_config(cfg: dict | str | Path, *, calibration: dict | None = None) -> li
                         dataset=block["dataset"], seqlen=block.get("seqlen"),
                     )
                     model._tricast_pruned = block  # patch_model refuses a prune recipe on an unpruned model
+                if recipe.official_gptq is not None:  # after pruning: GPTQ quantizes the pruned weights
+                    from ..official import gptq as official_gptq
+
+                    record["official_gptq"] = official_gptq.quantize(
+                        model, tokenizer, device=device, **recipe.official_gptq)
+                    model._tricast_official_gptq = recipe.official_gptq  # checked by patch_model, as prune
                 report = patch_model(model, recipe)
                 record["patch_report"] = asdict(report)
                 if not report.patched and not report.kv:
@@ -376,7 +382,7 @@ def run_config(cfg: dict | str | Path, *, calibration: dict | None = None) -> li
             try:
                 unpatch_model(model)
             finally:
-                if recipe is not None and recipe.prune is not None:
+                if recipe is not None and (recipe.prune is not None or recipe.official_gptq is not None):
                     model = tokenizer = None  # pruning changed weights in place: reload for the next run
                 record["wall_time_s"] = time.perf_counter() - started
                 _write_json(output_dir / "env.json", run_env)

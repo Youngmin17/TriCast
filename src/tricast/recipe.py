@@ -32,6 +32,10 @@ CALIBRATION_DEFAULTS = {
 }
 # official main.py; an absent prune.seqlen means the official rule and stays absent (hash unchanged)
 PRUNE_DEFAULTS = {"n": 0, "m": 0, "nsamples": 128, "seed": 0, "dataset": "c4"}
+# official IST-DASLab/gptq llama.py (true_sequential as its README LLaMA command); seqlen as prune.seqlen
+OFFICIAL_GPTQ_DEFAULTS = {"groupsize": -1, "sym": False, "act_order": False, "static_groups": False,
+                          "percdamp": 0.01, "true_sequential": True, "nsamples": 128, "seed": 0,
+                          "dataset": "c4"}
 _SELECTORS = {"match", "layers", "modules"}
 _LAYER_INDEX = re.compile(r"(?:^|\.)layers\.(\d+)(?:\.|$)")
 
@@ -173,6 +177,7 @@ class Recipe:
     kv: KVSpec | None = None
     kv_layers: str | None = None
     prune: dict | None = None  # official pruning run by the eval runner before patching (tricast.official)
+    official_gptq: dict | None = None  # official GPTQ run by the eval runner after prune, before patching
 
     def _selection(self, module_name: str, num_layers: int | None,
                    decoder: tuple[str, int] | None = None) -> tuple[int | None, str | None]:
@@ -246,6 +251,8 @@ class Recipe:
         }
         if self.prune is not None:  # left out when unset, so recipes without it keep their JSON and hash
             data["prune"] = copy.deepcopy(self.prune)
+        if self.official_gptq is not None:  # likewise
+            data["official_gptq"] = copy.deepcopy(self.official_gptq)
         return data
 
     @property
@@ -395,6 +402,21 @@ def load_recipe(source: str | Path | dict | Recipe) -> Recipe:
                        prune["dataset"])
         except ValueError as exc:
             raise ValueError(f"prune.{exc}") from exc
+    official_gptq = data.get("official_gptq")
+    if official_gptq is not None:
+        if any(spec.weight_algo.kind == "gptq" for spec in specs):
+            raise ValueError("official_gptq: cannot be combined with weight_algo: gptq (two GPTQ paths)")
+        if any(spec.weight is not None for spec in specs):
+            raise ValueError("official_gptq: quantizes the decoder Linear weights itself; a weight spec "
+                             "would quantize them twice (set weight: null)")
+        official_gptq = {**OFFICIAL_GPTQ_DEFAULTS, **official_gptq}
+        from .official.gptq import check_args as check_gptq
+
+        try:
+            check_gptq(official_gptq["wbits"], official_gptq["groupsize"], official_gptq["static_groups"],
+                       official_gptq["percdamp"], official_gptq["nsamples"], official_gptq["dataset"])
+        except ValueError as exc:
+            raise ValueError(f"official_gptq.{exc}") from exc
     kv_data = data.get("kv")
     kv_layers = None
     if isinstance(kv_data, dict):
@@ -410,5 +432,5 @@ def load_recipe(source: str | Path | dict | Recipe) -> Recipe:
         name=data["name"], description=data.get("description", ""), defaults=defaults,
         include=data.get("include", ["*"]), exclude=data.get("exclude", ["lm_head"]),
         overrides=overrides, calibration=data.get("calibration"), backend=data.get("backend", "auto"),
-        kv=kv, kv_layers=kv_layers, prune=prune,
+        kv=kv, kv_layers=kv_layers, prune=prune, official_gptq=official_gptq,
     )

@@ -87,6 +87,10 @@ def patch_model(
     if recipe.prune is not None and getattr(model, "_tricast_pruned", None) != recipe.prune:
         raise ValueError("prune: the eval runner (tricast run / ppl / eval) applies official pruning before "
                          "patching; this entry point would quantize the unpruned model")
+    gptq = recipe.official_gptq
+    if gptq is not None and getattr(model, "_tricast_official_gptq", None) != gptq:
+        raise ValueError("official_gptq: the eval runner (tricast run / ppl / eval) applies official GPTQ "
+                         "before patching; this entry point would evaluate unquantized weights")
     backend = backend or recipe.backend
     report = PatchReport()
     replacements = []

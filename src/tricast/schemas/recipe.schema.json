@@ -53,6 +53,16 @@
         }
       ]
     },
+    "official_gptq": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/official_gptq"
+        }
+      ]
+    },
     "backend": {
       "type": "string",
       "enum": [
@@ -936,6 +946,68 @@
       "required": [
         "method",
         "ratio"
+      ],
+      "additionalProperties": false
+    },
+    "official_gptq": {
+      "type": "object",
+      "description": "Official GPTQ (IST-DASLab/gptq llama.py llama_sequential, pinned in tricast.official.repos) run by the eval runner after prune and before patching; replaces each decoder Linear weight by its quantize-dequantize result. Not combinable with a weight spec or weight_algo: gptq.",
+      "properties": {
+        "wbits": {
+          "type": "integer",
+          "enum": [
+            2,
+            3,
+            4,
+            8
+          ]
+        },
+        "groupsize": {
+          "type": "integer",
+          "minimum": -1,
+          "description": "-1 = whole row (official default)."
+        },
+        "sym": {
+          "type": "boolean"
+        },
+        "act_order": {
+          "type": "boolean"
+        },
+        "static_groups": {
+          "type": "boolean",
+          "description": "Needs a groupsize."
+        },
+        "percdamp": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "true_sequential": {
+          "type": "boolean",
+          "description": "Default true (official README LLaMA command)."
+        },
+        "nsamples": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "seed": {
+          "type": "integer"
+        },
+        "dataset": {
+          "type": "string",
+          "enum": [
+            "wikitext2",
+            "c4"
+          ],
+          "description": "Official get_loaders source (default c4)."
+        },
+        "seqlen": {
+          "type": "integer",
+          "minimum": 2,
+          "description": "Calibration sequence length; absent = official 2048 (llama.py get_llama). Recorded as a parameter mapping. At most max_position_embeddings."
+        }
+      },
+      "required": [
+        "wbits"
       ],
       "additionalProperties": false
     },

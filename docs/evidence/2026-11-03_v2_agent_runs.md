@@ -56,6 +56,34 @@ PPL 은 공식 `lib.eval.eval_ppl` 로 잰다 (WikiText-2 test, seqlen 4096). �
 - 공식 C4 `data_files` 를 풀기 위해 이 게이트만 hub 를 온라인으로 했다. 샤드는 캐시에 있었다.
 - datasets 4.x 에 맞춰 C4 설정 이름을 넘기지 않게 했다 (`1e93df6`). `'en'` 으로 넘겼던 첫 시도는 분할 검증 오류로 실패했다.
 
+## AC26 — 공식 GPTQ GPU 게이트 (Llama-2-7B W4 g128, NVIDIA H200)
+
+> 판정 기준은 측정 전에 이 커밋으로 적었고, 결과를 본 뒤 바꾸지 않는다.
+
+**설정**
+- 공식 GPTQ `2d65066` 의 `llama_sequential` 을 쓴다. W4, 비대칭, group 128, true-sequential, act-order 없음, damp 0.01.
+- 보정은 공식 `datautils` 의 C4 128 × 2048, seed 0 이다.
+- 세 실행을 같은 평가(`same_eval`)로 잰다. 평가는 WikiText-2 test 를 `"\n\n"` 로 잇고 2048 토큰 창으로 나눠 fp16 전체 forward 로 잰다 (공식 `llama_eval` 과 같은 식).
+  - `dense`: 양자화하지 않은 모델 (tricast env, transformers 4.55)
+  - `adapter`: `tricast.official.gptq.quantize` (tricast env + compat shim)
+  - `official`: 같은 공식 코드를 구 환경(OmniServe env, transformers 4.37, shim 없음)에서 직접 부른다. 공식 `llama_eval` 도 함께 잰다.
+- 앵커는 AWQ (MLSys 2024) Table 4 의 Llama-2-7B INT4-g128 이다: FP16 5.47, GPTQ 5.69 (재정렬 없음), GPTQ-R 5.63. 공식 README 에는 Llama-2 수치가 없어서 제3자 값을 쓴다.
+- glue 는 두 가지이고, AC25 와 같다.
+  - C4 설정 이름을 넘기지 않는다 (datasets 4.x).
+  - 토크나이저 없는 meta-llama 스냅샷의 config · 가중치를 Llama-2 slow tokenizer 사본(`9e556afd…`) 옆에 링크한다.
+
+**판정 기준**
+
+| # | 조건 | 기준 |
+|:-:|---|---|
+| G1 | 어댑터 = 공식 코드 (같은 평가) | \|PPL<sub>adapter</sub> − PPL<sub>official</sub>\| ≤ 0.05 또는 상대 1% 이내 |
+| G2 | 공식 코드의 재현 | 공식 `llama_eval` PPL 이 앵커 5.69 의 1% 이내 (5.633–5.747) |
+| G3 | 기준선 | dense PPL 이 앵커 5.47 의 0.05 이내 |
+| G4 | 발화 증거 | `fasterquant` 224회 (32 블록 × 7 Linear), 그룹당 고유값 ≤ 16 |
+
+- AC26 GPU 게이트의 판정은 G1 · G4 로 한다.
+- G2 · G3 는 재현 수준을 보고한다. 실패하면 "재현 미달 (Δ=…)" 로 적고 원인을 가린다.
+
 ## R7 — 서버 GPU 작업 경로 (트리 `eff9e7f`, Tesla V100-PCIE-32GB, london)
 
 `POST /api/quantizer/jobs` (FastAPI TestClient, 포트를 열지 않는 배치) 로 `qd_nvfp4` PPL 을 재고, 같은 GPU 에서 `tricast run` 과 짝지어 비교했다.

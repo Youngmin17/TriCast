@@ -416,8 +416,7 @@ def run(config: dict[str, Any], root: Path, rounds: int, per_round: int, propose
                                  "improved": False}
         if accepted:
             kl_path = measure(round_number, accepted)
-            lg.ingest([kl_path], ledger, root)
-            lg.write_documents(lg.read_ledger(ledger), lg.docs_path(ledger))
+            lg.ingest_and_document([kl_path], ledger, root)  # one lock: no older documents than the ledger
             best = _measured(session, ledger)[0]
             entry.update(best=best["name"], best_kl=best["kl"], improved=best["kl"] < before)
             log(f"TUNE_LOOP round={round_number} best={best['name']} kl={best['kl']:.6g} "

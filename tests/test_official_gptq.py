@@ -5,6 +5,8 @@ recipe block and the eval-runner hook-in. Tiny models from configs; no network.
 
 from __future__ import annotations
 
+import hashlib
+
 import pytest
 import torch
 from torch import nn
@@ -124,6 +126,68 @@ def test_default_data_is_official_get_loaders(tmp_path, monkeypatch):
         assert any("allenai--c4" in entry for entry in report["deviations"] if isinstance(entry, str)) == (
             dataset == "c4")
     assert datasets.load_dataset is load_dataset
+
+
+def _input_ids_sha256(batches) -> str:
+    """Recomputed apart from the report: one int64 vector of every sample's input ids, in order."""
+    ids = torch.cat([batch[0].reshape(-1) for batch in batches]).to(torch.int64)
+    return hashlib.sha256(ids.numpy().astype("<i8").tobytes()).hexdigest()
+
+
+def test_the_report_fingerprints_a_loader_override():
+    """Review M7: the report did not identify the calibration input."""
+    samples = _loader()
+    one_token = [(ids.clone(), target) for ids, target in samples]
+    one_token[-1][0][0, -1] = 5 if int(one_token[-1][0][0, -1]) == 4 else 4
+    fingerprints = []
+    for batches in (samples, samples[::-1], one_token):
+        data = official_gptq.quantize(_tiny("llama"), None, 4, seqlen=SEQLEN, nsamples=NSAMPLES,
+                                      loader=batches)["data"]
+        assert data["calibration_input"] == {"samples": NSAMPLES, "shape": [1, SEQLEN],
+                                             "input_ids_sha256": _input_ids_sha256(batches)}
+        assert "tokenizer_loaded" not in data  # no tokenizer is loaded on the override path
+        fingerprints.append(data["calibration_input"]["input_ids_sha256"])
+    assert len(set(fingerprints)) == 3  # other order or one other token: another fingerprint
+
+
+def test_the_report_identifies_the_official_loader_tokenizer_and_samples(tmp_path, monkeypatch):
+    """Review M7: official get_loaders reloads a tokenizer by model name (no revision); the report names it
+    and fingerprints the samples get_loaders returned."""
+    import datasets
+
+    texts = [" ".join(f"t{(row * 7 + column) % 252}" for column in range(80)) for row in range(10)]
+
+    def load_dataset(path, name=None, **kwargs):
+        if name == "allenai--c4":
+            raise ValueError("BuilderConfig 'allenai--c4' not found.")
+        return {"text": texts} if path == "wikitext" else _Rows(texts)
+
+    monkeypatch.setattr(datasets, "load_dataset", load_dataset)
+    datautils = repos.load_module("gptq", "datautils")
+    get_loaders, returned = datautils.get_loaders, []
+    monkeypatch.setattr(datautils, "get_loaders", lambda *args, **kwargs: returned.append(
+        get_loaders(*args, **kwargs)) or returned[-1])
+    from_pretrained = vars(transformers.AutoTokenizer)["from_pretrained"]
+    commit = "0123abcd" * 5
+    plain, snapshot = tmp_path / "plain", tmp_path / "models--tiny" / "snapshots" / commit
+    fingerprints = []
+    for dataset, directory, seed, expected in (("wikitext2", plain, 0, None), ("wikitext2", plain, 1, None),
+                                               ("c4", snapshot, 0, commit)):
+        _tokenizer().save_pretrained(directory)
+        model = _tiny("llama")
+        model.config._name_or_path = str(directory)
+        data = official_gptq.quantize(model, None, 4, seqlen=SEQLEN, nsamples=NSAMPLES, seed=seed,
+                                      dataset=dataset)["data"]
+        loaded = data["tokenizer_loaded"]
+        assert [{key: item[key] for key in ("name_or_path", "commit")} for item in loaded] == [
+            {"name_or_path": str(directory), "commit": expected}]
+        assert ("note" in loaded[0]) == (expected is None)
+        samples = returned[-1][0]
+        assert data["calibration_input"] == {"samples": NSAMPLES, "shape": [1, SEQLEN],
+                                             "input_ids_sha256": _input_ids_sha256(samples)}
+        fingerprints.append(data["calibration_input"]["input_ids_sha256"])
+    assert len(set(fingerprints)) == 3  # another seed or dataset: other samples, another fingerprint
+    assert vars(transformers.AutoTokenizer)["from_pretrained"] is from_pretrained  # the observer is removed
 
 
 def test_official_gptq_recipe_block():

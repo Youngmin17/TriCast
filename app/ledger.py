@@ -28,7 +28,12 @@ gets the new file hash (a resumed run appends lines); a different value at the s
 is gone, is refused (a result was rewritten in place), and so is a record whose value stayed but whose other
 fields (model, layer, setting, environment) changed. Records are never deleted, so a cited id always resolves:
 a finished ``<stem>.json`` table marks the records of its ``<stem>.entries.jsonl`` ``superseded_by`` its own
-record of the same (layer, method) and value, and documents skip superseded records.
+record of the same (layer, method), value, model_sha and window setting (another model or setting is refused),
+and documents skip superseded records. Directory ingest skips a log once its table exists, so ingesting the
+table re-reads the log, when it is still there, under the rules above: its records get the log's current file
+hash (a resumed run appended lines after they were ingested).
+
+``ingest_and_document`` (the CLI ``ingest``) rewrites the documents under the same lock as the ingest.
 
 The documents group the records for retrieval — one per layer (every method's KL, floors and report metrics
 across all sources), one per recipe hash (every metric measured with it) and one per (table, method) (its
@@ -323,6 +328,31 @@ def ingest(paths: Sequence[Path], ledger: Path, root: Path) -> dict[str, Any]:
         return _ingest(paths, ledger, root)
 
 
+def ingest_and_document(paths: Sequence[Path], ledger: Path, root: Path) -> dict[str, Any]:
+    """``ingest``, then rewrite ``docs_path(ledger)`` from the ledger, both under one exclusive lock, so a
+    slow writer cannot replace newer documents with an older snapshot; returns the counts and
+    ``documents``."""
+    with _exclusive(ledger):
+        summary = _ingest(paths, ledger, root)
+        summary["documents"] = write_documents(read_ledger(ledger), docs_path(ledger))
+        return summary
+
+
+def _gone(known: dict[str, dict[str, Any]], source: str, records: Sequence[dict[str, Any]]) -> None:
+    gone = {key for key, record in known.items() if record["source"]["path"] == source} - \
+        {record["id"] for record in records}
+    if gone:
+        raise LedgerError(f"{source}: {len(gone)} recorded values are no longer in the file (rewritten?)")
+
+
+def _unchanged(old: dict[str, Any], record: dict[str, Any]) -> None:
+    if _content(old) != _content(record):
+        changed = sorted(key for key in set(_content(old)) | set(_content(record))
+                         if _content(old).get(key) != _content(record).get(key))
+        raise LedgerError(f"{record['source']['path']}{record['source']['pointer']}: changed in place "
+                          f"({changed})")
+
+
 def _ingest(paths: Sequence[Path], ledger: Path, root: Path) -> dict[str, Any]:
     known = {record["id"]: record for record in read_ledger(ledger)}
     added: dict[str, int] = defaultdict(int)
@@ -331,25 +361,22 @@ def _ingest(paths: Sequence[Path], ledger: Path, root: Path) -> dict[str, Any]:
         records, reason = records_of(path, root)
         skipped += reason is not None
         source = _relative(path, root)
-        gone = {key for key, record in known.items() if record["source"]["path"] == source} - \
-            {record["id"] for record in records}
-        if gone:
-            raise LedgerError(f"{source}: {len(gone)} recorded values are no longer in the file (rewritten?)")
+        _gone(known, source, records)
         for record in records:
             old = known.get(record["id"])
             if old is None:
                 known[record["id"]] = record
                 added[record["kind"]] += 1
-            elif _content(old) != _content(record):
-                changed = sorted(key for key in set(_content(old)) | set(_content(record))
-                                 if _content(old).get(key) != _content(record).get(key))
-                raise LedgerError(f"{source}{record['source']['pointer']}: changed in place ({changed})")
-            elif old["source"]["sha256"] != record["source"]["sha256"]:
+                continue
+            _unchanged(old, record)
+            if old["source"]["sha256"] != record["source"]["sha256"]:
                 known[record["id"]] = {**record, **({"superseded_by": old["superseded_by"]}
                                                     if "superseded_by" in old else {})}
                 refreshed += 1
         if records and records[0]["kind"] == "layer_kl" and path.suffix == ".json":
-            superseded += _supersede(known, source.removesuffix(".json") + ".entries.jsonl", records)
+            log = source.removesuffix(".json") + ".entries.jsonl"
+            refreshed += _refresh_log(known, log, root)
+            superseded += _supersede(known, log, records)
     ordered = sorted(known.values(), key=lambda record: record["id"])
     _write_atomic(ledger, "".join(json.dumps(record, sort_keys=True, allow_nan=False) + "\n"
                                   for record in ordered))
@@ -363,9 +390,31 @@ def _content(record: dict[str, Any]) -> dict[str, Any]:
             "path": record["source"]["path"], "pointer": record["source"]["pointer"]}
 
 
+def _refresh_log(known: dict[str, dict[str, Any]], log: str, root: Path) -> int:
+    """Give the ledger's records of a finished table's resume log the log's current file hash; a value that
+    changed or is gone is refused as in a re-ingest. Nothing to do when the log is no longer there."""
+    path = Path(log) if Path(log).is_absolute() else root / log
+    ours = {key: record for key, record in known.items() if record["source"]["path"] == log}
+    if not ours or not path.is_file():
+        return 0
+    records, _ = records_of(path, root)
+    _gone(known, log, records)
+    count = 0
+    for record in records:
+        old = ours.get(record["id"])
+        if old is None:  # appended after the log was ingested: the table holds it
+            continue
+        _unchanged(old, record)
+        if old["source"]["sha256"] != record["source"]["sha256"]:
+            known[record["id"]] = {**old, "source": record["source"]}
+            count += 1
+    return count
+
+
 def _supersede(known: dict[str, dict[str, Any]], log: str, records: Sequence[dict[str, Any]]) -> int:
     """Mark the records of a finished table's resume log ``superseded_by`` the table's record of the same
-    (layer, method); refuse a log value the table does not hold."""
+    (layer, method); refuse a log value the table does not hold, or one it measured for another model or
+    window setting."""
     table = {(record["layer"], record["method"]): record for record in records
              if record["kind"] == "layer_kl"}
     count = 0
@@ -375,6 +424,10 @@ def _supersede(known: dict[str, dict[str, Any]], log: str, records: Sequence[dic
         target = table.get((record["layer"], record["method"]))
         if target is None or target["value"] != record["value"]:
             raise LedgerError(f"{log}{record['source']['pointer']}: not this value in the finished table")
+        differ = [field for field in ("model_sha", "setting") if record.get(field) != target.get(field)]
+        if differ:
+            raise LedgerError(f"{log}{record['source']['pointer']}: the finished table measured another "
+                              f"model or window setting ({differ}); not superseded")
         known[key] = {**record, "superseded_by": target["id"]}
         count += 1
     return count
@@ -553,9 +606,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         records = read_ledger(args.ledger)
         if args.command == "ingest":
-            summary = ingest(args.paths, args.ledger, args.root)
-            summary["documents"] = write_documents(read_ledger(args.ledger), docs_path(args.ledger))
-            print(json.dumps(summary, indent=1))
+            print(json.dumps(ingest_and_document(args.paths, args.ledger, args.root), indent=1))
         elif args.command == "stats":
             counts: dict[str, int] = defaultdict(int)
             for record in records:

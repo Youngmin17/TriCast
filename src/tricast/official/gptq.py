@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import hashlib
 import time
 from collections.abc import Callable, Iterator, Sequence
 from pathlib import Path
@@ -68,6 +69,39 @@ def _counted(method: Callable[..., Any], counter: dict) -> Callable[..., Any]:
     return counting
 
 
+def _recording(load: Callable[..., Any], loaded: list) -> Callable[..., Any]:
+    """``load`` unchanged, keeping what it returned in ``loaded``."""
+    def recording(*args: Any, **kwargs: Any) -> Any:
+        loaded.append(load(*args, **kwargs))
+        return loaded[-1]
+
+    return recording
+
+
+def _tokenizer_loaded(tokenizer: Any) -> dict:
+    """A tokenizer the official loader loaded: its ``name_or_path`` and hub commit. transformers keeps no
+    commit hash on a loaded tokenizer; the commit is known only when the name is a hub-cache snapshot path."""
+    from transformers.utils import extract_commit_hash
+
+    name = str(tokenizer.name_or_path)
+    commit = extract_commit_hash(str(Path(name, "tokenizer_config.json")), None)  # a file in the snapshot
+    loaded = {"name_or_path": name, "commit": commit}
+    if commit is None:
+        loaded["note"] = ("transformers keeps no commit hash on a loaded tokenizer and the official loader "
+                          "passes no revision: this name as it resolved at load time")
+    return loaded
+
+
+def _calibration_input(batches: Sequence) -> dict:
+    """The samples llama_sequential gets: count, one sample's input-ids shape (llama_sequential's Catcher
+    takes (1, seqlen) each) and the sha256 of every sample's input ids as little-endian int64, in order."""
+    digest = hashlib.sha256()
+    for batch in batches:
+        digest.update(batch[0].detach().cpu().numpy().astype("<i8").tobytes())
+    return {"samples": len(batches), "shape": list(batches[0][0].shape),
+            "input_ids_sha256": digest.hexdigest()}
+
+
 def _max_distinct(weight: torch.Tensor, groupsize: int) -> int:
     """Most distinct values in one row of one contiguous column group (whole row when groupsize == -1)."""
     width = weight.shape[1] if groupsize == -1 else groupsize
@@ -90,6 +124,9 @@ def quantize(model: nn.Module, tokenizer: Any, wbits: int, groupsize: int = -1, 
     max_position_embeddings), recorded as a parameter mapping in ``deviations``. Data: official
     ``datautils.get_loaders(dataset)``, which loads its own tokenizer by model name (``use_fast=False``),
     so ``tokenizer`` is not used; or ``loader``: ``nsamples`` batches ``(input_ids[1, seqlen], target)``.
+    The report's ``data`` identifies the input: ``calibration_input`` (``_calibration_input`` of the batches)
+    and, on the official path, ``tokenizer_loaded`` (what ``AutoTokenizer.from_pretrained`` returned to the
+    official loader, observed during the call, not changed).
     """
     check_args(wbits, groupsize, static_groups, percdamp, nsamples, dataset)
     limit = int(model.config.max_position_embeddings)
@@ -128,12 +165,18 @@ def quantize(model: nn.Module, tokenizer: Any, wbits: int, groupsize: int = -1, 
         deviations.append("data: loader override in place of official datautils.get_loaders")
     else:
         import datasets
+        import transformers
 
-        with _attribute(datasets, "load_dataset", _c4_config_shim(datasets.load_dataset, deviations)):
+        loaded: list = []
+        with (_attribute(datasets, "load_dataset", _c4_config_shim(datasets.load_dataset, deviations)),
+              _attribute(transformers.AutoTokenizer, "from_pretrained",
+                         staticmethod(_recording(transformers.AutoTokenizer.from_pretrained, loaded)))):
             batches = datautils.get_loaders(dataset, nsamples=nsamples, seed=seed, model=args.model,
                                             seqlen=seqlen)[0]
         data = {"source": f"official datautils.get_loaders({dataset!r})", "dataset": dataset,
-                "tokenizer": f"AutoTokenizer.from_pretrained({args.model!r}, use_fast=False) (official)"}
+                "tokenizer": f"AutoTokenizer.from_pretrained({args.model!r}, use_fast=False) (official)",
+                "tokenizer_loaded": [_tokenizer_loaded(tokenizer) for tokenizer in loaded]}
+    data["calibration_input"] = _calibration_input(batches)
     solves, layer_calls = {"calls": 0}, {"total": 0, "with_position_ids": 0}
 
     def official_call(module: nn.Module, call_args: tuple, kwargs: dict) -> None:

@@ -183,6 +183,62 @@ def test_a_resumed_log_keeps_its_ids_a_rewritten_value_is_refused_and_the_table_
     assert first["id"] not in cited and logged["superseded_by"] in cited
 
 
+def _write_lines(path: Path, lines: list[dict]) -> None:
+    path.write_text("".join(json.dumps(line) + "\n" for line in lines))
+
+
+def test_a_log_resumed_after_its_ingest_still_verifies_once_its_table_supersedes_it(tmp_path: Path) -> None:
+    """Review M5: superseded log records kept the log hash of their own ingest; lines the resumed run appended
+    later (directory ingest skips the log once the table exists) left them failing verify."""
+    runs = tmp_path / "runs" / "t"
+    runs.mkdir(parents=True)
+    log, path = runs / "table.entries.jsonl", tmp_path / "ledger.jsonl"
+    lines = [{"config": META}, {"layer": O_PROJ, "method": "nvfp4", "kl": 0.0026}]
+    _write_lines(log, lines)
+    assert lg.ingest([runs], path, tmp_path)["added"] == {"layer_kl": 1}
+    lines.append({"layer": DOWN, "method": "nvfp4", "kl": 0.011})  # the resumed run appends, then finishes
+    _write_lines(log, lines)
+    table = {"schema": "tricast.autotune.table/2", "meta": META, "layers": [
+        {"name": O_PROJ, "block": 13, "kind": "o_proj", "kl": {"nvfp4": 0.0026}},
+        {"name": DOWN, "block": 2, "kind": "down_proj", "kl": {"nvfp4": 0.011}}]}
+    (runs / "table.json").write_text(json.dumps(table))
+    summary = lg.ingest([runs], path, tmp_path)
+    records = lg.read_ledger(path)
+    assert all(lg.verify(record, tmp_path) for record in records)
+    assert summary["added"] == {"layer_kl": 2} and summary["superseded"] == 1 and summary["refreshed"] == 1
+    assert len(records) == 3 and sum("superseded_by" in record for record in records) == 1
+    lines[1]["kl"] = 0.0027  # the log rewritten after its table: refused as in a re-ingest
+    _write_lines(log, lines)
+    with pytest.raises(lg.LedgerError, match=r"changed in place \(\['value'\]\)"):
+        lg.ingest([runs], path, tmp_path)
+    _write_lines(log, lines[:1])
+    with pytest.raises(lg.LedgerError, match="no longer in the file"):
+        lg.ingest([runs], path, tmp_path)
+    assert lg.read_ledger(path) == records  # nothing written
+
+
+def test_a_table_of_another_model_or_window_setting_does_not_supersede_a_log(tmp_path: Path) -> None:
+    """Review M5: supersession matched (layer, method, value) only; bf16 is 0.0 for every model and seed."""
+    runs = tmp_path / "runs" / "t"
+    runs.mkdir(parents=True)
+    path = tmp_path / "ledger.jsonl"
+    _write_lines(runs / "table.entries.jsonl",
+                 [{"config": META}, {"layer": O_PROJ, "method": "bf16", "kl": 0.0}])
+    lg.ingest([runs], path, tmp_path)
+    before = lg.read_ledger(path)
+    for meta, differ in (({**META, "model_sha": "another"}, "model_sha"), ({**META, "seed": 7}, "setting"),
+                         ({**META, "source": {"split": "test"}}, "setting")):
+        table = {"schema": "tricast.autotune.table/2", "meta": meta,
+                 "layers": [{"name": O_PROJ, "block": 13, "kind": "o_proj", "kl": {"bf16": 0.0}}]}
+        (runs / "table.json").write_text(json.dumps(table))
+        with pytest.raises(lg.LedgerError, match=rf"another model or window setting \(\['{differ}'\]\)"):
+            lg.ingest([runs], path, tmp_path)
+        assert lg.read_ledger(path) == before  # nothing written
+    table["meta"] = META
+    (runs / "table.json").write_text(json.dumps(table))
+    assert lg.ingest([runs], path, tmp_path)["superseded"] == 1  # the same model and setting supersede
+
+
 def test_an_exact_layer_name_finds_its_own_document_first(tmp_path: Path) -> None:
     """Method documents list layer names too; the layer's own document must still come first."""
     runs = _runs(tmp_path)
@@ -226,3 +282,52 @@ def test_concurrent_ingests_lose_no_record(tmp_path: Path) -> None:
         assert worker.exitcode == 0
     values = sorted(record["value"] for record in lg.read_ledger(ledger))
     assert values == [20.0 + index for index in range(24)]
+
+
+def _document_slowly(path: str, ledger: str, root: str, writing, written) -> None:
+    """ingest_and_document whose document writer stalls until the other process has documented (2 s at
+    most)."""
+    write = lg.write_documents
+
+    def stalled(records, target):
+        writing.set()
+        written.wait(2)
+        return write(records, target)
+
+    lg.write_documents = stalled
+    lg.ingest_and_document([Path(path)], Path(ledger), Path(root))
+
+
+def _document_meanwhile(path: str, ledger: str, root: str, writing, written) -> None:
+    assert writing.wait(120)
+    lg.ingest_and_document([Path(path)], Path(ledger), Path(root))
+    written.set()
+
+
+def test_a_slow_document_writer_cannot_leave_older_documents_than_the_ledger(tmp_path: Path) -> None:
+    """Review m3: documents were written outside the ingest lock, so a writer holding an older snapshot could
+    replace the documents another ingest had just written."""
+    import multiprocessing
+
+    runs = tmp_path / "runs"
+    runs.mkdir()
+    files = []
+    for index in range(2):
+        run = {"run_hash": f"r{index}", "recipe_hash": f"h{index}", "recipe": {"name": f"x{index}"},
+               "env": ENV, "metrics": {"ppl": {"ppl": 20.0 + index, "n_tokens": 1}}}
+        (runs / f"run{index}.json").write_text(json.dumps(run))
+        files.append(str(runs / f"run{index}.json"))
+    ledger = tmp_path / "ledger.jsonl"
+    context = multiprocessing.get_context("spawn")
+    writing, written = context.Event(), context.Event()
+    workers = [context.Process(target=target, args=(file, str(ledger), str(tmp_path), writing, written))
+               for target, file in ((_document_slowly, files[0]), (_document_meanwhile, files[1]))]
+    for worker in workers:
+        worker.start()
+    for worker in workers:
+        worker.join(120)
+        assert worker.exitcode == 0
+    records = lg.read_ledger(ledger)
+    assert sorted(record["value"] for record in records) == [20.0, 21.0]
+    docs = [json.loads(line) for line in lg.docs_path(ledger).read_text().splitlines()]
+    assert docs == [{"schema": lg.DOCS_SCHEMA, **doc} for doc in lg.documents(records)]

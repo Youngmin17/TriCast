@@ -14,6 +14,9 @@ usage: PYTHONPATH=src:. python scripts/quantizer/autotune_c2.py <predict.json> <
               (qd_mxfp4_ends_bf16, auto_5.09).
 - --overlap: token offsets of the WikiText-2 train windows for each seed (tricast.calibration._windows on
   the joined text) and whether any window of one seed overlaps a window of another.
+- --objective v2 (docs/spikes/2026-11-03_autotune_v2.md §3): the prediction is kl_sum_minus_floor plus
+  predicted_kv_kl_sum (the table's KV entries of the recipe's KV preset); a recipe whose table lacks a floor
+  or its KV preset is refused. v1 (default) keeps kl_sum.
 Last line: AUTOTUNE_C2_DONE ...
 """
 import argparse
@@ -67,13 +70,14 @@ def signature(recipe_path: str) -> str:
     return hashlib.sha256(json.dumps([layers, kv]).encode()).hexdigest()
 
 
-def overlap(model: str, revision: str, seqlen: int, windows: int, seeds: list[int]) -> dict:
+def overlap(model: str, revision: str, seqlen: int, windows: int, seeds: list[int],
+            split: str = "train") -> dict:
     from transformers import AutoTokenizer
 
     from tricast.calibration import _dataset_texts
 
     tokenizer = AutoTokenizer.from_pretrained(model, revision=revision)
-    text = "\n\n".join(_dataset_texts("wikitext2", "train"))
+    text = "\n\n".join(_dataset_texts("wikitext2", split))
     n_tokens = tokenizer(text, return_tensors="pt")["input_ids"].shape[1]
     starts = {}
     for seed in seeds:  # mirrors tricast.calibration._windows for a single 1 x N id row
@@ -84,7 +88,7 @@ def overlap(model: str, revision: str, seqlen: int, windows: int, seeds: list[in
             starts[seed].append(rng.randrange(n_tokens - seqlen + 1))
     clashes = [(a, sa, b, sb) for i, a in enumerate(seeds) for b in seeds[i + 1:]
                for sa in starts[a] for sb in starts[b] if abs(sa - sb) < seqlen]
-    return {"n_tokens": n_tokens, "starts": {str(k): v for k, v in starts.items()},
+    return {"split": split, "n_tokens": n_tokens, "starts": {str(k): v for k, v in starts.items()},
             "overlaps": [{"seed_a": a, "start_a": sa, "seed_b": b, "start_b": sb}
                          for a, sa, b, sb in clashes]}
 
@@ -99,6 +103,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--seqlen", type=int, default=512)
     parser.add_argument("--windows", type=int, default=8)
     parser.add_argument("--seeds", default="42,43")
+    parser.add_argument("--objective", choices=("v1", "v2"), default="v1")
+    parser.add_argument("--split", choices=("train", "validation"), default="train",
+                        help="WikiText-2 split of the table and measure windows (--overlap)")
     args = parser.parse_args(argv)
     predicted = json.loads(Path(args.predict).read_text(encoding="utf-8"))["results"]
     measured = json.loads(Path(args.measure).read_text(encoding="utf-8"))["results"]
@@ -120,7 +127,12 @@ def main(argv: list[str] | None = None) -> int:
             continue
         seen[sig] = row["name"]
         pred = by_pred[row["name"]]
-        rows.append({"name": row["name"], "predicted": pred["kl_sum"], "measured": row["kl"],
+        predicted_value = pred["kl_sum"]
+        if args.objective == "v2":
+            if pred.get("kl_sum_minus_floor") is None or pred.get("predicted_kv_kl_sum") is None:
+                raise SystemExit(f"{row['name']}: v2 needs kl_sum_minus_floor and the KV sum of {pred['kv']}")
+            predicted_value = pred["kl_sum_minus_floor"] + pred["predicted_kv_kl_sum"]
+        rows.append({"name": row["name"], "predicted": predicted_value, "measured": row["kl"],
                      "avg_bits": pred["avg_bits"], "kv": pred["kv"], "layers_sha256": sig})
     rho = spearman([r["predicted"] for r in rows], [r["measured"] for r in rows])
     band = [r for r in rows if BAND[0] <= Fraction(r["avg_bits"]).limit_denominator(10**6) <= BAND[1]]
@@ -137,10 +149,10 @@ def main(argv: list[str] | None = None) -> int:
     result = {"c2": {"rho": rho, "n": len(rows), "threshold": THRESHOLD, "min_n": MIN_N,
                      "pass": rho >= THRESHOLD and len(rows) >= MIN_N},
               "band": {"bits": [str(BAND[0]), str(BAND[1])], "n": len(band), "rho": band_rho},
-              "pairs": pairs, "duplicates": duplicates, "rows": rows}
+              "pairs": pairs, "duplicates": duplicates, "rows": rows, "objective": args.objective}
     if args.overlap:
         result["windows"] = overlap(args.overlap, args.revision, args.seqlen, args.windows,
-                                    [int(s) for s in args.seeds.split(",")])
+                                    [int(s) for s in args.seeds.split(",")], args.split)
     Path(args.out).write_text(json.dumps(result, indent=1, ensure_ascii=False), encoding="utf-8")
     for r in rows:
         print(f"C2 {r['name']:>20} predicted={r['predicted']:.6g} measured={r['measured']:.6g} "

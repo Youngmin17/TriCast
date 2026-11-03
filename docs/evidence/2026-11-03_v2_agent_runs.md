@@ -225,6 +225,22 @@ PPL 은 공식 `lib.eval.eval_ppl` 로 잰다 (WikiText-2 test, seqlen 4096). �
   - `measure` 결과에 보정 · KL 시간을 나눠 기록하고, `corrupt` · `inputs` 를 옮긴다.
   - 그 뒤 15 s 의 구성을 잰다 (진단).
 
+## 사후 진단 (사전 등록 아님) — 측정 시간 분해 (트리 `9d08b5d`, H200, 15:21–15:31 UTC)
+
+게이트 2 와 같은 세 단계를 `calibration_s` · `kl_s` 를 기록하는 `measure` 로 다시 쟀다. KL 은 네 제안 모두 게이트 2 의 S1 과 float 로 같다.
+
+| 단계 | 보정 | KL forward | 기타 | 합 |
+|---|:-:|:-:|:-:|:-:|
+| S1 캐시 없음 | 209.0 s | 38.6 s | 2.6 s | 250.2 s |
+| S2 채우기 | 166.7 s | 37.2 s | 2.2 s | 206.2 s |
+| S3 전부 적중 | 24.6 s | 37.2 s | 2.2 s | 64.0 s |
+
+- 보정 단계만 보면 전부 적중일 때 8.5배 빠르다 (제안당 약 52 s → 6.1 s; 남은 6 s 는 항목 읽기 · digest 검증 · 모델 해시).
+- 남은 시간의 대부분은 KL 측정 forward (8 × 512 토큰, 194 층 에뮬레이션, 제안당 8–12 s) 다. 보정 캐시로는 줄일 수 없는 고정 비용이다.
+  - 그래서 CG2 · CG2′ 의 기준(`wall_s` 전체 1/5)은 캐시가 닿지 않는 비용까지 포함한 설계였다. 판정은 사전 등록대로 실패로 둔다.
+- CG5 확인: 실제 모델에서 `uncacheable` · `corrupt` 가 비어 있고, `inputs` 는 written → verified → valid 다.
+- 실험 비용 추정 (Qwen3-0.6B, H200): 측정 1회는 캐시 없이 약 62 s, 캐시 전부 적중으로 약 16 s, 미스 28층으로 약 22 s 다. GPTQ 옵션을 바꾸는 제안은 GPTQ 층이 모두 미스라 약 62 s 다.
+
 ## GPU 테스트 (AGENTS §6) — 트리 `8247881`, NVIDIA H200 NVL (berlin, 15:02–15:20 UTC)
 
 - `pytest tests/gpu -q`: **896 passed, 1 skipped** (`test_triton_mma.py:362`, 성능 측정은 `TRICAST_MMA_PERF=1` 일 때만).

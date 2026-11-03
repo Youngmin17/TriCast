@@ -59,6 +59,10 @@
   - 칸마다 GPU 모델을 하나로 고정한다. 코드가 강제한다: 세션이 loop.json 의 `gpu` 를 고정하고(`tune_agent.pin_gpu`), 다른 GPU 의 측정은 이력에 넣지 않으며 `kl.json` 도 거부한다.
   - 최종 평가도 같은 GPU 에서 한다.
   - 다른 GPU 에서 최선 레시피들을 다시 재어 순위 상관을 보고한다.
+- **GEMM 누산은 트랙마다 하나로 고정한다.** 같은 레시피에서 누산만 바꿔도(cofda F23 → fp32_fma) KL 이 0.7–1.9% 움직인다 (증거 문서, 사후 진단).
+  - 트랙 M: `fp32_fma` (BF16 피연산자 + FP32 누산, 공식 비교군의 평가 경로에 가깝다; KL forward 3.7–11배 빠름) — 제안 (사용자 결정)
+  - 트랙 C: 칩 프리셋 누산 (TriCast 의 칩 정확 에뮬레이션)
+  - 외부 공식 비교군의 결과 모델도 가능하면 같은 TriCast 평가 경로로 다시 잰다.
 - 최종 평가는 탐색이 끝난 뒤 최선 레시피 하나만 1회 잰다. 선택에는 쓰지 않는다.
   - WikiText-2 test PPL (2048 창), C4 validation PPL (GPTQ 프로토콜)
   - lm-eval zero-shot: ARC-e/c · HellaSwag · PIQA · WinoGrande · LAMBADA · BoolQ. 과제별 점수와 표본 수를 보고한다.

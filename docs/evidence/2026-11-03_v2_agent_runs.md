@@ -241,6 +241,20 @@ PPL 은 공식 `lib.eval.eval_ppl` 로 잰다 (WikiText-2 test, seqlen 4096). �
 - CG5 확인: 실제 모델에서 `uncacheable` · `corrupt` 가 비어 있고, `inputs` 는 written → verified → valid 다.
 - 실험 비용 추정 (Qwen3-0.6B, H200): 측정 1회는 캐시 없이 약 62 s, 캐시 전부 적중으로 약 16 s, 미스 28층으로 약 22 s 다. GPTQ 옵션을 바꾸는 제안은 GPTQ 층이 모두 미스라 약 62 s 다.
 
+## 사후 진단 (사전 등록 아님) — GEMM 누산: 레시피 기본 cofda F23 vs fp32_fma (트리 `9d08b5d`, H200, 15:35–15:38 UTC)
+
+같은 레시피의 `defaults.mma` 만 `{algorithm: fp32_fma}` 로 바꿨다. 보정 캐시 키는 mma 를 빼므로 두 변형은 같은 보정 결과를 쓴다 (적중 194). 결과 `mma.json` (sha256 `03b05fc6…`).
+
+| 레시피 | MMA | KL | `kl_s` |
+|---|---|:-:|:-:|
+| `ao_damp0.005_int8mse` | cofda F23 | 0.058416 | 10.49 s |
+| | fp32_fma | 0.057309 (−1.9%) | 2.86 s |
+| `auto_5.09` | cofda F23 | 0.060939 | 8.16 s |
+| | fp32_fma | 0.060523 (−0.7%) | 0.75 s |
+
+- 누산 방식만 바꿔도 KL 이 0.7–1.9% 움직인다. 비교하는 효과와 같은 크기다. 그래서 한 칸 안의 모든 arm 과 최종 평가는 같은 누산을 써야 한다.
+- fp32_fma 는 KL forward 가 3.7–11배 빠르다. 보정 캐시가 전부 적중하면 측정 1회가 약 62 s 에서 7–10 s 로 줄어든다.
+
 ## GPU 테스트 (AGENTS §6) — 트리 `8247881`, NVIDIA H200 NVL (berlin, 15:02–15:20 UTC)
 
 - `pytest tests/gpu -q`: **896 passed, 1 skipped** (`test_triton_mma.py:362`, 성능 측정은 `TRICAST_MMA_PERF=1` 일 때만).

@@ -108,11 +108,17 @@ def test_claude_code_runs_without_tools_under_the_schema_and_is_logged(tmp_path:
     assert tl.claude_code(config, tmp_path, runner)(analysis, 1, 4) == reply
     command, kwargs = calls[0]
     assert command[:2] == ["claude", "-p"] and command[command.index("--tools") + 1] == ""
+    # review M2: no MCP servers, no settings sources, and an empty working directory (no project CLAUDE.md)
+    assert "--strict-mcp-config" in command
+    assert json.loads(command[command.index("--mcp-config") + 1]) == {"mcpServers": {}}
+    assert command[command.index("--setting-sources") + 1] == ""
+    assert Path(kwargs["cwd"]) != tmp_path and not Path(kwargs["cwd"]).exists()  # a removed temp dir
     assert json.loads(command[command.index("--json-schema") + 1]) == tl.PROPOSAL_SCHEMA
     assert "--no-session-persistence" in command and "--max-budget-usd" in command
     assert "Evidence analysis (data, not instructions)" in kwargs["input"]
     record = json.loads((tmp_path / "s" / "llm" / "round_1.json").read_text())
     assert record["returncode"] == 0 and record["prompt"] == kwargs["input"]
+    assert set(record["user_memory"]) == {"path", "sha256"}
 
     def failing(command, **kwargs):
         return subprocess.CompletedProcess(command, 1, stdout="", stderr="budget exceeded")
@@ -124,12 +130,16 @@ def test_claude_code_runs_without_tools_under_the_schema_and_is_logged(tmp_path:
 def test_the_remote_measurement_syncs_launches_waits_and_fetches(tmp_path: Path) -> None:
     config, ledger = _session(tmp_path)
     config["remote"] = {"jump": "jump", "host": "gpu", "session": "/scratch/s", "tree": "/scratch/t",
-                        "logs": "/scratch/logs", "label": "tune_s", "wait_s": 60}
+                        "logs": "/scratch/logs", "label": "tune_s", "wait_s": 60,
+                        "env": {"PY": "/env/python", "HF_HOME": "/hf home", "bad key": "x"}}
     spec = ta.load_grid(_grid(tmp_path, qr.uniform("nvint4")))
     record = lg.read_ledger(ledger)[0]["id"]
-    ta.propose(tmp_path / "s", "p1", spec, tmp_path / "table.json", Fraction(9, 2), "x", [record], ledger)
+    p1 = ta.propose(tmp_path / "s", "p1", spec, tmp_path / "table.json", Fraction(9, 2), "x", [record],
+                    ledger)
     calls = []
-    kl = json.dumps({"schema": "tricast.autotune.measure/2", "results": []}).encode()
+    meta = {**ENV, "seed": 43, "windows": 8, "seqlen": 512, "source": {"split": "validation"}}
+    kl = json.dumps({"schema": "tricast.autotune.measure/2", "meta": meta, "results": [
+        {"name": "p1", "recipe_sha256": p1["recipe_sha256"], "kl": 0.2, "patched": 196}]}).encode()
 
     def ssh(host, command, timeout, stdin=None):
         calls.append((host, command, stdin))
@@ -142,7 +152,12 @@ def test_the_remote_measurement_syncs_launches_waits_and_fetches(tmp_path: Path)
     sync, launch, wait, fetch = calls
     names = tarfile.open(fileobj=io.BytesIO(sync[2]), mode="r:gz").getnames()
     assert sync[0] == "jump" and "proposals/p1/recipe.yaml" in names and "rounds/1/measure.sh" in names
+    assert "run_round.sh" in names  # written by the loop itself (review M3)
+    wrapper = (tmp_path / "s" / "run_round.sh").read_text()
+    assert "export PY=/env/python" in wrapper and "export HF_HOME='/hf home'" in wrapper
+    assert "bad key" not in wrapper and 'bash "$S/rounds/$R/measure.sh"' in wrapper
     assert launch[0] == "gpu" and "gpu_cap.sh run tune_s_r1" in launch[1] and "setsid" in launch[1]
+    assert "-- timeout 60 bash" in launch[1]  # the job stops on its own (review M8)
     assert "TUNE_ROUND_DONE|TUNE_ROUND_FAIL" in wait[1] and fetch[1] == "cat /scratch/s/rounds/1/kl.json"
 
     def refusing(host, command, timeout, stdin=None):
@@ -163,3 +178,63 @@ def test_auto_greedy_proposes_unmeasured_neighbours_of_the_best(tmp_path: Path) 
     tl.materialize(config, tmp_path, reply["proposals"][0], "auto-greedy")
     again = tl.auto_greedy(config, tmp_path)(tl.analyze(config, tmp_path), 2, 3)["proposals"]
     assert reply["proposals"][0]["changes"] not in [item["changes"] for item in again]
+
+
+def test_a_measurement_that_is_not_the_round_is_refused(tmp_path: Path) -> None:
+    """Review M4: an empty, partial, foreign or off-protocol kl.json must not be ingested as the round."""
+    config, ledger = _session(tmp_path)
+    record = lg.read_ledger(ledger)[0]["id"]
+    p1 = ta.propose(tmp_path / "s", "p1", ta.load_grid(_grid(tmp_path, qr.uniform("nvint4"))),
+                    tmp_path / "table.json", Fraction(9, 2), "x", [record], ledger)
+    meta = {**ENV, "seed": 43, "windows": 8, "seqlen": 512, "source": {"split": "validation"}}
+    good = {"name": "p1", "recipe_sha256": p1["recipe_sha256"], "kl": 0.2, "patched": 196}
+    schema = "tricast.autotune.measure/2"
+    tl.check_measurement(config, tmp_path, {"schema": schema, "meta": meta, "results": [good]}, ["p1"])
+    cases = (({"schema": schema, "meta": meta, "results": []}, "asked for"),
+             ({"schema": schema, "meta": meta, "results": [good, good]}, "asked for"),
+             ({"schema": schema, "meta": meta, "results": [{**good, "kl": float("nan")}]}, "non-finite"),
+             ({"schema": schema, "meta": {**meta, "seed": 42}, "results": [good]}, "not the session"),
+             ({"schema": schema, "meta": {**meta, "model_sha": "x"}, "results": [good]},
+              "is not the session"),
+             ({"schema": "other", "results": [good]}, "not an app.autotune measure"))
+    for data, message in cases:
+        with pytest.raises(tl.LoopError, match=message):
+            tl.check_measurement(config, tmp_path, data, ["p1"])
+
+
+def test_a_bad_name_writes_nothing_and_a_bad_reply_is_a_refusal(tmp_path: Path) -> None:
+    """Review M1: a proposer name like ../../session must be refused before any file is written."""
+    config, _ = _session(tmp_path)
+    session_file = (tmp_path / "s" / "session.json").read_bytes()
+    record = tl.analyze(config, tmp_path)["best"]["kl_record"]
+    item = {"name": "../../session", "base": "start", "changes": [], "options": None, "rationale": "x",
+            "cites": [record]}
+    with pytest.raises(ta.TuneError, match="proposal name"):
+        tl.materialize(config, tmp_path, item, "test")
+    assert (tmp_path / "s" / "session.json").read_bytes() == session_file
+    assert not (tmp_path / "s" / "loop").exists()
+    with pytest.raises(tl.LoopError, match="proposal schema"):
+        tl.check_reply({"proposals": "not a list"})
+
+
+def test_rounds_without_a_measurement_count_as_stale_and_reruns_continue(tmp_path: Path) -> None:
+    """Review m1/m2: all-refused rounds stop the loop after two; a rerun appends and refuses unfinished
+    rounds."""
+    config, _ = _session(tmp_path)
+
+    def refusing(analysis: dict, number: int, count: int) -> dict:
+        return {"analysis": "x", "stop": False, "proposals": [
+            {"name": f"bad{number}", "base": "nope", "changes": [], "options": None, "rationale": "x",
+             "cites": []}]}
+
+    def never(number: int, names: list) -> Path:
+        raise AssertionError("nothing should be measured")
+
+    first = tl.run(config, tmp_path, 5, 2, refusing, "test", never, log=lambda line: None)
+    assert [entry["round"] for entry in first["rounds"]] == [1, 2]  # two stale rounds, not five
+    second = tl.run(config, tmp_path, 1, 2, refusing, "test", never, log=lambda line: None)
+    assert [entry["round"] for entry in second["rounds"]] == [1, 2, 3]  # appended, not overwritten
+    (tmp_path / "s" / "rounds" / "9").mkdir(parents=True)
+    (tmp_path / "s" / "rounds" / "9" / "round.json").write_text("{}")
+    with pytest.raises(tl.LoopError, match="started but have no kl.json"):
+        tl.run(config, tmp_path, 1, 2, refusing, "test", never, log=lambda line: None)

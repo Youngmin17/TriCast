@@ -12,9 +12,11 @@ repeats; the tools keep every proposal checkable and every number traceable.
     python -m app.tune_agent state --session S                       # proposals with their measurements
 
 A proposal is refused when its grid does not build (the Quantizer's own ``build``), when it exceeds the
-budget, when a method has no table entry, when a cited id is not in the ledger, or when its rationale states
-a measured number (a decimal) that neither a cited record nor the proposal's own computed values support at
-the precision it is written with. Integers (block numbers, counts) are not checked. Predictions come from
+budget, when a method has no table entry, when a cited id or an id named in the rationale is not in the
+ledger, or when its rationale states a measured number (a decimal) that neither a cited record nor the
+proposal's own computed values support at the precision it is written with. Parameters are written
+``name=value`` (``damp=0.005``) and must be options of the proposal or of a cited session recipe; they never
+support a measured number. Integers (block numbers, counts) are not checked. Predictions come from
 ``app.autotune.predict`` — the table's single-layer KL sum, raw and with ``app.autotune.FLOOR_RULE`` when
 the table has floors (neighbours are ranked on the latter), plus the table's KV entries for the grid's KV
 preset; they rank candidates, they are never reported as measurements. Selection measures whole-recipe KL on
@@ -77,6 +79,41 @@ def unsupported_numbers(text: str, values: Sequence[float]) -> list[str]:
         if not supported:
             missing.append(match.group(0))
     return list(dict.fromkeys(missing))
+
+
+_PARAMETER = re.compile(r"\b([a-z][a-z_]*)\s*=\s*([-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?)")
+
+
+def _parameters(spec: dict[str, Any]) -> dict[str, set[float]]:
+    """{short name: values} of a grid spec's options (``weight_algo.damp`` -> ``damp``) and calibration."""
+    out: dict[str, set[float]] = {}
+    for options in (spec.get("options") or {}).values():
+        for option, value in (options or {}).items():
+            if not isinstance(value, bool) and isinstance(value, (int, float)):
+                out.setdefault(option.rsplit(".", 1)[-1], set()).add(float(value))
+    for key, value in (spec.get("calibration") or {}).items():
+        if not isinstance(value, bool) and isinstance(value, (int, float)):
+            out.setdefault(key, set()).add(float(value))
+    return out
+
+
+def _strip_parameters(text: str, specs: Sequence[dict[str, Any]]) -> str:
+    """``text`` without the ``name=value`` parameter statements that one of ``specs`` holds; any other
+    ``name=value`` stays and is checked as a measured number. Parameters are never evidence for measurements:
+    "damp=0.005" is accepted, "KL 0.005" is not, whatever the options hold."""
+    known: dict[str, set[float]] = {}
+    for spec in specs:
+        for key, values in _parameters(spec).items():
+            known.setdefault(key, set()).update(values)
+
+    def keep(match: re.Match[str]) -> str:
+        try:
+            value = float(match.group(2))
+        except ValueError:
+            return match.group(0)
+        return " " if value in known.get(match.group(1), set()) else match.group(0)
+
+    return _PARAMETER.sub(keep, text)
 
 
 def _numbers(value: Any) -> list[float]:
@@ -252,14 +289,13 @@ def propose(session: Path, name: str, spec: dict[str, Any], table_path: Path, bu
     computed = evaluate(spec, table_path, budget)
     evidence = [number for item in cites for number in _numbers(index[item]["value"])]
     evidence += [number for item in cites for number in _numbers(index[item].get("stderr"))]
-    # parameters: the proposal's own, and those of the session's proposals whose records are cited
+    # parameters ("damp=0.005") may come from the proposal's own options or those of cited session recipes
     specs = {json.loads(path.read_text(encoding="utf-8"))["recipe_sha256"]: json.loads(path.read_text(
         encoding="utf-8"))["spec"] for path in (session / "proposals").glob("*/proposal.json")}
     cited_specs = [specs[index[item]["recipe_hash"]] for item in cites
                    if index[item].get("recipe_hash") in specs]
-    own = [number for item in (spec, *cited_specs)
-           for number in _numbers(item.get("options")) + _numbers(item.get("calibration"))]
-    unsupported = unsupported_numbers(rationale, evidence + _numbers(computed) + own)
+    measured_text = _strip_parameters(rationale, [spec, *cited_specs])
+    unsupported = unsupported_numbers(measured_text, evidence + _numbers(computed))
     if unsupported:
         raise TuneError(f"rationale numbers not supported by the cited records or the proposal: "
                         f"{unsupported}")

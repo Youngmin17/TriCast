@@ -300,9 +300,12 @@ def test_a_proposal_may_state_its_own_option_values(tmp_path: Path) -> None:
     ta.propose(tmp_path / "s", "own", spec, table, Fraction(9, 2), "rtz rounding", [record], ledger)
     gptq = {**ta.load_grid(_grid(tmp_path, qr.uniform("nvfp4"))),
             "options": {"nvfp4": {"weight.scale.method": "percentile", "weight.scale.percentile": 99.5}}}
-    ta.propose(tmp_path / "s", "pct", gptq, table, Fraction(9, 2), "percentile 99.5 scale", [record], ledger)
+    ta.propose(tmp_path / "s", "pct", gptq, table, Fraction(9, 2), "percentile=99.5 scale", [record], ledger)
     with pytest.raises(ta.TuneError, match="not supported"):
-        ta.propose(tmp_path / "s", "bad", gptq, table, Fraction(9, 2), "percentile 99.4", [record], ledger)
+        ta.propose(tmp_path / "s", "bad", gptq, table, Fraction(9, 2), "percentile=99.4", [record], ledger)
+    # review M6: an option value is a parameter, never evidence for a measured number
+    with pytest.raises(ta.TuneError, match=r"not supported.*99\.5"):
+        ta.propose(tmp_path / "s", "lie", gptq, table, Fraction(9, 2), "measured KL 99.5", [record], ledger)
 
 
 def test_a_cited_recipe_supports_its_own_option_values(tmp_path: Path) -> None:
@@ -318,9 +321,10 @@ def test_a_cited_recipe_supports_its_own_option_values(tmp_path: Path) -> None:
                                                              "meta": meta, "results": [result]}))
     lg.ingest([tmp_path / "runs" / "pct.json"], ledger, tmp_path)
     measured = next(r["id"] for r in lg.read_ledger(ledger) if r["kind"] == "recipe_kl")
-    ta.propose(tmp_path / "s", "next", grid, table, Fraction(9, 2), "99.5 gave 0.31", [measured], ledger)
+    ta.propose(tmp_path / "s", "next", grid, table, Fraction(9, 2), "percentile=99.5 gave 0.31", [measured],
+               ledger)
     with pytest.raises(ta.TuneError, match="not supported"):
-        ta.propose(tmp_path / "s", "next2", grid, table, Fraction(9, 2), "percentile 99.5", [record], ledger)
+        ta.propose(tmp_path / "s", "next2", grid, table, Fraction(9, 2), "percentile=99.5", [record], ledger)
 
 
 def test_ids_named_in_the_rationale_must_be_ledger_records(tmp_path: Path) -> None:

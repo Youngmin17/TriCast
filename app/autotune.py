@@ -364,8 +364,11 @@ def predict(table: dict[str, Any], layers: Sequence[Layer], methods: Sequence[st
             grid: qr.Grid, subtract_floor: bool = False) -> tuple[float, Fraction]:
     """(sum of the table's kl — FLOOR_RULE with ``subtract_floor`` — over its layers for the methods
     ``grid`` gives them, their average bits)."""
-    if len(grid) != qr.BLOCKS or any(len(row) != len(qr.KINDS) for row in grid):
-        raise AutotuneError(f"grid must be {qr.BLOCKS} blocks x {len(qr.KINDS)} kinds")
+    if len(grid) < qr.BLOCKS or any(len(row) != len(qr.KINDS) for row in grid):
+        raise AutotuneError(f"grid must be >= {qr.BLOCKS} blocks x {len(qr.KINDS)} kinds")
+    beyond = sorted({layer.block for layer in layers if layer.block >= len(grid)})
+    if beyond:
+        raise AutotuneError(f"the grid has {len(grid)} blocks; the table has layers in blocks {beyond}")
     missing = sorted({method for row in grid for method in row} - set(methods))
     if missing:
         raise AutotuneError(f"the grid uses {missing}, which the table has no KL for "
@@ -570,8 +573,6 @@ def model_layers(model: Any, blocks: int | None = None) -> tuple[list[Layer], in
     if decoder is None or decoder[0] != "model.layers":
         raise AutotuneError("auto-tune v1 needs the Quantizer's layer names: "
                             "model.layers.<b>.<self_attn|mlp>.<kind>")
-    if decoder[1] > qr.BLOCKS:
-        raise AutotuneError(f"the Quantizer grid has {qr.BLOCKS} blocks; this model has {decoder[1]}")
     layers = []
     for block in range(decoder[1] if blocks is None else min(blocks, decoder[1])):
         for kind in qr.KINDS:
@@ -581,6 +582,11 @@ def model_layers(model: Any, blocks: int | None = None) -> tuple[list[Layer], in
                 raise AutotuneError(f"{name} is not a Linear")
             layers.append(Layer(name, block, kind, module.weight.numel(), module.in_features))
     return layers, decoder[1]
+
+
+def meta_blocks(table: dict[str, Any]) -> int:
+    """The model's decoder block count the table records (0 if it does not)."""
+    return int(table["meta"].get("model_blocks") or 0)
 
 
 def method_recipe(method: str, calibration: dict[str, Any] | None = None) -> Any:
@@ -970,7 +976,8 @@ def cmd_solve(args: argparse.Namespace) -> int:
                           args.resolution)
     chosen = [row[j] for row, j in zip(options, solution.choice, strict=True)]
     default = default_method(chosen, methods)
-    grid = qr.uniform(default)
+    # the page's BLOCKS rows (byte-identical solutions for models up to that size), or one row per block
+    grid = qr.uniform(default, max(qr.BLOCKS, meta_blocks(table), 1 + max(layer.block for layer in layers)))
     for layer, method in zip(layers, chosen, strict=True):
         grid[layer.block][qr.KINDS.index(layer.kind)] = method
     name = args.name or default_name(bits, args.kv)
@@ -1022,8 +1029,8 @@ def cmd_solve(args: argparse.Namespace) -> int:
                   **{key: meta.get(key) for key in ("model_id", "model_sha", "dataset_fingerprint", "windows",
                                                     "seqlen", "seed", "git_sha", "git_dirty")}},
         "table_blocks": tabled, "model_blocks": model_blocks,
-        "untabled_blocks_in_grid": [block for block in range(qr.BLOCKS) if block not in tabled],
-        "grid_blocks_beyond_model": [] if model_blocks is None else list(range(model_blocks, qr.BLOCKS)),
+        "untabled_blocks_in_grid": [block for block in range(len(grid)) if block not in tabled],
+        "grid_blocks_beyond_model": [] if model_blocks is None else list(range(model_blocks, len(grid))),
         "layers": [{"name": layer.name, "block": layer.block, "kind": layer.kind, "params": layer.params,
                     "method": method, "kl": kl[layer.name][method],
                     "floor": None if floor is None else floor[layer.name],

@@ -35,7 +35,7 @@ from typing import Any
 KINDS = ("q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj")
 PARENT = {"q_proj": "self_attn", "k_proj": "self_attn", "v_proj": "self_attn", "o_proj": "self_attn",
           "gate_proj": "mlp", "up_proj": "mlp", "down_proj": "mlp"}
-BLOCKS = 28  # Qwen3-0.6B decoder blocks (the recorded demo model)
+BLOCKS = 28  # Qwen3-0.6B decoder blocks (the recorded demo model, the page grid); Python grids may have more
 
 # Every quantized operand is dequantized onto BF16 before the GEMM (``mma_input: dequant``, the usual
 # fake-quant convention). The recipe sets no ``mma``, so that GEMM uses the recipe default (cofda F=23) on
@@ -429,8 +429,9 @@ def build(name: str, default: str, grid: Grid, kv: str = "none", description: st
     ``options`` ({method: {option id: value}}), ``calibration`` settings and ``kv_options``."""
     if default not in ALL_METHODS or default == "bf16":
         raise ValueError(f"default method must be a quantization method, got {default!r}")
-    if len(grid) != BLOCKS or any(len(row) != len(KINDS) for row in grid):
-        raise ValueError(f"grid must be {BLOCKS} blocks × {len(KINDS)} kinds")
+    if len(grid) < BLOCKS or any(len(row) != len(KINDS) for row in grid):
+        # the page grid has BLOCKS rows; a model with more decoder blocks gets one row per block
+        raise ValueError(f"grid must be >= {BLOCKS} blocks × {len(KINDS)} kinds")
     unknown = sorted({m for row in grid for m in row} - set(ALL_METHODS))
     if unknown:
         raise ValueError(f"unknown methods {unknown}")
@@ -439,7 +440,7 @@ def build(name: str, default: str, grid: Grid, kv: str = "none", description: st
     settings = check_calibration(calibration)
     table = fragments(default, checked)
     rules = overrides_for(default, grid, table)
-    if resolve(default, rules, table=table) != grid:
+    if resolve(default, rules, len(grid), table=table) != grid:
         raise AssertionError("generated rules do not reproduce the grid")
     used = {default, *(m for row in grid for m in row)}
     recipe: dict[str, Any] = {"name": name, "description": description,
@@ -456,8 +457,8 @@ def build(name: str, default: str, grid: Grid, kv: str = "none", description: st
     return recipe
 
 
-def uniform(method: str) -> Grid:
-    return [[method] * len(KINDS) for _ in range(BLOCKS)]
+def uniform(method: str, blocks: int = BLOCKS) -> Grid:
+    return [[method] * len(KINDS) for _ in range(blocks)]
 
 
 def _preset_grids() -> dict[str, tuple[str, Grid, str, str]]:

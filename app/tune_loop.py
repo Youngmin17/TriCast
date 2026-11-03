@@ -190,7 +190,7 @@ def analyze(config: dict[str, Any], root: Path, refused: Sequence[dict[str, Any]
                 for row in measured],
             "option_space": {method: {option: qr.OPTIONS[option] for option in qr.METHOD_OPTIONS[method]}
                              for method in used},
-            "catalog": cards, "grid": {"blocks": qr.BLOCKS, "kinds": list(qr.KINDS)}}
+            "catalog": cards, "grid": {"blocks": len(spec["grid"]), "kinds": list(qr.KINDS)}}
 
 
 # ---------- proposers ----------
@@ -450,7 +450,7 @@ def materialize(config: dict[str, Any], root: Path, item: dict[str, Any], author
     ta._proposal_dir(session, item["name"])  # refuses names outside [A-Za-z0-9_.-]+
     spec = json.loads(json.dumps(ta.read_proposal(session, item["base"])["spec"]))
     for change in item["changes"]:
-        if not 0 <= change["block"] < qr.BLOCKS or change["kind"] not in qr.KINDS:
+        if not 0 <= change["block"] < len(spec["grid"]) or change["kind"] not in qr.KINDS:
             raise ta.TuneError(f"no grid cell {change}")
         spec["grid"][change["block"]][qr.KINDS.index(change["kind"])] = change["method"]
     if item.get("options") is not None:

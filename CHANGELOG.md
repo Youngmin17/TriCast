@@ -15,6 +15,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   function; refused with official GPTQ or a transform. Four-over-Six does not match fouroversix 1.0.5 (recorded).
 - Opt-in calibration result cache (`calibrate(..., cache_dir=...)`): per-layer states keyed by model, source,
   runtime, calibration windows and spec; bit-identical to a fresh calibration, no forward when every layer hits.
+- Grids for models deeper than the page's 28 blocks (Llama-3.1-8B, Qwen3-8B): one row per decoder block in
+  `quantizer_recipe.build`, auto-tune tables, `solve` and the tune loop; 28-block grids are unchanged.
 - Black-box controls for the tune loop (`--proposer evolution|random`): EvoPress-style level-switch mutations
   plus option mutations under the same checks and measurement; `--measurements N` runs a fixed budget (refused
   proposals made up, shortfall recorded); proposals are deduplicated by recipe hash.

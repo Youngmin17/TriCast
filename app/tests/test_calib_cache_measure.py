@@ -46,6 +46,25 @@ def test_a_cached_calibration_measures_the_same_kl_with_no_forward(calibrated: t
     assert plain["calibration"]["dataset_fingerprint"] == hit["calibration"]["dataset_fingerprint"]
 
 
+def test_measure_splits_calibration_and_kl_time(calibrated: tuple[Path, dict, Any], tmp_path: Path) -> None:
+    """Each result records calibration_s and kl_s (wall_s = both + patching), and the cache's corrupt and
+    inputs fields when a cache is used."""
+    root, _, _ = calibrated
+    grid = qr.uniform("bf16")
+    grid[0][qr.KINDS.index("o_proj")] = "gptq_int4"
+    at.write_grid(tmp_path / "g", "one", "gptq_int4", grid, "none", SETTINGS)
+    common = ["measure", "--model", str(root / "model"), "--text", str(root / "text.txt"), *LLAMA_ARGS,
+              "--seed", "42", "--calibrate", "--calib-cache", str(tmp_path / "cache")]
+    with spies():
+        rc, _, err = run([*common, "--out", str(tmp_path / "kl.json"), str(tmp_path / "g" / "recipe.yaml")],
+                         model_factory=tiny_llama)
+    assert rc == 0, err
+    result = load(tmp_path / "kl.json")["results"][0]
+    assert 0 < result["calibration_s"] and 0 < result["kl_s"]
+    assert result["calibration_s"] + result["kl_s"] <= result["wall_s"]
+    assert {"corrupt", "inputs"} <= set(result["calibration"]["cache"])
+
+
 def test_the_round_script_passes_the_cache_only_when_set(tmp_path: Path) -> None:
     pytest.importorskip("transformers")
     from app.tests.test_tune_loop import _session

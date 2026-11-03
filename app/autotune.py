@@ -914,27 +914,32 @@ def cmd_measure(args: argparse.Namespace, model_factory: ModelFactory | None = N
             overlap = overlaps[key]
         torch.manual_seed(args.seed)
         report = patch_model(session.model, recipe)
-        calibration = None
+        calibration, calibration_s = None, 0.0
         try:
             if not report.patched and not report.kv:
                 raise RuntimeError(f"{path}: the recipe patched nothing")
             if recipe.needs_calibration:  # on the recipe's calibration windows, never the measured ones
                 from tricast.calibration import calibrate
 
+                calibration_started = time.perf_counter()
                 fitted = calibrate(session.model, recipe, tokenizer=session.tokenizer,
                                    cache_dir=args.calib_cache)
+                calibration_s = time.perf_counter() - calibration_started
                 calibration = {key: fitted[key] for key in (*CALIBRATION_SUMMARY, "groups")}
                 if args.calib_cache is not None:  # what was loaded, fitted, or could not be cached
                     cache = fitted["cache"]
                     calibration["cache"] = {"dir": cache["dir"], "hits": len(cache["hits"]),
                                             "misses": cache["misses"], "uncacheable": cache["uncacheable"],
+                                            "corrupt": cache.get("corrupt"), "inputs": cache.get("inputs"),
                                             "source_sha256": cache["source_sha256"]}
                 assert overlap is not None
                 replayed = overlap["calibration_windows"].get("dataset_fingerprint")
                 if replayed is not None and calibration["dataset_fingerprint"] != replayed:
                     raise RuntimeError("the replayed calibration window offsets do not reproduce the windows "
                                        "tricast calibrated on")
+            kl_started = time.perf_counter()
             kl = mean_kl(session.model, session.windows, session.native)
+            kl_s = time.perf_counter() - kl_started
         finally:
             unpatch_model(session.model)
         results.append({"recipe": str(path), "name": recipe.name, "recipe_sha256": recipe.sha256,
@@ -942,7 +947,8 @@ def cmd_measure(args: argparse.Namespace, model_factory: ModelFactory | None = N
                         "patched": len(report.patched), "kv": report.kv,
                         "calibrated": calibration is not None, "calibration": calibration,
                         "calibration_overrides": overrides if calibration is not None else None,
-                        "calibration_overlap": overlap, "wall_s": time.perf_counter() - recipe_started})
+                        "calibration_overlap": overlap, "calibration_s": calibration_s, "kl_s": kl_s,
+                        "wall_s": time.perf_counter() - recipe_started})
         fitted_text = "" if calibration is None else f" calibrated={calibration['dataset_fingerprint'][:12]}"
         print(f"MEASURE {recipe.name} kl={kl:.6g} patched={len(report.patched)} kv={len(report.kv)}"
               f"{fitted_text} ({results[-1]['wall_s']:.1f}s)", flush=True)

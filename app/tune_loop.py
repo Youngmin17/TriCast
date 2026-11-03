@@ -19,13 +19,16 @@ A round:
 2. a proposer turns it into at most ``per_round`` proposals {name, base, changes: [{block, kind, method}],
    options, rationale, cites}: ``claude-code`` asks Claude Code headless (``claude -p``, no tools, a JSON
    schema, a spend cap) and keeps prompt and reply in ``<session>/llm/round_<n>.json``; ``auto-greedy`` takes
-   the best unmeasured neighbours of the current best (the agent spike's control rule).
+   the best unmeasured neighbours of the current best (the agent spike's control rule); ``evolution`` and
+   ``random`` are black-box controls for equal-budget comparisons (``mutation_search``).
 3. every proposal goes through ``app.tune_agent.propose`` (grid builds, budget, cited ids, supported numbers);
    refused ones and the reasons are shown to the proposer next round.
 4. accepted proposals are measured on the session's validation windows (``app.tune_agent.round_script``):
    the session is synced to the cluster, the round runs through ``gpu_cap.sh``, the loop waits on the cluster
    for the log's TUNE_ROUND_DONE / TUNE_ROUND_FAIL marker, fetches kl.json and ingests it.
-It stops after ``rounds``, after two rounds without a lower measured KL, or when the proposer says stop.
+It stops after ``rounds``, after ``stale_rounds`` (default 2; 0 = never) rounds without a lower measured KL,
+or when the proposer says stop. An equal-budget comparison runs every arm with ``stale_rounds`` 0, so each
+arm gets ``rounds`` x ``per_round`` measurements unless its proposer stops.
 Test-set PPL is never measured here: the chosen proposal's final evaluation is a separate, single run.
 """
 
@@ -37,6 +40,7 @@ import hashlib
 import io
 import json
 import math
+import random
 import re
 import shlex
 import subprocess
@@ -56,6 +60,11 @@ from app import tune_agent as ta
 LOOP_SCHEMA = "tricast.tune.loop/1"
 TOP_LAYERS = 12  # layers with the largest single-layer loss shown to the proposer
 TOP_MOVES = 12  # tabled one-move neighbours shown to the proposer
+# black-box controls (mutation_search): cell switches per offspring (drawn uniformly), the chance that an
+# offspring also changes one option of a method in its grid, and the factors a numeric option is multiplied by
+MUTATION_CELLS = (1, 2, 3)
+OPTION_RATE = 0.5
+NUMERIC_STEPS = (0.1, 0.5, 2.0, 5.0)
 # set by gpu_cap.sh for the job it admits; a round wrapper must never change them
 GPU_CAP_OWNED = frozenset({"CUDA_VISIBLE_DEVICES", "NVIDIA_VISIBLE_DEVICES", "HIP_VISIBLE_DEVICES",
                            "ROCR_VISIBLE_DEVICES", "GPU_DEVICE_ORDINAL"})
@@ -212,6 +221,131 @@ def auto_greedy(config: dict[str, Any], root: Path) -> Proposer:
                 break
         return {"analysis": "auto-greedy", "stop": not out, "proposals": out}
     return propose
+
+
+def _option_value(method: str, option: str, options: dict[str, Any]) -> Any:
+    return (options.get(method) or {}).get(option, qr.OPTIONS[option]["default"])
+
+
+def _mutate_option(rng: random.Random, grid: list[list[str]], options: dict[str, Any]) -> str | None:
+    """Give one option (active under its ``when`` condition) of a method in ``grid`` another value: another
+    choice, the other bool, or a numeric value times a random NUMERIC_STEPS factor, clipped to its range. A
+    value equal to the default is removed, so equal recipes have equal options. Returns ``method.option``."""
+    used = sorted({method for row in grid for method in row if qr.METHOD_OPTIONS.get(method)})
+    if not used:
+        return None
+    method = rng.choice(used)
+    when = {option: qr.OPTIONS[option].get("when") for option in qr.METHOD_OPTIONS[method]}
+    names = [option for option, rule in when.items()
+             if rule is None or _option_value(method, rule[0], options) in rule[1]]
+    option = rng.choice(names)
+    spec, current = qr.OPTIONS[option], _option_value(method, option, options)
+    if spec["type"] == "choice":
+        value = rng.choice([choice for choice in spec["choices"] if choice != current])
+    elif spec["type"] == "bool":
+        value = not current
+    else:
+        value = float(f"{current * rng.choice(NUMERIC_STEPS):.6g}")
+        value = min(max(int(round(value)) if spec["type"] == "int" else value, spec["min"]), spec["max"])
+        if (value == current or (spec.get("max_open") and value == spec["max"])
+                or (spec.get("min_open") and value == spec["min"])):
+            return None
+    chosen = dict(options.get(method) or {})
+    if value == spec["default"]:
+        chosen.pop(option, None)
+    else:
+        chosen[option] = value
+    if chosen:
+        options[method] = chosen
+    else:
+        options.pop(method, None)
+    return f"{method}.{option}"
+
+
+def mutation_search(config: dict[str, Any], root: Path, parents: Callable[[dict[str, Any]], list[str]],
+                    label: str, seed: int = 0) -> Proposer:
+    """Black-box control: each offspring copies a parent (uniform over ``parents(analysis)``), switches
+    MUTATION_CELLS random layers to another method the table has an entry for, changes one option with
+    OPTION_RATE, then steps random layers down to cheaper tabled methods until the grid fits the budget
+    (EvoPress-style level switches, one fidelity), and drops the options of methods no longer in the grid.
+    Offspring that are seen, over budget after repair, or do not build are dropped before they are proposed.
+    No table prediction or catalog is used. Deterministic: the random stream is seeded by (label, seed,
+    round)."""
+    table, _, layers, _ = ta.load_full_table(root / config["table"])
+    objective = at.objective(table, subtract_floor=True)
+    allowed = {layer.name: sorted(method for method, value in objective[layer.name].items()
+                                  if value is not None) for layer in layers}
+    budget = Fraction(config["budget_bits"])
+    total = sum(layer.params for layer in layers)
+
+    def bits(grid: list[list[str]], options: dict[str, Any], layer: at.Layer) -> Fraction:
+        return ta.method_bits(grid[layer.block][qr.KINDS.index(layer.kind)], layer.in_features, options)
+
+    def fits(grid: list[list[str]], options: dict[str, Any]) -> bool:
+        stored = sum((layer.params * bits(grid, options, layer) for layer in layers), Fraction(0))
+        return stored <= budget * total
+
+    def propose(analysis: dict[str, Any], round_number: int, count: int) -> dict[str, Any]:
+        session = root / config["session"]
+        rng = random.Random(f"{label}:{seed}:{round_number}")
+        records = {row["name"]: row["kl_record"] for row in analysis["history"]}
+        pool, seen, out = parents(analysis), _seen(session), []
+        for _ in range(200 * count):
+            if len(out) == count:
+                break
+            parent = rng.choice(pool)
+            spec = json.loads(json.dumps(ta.read_proposal(session, parent)["spec"]))
+            base = _cells(spec["grid"])
+            grid, options = spec["grid"], dict(spec.get("options") or {})
+            switches = rng.choice(MUTATION_CELLS)
+            for layer in rng.sample(layers, switches):
+                current = grid[layer.block][qr.KINDS.index(layer.kind)]
+                grid[layer.block][qr.KINDS.index(layer.kind)] = rng.choice(
+                    [method for method in allowed[layer.name] if method != current] or [current])
+            option = _mutate_option(rng, grid, options) if rng.random() < OPTION_RATE else None
+            for _ in range(4 * len(layers)):
+                if fits(grid, options):
+                    break
+                layer = rng.choice(layers)
+                cost = bits(grid, options, layer)
+                cheaper = [method for method in allowed[layer.name]
+                           if ta.method_bits(method, layer.in_features, options) < cost]
+                if cheaper:
+                    grid[layer.block][qr.KINDS.index(layer.kind)] = rng.choice(cheaper)
+            used = {method for row in grid for method in row}
+            options = {method: chosen for method, chosen in options.items() if method in used}
+            if not fits(grid, options) or (grid, options or None) in seen:
+                continue
+            name = f"{label}_r{round_number}_{len(out)}"
+            try:
+                ta._recipe(name, {**spec, "options": options or None})
+            except ta.TuneError:
+                continue
+            seen.append((grid, options or None))
+            new = _cells(grid)
+            changes = [{"block": block, "kind": kind, "method": new[(block, kind)]}
+                       for (block, kind), method in base.items() if new[(block, kind)] != method]
+            note = f", option {option}" if option else ""
+            out.append({"name": name, "base": parent, "changes": changes, "options": options,
+                        "cites": [records[parent]],
+                        "rationale": f"{label}: mutation of {parent} ({switches} cell switches{note})"})
+        return {"analysis": label, "stop": not out, "proposals": out}
+    return propose
+
+
+def evolution(config: dict[str, Any], root: Path, parents: int = 1, seed: int = 0) -> Proposer:
+    """``mutation_search`` from the ``parents`` best measured proposals: (mu + lambda) with mu = ``parents``,
+    EvoPress's (1 + lambda) for 1."""
+    def best(analysis: dict[str, Any]) -> list[str]:
+        return [row["name"] for row in analysis["history"][:parents]]
+    return mutation_search(config, root, best, "evolution", seed)
+
+
+def random_search(config: dict[str, Any], root: Path, seed: int = 0) -> Proposer:
+    """``mutation_search`` from the start proposal only (the best measured one without a parent): the same
+    random moves with no selection, the control for evolution's use of measurements."""
+    return mutation_search(config, root, lambda analysis: [
+        next(row["name"] for row in analysis["history"] if row["parent"] is None)], "random", seed)
 
 
 def claude_command(config: dict[str, Any]) -> list[str]:
@@ -392,7 +526,8 @@ def measure_remote(config: dict[str, Any], root: Path, round_number: int, names:
 
 # ---------- the loop ----------
 def run(config: dict[str, Any], root: Path, rounds: int, per_round: int, proposer: Proposer, author: str,
-        measure: Callable[[int, Sequence[str]], Path], log: Callable[[str], None] = print) -> dict[str, Any]:
+        measure: Callable[[int, Sequence[str]], Path], log: Callable[[str], None] = print,
+        stale_rounds: int = 2) -> dict[str, Any]:
     """Rounds of analyze -> propose -> check -> measure -> ingest, until the stop rule of the module
     docstring. A rerun continues the session: it refuses a round folder without kl.json (an unfinished
     round), and appends to loop/summary.json, starting from its stale count and last refusals."""
@@ -443,7 +578,7 @@ def run(config: dict[str, Any], root: Path, rounds: int, per_round: int, propose
         summary.append(entry)
         summary_path.parent.mkdir(parents=True, exist_ok=True)
         summary_path.write_text(json.dumps(summary, indent=1, ensure_ascii=False), encoding="utf-8")
-        if entry["stop"] or stale >= 2:
+        if entry["stop"] or (stale_rounds and stale >= stale_rounds):
             break
     best = _measured(session, ledger)[0]
     log(f"TUNE_LOOP_DONE best={best['name']} kl={best['kl']:.6g} rounds={len(summary)}")
@@ -458,7 +593,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     runner = sub.choices["run"]
     runner.add_argument("--rounds", type=int, default=2)
     runner.add_argument("--per-round", type=int, default=4)
-    runner.add_argument("--proposer", choices=("claude-code", "auto-greedy"), default="claude-code")
+    runner.add_argument("--proposer", choices=("claude-code", "auto-greedy", "evolution", "random"),
+                        default="claude-code")
+    runner.add_argument("--stale-rounds", type=int, default=2, help="0: never stop for lack of improvement")
+    runner.add_argument("--seed", type=int, default=0, help="evolution / random: the random stream")
+    runner.add_argument("--parents", type=int, default=1, help="evolution: mu, the best measured kept")
     args = parser.parse_args(argv)
     root = Path(__file__).resolve().parents[1]
     try:
@@ -466,11 +605,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.command == "analyze":
             print(json.dumps(analyze(config, root), indent=1, ensure_ascii=False, default=str))
             return 0
-        claude = args.proposer == "claude-code"
-        proposer = claude_code(config, root) if claude else auto_greedy(config, root)
-        result = run(config, root, args.rounds, args.per_round, proposer,
-                     "claude-code-loop" if claude else "auto-greedy",
-                     lambda number, names: measure_remote(config, root, number, names))
+        proposer, author = {
+            "claude-code": lambda: (claude_code(config, root), "claude-code-loop"),
+            "auto-greedy": lambda: (auto_greedy(config, root), "auto-greedy"),
+            "evolution": lambda: (evolution(config, root, args.parents, args.seed), "evolution"),
+            "random": lambda: (random_search(config, root, args.seed), "random-search"),
+        }[args.proposer]()
+        result = run(config, root, args.rounds, args.per_round, proposer, author,
+                     lambda number, names: measure_remote(config, root, number, names),
+                     stale_rounds=args.stale_rounds)
         print(json.dumps(result, indent=1, ensure_ascii=False))
     except (LoopError, ta.TuneError, lg.LedgerError, OSError, json.JSONDecodeError,
             subprocess.TimeoutExpired) as exc:

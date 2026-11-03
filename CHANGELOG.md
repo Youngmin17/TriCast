@@ -10,6 +10,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   `tricast.rag.search_evidence` ranks per-layer, per-recipe and per-method documents plus the method catalog.
 - Autonomous tune loop (`app/tune_loop.py`, AC27): per-layer evidence analysis, Claude Code headless (or
   auto-greedy) proposals, checks, GPU measurement through gpu_cap and ingest, round after round without a human.
+- Black-box controls for the tune loop (`--proposer evolution|random`, `--stale-rounds 0`): EvoPress-style
+  level-switch mutations plus option mutations under the same checks and measurement, for equal-budget runs.
 - Agent tune tools (`app/tune_agent.py`, AC24) and their protocol (`docs/prompts/tune_agent.md`): proposals are
   refused unless they build, fit the budget, cite ledger records and state only supported numbers.
 - Auto-tune v2 (`app/autotune.py`): per-layer patch floor, calibrated methods (GPTQ; AWQ and SmoothQuant on

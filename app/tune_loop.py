@@ -27,8 +27,10 @@ A round:
    the session is synced to the cluster, the round runs through ``gpu_cap.sh``, the loop waits on the cluster
    for the log's TUNE_ROUND_DONE / TUNE_ROUND_FAIL marker, fetches kl.json and ingests it.
 It stops after ``rounds``, after ``stale_rounds`` (default 2; 0 = never) rounds without a lower measured KL,
-or when the proposer says stop. An equal-budget comparison runs every arm with ``stale_rounds`` 0, so each
-arm gets ``rounds`` x ``per_round`` measurements unless its proposer stops.
+or when the proposer says stop. Equal-budget comparisons use ``measurements`` instead: the loop runs until
+that many of its proposals are measured, asks each round for at most the remainder (refused or missing
+proposals are made up in later rounds), ignores staleness, and records a shortfall when the proposer stops
+or ``rounds`` (the round cap) runs out first.
 Test-set PPL is never measured here: the chosen proposal's final evaluation is a separate, single run.
 """
 
@@ -70,7 +72,7 @@ GPU_CAP_OWNED = frozenset({"CUDA_VISIBLE_DEVICES", "NVIDIA_VISIBLE_DEVICES", "HI
                            "ROCR_VISIBLE_DEVICES", "GPU_DEVICE_ORDINAL"})
 _CHANGE = {"type": "object",
            "properties": {"block": {"type": "integer"}, "kind": {"type": "string", "enum": list(qr.KINDS)},
-                          "method": {"type": "string", "enum": list(qr.METHODS)}},
+                          "method": {"type": "string", "enum": list(qr.ALL_METHODS)}},
            "required": ["block", "kind", "method"], "additionalProperties": False}
 _PROPOSAL = {"type": "object",
              "properties": {"name": {"type": "string", "pattern": "^[A-Za-z0-9_.-]+$"},
@@ -192,11 +194,24 @@ def analyze(config: dict[str, Any], root: Path, refused: Sequence[dict[str, Any]
 
 
 # ---------- proposers ----------
-def _seen(session: Path) -> list[tuple[Any, Any]]:
-    """(grid, options) of every proposal in the session."""
-    specs = [json.loads(path.read_text(encoding="utf-8"))
-             for path in (session / "proposals").glob("*/grid.json")]
-    return [(spec["grid"], spec.get("options")) for spec in specs]
+_IDENTITIES: dict[tuple[str, int], str] = {}
+
+
+def _identity(spec: dict[str, Any]) -> str:
+    """The recipe hash of ``spec`` built under one fixed name: proposals that differ only in how they write
+    options (defaults, empty or unused entries) have the same identity. TuneError if it does not build."""
+    return ta._recipe_sha256(ta._recipe("identity", spec))
+
+
+def _seen(session: Path) -> set[str]:
+    """The identities of every proposal in the session (cached by file and modification time)."""
+    seen = set()
+    for path in sorted((session / "proposals").glob("*/grid.json")):
+        key = (str(path), path.stat().st_mtime_ns)
+        if key not in _IDENTITIES:
+            _IDENTITIES[key] = _identity(json.loads(path.read_text(encoding="utf-8")))
+        seen.add(_IDENTITIES[key])
+    return seen
 
 
 def auto_greedy(config: dict[str, Any], root: Path) -> Proposer:
@@ -209,7 +224,7 @@ def auto_greedy(config: dict[str, Any], root: Path) -> Proposer:
         seen = _seen(session)
         out = []
         for move in ta.neighbors(spec, root / config["table"], Fraction(config["budget_bits"]), 50):
-            if (move["grid"], spec.get("options")) in seen:
+            if _identity({**spec, "grid": move["grid"]}) in seen:
                 continue
             base, new = _cells(spec["grid"]), _cells(move["grid"])
             changes = [{"block": block, "kind": kind, "method": new[(block, kind)]}
@@ -225,6 +240,22 @@ def auto_greedy(config: dict[str, Any], root: Path) -> Proposer:
 
 def _option_value(method: str, option: str, options: dict[str, Any]) -> Any:
     return (options.get(method) or {}).get(option, qr.OPTIONS[option]["default"])
+
+
+def _drop_inactive(options: dict[str, Any]) -> dict[str, Any]:
+    """``options`` without the entries whose ``when`` condition no longer holds, to a fixed point (a
+    percentile left behind when its scale method went back to absmax), and without empty methods."""
+    kept = {method: dict(chosen) for method, chosen in options.items()}
+    changed = True
+    while changed:
+        changed = False
+        for method, chosen in kept.items():
+            for option in list(chosen):
+                rule = qr.OPTIONS[option].get("when")
+                if rule is not None and _option_value(method, rule[0], kept) not in rule[1]:
+                    del chosen[option]
+                    changed = True
+    return {method: chosen for method, chosen in kept.items() if chosen}
 
 
 def _mutate_option(rng: random.Random, grid: list[list[str]], options: dict[str, Any]) -> str | None:
@@ -313,15 +344,17 @@ def mutation_search(config: dict[str, Any], root: Path, parents: Callable[[dict[
                 if cheaper:
                     grid[layer.block][qr.KINDS.index(layer.kind)] = rng.choice(cheaper)
             used = {method for row in grid for method in row}
-            options = {method: chosen for method, chosen in options.items() if method in used}
-            if not fits(grid, options) or (grid, options or None) in seen:
+            options = _drop_inactive({method: chosen for method, chosen in options.items() if method in used})
+            if not fits(grid, options):
                 continue
-            name = f"{label}_r{round_number}_{len(out)}"
             try:
-                ta._recipe(name, {**spec, "options": options or None})
+                identity = _identity({**spec, "options": options or None})
             except ta.TuneError:
                 continue
-            seen.append((grid, options or None))
+            if identity in seen:
+                continue
+            name = f"{label}_r{round_number}_{len(out)}"
+            seen.add(identity)
             new = _cells(grid)
             changes = [{"block": block, "kind": kind, "method": new[(block, kind)]}
                        for (block, kind), method in base.items() if new[(block, kind)] != method]
@@ -422,8 +455,8 @@ def materialize(config: dict[str, Any], root: Path, item: dict[str, Any], author
         spec["grid"][change["block"]][qr.KINDS.index(change["kind"])] = change["method"]
     if item.get("options") is not None:
         spec["options"] = item["options"] or None
-    if (spec["grid"], spec.get("options")) in _seen(session):
-        raise ta.TuneError("this grid with these options is already in the session")
+    if _identity(spec) in _seen(session):
+        raise ta.TuneError("this grid with these options is already in the session (same recipe)")
     folder = session / "loop" / "grids"
     folder.mkdir(parents=True, exist_ok=True)
     path = folder / f"{item['name']}.json"
@@ -527,7 +560,7 @@ def measure_remote(config: dict[str, Any], root: Path, round_number: int, names:
 # ---------- the loop ----------
 def run(config: dict[str, Any], root: Path, rounds: int, per_round: int, proposer: Proposer, author: str,
         measure: Callable[[int, Sequence[str]], Path], log: Callable[[str], None] = print,
-        stale_rounds: int = 2) -> dict[str, Any]:
+        stale_rounds: int = 2, measurements: int | None = None) -> dict[str, Any]:
     """Rounds of analyze -> propose -> check -> measure -> ingest, until the stop rule of the module
     docstring. A rerun continues the session: it refuses a round folder without kl.json (an unfinished
     round), and appends to loop/summary.json, starting from its stale count and last refusals."""
@@ -548,16 +581,20 @@ def run(config: dict[str, Any], root: Path, rounds: int, per_round: int, propose
     for entry in summary:
         stale = 0 if entry.get("improved") else stale + 1
     first = max(started + [entry["round"] for entry in summary], default=0) + 1
+    done = sum(len(entry["accepted"]) for entry in summary)
     for round_number in range(first, first + rounds):
+        if measurements is not None and done >= measurements:
+            break
+        count = per_round if measurements is None else min(per_round, measurements - done)
         analysis = analyze(config, root, refused)
         before = analysis["best"]["kl"]
         accepted, refused = [], []
         try:
-            reply = check_reply(proposer(analysis, round_number, per_round))
+            reply = check_reply(proposer(analysis, round_number, count))
         except LoopError as exc:
             reply = {"analysis": None, "stop": False, "proposals": []}
             refused.append({"name": None, "reason": str(exc)})
-        for item in reply["proposals"][:per_round]:
+        for item in reply["proposals"][:count]:
             try:
                 materialize(config, root, item, author)
                 accepted.append(item["name"])
@@ -567,6 +604,7 @@ def run(config: dict[str, Any], root: Path, rounds: int, per_round: int, propose
         entry: dict[str, Any] = {"round": round_number, "accepted": accepted, "refused": refused,
                                  "stop": bool(reply["stop"]), "analysis": reply["analysis"],
                                  "improved": False}
+        done += len(accepted)
         if accepted:
             kl_path = measure(round_number, accepted)
             lg.ingest_and_document([kl_path], ledger, root)  # one lock: no older documents than the ledger
@@ -578,11 +616,14 @@ def run(config: dict[str, Any], root: Path, rounds: int, per_round: int, propose
         summary.append(entry)
         summary_path.parent.mkdir(parents=True, exist_ok=True)
         summary_path.write_text(json.dumps(summary, indent=1, ensure_ascii=False), encoding="utf-8")
-        if entry["stop"] or (stale_rounds and stale >= stale_rounds):
+        if entry["stop"] or (measurements is None and stale_rounds and stale >= stale_rounds):
             break
     best = _measured(session, ledger)[0]
-    log(f"TUNE_LOOP_DONE best={best['name']} kl={best['kl']:.6g} rounds={len(summary)}")
-    return {"best": best["name"], "kl": best["kl"], "rounds": summary}
+    budget = None if measurements is None else {"measurements": measurements, "measured": done,
+                                                 "shortfall": max(0, measurements - done)}
+    log(f"TUNE_LOOP_DONE best={best['name']} kl={best['kl']:.6g} rounds={len(summary)}"
+        + ("" if budget is None else f" measured={done}/{measurements}"))
+    return {"best": best["name"], "kl": best["kl"], "rounds": summary, "budget": budget}
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -591,14 +632,26 @@ def main(argv: Sequence[str] | None = None) -> int:
     for name in ("run", "analyze"):
         sub.add_parser(name).add_argument("--config", type=Path, required=True)
     runner = sub.choices["run"]
-    runner.add_argument("--rounds", type=int, default=2)
+    runner.add_argument("--rounds", type=int, default=None,
+                        help="default 2; with --measurements the round cap, default 3 x the rounds needed")
     runner.add_argument("--per-round", type=int, default=4)
     runner.add_argument("--proposer", choices=("claude-code", "auto-greedy", "evolution", "random"),
                         default="claude-code")
     runner.add_argument("--stale-rounds", type=int, default=2, help="0: never stop for lack of improvement")
     runner.add_argument("--seed", type=int, default=0, help="evolution / random: the random stream")
     runner.add_argument("--parents", type=int, default=1, help="evolution: mu, the best measured kept")
+    runner.add_argument("--measurements", type=int, default=None,
+                        help="fixed budget: measure this many proposals (equal-budget comparisons)")
     args = parser.parse_args(argv)
+    if args.command == "run":
+        for flag, value, low in (("--per-round", args.per_round, 1), ("--parents", args.parents, 1),
+                                 ("--stale-rounds", args.stale_rounds, 0), ("--rounds", args.rounds, 1),
+                                 ("--measurements", args.measurements, 1)):
+            if value is not None and value < low:
+                parser.error(f"{flag} must be >= {low}")
+        if args.rounds is None:
+            needed = None if args.measurements is None else math.ceil(args.measurements / args.per_round)
+            args.rounds = 2 if needed is None else 3 * needed
     root = Path(__file__).resolve().parents[1]
     try:
         config = json.loads(args.config.read_text(encoding="utf-8"))
@@ -613,7 +666,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         }[args.proposer]()
         result = run(config, root, args.rounds, args.per_round, proposer, author,
                      lambda number, names: measure_remote(config, root, number, names),
-                     stale_rounds=args.stale_rounds)
+                     stale_rounds=args.stale_rounds, measurements=args.measurements)
         print(json.dumps(result, indent=1, ensure_ascii=False))
     except (LoopError, ta.TuneError, lg.LedgerError, OSError, json.JSONDecodeError,
             subprocess.TimeoutExpired) as exc:

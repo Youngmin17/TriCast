@@ -10,6 +10,8 @@ import random
 from fractions import Fraction
 from pathlib import Path
 
+import pytest
+
 from app import quantizer_recipe as qr
 from app import tune_agent as ta
 from app import tune_loop as tl
@@ -98,3 +100,68 @@ def test_with_stale_rounds_zero_every_round_is_measured(tmp_path: Path) -> None:
                     stale_rounds=0)
     assert [entry["round"] for entry in result["rounds"]] == [1, 2, 3, 4] and result["best"] == "start"
     assert sum(len(entry["accepted"]) for entry in result["rounds"]) == 8
+
+
+def test_the_proposal_schema_names_every_selectable_method() -> None:
+    """The Claude proposer can choose the Python-only methods (nf4, hqq_int4, razer_nvfp4) by name."""
+    assert tl._CHANGE["properties"]["method"]["enum"] == list(qr.ALL_METHODS)
+    assert set(qr.EXTENDED) <= set(tl._CHANGE["properties"]["method"]["enum"])
+
+
+def test_a_recipe_already_measured_is_refused_however_its_options_are_written(tmp_path: Path) -> None:
+    """Review F3: explicit defaults, empty or unused option entries build the same recipe as the base."""
+    config, _ = _session(tmp_path)
+    record = tl.analyze(config, tmp_path)["best"]["kl_record"]
+    default = qr.OPTIONS["weight.rounding"]["default"]
+    unused = {"gptq_int4": {"weight_algo.damp": 0.1}}  # gptq_int4 is not in the uniform NVFP4 grid
+    for options in ({"bf16": {}}, {"nvfp4": {"weight.rounding": default}}, unused):
+        item = {"name": "again", "base": "start", "changes": [], "options": options, "rationale": "x",
+                "cites": [record]}
+        with pytest.raises(ta.TuneError, match="already in the session"):
+            tl.materialize(config, tmp_path, item, "test")
+
+
+def test_inactive_options_are_dropped_to_a_fixed_point() -> None:
+    """Review F5: a percentile left behind when its scale method went back to absmax is dropped."""
+    options = {"nvfp4": {"weight.scale.percentile": 95.0}, "int8": {}}
+    assert tl._drop_inactive(options) == {}
+    kept = {"nvfp4": {"weight.scale.method": "percentile", "weight.scale.percentile": 95.0}}
+    assert tl._drop_inactive(kept) == kept
+
+
+def test_a_fixed_budget_makes_up_refused_proposals_and_records_a_shortfall(tmp_path: Path) -> None:
+    """Review F4: with measurements=N the loop runs until N proposals are measured, refusals included."""
+    config, ledger = _session(tmp_path)
+    inner = tl.evolution(config, tmp_path)
+    asked = []
+
+    def half_refused(analysis: dict, number: int, count: int) -> dict:
+        asked.append(count)
+        reply = inner(analysis, number, count)
+        bad = {**reply["proposals"][0], "name": f"bad{number}", "cites": ["Enope"]}  # refused: no such record
+        return {**reply, "proposals": ([bad] if number % 2 else []) + reply["proposals"]}
+
+    def measure(number: int, names: list) -> Path:
+        shas = {name: ta.read_proposal(tmp_path / "s", name)["recipe_sha256"] for name in names}
+        return _measure(tmp_path, ledger, {name: (sha, 0.9) for name, sha in shas.items()}, f"r{number}")
+
+    result = tl.run(config, tmp_path, 20, 2, half_refused, "evolution", measure, log=lambda line: None,
+                    measurements=5)
+    assert result["budget"] == {"measurements": 5, "measured": 5, "shortfall": 0}
+    # 1 + 2 + 1 accepted in rounds 1-3 (two refusals), then the last round asks for the 1 still missing
+    assert asked == [2, 2, 2, 1] and [len(entry["accepted"]) for entry in result["rounds"]] == [1, 2, 1, 1]
+
+    def stop(analysis: dict, number: int, count: int) -> dict:
+        return {"analysis": "x", "stop": True, "proposals": []}
+
+    short = tl.run(config, tmp_path, 20, 2, stop, "evolution", measure, log=lambda line: None, measurements=7)
+    assert short["budget"] == {"measurements": 7, "measured": 5, "shortfall": 2}
+
+
+@pytest.mark.parametrize("flags", [["--parents", "0"], ["--stale-rounds", "-1"], ["--measurements", "0"],
+                                   ["--per-round", "0"]])
+def test_the_cli_refuses_out_of_range_flags(flags: list, tmp_path: Path) -> None:
+    """Review F7."""
+    with pytest.raises(SystemExit) as exit_info:
+        tl.main(["run", "--config", str(tmp_path / "loop.json"), *flags])
+    assert exit_info.value.code == 2

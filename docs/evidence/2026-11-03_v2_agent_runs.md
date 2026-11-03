@@ -84,6 +84,28 @@ PPL 은 공식 `lib.eval.eval_ppl` 로 잰다 (WikiText-2 test, seqlen 4096). �
 - AC26 GPU 게이트의 판정은 G1 · G4 로 한다.
 - G2 · G3 는 재현 수준을 보고한다. 실패하면 "재현 미달 (Δ=…)" 로 적고 원인을 가린다.
 
+**결과** (트리 `d1daeab`, NVIDIA H200 NVL, berlin)
+
+| 실행 | 환경 | same_eval PPL | 공식 `llama_eval` | 결과 파일 sha256 |
+|---|---|:-:|:-:|---|
+| dense | tricast env (torch 2.8.0 · transformers 4.55.2) | 5.4721 | — | `bbb5e511…` |
+| adapter | tricast env + compat shim | **5.6570** | — | `9e012c68…` |
+| official | OmniServe env (torch 2.2.0 · transformers 4.37.2, shim 없음) | **5.6712** | 5.6714 | `1646b84a…` |
+
+- 같은 평가: 두 환경의 평가 토큰 sha256 이 같다 (`8e0218ee…`, 166 × 2048 창).
+- 같은 보정 입력: 어댑터가 공식 loader 에서 받은 C4 128 × 2048 과 구 환경 `get_loaders` 출력의 sha256 이 같다 (`068c5674…`).
+
+| # | 결과 | 판정 |
+|:-:|---|:-:|
+| G1 | \|5.6570 − 5.6712\| = 0.0142 (상대 0.25%) ≤ 0.05 | ✅ |
+| G2 | 공식 `llama_eval` 5.6714 vs 앵커 5.69: Δ −0.019 (−0.33%), 1% 이내 | ✅ |
+| G3 | dense 5.4721 vs 앵커 5.47: Δ +0.002 | ✅ |
+| G4 | `fasterquant` 224회, 공식 층 호출 20,480회 (모두 `position_ids` 포함), 그룹당 고유값 최대 16 | ✅ |
+
+- **판정: AC26 GPU 게이트 통과 (G1 · G4).** 공식 코드 자체도 제3자 앵커를 재현한다 (G2 · G3).
+- 어댑터가 0.014 낮다. 두 실행은 torch · transformers 판이 다르다(GPTQ 풀이와 forward 수치 경로 포함). 원인은 따로 가르지 않았다.
+- 1차 실행은 dense 단계에서 NFS 페이지 대기(D 상태, pyarrow `.so`)로 20분 멈췄다. 그래서 정리하고 2차 실행에서 네이티브 라이브러리를 미리 읽었다. 1차 로그는 클러스터 `qz_gptq_gate/try1/` 에 있다.
+
 ## 보정 결과 캐시 GPU 게이트 (Qwen3-0.6B, 자율 루프 2라운드의 제안 4개)
 
 > 판정 기준은 측정 전에 이 커밋으로 적었고, 결과를 본 뒤 바꾸지 않는다.

@@ -114,11 +114,13 @@ official_methods:
               1e93df6): dense 5.1166, Wanda 50% 6.4631, SparseGPT 50% 6.5168, SparseGPT 2:4 10.1807 within 1% of the
               pinned README; Wanda 2:4 11.3392 vs README 11.02 (+2.9%) but -0.25% from the same official code in the
               old env (11.3679) — docs/evidence/2026-11-03_v2_agent_runs.md"}
-  gptq: {status: implemented, methods: [official_gptq],
+  gptq: {status: verified, methods: [official_gptq],
          source: "IST-DASLab/gptq 2d65066e (Apache-2.0), llama.py llama_sequential called unchanged",
          note: "recipe official_gptq block, after prune and before patch_model; refused with weight_algo gptq or a
            TriCast weight spec; official default seqlen 2048, other values recorded as parameter mappings",
-         evidence: "tests/test_official_gptq.py (CPU, tiny Llama and Qwen3); GPU gate planned"}
+         evidence: "tests/test_official_gptq.py (CPU, tiny Llama and Qwen3); GPU gate Llama-2-7B W4 g128 H200: adapter
+           5.6570 vs the same official code in the old env 5.6712 (same eval), official llama_eval 5.6714 vs AWQ Tab 4
+           anchor 5.69 — docs/evidence/2026-11-03_v2_agent_runs.md"}
 weight_structure:
   sparsity: {status: verified, values: ["n:m", unstructured], source: "team interviews, log 10",
              note: "magnitude pruning after the transform, before quantization; dense K order in the accumulator

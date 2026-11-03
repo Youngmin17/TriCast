@@ -581,7 +581,12 @@ def run(config: dict[str, Any], root: Path, rounds: int, per_round: int, propose
     for entry in summary:
         stale = 0 if entry.get("improved") else stale + 1
     first = max(started + [entry["round"] for entry in summary], default=0) + 1
-    done = sum(len(entry["accepted"]) for entry in summary)
+    # the budget counts the proposals measured so far: those of the summary (written after each measurement)
+    # and those of every round with a kl.json, so a run that stopped between saving kl.json and writing
+    # summary.json does not get that round's measurements again
+    done = len({name for entry in summary for name in entry["accepted"]}
+               | {name for path in measured
+                  for name in json.loads((path.parent / "round.json").read_text(encoding="utf-8"))["names"]})
     for round_number in range(first, first + rounds):
         if measurements is not None and done >= measurements:
             break
@@ -615,7 +620,9 @@ def run(config: dict[str, Any], root: Path, rounds: int, per_round: int, propose
         stale = 0 if entry["improved"] else stale + 1  # a round with nothing measured did not improve either
         summary.append(entry)
         summary_path.parent.mkdir(parents=True, exist_ok=True)
-        summary_path.write_text(json.dumps(summary, indent=1, ensure_ascii=False), encoding="utf-8")
+        partial = summary_path.with_suffix(".json.partial")
+        partial.write_text(json.dumps(summary, indent=1, ensure_ascii=False), encoding="utf-8")
+        partial.replace(summary_path)  # atomic: a reader never sees a half-written summary
         if entry["stop"] or (measurements is None and stale_rounds and stale >= stale_rounds):
             break
     best = _measured(session, ledger)[0]

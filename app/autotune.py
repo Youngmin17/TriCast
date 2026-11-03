@@ -158,8 +158,8 @@ class Layer:
 # ---------- sizes ----------
 def weight_bits(method: str, in_features: int) -> Fraction:
     """Stored bits per weight: element + scale bits / elements per scale (WEIGHT_BITS; None = one per row).
-    Exact when ``in_features`` is a multiple of the group (every dimension of the evaluated models is a
-    multiple of 128); a partial last group is counted as a fraction of a scale, so it is undercounted."""
+    Exact when ``in_features`` is a multiple of the group (every Linear ``in_features`` of the evaluated
+    models is a multiple of 128); a partial last group is counted as a fraction of a scale (undercounted)."""
     element, scale, per = ex.WEIGHT_BITS[method]
     return element + Fraction(scale, per or in_features)
 

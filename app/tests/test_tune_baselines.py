@@ -15,6 +15,7 @@ import pytest
 from app import quantizer_recipe as qr
 from app import tune_agent as ta
 from app import tune_loop as tl
+from app.tests.test_tune_agent import ENV
 from app.tests.test_tune_loop import _measure, _session
 
 
@@ -165,3 +166,33 @@ def test_the_cli_refuses_out_of_range_flags(flags: list, tmp_path: Path) -> None
     with pytest.raises(SystemExit) as exit_info:
         tl.main(["run", "--config", str(tmp_path / "loop.json"), *flags])
     assert exit_info.value.code == 2
+
+
+def test_a_resumed_fixed_budget_counts_rounds_measured_before_the_summary_was_written(tmp_path: Path) -> None:
+    """Re-check F4: kl.json saved, summary.json not yet written, then a rerun: those measurements count."""
+    config, ledger = _session(tmp_path)
+    analysis = tl.analyze(config, tmp_path)
+    first = tl.evolution(config, tmp_path)(analysis, 1, 2)["proposals"]
+    for item in first:
+        tl.materialize(config, tmp_path, item, "evolution")
+    names = [item["name"] for item in first]
+    ta.round_script(tmp_path / "s", names, 1)
+    shas = {name: ta.read_proposal(tmp_path / "s", name)["recipe_sha256"] for name in names}
+    meta = {**ENV, "seed": 43, "windows": 8, "seqlen": 512, "source": {"split": "validation"}}
+    (tmp_path / "s" / "rounds" / "1" / "kl.json").write_text(json.dumps({
+        "schema": "tricast.autotune.measure/2", "meta": meta,
+        "results": [{"name": name, "recipe_sha256": sha, "kl": 0.9, "patched": 196}
+                    for name, sha in shas.items()]}))
+    asked = []
+
+    def proposer(analysis: dict, number: int, count: int) -> dict:
+        asked.append(count)
+        return tl.evolution(config, tmp_path, seed=5)(analysis, number, count)
+
+    def measure(number: int, names: list) -> Path:
+        rows = {name: (ta.read_proposal(tmp_path / "s", name)["recipe_sha256"], 0.9) for name in names}
+        return _measure(tmp_path, ledger, rows, f"r{number}")
+
+    result = tl.run(config, tmp_path, 5, 2, proposer, "evolution", measure, log=lambda line: None,
+                    measurements=3)
+    assert asked == [1] and result["budget"] == {"measurements": 3, "measured": 3, "shortfall": 0}

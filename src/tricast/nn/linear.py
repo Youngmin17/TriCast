@@ -16,9 +16,9 @@ from ..quant.api import fake_quant, quantize
 from ..quant.observer import ObserverState
 from ..quant.spec import ObserverSpec, QuantSpec, TransformSpec
 from ..quant.structure import outlier_mask, sparsity_mask
-from ..recipe import LinearSpec
+from ..recipe import WEIGHT_METHODS, LinearSpec
 from ..transforms import LinearTransform, StatsCollector, fit_transform
-from ..weight_quant import quantize_weight
+from ..weight_quant import quantize_weight, replace_weight
 
 
 def _operand_value(operand: Operand) -> torch.Tensor:
@@ -187,7 +187,9 @@ class EmuLinear(nn.Module):
                   else self.transform.apply_weight(self.weight.detach()))
         weight, outliers, zeros = self._structure(weight)
         self._weight_noise = self._noise(weight, self.spec.weight)
-        if self.spec.weight is None:
+        if self.spec.weight_algo.kind in WEIGHT_METHODS:
+            operand = as_operand(replace_weight(weight, self.spec.weight_algo), compact=True)
+        elif self.spec.weight is None:
             operand = as_operand(weight, compact=True)
         elif self.spec.weight_algo.kind == "gptq":
             if hessian is None:

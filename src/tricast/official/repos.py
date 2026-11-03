@@ -37,6 +37,11 @@ REPOS: dict[str, OfficialRepo] = {
         "https://github.com/IST-DASLab/gptq.git", "2d65066eeb06a5c9ff5184d8cebdf33662c67faf",
         "Apache-2.0", ("gptq.py", "quant.py", "datautils.py", "llama.py"),
     ),
+    "razer": OfficialRepo(  # read by the fidelity test of tricast.weight_quant.razer (no runtime use)
+        "https://github.com/abdelfattah-lab/NVFP4-RaZeR.git", "78be7fc78857b635ef789edf817cab77cc7f4a01",
+        "MIT",
+        ("quantize/__init__.py", "quantize/quantizer.py", "quantize/quant_config.py", "quantize/utils.py"),
+    ),
 }
 _PACKAGE = "_tricast_official_{}"
 

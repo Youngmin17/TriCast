@@ -38,6 +38,24 @@ OFFICIAL_GPTQ_DEFAULTS = {"groupsize": -1, "sym": False, "act_order": False, "st
                           "dataset": "c4"}
 _SELECTORS = {"match", "layers", "modules"}
 _LAYER_INDEX = re.compile(r"(?:^|\.)layers\.(\d+)(?:\.|$)")
+# weight_algo kinds that replace the whole weight by one method's quantize -> dequantize result on BF16
+# (tricast.weight_quant.replace_weight), so they take weight: null: nf4 (bitsandbytes NF4, block 64), hqq
+# (official HQQ 4-bit, group 64), razer (RaZeR NVFP4, E4M3 block scale). quant.spec.WeightAlgoSpec (a shared
+# spec) knows rtn / gptq only; these kinds are carried by WeightMethodSpec, a subclass with the same fields.
+WEIGHT_METHODS = ("nf4", "hqq", "razer")
+
+
+@dataclass(frozen=True)
+class WeightMethodSpec(WeightAlgoSpec):
+    """A weight_algo of WEIGHT_METHODS; ``block_size`` / ``damp`` / ``act_order`` are GPTQ's and unused."""
+
+    def __post_init__(self) -> None:
+        if self.kind not in WEIGHT_METHODS:
+            raise ValueError(f"unknown weight algorithm {self.kind!r}")
+
+
+def _weight_algo(data: dict) -> WeightAlgoSpec:
+    return (WeightMethodSpec if data.get("kind") in WEIGHT_METHODS else WeightAlgoSpec)(**data)
 
 
 @dataclass
@@ -56,6 +74,13 @@ class LinearSpec:
         # Errors name the field first; load_recipe prefixes the recipe path.
         if self.outliers is not None and self.weight is None:
             raise ValueError("outliers: requires a weight QuantSpec")
+        if self.weight_algo.kind in WEIGHT_METHODS and self.weight is not None:
+            raise ValueError(f"weight: must be null with weight_algo {self.weight_algo.kind} (it replaces "
+                             "the weight itself)")
+        if self.weight_algo.kind in WEIGHT_METHODS and self.transform.kind != "none":
+            # the transform fit (e.g. AWQ's scale search) quantizes with the weight spec, which is null here,
+            # so it would never see this method's weight error
+            raise ValueError(f"transform: not supported with weight_algo {self.weight_algo.kind}")
         if self.weight_algo.kind == "gptq":
             if self.sparsity.kind != "none":
                 raise ValueError("sparsity: not supported with gptq")
@@ -332,7 +357,7 @@ def _linear_spec(data: dict, path: str) -> LinearSpec:
     activation = _quant_spec(data.get("activation"), f"{path}.activation")
     result = {}
     for key, constructor in (("mma", MMASpec.from_dict), ("transform", lambda d: TransformSpec(**d)),
-                             ("weight_algo", lambda d: WeightAlgoSpec(**d))):
+                             ("weight_algo", _weight_algo)):
         try:
             result[key] = constructor(data.get(key, {}))
         except (ValueError, TypeError) as exc:
@@ -409,6 +434,10 @@ def load_recipe(source: str | Path | dict | Recipe) -> Recipe:
         if any(spec.weight is not None for spec in specs):
             raise ValueError("official_gptq: quantizes the decoder Linear weights itself; a weight spec "
                              "would quantize them twice (set weight: null)")
+        replacing = sorted({spec.weight_algo.kind for spec in specs} & set(WEIGHT_METHODS))
+        if replacing:
+            raise ValueError(f"official_gptq: cannot be combined with weight_algo {', '.join(replacing)} "
+                             "(the weight would be quantized twice)")
         official_gptq = {**OFFICIAL_GPTQ_DEFAULTS, **official_gptq}
         from .official.gptq import check_args as check_gptq
 

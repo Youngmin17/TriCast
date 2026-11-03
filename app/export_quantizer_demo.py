@@ -69,6 +69,10 @@ WEIGHT_BITS: dict[str, tuple[int, int, int | None]] = {
     "gptq_int4": (4, 20, 128),  # uint4, per 128: fp16 scale + 4-bit zero point
     "int8": (8, 32, None),      # fp32 scale per output row
     "bf16": (16, 0, 1),
+    # Python-only methods (app.quantizer_recipe.EXTENDED), as each format stores them:
+    "nf4": (4, 32, 64),          # 4-bit code + fp32 absmax per 64 (no double quantization) = 4.5
+    "hqq_int4": (4, 32, 64),     # uint4 + BF16 scale + BF16 zero per 64 = 4 + (16 + 16) / 64 = 4.5
+    "razer_nvfp4": (4, 8, 16),   # FP4 code + E4M3 scale per 16 (the ±5 choice in its unused sign bit) = 4.5
 }
 
 # Page order (families together): id, label, code, family, W/A bits, one-line description.
@@ -373,10 +377,10 @@ def _bits(method: str, kind: str) -> float:
 
 
 def catalog() -> dict[str, Any]:
-    methods_now = sorted(qr.METHODS)
-    if sorted(row[0] for row in METHOD_INFO) != methods_now or sorted(WEIGHT_BITS) != methods_now:
+    if sorted(row[0] for row in METHOD_INFO) != sorted(qr.METHODS) or sorted(WEIGHT_BITS) != sorted(
+            qr.ALL_METHODS):
         raise ExportError("METHOD_INFO / WEIGHT_BITS do not list exactly the methods of app.quantizer_recipe."
-                          "METHODS; add the new method's label, code and bits here")
+                          "METHODS / ALL_METHODS; add the new method's label, code and bits here")
     if sorted(OPTION_INFO) != sorted(qr.OPTIONS) or sorted(CALIBRATION_INFO) != sorted(qr.CALIBRATION) \
             or {key for spec in qr.KV_OPTIONS.values() for key in spec} - set(KV_OPTION_INFO):
         raise ExportError("OPTION_INFO / CALIBRATION_INFO / KV_OPTION_INFO do not name exactly the options "

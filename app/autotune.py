@@ -87,6 +87,8 @@ TABLE_SCHEMAS = ("tricast.autotune.table/1", TABLE_SCHEMA)  # what load_table re
 MEASURE_SCHEMA = "tricast.autotune.measure/2"  # /2: results say whether and how they were calibrated
 SOLUTION_SCHEMA = "tricast.autotune.solution/2"
 FREE = tuple(m for m in qr.METHODS if m not in qr.CALIBRATED)  # bf16 nvfp4 nvint4 mxfp4 mxfp8 int8 bfp12
+# The Python-only methods (app.quantizer_recipe.EXTENDED: nf4 hqq_int4 razer_nvfp4) are calibration-free too;
+# they are tabled when --methods names them (the default stays FREE, the page's alphabet).
 SHARED_INPUT = ("awq_nvfp4", "smoothquant_nvfp4")  # one scale per input in a full recipe (module docstring)
 UNIQUE_INPUT = ("o_proj", "down_proj")  # the kinds no other Linear of the block reads the input of
 # The patch floor: the layer patched with no quantization on the default MMA path (the control
@@ -155,7 +157,9 @@ class Layer:
 
 # ---------- sizes ----------
 def weight_bits(method: str, in_features: int) -> Fraction:
-    """Stored bits per weight: element + scale bits / elements per scale (WEIGHT_BITS; None = one per row)."""
+    """Stored bits per weight: element + scale bits / elements per scale (WEIGHT_BITS; None = one per row).
+    Exact when ``in_features`` is a multiple of the group (every dimension of the evaluated models is a
+    multiple of 128); a partial last group is counted as a fraction of a scale, so it is undercounted."""
     element, scale, per = ex.WEIGHT_BITS[method]
     return element + Fraction(scale, per or in_features)
 
@@ -256,11 +260,12 @@ def solve_mckp(costs: Sequence[Sequence[Fraction | int | float]], values: Sequen
 # ---------- grids ----------
 def default_method(used: Sequence[str], allowed: Sequence[str]) -> str:
     """The grid default: the most frequent non-BF16 method in ``used``, ties to the earlier method in
-    app.quantizer_recipe.METHODS; with none, the first non-BF16 method of ``allowed`` (build needs one)."""
+    app.quantizer_recipe.ALL_METHODS; with none, the first non-BF16 method of ``allowed`` (build needs
+    one)."""
     counts = Counter(method for method in used if method != "bf16")
     if counts:
-        return min(counts, key=lambda method: (-counts[method], list(qr.METHODS).index(method)))
-    return next(method for method in qr.METHODS if method in allowed and method != "bf16")
+        return min(counts, key=lambda method: (-counts[method], list(qr.ALL_METHODS).index(method)))
+    return next(method for method in qr.ALL_METHODS if method in allowed and method != "bf16")
 
 
 def write_grid(out_dir: Path, name: str, default: str, grid: qr.Grid, kv: str,
@@ -280,18 +285,18 @@ def applicable(method: str, kind: str) -> bool:
 
 
 def parse_methods(text: str, calibrate: bool = False) -> list[str]:
-    """Comma-separated method ids -> methods in app.quantizer_recipe.METHODS order; the calibrated ones
+    """Comma-separated method ids -> methods in app.quantizer_recipe.ALL_METHODS order; the calibrated ones
     only with ``calibrate`` (table --calibrate)."""
     given = {method.strip() for method in text.split(",") if method.strip()}
-    unknown = sorted(given - set(qr.METHODS))
+    unknown = sorted(given - set(qr.ALL_METHODS))
     if unknown:
-        raise AutotuneError(f"unknown methods {unknown}; known: {list(qr.METHODS)}")
+        raise AutotuneError(f"unknown methods {unknown}; known: {list(qr.ALL_METHODS)}")
     calibrated = sorted(given & qr.CALIBRATED)
     if calibrated and not calibrate:
         raise AutotuneError(f"{calibrated} need calibration data; add --calibrate to calibrate each "
                             f"one-layer entry on the --calib-* windows (without it, only the "
-                            f"calibration-free methods {list(FREE)})")
-    methods = [method for method in qr.METHODS if method in given]
+                            f"calibration-free methods {[*FREE, *qr.EXTENDED]})")
+    methods = [method for method in qr.ALL_METHODS if method in given]
     if all(method == "bf16" for method in methods):
         raise AutotuneError("give at least one quantization method besides bf16")
     return methods

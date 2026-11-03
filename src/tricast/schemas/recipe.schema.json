@@ -172,6 +172,15 @@
       ],
       "description": "Independent rounding or Hessian-aware GPTQ."
     },
+    "weight_method": {
+      "type": "string",
+      "enum": [
+        "nf4",
+        "hqq",
+        "razer"
+      ],
+      "description": "Replace the weight by one method's quantize-dequantize result on BF16 (weight: null): bitsandbytes NF4 (block 64), official HQQ 4-bit (group 64), RaZeR NVFP4 (E4M3 block scale)."
+    },
     "algorithm": {
       "type": "string",
       "enum": [
@@ -669,7 +678,14 @@
       "description": "Weight rounding algorithm and GPTQ solver parameters.",
       "properties": {
         "kind": {
-          "$ref": "#/$defs/weight_algorithm"
+          "anyOf": [
+            {
+              "$ref": "#/$defs/weight_algorithm"
+            },
+            {
+              "$ref": "#/$defs/weight_method"
+            }
+          ]
         },
         "block_size": {
           "type": "integer",
@@ -689,6 +705,9 @@
       "anyOf": [
         {
           "$ref": "#/$defs/weight_algorithm"
+        },
+        {
+          "$ref": "#/$defs/weight_method"
         },
         {
           "$ref": "#/$defs/weight_algo_object"

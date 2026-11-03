@@ -59,7 +59,10 @@ rounding: {status: verified, modes: [rne, rna, rtz, rup, rdn, sr], note: "SR tak
 
 quantization:
   granularity: {status: verified, values: [tensor, row, group, block]}
-  scale_method: {status: verified, values: [absmax, pow2_floor, pow2_ceil, mse, percentile, four_over_six]}
+  scale_method: {status: verified, values: [absmax, pow2_floor, pow2_ceil, mse, percentile, four_over_six],
+                 note: "four_over_six (nvfp4_4o6) is not bit-identical to fouroversix 1.0.5 (pytorch backend, mse
+                   rule): its tensor scale is amax / (6 * 256), TriCast's amax / (6 * 448); 84.7% of elements differ
+                   on a 128 x 256 N(0, 1) tensor (2026-11-03)"}
   scale_format: {status: verified, values: [fp32, fp16, bf16, ue4m3, e8m0, "any float format"]}
   two_level: {status: verified, note: "NVFP4, TensorRT-Model-Optimizer ordering"}
   zero_point: {status: implemented, values: [none, int, float],
@@ -76,6 +79,29 @@ transforms: {status: implemented, values: [hadamard, random_hadamard, smoothquan
              evidence: "tests/test_transforms.py, tests/test_calibrate.py (CPU)"}
 weight_algorithms: {status: implemented, values: [rtn, gptq], note: "gptq supports sequential calibration",
                     evidence: "tests/test_gptq.py (CPU): GPTQ error < RTN"}
+weight_methods:
+  # weight_algo kinds that replace the whole weight by one method's quantize -> dequantize result on BF16
+  # (weight: null; tricast.weight_quant.replace_weight). Quantizer methods nf4 / hqq_int4 / razer_nvfp4 are
+  # app.quantizer_recipe.EXTENDED: Auto-tune and the tune agent use them, the page does not list them yet.
+  nf4: {status: implemented, kind: tricast_native,
+        source: "bitsandbytes 0.50.2 CUDA kQuantizeBlockwise<NF4>: block 64, fp32 absmax, x * (1/absmax), the
+          dQuantizeNF4 thresholds of csrc/kernels.cu (strict >), code * absmax, then BF16",
+        evidence: "tests/test_weight_methods.py (CPU): code table = bitsandbytes, thresholds = kernels.cu literals,
+          brute-force nearest code equal on normal / Student-t / BF16 weights, bitsandbytes CPU path bit-identical;
+          the bitsandbytes CUDA bit-for-bit test skips without a GPU (not run yet)"}
+  hqq: {status: implemented, kind: official_adapter,
+        source: "pip hqq==0.2.8.post1 (dropbox/hqq, Apache-2.0): HQQLinear with BaseQuantizeConfig(nbits=4,
+          group_size=64) (axis 1, optimize, round_zero), compute_dtype bf16, dequantize()",
+        note: "HQQ's solver runs in fp32 on CPU and fp16 on CUDA, so CPU and GPU weights differ",
+        evidence: "tests/test_weight_methods.py (CPU): adapter == the official call bit for bit, one BF16 scale and
+          zero per 64, the solver changed the weights; another hqq release is refused"}
+  razer: {status: implemented, kind: tricast_native,
+          source: "abdelfattah-lab/NVFP4-RaZeR 78be7fc7 (MIT) quantize/quantizer.py quant_nvfp4_razer_e4m3:
+            block 16, E4M3 block scale under an fp32 tensor scale, -0 remapped to -5 or +5 per block",
+          note: "razer_nvfp4 = RaZeR-E4M3 weights + plain NVFP4 activations; the official W4A4 scripts use
+            razer_e3m3 weights (±5, ±8) and razer_e4m3 activations",
+          evidence: "tests/test_weight_methods.py (CPU): bit-identical to the pinned clone on normal, Student-t,
+            BF16 and clamped / all-zero blocks"}
 official_methods:
   # Methods absorbed by calling the official code at a pinned commit (src/tricast/official); the method catalog
   # with every surveyed method and TriCast's status for it is docs/research/methods_catalog.yaml.

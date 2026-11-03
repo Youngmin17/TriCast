@@ -118,7 +118,7 @@ methods:
   kb_key: null
   arxiv: null
   note: "Calibration-free (no activations). Repo moved mobiusml/hqq -> dropbox/hqq; PyPI hqq 0.2.8.post1 (2025-10-20) still lists mobiusml URL. setup: transformers>=4.36.1."
-  tricast: none
+  tricast: official_adapter  # weight_algo hqq (src/tricast/weight_quant/hqq.py): official HQQLinear, pip hqq==0.2.8.post1, BaseQuantizeConfig(nbits=4, group_size=64) (axis 1, optimize), compute_dtype bf16; Quantizer method hqq_int4 (Python-only); tests/test_weight_methods.py
 - id: sinq
   name: SINQ (Sinkhorn-Normalized Quantization)
   venue: ICML
@@ -632,7 +632,7 @@ methods:
   kb_key: fouroversix-arxiv25
   arxiv: "2512.02010"
   note: "Chooses per block between scaling to 6 or 4 (MSE rule). PyPI fouroversix 1.0.5 (README install line)."
-  tricast: tricast_reimplementation  # scale.method four_over_six (scheme nvfp4_4o6)
+  tricast: tricast_reimplementation  # scale.method four_over_six (scheme nvfp4_4o6); not bit-identical to fouroversix 1.0.5 (pytorch backend, mse): official tensor scale amax/(6*256), TriCast amax/(6*448); 84.7% of elements differ on N(0,1) 128x256 (2026-11-03)
 - id: razer
   name: RaZeR (redundant zero remapping for NVFP4/MXFP4)
   venue: NeurIPS
@@ -651,7 +651,7 @@ methods:
   kb_key: razer-neurips26
   arxiv: "2501.04052"
   note: "Fake-quant tensor functions; repo also has models/qmodule_qwen3.py and qmodule_llama.py. Venue from KB card (arXiv v3 comment still says 'under review')."
-  tricast: none
+  tricast: tricast_native  # weight_algo razer (src/tricast/weight_quant/razer.py) = quant_nvfp4_razer_e4m3 at 78be7fc7, bit-identical on CPU (tests/test_weight_methods.py); Quantizer razer_nvfp4 = RaZeR-E4M3 weights + plain NVFP4 activations (official scripts: razer_e3m3 weights, razer_e4m3 activations)
 - id: duquant-pp
   name: "DuQuant++ (fine-grained rotation for MXFP4)"
   venue: arXiv
@@ -957,7 +957,7 @@ methods:
   kb_key: qlora-neurips23
   arxiv: "2305.14314"
   note: "QLoRA defines NF4 + double quant; the format lives in bitsandbytes (artidoro/qlora is the fine-tuning repo)."
-  tricast: none
+  tricast: tricast_native  # weight_algo nf4 (src/tricast/weight_quant/nf4.py): NF4 only, block 64, no double quant, bitsandbytes 0.50.2 CUDA rule; CPU tests vs brute-force nearest code and the bnb CPU path; bnb CUDA bit-for-bit test not run yet; Quantizer method nf4 (Python-only)
 # ---------------------------------------------------------------- KV cache
 - id: kivi
   name: KIVI (2-bit asymmetric KV)

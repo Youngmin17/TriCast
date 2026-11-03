@@ -67,6 +67,17 @@ METHODS: dict[str, dict[str, Any] | None] = {
              "weight_algo": "rtn"},
     "bfp12": {"weight": _q("msfp12"), "activation": _q("msfp12"), "transform": "none", "weight_algo": "rtn"},
 }
+# Python-only methods (Auto-tune, the tune agent, --from-json): tricast.weight_quant replaces the weight by
+# the method's quantize -> dequantize result on BF16 (weight_algo nf4 / hqq / razer, hence weight: null);
+# razer_nvfp4 keeps the NVFP4 activations of the nvfp4 method. They are not on the page: its catalog and its
+# browser checks (scripts/quantizer/) list METHODS, so the browser = Python YAML parity (AC15) covers METHODS
+# only. None of them needs calibration or has options.
+EXTENDED: dict[str, dict[str, Any]] = {
+    "nf4": {"weight": None, "activation": None, "transform": "none", "weight_algo": "nf4"},
+    "hqq_int4": {"weight": None, "activation": None, "transform": "none", "weight_algo": "hqq"},
+    "razer_nvfp4": {"weight": None, "activation": _q("nvfp4"), "transform": "none", "weight_algo": "razer"},
+}
+ALL_METHODS: dict[str, dict[str, Any] | None] = {**METHODS, **EXTENDED}
 CALIBRATED = {"gptq_int4", "awq_nvfp4", "smoothquant_nvfp4"}
 KV = {"none": None, "kivi2": {"preset": "kivi2", "mode": "fakequant"},
       "kivi4": {"preset": "kivi4", "mode": "fakequant"}, "kv_fp8": {"preset": "kv_fp8", "mode": "fakequant"}}
@@ -112,10 +123,21 @@ OPTIONS: dict[str, dict[str, Any]] = {
 }
 _SCALED = ("weight.scale.method", "weight.scale.percentile", "weight.rounding",
            "activation.scale.method", "activation.scale.percentile", "activation.rounding")
+
+
+class _MethodOptions(dict):
+    """METHOD_OPTIONS names the page's methods (it is page data); a Python-only method (EXTENDED) has none."""
+
+    def __missing__(self, method: str) -> tuple[str, ...]:
+        if method in EXTENDED:
+            return ()
+        raise KeyError(method)
+
+
 # The options each method offers, in the order they are written. MX / BFP / NVFP4 block sizes and scale
 # formats are fixed by those formats' definitions, so they have no group size or scale method option;
 # GPTQ's zero point takes its range from [min, max], so it has no scale method either.
-METHOD_OPTIONS: dict[str, tuple[str, ...]] = {
+METHOD_OPTIONS: dict[str, tuple[str, ...]] = _MethodOptions({
     "bf16": (),
     "gptq_int4": ("weight.group_size", "weight.rounding", "weight_algo.damp", "weight_algo.act_order",
                   "weight_algo.block_size"),
@@ -130,7 +152,7 @@ METHOD_OPTIONS: dict[str, tuple[str, ...]] = {
              "activation.observer.kind", "activation.observer.decay", "activation.observer.history_len",
              "activation.observer.percentile"),
     "bfp12": ("weight.rounding", "activation.rounding"),
-}
+})
 CALIBRATING_OBSERVERS = ("minmax", "ema", "percentile")  # tricast: all observers but history calibrate
 # A transform / weight_algo that carries options is written as a complete mapping (every field, in dataclass
 # order): tricast merges an override's transform field by field onto the defaults' one.
@@ -223,7 +245,7 @@ def _check_options(options: Options | None) -> Options:
         return {}
     if not isinstance(options, dict):
         raise ValueError("options must map method ids to {option id: value}")
-    unknown = sorted(set(options) - set(METHODS))
+    unknown = sorted(set(options) - set(ALL_METHODS))
     if unknown:
         raise ValueError(f"options for unknown methods {unknown}")
     return {method: method_options(method, value) for method, value in options.items()}
@@ -249,7 +271,7 @@ def _variant(method: str, chosen: dict[str, Any], complete: set[str]) -> dict[st
     """METHODS[method] with the (checked) options written in. Operand options go inside the operand's scheme
     mapping (``mma_input`` stays last, as in ``_q``), so a later spec never inherits them; transform /
     weight_algo keys in ``complete`` (and those with options) become complete mappings."""
-    base = METHODS[method]
+    base = ALL_METHODS[method]
     if base is None:
         return None
     fragment = copy.deepcopy(base)
@@ -285,7 +307,7 @@ def fragments(default: str, options: Options | None = None) -> Fragments:
     inherits the default's values through tricast's field-by-field merge."""
     checked = _check_options(options)
     complete = _modified(checked.get(default, {}))
-    return {method: _variant(method, checked.get(method, {}), complete) for method in METHODS}
+    return {method: _variant(method, checked.get(method, {}), complete) for method in ALL_METHODS}
 
 
 def check_calibration(calibration: dict[str, Any] | None) -> dict[str, Any]:
@@ -350,7 +372,7 @@ def _rule(selector: dict[str, Any], method: str, table: Fragments) -> dict[str, 
 
 def overrides_for(default: str, grid: Grid, table: Fragments | None = None) -> list[dict[str, Any]]:
     """Minimal first-match rules that reproduce ``grid`` on top of ``default`` (``table``: ``fragments``)."""
-    table = METHODS if table is None else table
+    table = ALL_METHODS if table is None else table
     covered: dict[tuple[int, int], str] = {}
     block_rules: dict[str, list[int]] = {}
     for block, row in enumerate(grid):
@@ -376,7 +398,7 @@ def overrides_for(default: str, grid: Grid, table: Fragments | None = None) -> l
 def resolve(default: str, rules: list[dict[str, Any]], blocks: int = BLOCKS,
             table: Fragments | None = None) -> Grid:
     """Replay first-match override resolution to the method id each layer gets."""
-    table = METHODS if table is None else table
+    table = ALL_METHODS if table is None else table
     by_fields = {json.dumps(fields, sort_keys=True): method for method, fields in table.items() if fields}
     if len(by_fields) != sum(1 for fields in table.values() if fields):
         raise AssertionError("two methods have the same recipe fields")
@@ -405,11 +427,11 @@ def build(name: str, default: str, grid: Grid, kv: str = "none", description: st
           kv_options: dict[str, Any] | None = None) -> dict[str, Any]:
     """The recipe mapping for one grid (default method, per-layer methods, KV preset), with per-method
     ``options`` ({method: {option id: value}}), ``calibration`` settings and ``kv_options``."""
-    if default not in METHODS or default == "bf16":
+    if default not in ALL_METHODS or default == "bf16":
         raise ValueError(f"default method must be a quantization method, got {default!r}")
     if len(grid) != BLOCKS or any(len(row) != len(KINDS) for row in grid):
         raise ValueError(f"grid must be {BLOCKS} blocks × {len(KINDS)} kinds")
-    unknown = sorted({m for row in grid for m in row} - set(METHODS))
+    unknown = sorted({m for row in grid for m in row} - set(ALL_METHODS))
     if unknown:
         raise ValueError(f"unknown methods {unknown}")
     kv_fields = _kv_fields(kv, kv_options)

@@ -25,8 +25,10 @@ the file's sha256 and a JSON pointer (``#L<n>/<key>`` for a jsonl line) to the e
 reads the number back. A value without an environment is refused (AGENTS.md §3.3). The record id is a hash
 of (kind, source path, pointer). Re-ingesting a changed file: a value still at its pointer keeps its id and
 gets the new file hash (a resumed run appends lines); a different value at the same pointer, or a pointer that
-is gone, is refused (a result was rewritten in place); a finished ``<stem>.json`` table replaces the records
-of its ``<stem>.entries.jsonl``.
+is gone, is refused (a result was rewritten in place), and so is a record whose value stayed but whose other
+fields (model, layer, setting, environment) changed. Records are never deleted, so a cited id always resolves:
+a finished ``<stem>.json`` table marks the records of its ``<stem>.entries.jsonl`` ``superseded_by`` its own
+record of the same (layer, method) and value, and documents skip superseded records.
 
 The documents group the records for retrieval — one per layer (every method's KL, floors and report metrics
 across all sources), one per recipe hash (every metric measured with it) and one per (table, method) (its
@@ -234,14 +236,17 @@ def _from_report(data: dict[str, Any], source: dict[str, Any]) -> Iterator[dict[
                           **model, **recipe, metric=metric, setting=setting)
 
 
+def _relative(path: Path, root: Path) -> str:
+    try:
+        return str(path.resolve().relative_to(root.resolve()))
+    except ValueError:
+        return str(path.resolve())
+
+
 def records_of(path: Path, root: Path) -> tuple[list[dict[str, Any]], str | None]:
     """(records, None) for a recognised file, ([], reason) otherwise."""
     raw = path.read_bytes()
-    try:
-        relative = str(path.resolve().relative_to(root.resolve()))
-    except ValueError:
-        relative = str(path.resolve())
-    source = {"path": relative, "sha256": _sha256(raw)}
+    source = {"path": _relative(path, root), "sha256": _sha256(raw)}
     text = raw.decode("utf-8")
     if path.name.endswith(".entries.jsonl"):
         lines = text.splitlines()
@@ -299,21 +304,13 @@ def ingest(paths: Sequence[Path], ledger: Path, root: Path) -> dict[str, Any]:
     counts. Nothing is written when a file is refused."""
     known = {record["id"]: record for record in read_ledger(ledger)}
     added: dict[str, int] = defaultdict(int)
-    skipped = refreshed = replaced = 0
+    skipped = refreshed = superseded = 0
     for path in _files(paths):
         records, reason = records_of(path, root)
         skipped += reason is not None
-        if not records:
-            continue
-        source = records[0]["source"]["path"]
-        if path.suffix == ".json" and path.name != "env.json":
-            stale = source.removesuffix(".json") + ".entries.jsonl"  # the finished table supersedes its log
-            for key in [key for key, record in known.items() if record["source"]["path"] == stale]:
-                del known[key]
-                replaced += 1
-        before = {key for key, record in known.items() if record["source"]["path"] == source}
-        now = {record["id"] for record in records}
-        gone = before - now
+        source = _relative(path, root)
+        gone = {key for key, record in known.items() if record["source"]["path"] == source} - \
+            {record["id"] for record in records}
         if gone:
             raise LedgerError(f"{source}: {len(gone)} recorded values are no longer in the file (rewritten?)")
         for record in records:
@@ -321,17 +318,44 @@ def ingest(paths: Sequence[Path], ledger: Path, root: Path) -> dict[str, Any]:
             if old is None:
                 known[record["id"]] = record
                 added[record["kind"]] += 1
-            elif old["value"] != record["value"]:
-                raise LedgerError(f"{source}{record['source']['pointer']}: value changed in place "
-                                  f"({old['value']!r} -> {record['value']!r})")
+            elif _content(old) != _content(record):
+                changed = sorted(key for key in set(_content(old)) | set(_content(record))
+                                 if _content(old).get(key) != _content(record).get(key))
+                raise LedgerError(f"{source}{record['source']['pointer']}: changed in place ({changed})")
             elif old["source"]["sha256"] != record["source"]["sha256"]:
-                known[record["id"]] = record
+                known[record["id"]] = {**record, **({"superseded_by": old["superseded_by"]}
+                                                    if "superseded_by" in old else {})}
                 refreshed += 1
+        if records and records[0]["kind"] == "layer_kl" and path.suffix == ".json":
+            superseded += _supersede(known, source.removesuffix(".json") + ".entries.jsonl", records)
     ordered = sorted(known.values(), key=lambda record: record["id"])
     _write_atomic(ledger, "".join(json.dumps(record, sort_keys=True, allow_nan=False) + "\n"
                                   for record in ordered))
     return {"ledger": str(ledger), "records": len(ordered), "added": dict(sorted(added.items())),
-            "refreshed": refreshed, "replaced_logs": replaced, "skipped_files": skipped}
+            "refreshed": refreshed, "superseded": superseded, "skipped_files": skipped}
+
+
+def _content(record: dict[str, Any]) -> dict[str, Any]:
+    """A record without its file hash and supersession: what must not change under the same id."""
+    return {**{key: value for key, value in record.items() if key not in ("source", "superseded_by")},
+            "path": record["source"]["path"], "pointer": record["source"]["pointer"]}
+
+
+def _supersede(known: dict[str, dict[str, Any]], log: str, records: Sequence[dict[str, Any]]) -> int:
+    """Mark the records of a finished table's resume log ``superseded_by`` the table's record of the same
+    (layer, method); refuse a log value the table does not hold."""
+    table = {(record["layer"], record["method"]): record for record in records
+             if record["kind"] == "layer_kl"}
+    count = 0
+    for key, record in list(known.items()):
+        if record["source"]["path"] != log or "superseded_by" in record:
+            continue
+        target = table.get((record["layer"], record["method"]))
+        if target is None or target["value"] != record["value"]:
+            raise LedgerError(f"{log}{record['source']['pointer']}: not this value in the finished table")
+        known[key] = {**record, "superseded_by": target["id"]}
+        count += 1
+    return count
 
 
 def verify(record: dict[str, Any], root: Path) -> bool:
@@ -449,6 +473,8 @@ def documents(records: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
     recipes: dict[str, list[dict[str, Any]]] = defaultdict(list)
     methods: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
     for record in records:
+        if "superseded_by" in record:  # the same number is in the finished table's record
+            continue
         if record["kind"] in ("layer_kl", "layer_report"):
             layers[(record.get("model_sha"), record["layer"])].append(record)
         if record["kind"] == "layer_kl" and record["method"] != "floor":

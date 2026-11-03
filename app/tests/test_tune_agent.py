@@ -76,6 +76,7 @@ def test_numbers_are_supported_at_their_written_precision() -> None:
     assert ta.unsupported_numbers("delta -0.25 and \u22120.25 and .25", [0.25]) == ["-0.25", "\u22120.25"]
     assert ta.unsupported_numbers("SQNR -3.5 dB", [-3.5]) == []
     assert ta.unsupported_numbers("range 0.1-0.25 and (x)-0.25", [0.1, 0.25]) == []  # dashes, not signs
+    assert ta.unsupported_numbers("KL -0.25. Then .99.", [0.25]) == ["-0.25", ".99"]  # sentence-final period
 
 
 def test_a_valid_proposal_is_recorded_with_its_recipe_and_prediction(tmp_path: Path) -> None:
@@ -249,3 +250,42 @@ def test_v2_tables_rank_neighbours_on_the_floor_subtracted_kl_and_add_the_kv_ent
     records = lg.records_of(table, tmp_path)[0]
     kv = [r for r in records if r["method"] == "kv:kivi2"]
     assert len(kv) == qr.BLOCKS and {r["layer_kind"] for r in kv} == {"kv"} and kv[13]["block"] == 13
+
+
+def test_a_refused_first_proposal_fixes_no_session_and_unrankable_grids_get_no_neighbours(
+        tmp_path: Path) -> None:
+    """Re-check NEW-4 and M1: a refused proposal must not pin the session's table; neighbours are ranked by
+    the table, so a grid with untabled options gets none."""
+    table_a = _table(tmp_path)
+    ledger, record = _ledger(tmp_path)
+    spec = ta.load_grid(_grid(tmp_path, qr.uniform("nvfp4")))
+    with pytest.raises(ta.TuneError, match="not supported"):
+        ta.propose(tmp_path / "s", "p", spec, table_a, Fraction(9, 2), "PPL 25.01", [record], ledger)
+    assert not (tmp_path / "s" / "session.json").exists()
+    other = tmp_path / "b"
+    other.mkdir()
+    table_b = _table(other, floor=0.001)
+    ta.propose(tmp_path / "s", "p", spec, table_b, Fraction(9, 2), "uniform", [record], ledger)
+    assert json.loads((tmp_path / "s" / "session.json").read_text())["table"]["path"] == str(table_b)
+    with pytest.raises(ta.TuneError, match="cannot rank this grid"):
+        ta.neighbors({**spec, "options": {"nvfp4": {"weight.rounding": "rtz"}}}, table_b, Fraction(9, 2), 3)
+
+
+def test_a_session_without_a_model_sha_joins_by_model_id(tmp_path: Path) -> None:
+    """Re-check M7: with no model SHA in the table, another model's measurement must not join."""
+    table = _table(tmp_path)
+    data = json.loads(table.read_text())
+    data["meta"]["model_sha"] = None
+    table.write_text(json.dumps(data))
+    ledger, record = _ledger(tmp_path)
+    spec = ta.load_grid(_grid(tmp_path, qr.uniform("nvfp4")))
+    proposal = ta.propose(tmp_path / "s", "p1", spec, table, Fraction(9, 2), "uniform", [record], ledger)
+    for name, model_id, kl in (("other", "meta-llama/Llama-3.2-1B", 0.5), ("same", "Qwen/Qwen3-0.6B", 0.3)):
+        meta = {**ENV, "model_id": model_id, "model_sha": None, "seed": 43, "windows": 8, "seqlen": 512,
+                "source": {"split": "validation"}}
+        result = {"name": "p1", "recipe_sha256": proposal["recipe_sha256"], "kl": kl, "patched": 196}
+        path = tmp_path / "runs" / f"{name}.json"
+        measured = {"schema": "tricast.autotune.measure/2", "meta": meta, "results": [result]}
+        path.write_text(json.dumps(measured))
+        lg.ingest([path], ledger, tmp_path)
+    assert [item["kl"] for item in ta.state(tmp_path / "s", ledger)["proposals"][0]["measured_kl"]] == [0.3]

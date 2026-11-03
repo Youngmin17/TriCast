@@ -153,9 +153,18 @@ def test_a_resumed_log_keeps_its_ids_a_rewritten_value_is_refused_and_the_table_
     assert all(lg.verify(record, tmp_path) for record in records)
     lines[1]["kl"] = 0.0027
     log.write_text("".join(json.dumps(line) + "\n" for line in lines))
-    with pytest.raises(lg.LedgerError, match="value changed in place"):
+    with pytest.raises(lg.LedgerError, match=r"changed in place \(\['value'\]\)"):
         lg.ingest([runs], path, tmp_path)
     assert lg.read_ledger(path) == records  # nothing written
+    lines[1]["kl"] = 0.0026
+    lines[0] = {"config": {**META, "model_sha": "another"}}  # same numbers, another model (re-check NEW-1)
+    log.write_text("".join(json.dumps(line) + "\n" for line in lines))
+    with pytest.raises(lg.LedgerError, match="changed in place.*model_sha"):
+        lg.ingest([runs], path, tmp_path)
+    log.write_text(json.dumps({"config": META}) + "\n")  # every measured line gone (re-check NEW-3)
+    with pytest.raises(lg.LedgerError, match="no longer in the file"):
+        lg.ingest([runs], path, tmp_path)
+    lines[0] = {"config": META}
     lines[1]["kl"] = 0.0026
     log.write_text("".join(json.dumps(line) + "\n" for line in lines))
     table = {"schema": "tricast.autotune.table/2", "meta": META, "layers": [
@@ -163,7 +172,12 @@ def test_a_resumed_log_keeps_its_ids_a_rewritten_value_is_refused_and_the_table_
         {"name": DOWN, "block": 2, "kind": "down_proj", "kl": {"nvfp4": 0.011}}]}
     (runs / "table.json").write_text(json.dumps(table))
     summary = lg.ingest([runs], path, tmp_path)
-    assert summary["replaced_logs"] == 2 and summary["added"] == {"layer_kl": 2}
-    records = lg.read_ledger(path)
-    assert sorted(r["source"]["path"] for r in records) == ["runs/t/table.json"] * 2
-    assert all(lg.verify(record, tmp_path) for record in records)
+    assert summary["superseded"] == 2 and summary["added"] == {"layer_kl": 2}
+    records = {r["id"]: r for r in lg.read_ledger(path)}
+    assert len(records) == 4 and all(lg.verify(record, tmp_path) for record in records.values())
+    # the log's ids still resolve (proposals cite them) and point at the table's record of the same number
+    logged = records[first["id"]]
+    assert records[logged["superseded_by"]]["source"]["path"] == "runs/t/table.json"
+    assert records[logged["superseded_by"]]["value"] == logged["value"]
+    cited = {item for doc in lg.documents(list(records.values())) for item in doc["ids"]}
+    assert first["id"] not in cited and logged["superseded_by"] in cited

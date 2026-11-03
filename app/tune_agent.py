@@ -51,7 +51,7 @@ MEASURE_DEFAULTS = {"windows": 8, "seqlen": 512, "seed": 43, "split": "validatio
 # A decimal written in a rationale, with its sign: 0.0026, -0.25, −0.63, .25, 26.16, 1e-3 (not inside an
 # identifier such as E1a2b, and a hyphen right after a word or number is a dash, not a sign: 0.1-0.2).
 _DECIMAL = re.compile(r"(?<![\w.])(?:(?<![\w)\].])(?P<sign>[-+\u2212]))?"
-                      r"(?P<number>(?:\d+\.\d*|\.\d+)(?:[eE][+-]?\d+)?|\d+[eE][+-]?\d+)(?![\w.])")
+                      r"(?P<number>(?:\d+\.\d*|\.\d+)(?:[eE][+-]?\d+)?|\d+[eE][+-]?\d+)(?!\w|\.\d)")
 
 
 class TuneError(ValueError):
@@ -207,9 +207,9 @@ def read_session(session: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def _session(session: Path, table_path: Path) -> dict[str, Any]:
-    """The session's fixed protocol — model, table and measurement windows — written by the first proposal;
-    later proposals must use the same table."""
+def _session(session: Path, table_path: Path, write: bool) -> dict[str, Any]:
+    """The session's fixed protocol — model, table and measurement windows — written (``write``) by the first
+    proposal that passes every check; later proposals must use the same table."""
     table, raw, _, _ = load_full_table(table_path)
     digest = hashlib.sha256(raw).hexdigest()
     path = session / "session.json"
@@ -221,8 +221,9 @@ def _session(session: Path, table_path: Path) -> dict[str, Any]:
     meta = table["meta"]
     fixed = {"schema": SESSION_SCHEMA, "model_id": meta["model_id"], "model_sha": meta.get("model_sha"),
              "table": {"path": str(table_path), "sha256": digest}, "measure": dict(MEASURE_DEFAULTS)}
-    session.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(fixed, indent=1) + "\n", encoding="utf-8")
+    if write:
+        session.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(fixed, indent=1) + "\n", encoding="utf-8")
     return fixed
 
 
@@ -243,15 +244,16 @@ def propose(session: Path, name: str, spec: dict[str, Any], table_path: Path, bu
         raise TuneError(f"cited ids not in the ledger {ledger}: {unknown}")
     if parent is not None:
         read_proposal(session, parent)
+    _session(session, table_path, write=False)
     recipe = _recipe(name, spec)
     computed = evaluate(spec, table_path, budget)
-    _session(session, table_path)
     evidence = [number for item in cites for number in _numbers(index[item]["value"])]
     evidence += [number for item in cites for number in _numbers(index[item].get("stderr"))]
     unsupported = unsupported_numbers(rationale, evidence + _numbers(computed))
     if unsupported:
         raise TuneError(f"rationale numbers not supported by the cited records or the proposal: "
                         f"{unsupported}")
+    _session(session, table_path, write=True)  # only a proposal that passed every check fixes the session
     proposal = {"schema": PROPOSAL_SCHEMA, "name": name, "author": author, "parent": parent,
                 "created_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"),
                 "rationale": rationale, "cites": list(cites), **computed,
@@ -269,6 +271,9 @@ def neighbors(spec: dict[str, Any], table_path: Path, budget: Fraction, top: int
     layer then method order): a layer switched to another tabled method, paid for when needed by switching
     the other layers with the least predicted loss per freed bit down to cheaper methods."""
     table, _, layers, methods = load_full_table(table_path)
+    reason = _unpredicted(spec, table)
+    if reason:
+        raise TuneError(f"neighbours are ranked by the table, which cannot rank this grid: {reason}")
     objective = at.objective(table, subtract_floor=True)  # the table's kl when it has no floors
     value = [[objective[layer.name][method] for method in methods] for layer in layers]
     current = [methods.index(spec["grid"][layer.block][qr.KINDS.index(layer.kind)]) for layer in layers]
@@ -345,7 +350,8 @@ def round_script(session: Path, names: Sequence[str], number: int) -> Path:
 
 def _matches(record: dict[str, Any], fixed: dict[str, Any]) -> bool:
     """A ledger measurement of the session's model, and for whole-recipe KL on the session's windows."""
-    if fixed.get("model_sha") and record.get("model_sha") != fixed["model_sha"]:
+    if (record.get("model_sha") != fixed["model_sha"]) if fixed.get("model_sha") \
+            else (record.get("model_id") != fixed["model_id"]):
         return False
     if record["kind"] != "recipe_kl":
         return True

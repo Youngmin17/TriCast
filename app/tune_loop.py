@@ -90,6 +90,21 @@ PROPOSAL_SCHEMA = {"type": "object",
                    "properties": {"analysis": {"type": "string"}, "stop": {"type": "boolean"},
                                   "proposals": {"type": "array", "items": _PROPOSAL}},
                    "required": ["analysis", "stop", "proposals"], "additionalProperties": False}
+
+
+def _reply_schema(methods: Sequence[str]) -> dict[str, Any]:
+    """PROPOSAL_SCHEMA with ``methods`` as the method names a change may use."""
+    change = {**_CHANGE, "properties": {**_CHANGE["properties"],
+                                        "method": {"type": "string", "enum": list(methods)}}}
+    proposal = {**_PROPOSAL, "properties": {**_PROPOSAL["properties"],
+                                            "changes": {"type": "array", "items": change}}}
+    return {**PROPOSAL_SCHEMA, "properties": {**PROPOSAL_SCHEMA["properties"],
+                                              "proposals": {"type": "array", "items": proposal}}}
+
+
+# Every reply is checked against every Python-side method (the LOWBIT ones included), so the black-box arms
+# may use them; the schema sent to Claude Code (PROPOSAL_SCHEMA) names ALL_METHODS until that is decided.
+REPLY_SCHEMA = _reply_schema(list(qr.PYTHON_METHODS))
 SYSTEM = """You are the proposer of an automatic quantization tuning loop for one LLM. Each round you receive
 an evidence analysis built from measured records (a per-layer KL table, whole-recipe KL measured on validation
 windows, the methods' option spaces and catalog cards). Propose grids that should lower the measured
@@ -607,11 +622,11 @@ def claude_code(config: dict[str, Any], root: Path, runner: Callable[..., Any] =
 
 
 def check_reply(reply: Any) -> dict[str, Any]:
-    """The proposer's reply against PROPOSAL_SCHEMA, before anything is written (external input)."""
+    """The proposer's reply against REPLY_SCHEMA, before anything is written (external input)."""
     from jsonschema import Draft202012Validator
 
     try:
-        Draft202012Validator(PROPOSAL_SCHEMA).validate(reply)
+        Draft202012Validator(REPLY_SCHEMA).validate(reply)
     except Exception as exc:  # jsonschema.ValidationError, or a non-object reply
         raise LoopError(f"the proposer's reply does not match the proposal schema: {exc}") from None
     return reply

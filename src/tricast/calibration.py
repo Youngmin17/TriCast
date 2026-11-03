@@ -32,7 +32,7 @@ from .recipe import Recipe, _json_value, load_recipe
 from .transforms import LinearTransform, fit_transform_group
 
 DEFAULT_HESSIAN_MAX_BYTES = 4 * 1024**3
-CACHE_FORMAT = 2  # bump when the stored layer state or the key layout changes
+CACHE_FORMAT = 3  # bump when the stored layer state or the key layout changes
 _FORMATS = {"float": FloatFormat, "int": IntFormat, "pow2": Pow2Format}
 
 
@@ -432,10 +432,24 @@ def _execution_context() -> str | None:
     return None
 
 
+def _plain_attributes(module: nn.Module) -> list:
+    """[name, repr] of the module's public attributes that hold plain values (numbers, strings, None, and
+    tuples or lists of them), sorted; ``training`` is left out (calibrate runs in eval mode)."""
+    def plain(value: object) -> bool:
+        if isinstance(value, (tuple, list)):
+            return all(plain(item) for item in value)
+        return value is None or isinstance(value, (bool, int, float, str))
+
+    return sorted([key, repr(value)] for key, value in vars(module).items()
+                  if not key.startswith("_") and key != "training" and plain(value))
+
+
 def _structure(model: nn.Module) -> tuple[list, str | None]:
-    """Each module's name, class and extra_repr (plus its source file's sha256 for a class outside torch,
-    transformers and tricast), and why the forward may still differ from that description (None: it
-    cannot). A passthrough EmuLinear is described as the Linear it wraps, so patching alone keeps the key."""
+    """Each module's name, class, extra_repr and public plain attributes (``scaling``, ``head_dim``, ...:
+    values a forward reads that config does not pin once the module exists), plus its source file's sha256
+    for a class outside torch, transformers and tricast, and why the forward may still differ from that
+    description (None: it cannot). A passthrough EmuLinear is described as the Linear it wraps, so patching
+    alone keeps the key."""
     kv = getattr(model, "_tricast_kv_patch", None)
     own = set() if kv is None else {kv.forward_hook.id, kv.clear_hook.id}  # the KV patch's mask hooks
     reasons = []
@@ -449,7 +463,7 @@ def _structure(model: nn.Module) -> tuple[list, str | None]:
         label = name or "model"
         shown = module._original if isinstance(module, EmuLinear) else module
         cls = type(shown)
-        entry = [name, f"{cls.__module__}.{cls.__qualname__}", shown.extra_repr()]
+        entry = [name, f"{cls.__module__}.{cls.__qualname__}", shown.extra_repr(), _plain_attributes(shown)]
         if cls.__module__.split(".")[0] not in ("torch", "transformers", "tricast"):
             try:
                 path = inspect.getsourcefile(cls)

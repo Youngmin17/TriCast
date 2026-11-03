@@ -96,3 +96,20 @@ def test_the_no_check_ablation_drops_evidence_checks_but_keeps_the_budget(tmp_pa
                                                       for b in range(qr.BLOCKS)]}
     with pytest.raises(ta.TuneError, match="exceed the budget"):
         tl.materialize(loose, tmp_path, fat, "test")
+
+
+def test_the_shared_reply_check_accepts_lowbit_changes_from_the_black_box_arms() -> None:
+    """Review 2026-11-04 MAJOR 2: check_reply applies to every proposer, so it must accept every Python-side
+    method; the schema sent to Claude Code is a separate, narrower one."""
+    def reply(method: str) -> dict:
+        change = {"block": 0, "kind": "q_proj", "method": method}
+        return {"analysis": "", "stop": False, "proposals": [
+            {"name": "x", "base": "start", "options": None, "rationale": "x", "cites": ["E0"],
+             "changes": [change]}]}
+
+    for method in qr.LOWBIT:
+        assert tl.check_reply(reply(method))
+    with pytest.raises(tl.LoopError, match="proposal schema"):
+        tl.check_reply(reply("no_such_method"))
+    assert set(tl.REPLY_SCHEMA["properties"]["proposals"]["items"]["properties"]["changes"]["items"]
+               ["properties"]["method"]["enum"]) == set(qr.PYTHON_METHODS)

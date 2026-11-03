@@ -409,3 +409,17 @@ def test_corrupt_entry_is_refitted_and_overwritten(tiny, tmp_path, damage):
     assert again["cache"]["hits"] == again["layers"] and again["cache"]["corrupt"] == {}
     assert again["full_model_forwards"] == 0
     _assert_same_model(reference, again_model)
+
+
+def test_a_changed_instance_attribute_reaches_the_key(tiny, tmp_path):
+    """Re-check of M3 (2026-11-03): an attention module's ``scaling`` changed after construction (same
+    class, config, weights, hooks) misses every layer and matches a fresh calibration."""
+    recipe = _mixed()
+    _calibrate(tiny, recipe, tmp_path)
+    base = copy.deepcopy(tiny)
+    base.model.layers[0].self_attn.scaling *= 16
+    reference, _ = _calibrate(base, recipe)
+    model, result = _calibrate(base, recipe, tmp_path)
+    _assert_same(_state(reference), _state(model))
+    _assert_same(reference(PROBE).logits, model(PROBE).logits, "logits")
+    assert result["cache"]["hits"] == [] and result["cache"]["misses"] == result["layers"]

@@ -81,7 +81,10 @@ weight_algorithms: {status: implemented, values: [rtn, gptq], note: "gptq suppor
                       gptq with group < block (e.g. group_size 32 / 64 at block 128, no act_order) refreshes a
                       group that starts inside a lazy block from the compensated weights and so differs from
                       official GPTQ (which reads W before the block's updates); bit-identity with the
-                      instrumented official holds for group >= block, block = group, or act_order. CPU-only
+                      instrumented official holds for group >= block, block = group, or act_order, on
+                      non-degenerate inputs only (review 2026-11-04): TriCast computes static-group scales
+                      before zeroing dead columns (H[i,i] = 0) and floors a vanishing fp16 scale, while official
+                      GPTQ zeroes dead columns first and maps an all-zero group to [-1, 1]. CPU-only
                       caveat: on macOS the Accelerate LAPACK behind torch.linalg.cholesky was not run-to-run
                       deterministic at K = 512 (3 of 300 repeats differed), deterministic with
                       VECLIB_MAXIMUM_THREADS=1 and at K = 256; the cluster GPU gates of 2026-11-03 were
@@ -110,7 +113,10 @@ weight_methods:
           zero per 64, the solver changed the weights; another hqq release is refused"}
   hqq3: {status: implemented, kind: official_adapter,
          source: "the hqq adapter with BaseQuantizeConfig(nbits=3, group_size=64) (round_zero false below 4 bits)",
-         note: "Quantizer method hqq_int3 (app.quantizer_recipe.LOWBIT)",
+         note: "Quantizer method hqq_int3 (app.quantizer_recipe.LOWBIT). WEIGHT_BITS (3, 32, 64) = 3.5 bits
+           undercounts the storage: HQQ packs ten 3-bit codes per int32 (3.2 bits per code + padding), about
+           3.7 bits per weight in all (review 2026-11-04); excluded from paper experiments until its bits are
+           fixed (the pinned value in app/tests/test_lowbit_extended.py needs a human-approved change)",
          evidence: "tests/test_lowbit_methods.py (CPU): == the official call bit for bit on normal / Student-t /
            BF16 weights, at most 8 levels per group, the solver changed the weights"}
   hqq2: {status: implemented, kind: official_adapter,
@@ -445,8 +451,11 @@ agent:
                    note: "app.quantizer_recipe.LOWBIT (Python-only, off the page): track M (2-4 bit weight-only)
                      and track C (Hadamard + NVFP4 / MXFP4 W4A4); calibrated gptq_int3 / gptq_int2 (all kinds) and
                      awq_int4 (o_proj / down_proj only, like awq_nvfp4) are in CALIBRATED_ALL, the page's
-                     CALIBRATED is unchanged; not in ALL_METHODS, so the tune loop's proposal schema does not offer
-                     them yet; no GPU table or measurement yet",
+                     CALIBRATED is unchanged; not in ALL_METHODS: the shared reply check accepts them
+                     (REPLY_SCHEMA, black-box arms), the schema sent to Claude Code does not yet (pending a
+                     human decision). WEIGHT_BITS are nominal deployed bits: hqq_int3 undercounts (see hqq3);
+                     had_* leave out the per-tensor fp32 scale (32 bits per tensor); awq_int4 assumes its
+                     channel scales are folded at deployment. No GPU table or measurement yet",
                    evidence: "app/tests/test_lowbit_extended.py (CPU: grids, --from-json, calibrated tiny table and
                      solve, bits, recorded hashes, page bundle unchanged); tests/test_lowbit_methods.py (CPU
                      fidelity)"}

@@ -400,8 +400,9 @@ def _setting(record: dict[str, Any]) -> str:
 def _layer_doc(name: str, records: list[dict[str, Any]]) -> dict[str, Any]:
     first = records[0]
     head = name
-    if "block" in first:  # tokens the BM25 tokenizer keeps whole: block13, oproj
-        head += f" (block{first['block']} {first['layer_kind'].replace('_', '')} {first['layer_kind']})"
+    if "block" in first:  # "block 13" and the BM25 tokens block13, oproj
+        head += (f" (block {first['block']} block{first['block']} {first['layer_kind'].replace('_', '')} "
+                 f"{first['layer_kind']})")
     lines = [f"layer {head} · model {first.get('model_id')}@{str(first.get('model_sha'))[:7]}"]
     by_source: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
     for record in records:

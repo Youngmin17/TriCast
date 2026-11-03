@@ -80,8 +80,12 @@ def _documents() -> list[dict]:
     return documents
 
 
-def _tokens(text: str) -> list[str]:
-    return re.findall(r"[a-z]+[a-z0-9]*|\d+|[가-힣]+", text.casefold())
+def _tokens(text: str, compound: bool = False) -> list[str]:
+    """Words, numbers and Hangul runs; with ``compound`` also every dotted identifier whole
+    (``model.layers.0.self_attn.v_proj``)."""
+    folded = text.casefold()
+    words = re.findall(r"[a-z]+[a-z0-9]*|\d+|[가-힣]+", folded)
+    return words + re.findall(r"[a-z0-9_]+(?:\.[a-z0-9_]+)+", folded) if compound else words
 
 
 def _check(query: str, k: int) -> None:
@@ -148,17 +152,24 @@ def _catalog_documents(catalogs: list[str] | None = None) -> list[dict]:
 def search_evidence(query: str, k: int = 5, ledgers: list[str] | None = None,
                     catalogs: list[str] | None = None) -> list[dict]:
     """BM25 over the evidence ledgers (measured per-layer and per-recipe results) and the method catalogs,
-    ranked the way :func:`search` ranks the contract; ``ledgers`` / ``catalogs`` override
-    ``config/rag.yaml``'s lists."""
+    ranked the way :func:`search` ranks the contract (dotted identifiers also count whole); ``ledgers`` /
+    ``catalogs`` override ``config/rag.yaml``'s lists. A document whose section names an identifier of the
+    query exactly (``layer model.layers.0.self_attn.v_proj``, ``method card wanda``) comes first: long
+    method documents list many layer names and would otherwise outrank the layer's own document."""
     _check(query, k)
-    return _rank(_evidence_documents(ledgers) + _catalog_documents(catalogs), query, k)
+    documents = _evidence_documents(ledgers) + _catalog_documents(catalogs)
+    ranked = _rank(documents, query, len(documents) if k else 0, compound=True)
+    exact = set(re.findall(r"[a-z0-9_]+(?:\.[a-z0-9_]+)+|[a-z0-9_-]+", query.casefold()))
+    named = [hit for hit in ranked if hit["section"].casefold().split()[-1] in exact
+             and hit["section"].split()[0] in ("layer", "method", "recipe")]
+    return (named + [hit for hit in ranked if hit not in named])[:k]
 
 
-def _rank(documents: list[dict], query: str, k: int) -> list[dict]:
-    terms = set(_tokens(query))
+def _rank(documents: list[dict], query: str, k: int, compound: bool = False) -> list[dict]:
+    terms = set(_tokens(query, compound))
     if not terms or k == 0 or not documents:
         return []
-    counts = [Counter(_tokens(doc["section"] + " " + doc["text"])) for doc in documents]
+    counts = [Counter(_tokens(doc["section"] + " " + doc["text"], compound)) for doc in documents]
     lengths = [sum(count.values()) for count in counts]
     average = sum(lengths) / max(len(lengths), 1)
     if not average:

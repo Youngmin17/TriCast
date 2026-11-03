@@ -181,3 +181,17 @@ def test_a_resumed_log_keeps_its_ids_a_rewritten_value_is_refused_and_the_table_
     assert records[logged["superseded_by"]]["value"] == logged["value"]
     cited = {item for doc in lg.documents(list(records.values())) for item in doc["ids"]}
     assert first["id"] not in cited and logged["superseded_by"] in cited
+
+
+def test_an_exact_layer_name_finds_its_own_document_first(tmp_path: Path) -> None:
+    """Method documents list layer names too; the layer's own document must still come first."""
+    runs = _runs(tmp_path)
+    path = tmp_path / "ledger.jsonl"
+    lg.ingest([runs], path, tmp_path)
+    docs_file = lg.docs_path(path)
+    lg.write_documents(lg.read_ledger(path), docs_file)
+    for name in (O_PROJ, DOWN):
+        hits = rag.search_evidence(name, 3, ledgers=[str(docs_file)], catalogs=[])
+        assert hits[0]["section"] == f"layer {name}"
+    hits = rag.search_evidence("v_proj block 13", 3, ledgers=[str(docs_file)], catalogs=[])
+    assert "block 13 block13" in next(hit["text"] for hit in hits if hit["section"] == f"layer {O_PROJ}")

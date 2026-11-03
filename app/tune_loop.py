@@ -267,7 +267,7 @@ def _mutate_option(rng: random.Random, grid: list[list[str]], options: dict[str,
     """Give one option (active under its ``when`` condition) of a method in ``grid`` another value: another
     choice, the other bool, or a numeric value times a random NUMERIC_STEPS factor, clipped to its range. A
     value equal to the default is removed, so equal recipes have equal options. Returns ``method.option``."""
-    used = sorted({method for row in grid for method in row if qr.METHOD_OPTIONS.get(method)})
+    used = sorted({method for row in grid for method in row if qr.METHOD_OPTIONS[method]})  # LOWBIT too
     if not used:
         return None
     method = rng.choice(used)

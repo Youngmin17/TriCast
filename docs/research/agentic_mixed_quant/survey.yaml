@@ -1,0 +1,165 @@
+title: "근거를 읽는 에이전트의 층별 혼합 양자화 — 선행연구 지도"
+project: TriCast
+date: 2026-11-03
+purpose: novelty-audit
+notice: >-
+  가장 가까운 경쟁작 두 편(autoqs-openreview26, explorerreviewer-openreview26; 둘 다 ICLR'27 심사 중)은 OpenReview 봇 검사로 본문을
+  받지 못해 초록만 확인했다. C1 의 차별점 판정은 이 두 본문에 달려 있다. 그 밖의 unknown: NeurIPS 2026 accepted 전수 목록, AdaqL
+  (NeurIPS'26) 메커니즘, Unsloth Dynamic 2.0 알고리즘, 코드 공개 여부 다수(카드별 code 항목).
+scope:
+  venues: [ICLR, ICML, NeurIPS, MLSys, CVPR/ICCV/ECCV, ACL/EMNLP/NAACL, DAC, arXiv, code]
+  years: "2023–2026 (+2018–2022 대표작, ICLR 2027 심사 중 제출물)"
+  queries:
+    - "mixed precision quantization large language models"
+    - "layer-wise bit allocation knapsack / ILP / DP"
+    - "single-layer KL sensitivity"
+    - "LLM agent quantization configuration search"
+    - "LLM as optimizer vs Bayesian optimization equal evaluations"
+    - "agentic model compression pruning quantization"
+  lanes: [paper, code]
+  excluded: >-
+    tier 외 venue (AAAI, GECCO, CEC, CPAL, COLM) · workshop (LLM-MQ, A KL Lens on Quantization, Luo et al.) · 런타임 정밀도 전환
+    (PMPD, DP-LLM, MorphServe) · 가변 크기 표현 (Any-Precision, Matryoshka, BitStack) · 층 간 할당이 없는 end-loss 양자화 (GuidedQuant,
+    QEP) · 연구 전체 자동화 (AI Scientist) · 커널 코드 생성 (KForge 등). 세부 이유는 lane_r1.md §4, lane_r2.md §4.
+  searched: 2026-11-03
+  coverage:
+    - {venue: ICLR, year: 2023, status: partial, source: "OpenReview group search (출력 잘림)", query: "mixed-precision quantization"}
+    - {venue: ICLR, year: 2024, status: done, source: "OpenReview group search", query: "mixed-precision quantization · LLM optimizer"}
+    - {venue: ICLR, year: 2025, status: done, source: "OpenReview group search", query: "mixed-precision quantization · LLM optimizer"}
+    - {venue: ICLR, year: 2026, status: done, source: "OpenReview group search", query: "mixed-precision quantization · LLM BO"}
+    - {venue: ICLR, year: 2027, status: partial, source: "OpenReview 제출물 검색 (본문 403)", query: "mixed-precision · agent quantization"}
+    - {venue: ICML, year: 2023, status: partial, source: "OpenAlex", query: "mixed-precision quantization"}
+    - {venue: ICML, year: 2024, status: done, source: "OpenReview", query: "mixed-precision · LLM agent"}
+    - {venue: ICML, year: 2025, status: done, source: "OpenReview", query: "mixed-precision · LLM agent"}
+    - {venue: ICML, year: 2026, status: partial, source: "OpenReview 키워드 검색만", query: "mixed-precision · LLM agent"}
+    - {venue: NeurIPS, year: 2023, status: partial, source: "OpenReview (출력 잘림)", query: "mixed-precision quantization"}
+    - {venue: NeurIPS, year: 2024, status: done, source: "OpenReview", query: "mixed-precision · LLM optimizer"}
+    - {venue: NeurIPS, year: 2025, status: done, source: "OpenReview", query: "mixed-precision · AI research agents"}
+    - {venue: NeurIPS, year: 2026, status: todo, source: "OpenReview 검색 0건 (색인 전), AdaqL 은 WebSearch 로만", query: ""}
+    - {venue: MLSys, year: 2024, status: partial, source: "프로그램 JSON 37건만 파싱", query: "mixed|precision|bit|quantiz|agent"}
+    - {venue: MLSys, year: 2025, status: done, source: "프로그램 JSON 61건 전수", query: "mixed|precision|bit|quantiz|agent"}
+    - {venue: MLSys, year: 2026, status: partial, source: "프로그램 JSON 308건 제목만", query: "mixed|precision|bit|quantiz|agent"}
+    - {venue: ACL/EMNLP/NAACL, year: 2025, status: partial, source: "OpenAlex · ACL Anthology", query: "mixed precision LLM"}
+    - {venue: ACL/EMNLP/NAACL, year: 2026, status: partial, source: "OpenAlex · ACL Anthology (일부 제목만)", query: "mixed precision LLM"}
+    - {venue: DAC, year: 2025, status: partial, source: "OpenAlex", query: "mixed precision"}
+    - {venue: arXiv, year: 2026, status: partial, source: "arXiv API 키워드 sweep (2026-10-30 까지)", query: "agent AND quantization AND mixed-precision 등"}
+    - {venue: code, year: 2026, status: done, source: "gh api: ModelOpt · AutoRound · llama.cpp · AIMET · INC · NNCF · HQQ · llm-compressor · torchao · Helion", query: "auto quantize / mixed precision search"}
+idea:
+  thesis: >-
+    측정 기록 원장(ledger)을 근거로 읽고 결정적 검사(크기 예산 · 인용한 레코드 id 실존 · 수치가 인용 레코드로 지지됨)를 통과해야 하는 LLM
+    에이전트가 Linear 단위의 이질적 방법 × 형식 × 옵션 공간에서 배정을 제안하고, 같은 전체 모델 측정 수에서 가산 표 + 정확 배낭과
+    블랙박스 탐색보다 낮은 KL 의 레시피를 찾는다.
+  claims:
+    - {id: C1, text: "원장 검색 + 결정적 타입 검사 + LLM 의 층별 혼합 방법 배정 제안이, 같은 측정 수에서 해석적(배낭) · 블랙박스(랜덤 · 진화 · BO) 탐색보다 낫다"}
+    - {id: C2, text: "층 하나만 양자화한 end-to-end KL 표(patch floor 차감) + 저장 비트 예산 아래 정확 MCKP 가 좋은 시작점을 준다"}
+    - {id: C3, text: "GPTQ · AWQ · SmoothQuant · 회전 · NVFP4/MX/INT8/BFP · NF4/HQQ/RaZeR · N:M · KV 를 한 층별 공간에서 고른다"}
+papers:
+  # --- 가산 민감도 + 정확 할당 ---
+  - {key: zeroq-cvpr20, group: "가산 민감도 + 정확 할당", overlap: {C1: none, C2: partial, C3: none}, note: "층 i 만 k-bit 로 둔 출력 KL 표 Ω_i(k) (Eq 2) 를 가산하고 크기 예산 DP Pareto (Eq 4) 로 푼다 — C2 의 핵심 메커니즘. CNN 비트폭, patch floor 와 예측-실측 순위 상관은 없음 (Tab Ia)."}
+  - {key: adaquant-icml21, group: "가산 민감도 + 정확 할당", overlap: {C1: none, C2: partial, C3: none}, note: "측정한 단일 층 손실 + 가산 IP (Eq 5, §4)."}
+  - {key: higgs-naacl25, group: "가산 민감도 + 정확 할당", overlap: {C1: none, C2: partial, C3: adjacent}, note: "LLM 층별 섭동 → 가산 α_l·t² → 평균 비트 예산 아래 정확 해 (Thm 1, Alg 3, §5, Tab 3–4). 후보는 HIGGS 격자뿐."}
+  - {key: hill-arxiv26, group: "가산 민감도 + 정확 할당", overlap: {C1: adjacent, C2: partial, C3: none}, note: "가산 합의 단조 변환이 구성 순위를 보존(쌍 오순서 ≤2%), 고립 민감도가 구성 손실을 71–376% 잘못 가격 매김; N=300 같은 측정으로 GP·RF·AMQ·CoopQ 비교 (abstract, §6–7, App C) — H2 비교 프로토콜의 표준선."}
+  - {key: modeloptaq-github26, group: "가산 민감도 + 정확 할당", overlap: {C1: none, C2: partial, C3: partial}, note: "(층, 포맷+AWQ/SQ config) 단일 층 KL 표(`kl_div`, 2025-11-26 이전부터) + minimax 이진 탐색; `gradient` 는 Fisher + LP; 층별 FP8/NVFP4/AWQ/SQ + KV 를 effective-bits 예산으로 고름 (소스 `AutoQuantizeKLDivSearcher`, `model_quant.auto_quantize`)."}
+  - {key: hawqv2-neurips20, group: "가산 민감도 + 정확 할당", overlap: {C1: none, C2: adjacent, C3: none}, note: "가산 Hessian-trace Ω + Pareto (Eq 2.11, Tab 2) — C2 가 대조군으로 삼는 대리지표."}
+  - {key: hawqv3-icml21, group: "가산 민감도 + 정확 할당", overlap: {C1: none, C2: adjacent, C3: none}, note: "가산 Hessian + 정확 ILP, 지연 제약 (Eq 8–11, Tab 2)."}
+  - {key: hawq-iccv19, group: "가산 민감도 + 정확 할당", overlap: {C1: none, C2: adjacent, C3: none}, note: "Hessian 고유값 대리지표 (§3, Tab 2)."}
+  - {key: chen-iccv21, group: "가산 민감도 + 정확 할당", overlap: {C1: none, C2: adjacent, C3: none}, note: "MCKP 정식화이나 Hessian 대리 + greedy (§3.4, Tab 1)."}
+  - {key: limpq-eccv22, group: "가산 민감도 + 정확 할당", overlap: {C1: none, C2: adjacent, C3: none}, note: "학습한 중요도 + ILP (Eq 4)."}
+  - {key: bytemckp-openreview26, group: "가산 민감도 + 정확 할당", overlap: {C1: none, C2: partial, C3: adjacent}, note: "바이트 MCKP + 측정 민감도 vs llama.cpp 프리셋 (초록만; ICLR'27 심사 중)."}
+  - {key: aimetamp-github26, group: "가산 민감도 + 정확 할당", overlap: {C1: none, C2: partial, C3: none}, note: "그룹 하나만 바꾼 측정 정확도 목록 + greedy Pareto, 정수 비트 (amp.rst Phase 1–2)."}
+  - {key: autoscheme-github25, group: "층별 방법 · 형식 혼합", overlap: {C1: none, C2: adjacent, C3: partial}, note: "기울기 대리 + DP, MXFP4/8·NVFP4·GGUF 혼합 (auto_scheme/delta_loss.py)."}
+  - {key: llamacppquant-github26, group: "층별 방법 · 형식 혼합", overlap: {C1: none, C2: adjacent, C3: adjacent}, note: "프리셋은 휴리스틱, PR #15550 은 국소 오차 + Lagrangian (llama-quant.cpp)."}
+  - {key: nncfmp-github26, group: "가산 민감도 + 정확 할당", overlap: {C1: none, C2: adjacent, C3: none}, note: "비율 + 대리지표 순위 (mixed_precision.py)."}
+  - {key: aptq-dac24, group: "가산 민감도 + 정확 할당", overlap: {C1: none, C2: adjacent, C3: none}, note: "attention-aware Hessian 할당 (Tab 1; FP16 C4 5.22 는 인용 전 PDF 재확인)."}
+  - {key: slimllm-icml25, group: "가산 민감도 + 정확 할당", overlap: {C1: none, C2: adjacent, C3: none}, note: "층 안 그룹 비트 배분, ILP < SBA (Tab 1·4) — 층별 할당 비교군으로는 약함."}
+  - {key: pbllm-iclr24, group: "층별 방법 · 형식 혼합", overlap: {C1: none, C2: none, C3: adjacent}, note: "부분 이진화 (Tab 2)."}
+  # --- 상호작용 · 블랙박스 탐색 ---
+  - {key: evopress-icml25, group: "상호작용 · 블랙박스 탐색", overlap: {C1: adjacent, C2: adjacent, C3: none}, note: "KL 적합도의 예산 보존 진화 탐색, 동적 비트폭 GPTQ 2–6, 가산 가정이 깨짐을 보임 (카드 Tab 2·14–15) — 등측정 블랙박스 비교군 (`--proposer evolution`)."}
+  - {key: amq-emnlp25, group: "상호작용 · 블랙박스 탐색", overlap: {C1: adjacent, C2: adjacent, C3: none}, note: "NSGA-II + RBF 대리모델, 실측 약 1만 회 (§3, Tab 1·4·6) — 같은 N 곡선으로 맞춰 비교."}
+  - {key: brecq-iclr21, group: "상호작용 · 블랙박스 탐색", overlap: {C1: none, C2: adjacent, C3: none}, note: "가산 가정 비판, 블록 내 교차 항 + GA (§3.4, Fig 2)."}
+  - {key: clado-dac25, group: "상호작용 · 블랙박스 탐색", overlap: {C1: none, C2: adjacent, C3: none}, note: "가산 가정 반례: 교차 항을 빼면 −6.9%p (Tab 1)."}
+  - {key: coopq-acl26, group: "상호작용 · 블랙박스 탐색", overlap: {C1: none, C2: adjacent, C3: none}, note: "Shapley 쌍 상호작용 + QP (초록)."}
+  - {key: autoqra-icml26, group: "상호작용 · 블랙박스 탐색", overlap: {C1: adjacent, C2: none, C3: none}, note: "EA + trust-region BO (Tab 1)."}
+  - {key: haq-cvpr19, group: "상호작용 · 블랙박스 탐색", overlap: {C1: adjacent, C2: none, C3: none}, note: "RL 블랙박스 층별 비트 (§3, Tab 3)."}
+  - {key: autoq-iclr20, group: "상호작용 · 블랙박스 탐색", overlap: {C1: adjacent, C2: none, C3: none}, note: "계층 RL (초록)."}
+  - {key: edmips-cvpr20, group: "상호작용 · 블랙박스 탐색", overlap: {C1: adjacent, C2: none, C3: none}, note: "미분 탐색 (Tab 1)."}
+  - {key: bayesianbits-neurips20, group: "상호작용 · 블랙박스 탐색", overlap: {C1: adjacent, C2: none, C3: adjacent}, note: "양자화 + 0-bit 가지치기 통합 (§2, Tab 4)."}
+  # --- 층별 방법 · 형식 혼합 ---
+  - {key: calm-arxiv25, group: "층별 방법 · 형식 혼합", overlap: {C1: none, C2: adjacent, C3: partial}, note: "디코더 층마다 {GPTQ, AWQ, SQ(+α)} 를 CKA greedy 로 선택, W4A8 고정, 예산 최적화 없음 (§3.2–3.3, Tab 1·4·6). Tab 4 가 같은 4-bit 에서 방법 혼합 > 비트 혼합을 이미 보고 — H1 일부 선점."}
+  - {key: mxmoe-icml25, group: "층별 방법 · 형식 혼합", overlap: {C1: none, C2: adjacent, C3: partial}, note: "MoE 블록마다 W-only / W-A scheme 을 ILP 로 선택, GPTQ 하나 (Eq 5–7, App A)."}
+  - {key: kvtuner-icml25, group: "층별 방법 · 형식 혼합", overlap: {C1: none, C2: adjacent, C3: partial}, note: "KV 정밀도 쌍 층별 탐색 (초록, §4)."}
+  - {key: fliqs-automl24, group: "층별 방법 · 형식 혼합", overlap: {C1: adjacent, C2: none, C3: adjacent}, note: "층별 INT/FP 포맷 탐색 (초록)."}
+  - {key: micromix-iclr26, group: "층별 방법 · 형식 혼합", overlap: {C1: none, C2: none, C3: adjacent}, note: "층 안 채널 MXFP4/6/8 (§3)."}
+  - {key: incautotune-github26, group: "층별 방법 · 형식 혼합", overlap: {C1: adjacent, C2: none, C3: adjacent}, note: "전역 방법×옵션 순차 시도 (autotune.md)."}
+  # --- LLM 에이전트 압축 ---
+  - {key: explorerreviewer-openreview26, group: "LLM 에이전트 압축", overlap: {C1: partial, C2: unknown, C3: unknown}, note: "코딩 에이전트가 방법을 고르고 리뷰어 에이전트가 공유 research log 위에서 근거 없는 결론을 막음; 2-bit weight-only 전역 레시피 (초록만, ICLR'27 심사 중). 층별 혼합 · 결정적 검사 · 등측정 비교는 초록에 없음."}
+  - {key: autoqs-openreview26, group: "LLM 에이전트 압축", overlap: {C1: partial, C2: unknown, C3: adjacent}, note: "LLM 제안 + 평가 이력 + 결정적 검증 + 예산; 고정 비트 · 고정 방법에서 층×연산자 group size 만 탐색, 비교군 균일 GPTQ/AWQ (초록만, ICLR'27 심사 중)."}
+  - {key: haqa-arxiv26, group: "LLM 에이전트 압축", overlap: {C1: partial, C2: none, C3: none}, note: "LLM 에이전트를 BO · random · NSGA-II 와 10 라운드 비교; 전역 하이퍼파라미터만, 원장 · 수치 검사 없음 (Tab 1–2; Tab 2 평균은 인용 전 재확인)."}
+  - {key: apqf-arxiv26, group: "LLM 에이전트 압축", overlap: {C1: partial, C2: adjacent, C3: adjacent}, note: "측정 프로파일로 LLM 플래너가 층별 비트를 1회 제안하고 실행 전 검증; CNN/ViT, 비트만, 블랙박스 비교 없음 (§3, Tab 1–3)."}
+  - {key: kodathala-arxiv26, group: "LLM 에이전트 압축", overlap: {C1: partial, C2: none, C3: none}, note: "Qwen3 층별 희소 증분 + PPL 롤백 반복 루프, 기준선은 N:M magnitude 뿐 (§3, Alg 1, Tab 2–4)."}
+  - {key: autopruner-arxiv26, group: "LLM 에이전트 압축", overlap: {C1: partial, C2: adjacent, C3: none}, note: "증거 저장소(하드 제약/수정 가능 증거) + 평가 이력 + 프로그램 검사 — C1 구조와 가장 비슷; VLA 층 삭제, 등측정 블랙박스 비교 없음 (§III, Tab I). Fig 4: 층 쌍 93.8–98.8% sub-additive — C2 반례."}
+  - {key: profilingagent-arxiv25, group: "LLM 에이전트 압축", overlap: {C1: adjacent, C2: none, C3: none}, note: "APQF 전신 (초록만)."}
+  - {key: tap-arxiv25, group: "LLM 에이전트 압축", overlap: {C1: adjacent, C2: adjacent, C3: none}, note: "LLM 이 MPQ 프록시 프로그램을 진화 (Tab 3). '직접 프롬프팅은 층별 비트 할당이 불안정' (§1) — C1 반대 근거, 무이력 · 무검사 arm 으로 답해야 함."}
+  - {key: quantforge-arxiv26, group: "LLM 에이전트 압축", overlap: {C1: adjacent, C2: none, C3: none}, note: "증거 기반 LLM 진화로 양자화기 프로그램 발견, 평가기 호출 240 등예산 (초록)."}
+  - {key: fca-arxiv26, group: "LLM 에이전트 압축", overlap: {C1: adjacent, C2: none, C3: adjacent}, note: "LM 플래너 vs TPE · random, 40 구성 카탈로그, 비전 소형 모델 (초록)."}
+  # --- LLM-as-optimizer · 평가 프로토콜 (C2 · C3 는 메커니즘상 무관: 양자화 할당을 다루지 않음 — 오케스트레이터 판정) ---
+  - {key: opro-iclr24, group: "LLM-as-optimizer · 평가 프로토콜", overlap: {C1: adjacent, C2: none, C3: none}, note: "LLM-as-optimizer 원형; 등측정 블랙박스 비교 없음, n≥20 TSP 에서 휴리스틱에 패배 (Tab 3)."}
+  - {key: llambo-iclr24, group: "LLM-as-optimizer · 평가 프로토콜", overlap: {C1: adjacent, C2: none, C3: none}, note: "같은 5 초기점 + 25 trials 에서 GP · TPE · SMAC 대비 초기 우위 (Fig 7)."}
+  - {key: zhang-arxiv23, group: "LLM-as-optimizer · 평가 프로토콜", overlap: {C1: adjacent, C2: none, C3: none}, note: "10/30/60 평가에서 LLM > SMAC, 100 평가에서 BO 역전 (Tab 5) — any-time 곡선 필수의 근거; LLM-seeded BO 하이브리드."}
+  - {key: bopro-iclr25, group: "LLM-as-optimizer · 평가 프로토콜", overlap: {C1: adjacent, C2: none, C3: none}, note: "어떤 과거 생성물을 프롬프트에 넣을지를 BO 로 선택 (초록만)."}
+  - {key: evoprompting-neurips23, group: "LLM-as-optimizer · 평가 프로토콜", overlap: {C1: adjacent, C2: none, C3: none}, note: "같은 표본 수 naive prompting arm (§4.1)."}
+  - {key: funsearch-nature24, group: "LLM-as-optimizer · 평가 프로토콜", overlap: {C1: adjacent, C2: none, C3: none}, note: "평가기 + 진화 원형, 실행 성공률 보고 (4/140)."}
+  - {key: alphaevolve-arxiv25, group: "LLM-as-optimizer · 평가 프로토콜", overlap: {C1: adjacent, C2: none, C3: none}, note: "No evolution / No context / Small LLM 절제 (Fig 8)."}
+  - {key: eoh-icml24, group: "LLM-as-optimizer · 평가 프로토콜", overlap: {C1: adjacent, C2: none, C3: none}, note: "질의 예산 2,000 vs ~10^6 (§4.2)."}
+  - {key: reevo-neurips24, group: "LLM-as-optimizer · 평가 프로토콜", overlap: {C1: adjacent, C2: none, C3: none}, note: "평가 ≤100, LLM only arm, 문제 은닉 명명 (Tab 5)."}
+  - {key: mlagentbench-icml24, group: "LLM-as-optimizer · 평가 프로토콜", overlap: {C1: adjacent, C2: none, C3: none}, note: "Claude v1.0 실행의 ~20% 가 근거 없는 개선 주장 (App D.2) — C1 결정적 검사의 동기."}
+  - {key: mlebench-iclr25, group: "LLM-as-optimizer · 평가 프로토콜", overlap: {C1: none, C2: none, C3: none}, note: "pass@k · SEM · 시간 스케일링 보고 형식."}
+  - {key: aide-arxiv25, group: "LLM-as-optimizer · 평가 프로토콜", overlap: {C1: adjacent, C2: none, C3: none}, note: "이력 요약 트리 탐색."}
+  - {key: airadojo-neurips25, group: "LLM-as-optimizer · 평가 프로토콜", overlap: {C1: adjacent, C2: none, C3: none}, note: "정책 × 연산자 분리, 검증 기준 선택의 test 오라클 격차 9–13%p (§5.3) — 선택 편향 보고 필요."}
+  - {key: automlagent-icml25, group: "LLM-as-optimizer · 평가 프로토콜", overlap: {C1: adjacent, C2: none, C3: none}, note: "탐색 중 추정 지표 사용 (§3.5) — C1 검사의 대조 사례."}
+  - {key: rebench-icml25, group: "LLM-as-optimizer · 평가 프로토콜", overlap: {C1: none, C2: none, C3: none}, note: "예산 2h↔32h 우열 역전, best-of-k, 비용 ($123/8h)."}
+  - {key: mlrbench-neurips25, group: "LLM-as-optimizer · 평가 프로토콜", overlap: {C1: adjacent, C2: none, C3: none}, note: "코딩 에이전트 결과의 ~80% 조작·무효 (초록만)."}
+  - {key: mlcopilot-eacl24, group: "LLM-as-optimizer · 평가 프로토콜", overlap: {C1: partial, C2: none, C3: none}, note: "과거 실험 레코드 정규화 + 검색, 검색 제거 시 붕괴 (§4.1–4.5, Tab 2–5); 과제 간 검색이고 같은 실행 안 증거 id 인용은 없음."}
+  - {key: kernelbench-icml25, group: "LLM-as-optimizer · 평가 프로토콜", overlap: {C1: adjacent, C2: none, C3: none}, note: "같은 10 호출에서 반복 샘플링 vs 피드백 (Tab 1)."}
+  - {key: gptuner-vldb24, group: "LLM-as-optimizer · 평가 프로토콜", overlap: {C1: adjacent, C2: none, C3: none}, note: "LLM 지식 + BO, 같은 100 반복 (§8.1), $23.7."}
+  - {key: accelopt-mlsys26, group: "LLM-as-optimizer · 평가 프로토콜", overlap: {C1: adjacent, C2: none, C3: none}, note: "커널 경험 메모리 (초록만)."}
+  - {key: prompts-mlsys26, group: "LLM-as-optimizer · 평가 프로토콜", overlap: {C1: adjacent, C2: none, C3: none}, note: "지식 베이스 RAG 제안 + 적은 시도 (초록만)."}
+  - {key: helionllm-blog26, group: "LLM-as-optimizer · 평가 프로토콜", overlap: {C1: adjacent, C2: none, C3: none}, note: "측정 이력을 넣은 LLM 이 LFBO 와 같은 커널 성능(1.009×)에 측정 ~10× 적게 도달 (Result 1–3)."}
+  - {key: pcn-arxiv25, group: "LLM-as-optimizer · 평가 프로토콜", overlap: {C1: partial, C2: none, C3: none}, note: "수치 claim 을 구간에 묶고 fail-closed 대조 (초록만, 실험 없음) — C1 수치 검사의 구성요소 선행."}
+directions:
+  - title: "가산 민감도 표 + 정확 할당"
+    papers: [zeroq-cvpr20, adaquant-icml21, higgs-naacl25, hill-arxiv26, modeloptaq-github26, hawqv3-icml21]
+    summary: "층 하나만 섭동한 손실을 가산하고 예산 아래 DP/ILP/MCKP 로 푼다. 2020년 CNN 비트폭에서 시작해 LLM(HIGGS) · 제품 코드(ModelOpt kl_div) · 순위 보존 이론(Hill)까지 왔다. C2 의 뼈대는 여기서 선점됐다."
+  - title: "가산성의 붕괴와 상호작용 · 블랙박스 탐색"
+    papers: [evopress-icml25, amq-emnlp25, brecq-iclr21, clado-dac25, coopq-acl26, autopruner-arxiv26]
+    summary: "교차 항 · 비가산성을 보이고 진화 · NSGA-II · Shapley 로 보정한다. 블랙박스는 측정을 많이 쓴다(AMQ 약 1만 회)."
+  - title: "층별 방법 · 형식 혼합"
+    papers: [calm-arxiv25, modeloptaq-github26, mxmoe-icml25, autoscheme-github25, kvtuner-icml25]
+    summary: "층마다 GPTQ/AWQ/SQ 나 포맷을 고른다. 공간은 각자 좁다(방법 3개, 포맷 몇 개, KV 만). 회전 · 희소 · 방법 옵션까지 한 공간에 넣은 사례는 없다."
+  - title: "LLM 에이전트 압축"
+    papers: [explorerreviewer-openreview26, autoqs-openreview26, haqa-arxiv26, apqf-arxiv26, kodathala-arxiv26, autopruner-arxiv26]
+    summary: "2026년에 급증했다. 대부분 arXiv · 심사 중이고, 한 축(비트 · group size · 희소율 · 전역 하이퍼파라미터)만 다루며, 같은 측정 수 블랙박스 비교가 드물다."
+  - title: "LLM-as-optimizer 의 평가 관행"
+    papers: [zhang-arxiv23, llambo-iclr24, airadojo-neurips25, mlagentbench-icml24, reevo-neurips24, helionllm-blog26]
+    summary: "등예산 any-time 곡선, BO/TPE · LLM-seeded BO 기준선, 무이력 · 무검색 arm, 선택 편향, 비용 표가 표준이다. 예산에 따라 우열이 뒤집힌다."
+gaps:
+  - title: "층별 이질 공간에서 해석적 · 블랙박스와의 등측정 비교"
+    claims: [C1, C3]
+    evidence: [hill-arxiv26, haqa-arxiv26, autoqs-openreview26, calm-arxiv25]
+    summary: "LLM 에이전트 압축 문헌에는 Linear 단위 방법 × 형식 × 옵션 배정을 가산 배낭 · 진화 · BO 와 같은 측정 수로 비교한 tier-1 사례가 없다. Hill 의 N=300 프로토콜과 ModelOpt · EvoPress 를 기준선으로 쓰면 이 자리를 실험으로 채울 수 있다."
+  - title: "같은 실행 안의 측정 원장을 id 로 인용하게 하는 결정적 검사"
+    claims: [C1]
+    evidence: [mlagentbench-icml24, mlrbench-neurips25, mlcopilot-eacl24, pcn-arxiv25, autopruner-arxiv26]
+    summary: "에이전트의 근거 없는 주장(~20%) · 조작(~80%) 문제가 보고됐고, 검색은 과제 간 경험에 머문다. 최적화 루프 안에서 인용 id 실존 · 수치 지지를 결정적으로 거르는 장치는 찾지 못했다. 다만 explorerreviewer 본문은 unknown 이다."
+  - title: "가산 표가 틀리는 곳을 측정 피드백으로 고치기"
+    claims: [C1, C2]
+    evidence: [hill-arxiv26, clado-dac25, evopress-icml25, autopruner-arxiv26]
+    summary: "고립 민감도는 구성 손실을 크게 잘못 가격 매긴다(71–376%). 표 + 배낭을 시작점으로 두고 측정 이력으로 상호작용을 고치는 것이 에이전트가 기여할 자리다. 저예산(낮은 비트)일수록 비가산성이 커진다는 가설을 측정해야 한다."
+verdict: >-
+  C2(단일 층 KL 표 + 가산 + 정확 할당)는 핵심이 선점됐다(ZeroQ 2020, HIGGS, ModelOpt kl_div, Hill). 논문 기여가 아니라 강한 기준선으로
+  다뤄야 한다. C3(이질적 층별 공간)는 부분 선점이다(CALM 의 방법 3개 혼합, ModelOpt 의 포맷 + AWQ/SQ). 공간의 폭(회전 · NF4/HQQ/RaZeR ·
+  N:M · KV · 방법 옵션)과 Linear 단위만 남는다. H1("방법 혼합 > 비트 혼합")은 CALM Tab 4 가 이미 보였으므로 주장에서 내린다.
+  신규성은 C1 에 있다: 측정 원장 인용 + 결정적 수치 검사를 받는 LLM 이 층별 이질 공간에서, 같은 측정 수로 Hill 식 배낭 · ModelOpt ·
+  EvoPress · AMQ · TPE · LLM-seeded BO 보다 낫다는 것. 이를 선점한 문헌은 찾지 못했다. 가장 큰 위험은 동시기 ICLR'27 제출물 두 편
+  (AutoQS, Explorer–Reviewer)이고 본문 미확인이다. 그다음 위험은 실험 결과 자체다: LLM 우위는 예산에 따라 뒤집힐 수 있고(zhang-arxiv23),
+  직접 프롬프팅은 층별 할당이 불안정하다는 보고(TAP)가 있다.

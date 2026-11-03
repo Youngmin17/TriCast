@@ -225,6 +225,12 @@ PPL 은 공식 `lib.eval.eval_ppl` 로 잰다 (WikiText-2 test, seqlen 4096). �
   - `measure` 결과에 보정 · KL 시간을 나눠 기록하고, `corrupt` · `inputs` 를 옮긴다.
   - 그 뒤 15 s 의 구성을 잰다 (진단).
 
+## GPU 테스트 (AGENTS §6) — 트리 `8247881`, NVIDIA H200 NVL (berlin, 15:02–15:20 UTC)
+
+- `pytest tests/gpu -q`: **896 passed, 1 skipped** (`test_triton_mma.py:362`, 성능 측정은 `TRICAST_MMA_PERF=1` 일 때만).
+- 오늘 추가한 방법 · 캐시 테스트 (`tests/test_lowbit_methods.py`, `tests/test_weight_methods.py`, `tests/test_calibration_cache.py`, hqq · bitsandbytes 는 `pydeps_qm`): **106 passed**.
+- A100 · V100 확인은 아직이다. geneva · london · athens 가 같은 계정의 다른 작업으로 cap 에 차 있었다.
+
 ## R7 — 서버 GPU 작업 경로 (트리 `eff9e7f`, Tesla V100-PCIE-32GB, london)
 
 `POST /api/quantizer/jobs` (FastAPI TestClient, 포트를 열지 않는 배치) 로 `qd_nvfp4` PPL 을 재고, 같은 GPU 에서 `tricast run` 과 짝지어 비교했다.

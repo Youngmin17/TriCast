@@ -161,6 +161,24 @@ PPL 은 공식 `lib.eval.eval_ppl` 로 잰다 (WikiText-2 test, seqlen 4096). �
   - 그러니 같은 GPU · 같은 트리 안에서는 측정이 결정적이다 (CG1, 이번 귀속, R7). A100 과 H200 사이에서는 KL 이 최대 5.5% 다르고, 서로 가까운 제안의 순위가 바뀐다.
   - 논문 실험에 주는 규칙: 한 칸(모델 × 예산)의 모든 arm 은 같은 GPU 모델과 같은 트리에서 잰다. GPU 간 순위 상관을 따로 보고한다 (protocol §4 · §7).
 
+## 보정 결과 캐시 GPU 게이트 2 — 노드 로컬 디스크 (Qwen3-0.6B, H200)
+
+> 판정 기준은 측정 전에 이 커밋으로 적었고, 결과를 본 뒤 바꾸지 않는다.
+
+- 동기: 1차 게이트는 CG1 통과, CG2 실패였다. 원인 가설은 NFS 입출력이다.
+- 바꾼 것은 두 가지다.
+  - 캐시 디렉터리를 berlin 의 노드 로컬 NVMe (`/tmp/uceeeee_calib_cache`) 에 둔다. 끝나면 지운다.
+  - 코드는 리뷰 수정판이다 (`44228cf` 포함 트리, `CACHE_FORMAT` 2).
+- 나머지(제안 4개, 측정 명령, S1 · S2 · S3 순서)는 1차와 같다.
+
+| # | 조건 | 기준 |
+|:-:|---|---|
+| CG1′ | 결과가 같다 | 제안마다 S2 · S3 의 KL 이 S1 과 float 로 같고, 1차 게이트의 S1 값과도 같다 |
+| CG2′ | 전부 적중이면 빠르다 | S3 에서 보정 forward 0회, 제안당 `wall_s` 합이 S1 의 1/5 이하 |
+| CG5 | 리뷰 수정이 실제 모델에서 캐시를 끄지 않는다 | S3 의 `uncacheable` · `corrupt` 가 비어 있고 `inputs` 가 verified |
+
+- 채택은 CG1′ · CG2′ · CG5 로 한다. CG2′ 가 실패하면 측정 가속용 캐시는 쓰지 않고, 원인 분석(프로파일)으로 넘어간다.
+
 ## R7 — 서버 GPU 작업 경로 (트리 `eff9e7f`, Tesla V100-PCIE-32GB, london)
 
 `POST /api/quantizer/jobs` (FastAPI TestClient, 포트를 열지 않는 배치) 로 `qd_nvfp4` PPL 을 재고, 같은 GPU 에서 `tricast run` 과 짝지어 비교했다.

@@ -157,7 +157,7 @@ def test_the_remote_measurement_syncs_launches_waits_and_fetches(tmp_path: Path)
     assert "export PY=/env/python" in wrapper and "export HF_HOME='/hf home'" in wrapper
     assert "bad key" not in wrapper and 'bash "$S/rounds/$R/measure.sh"' in wrapper
     assert launch[0] == "gpu" and "gpu_cap.sh run tune_s_r1" in launch[1] and "setsid" in launch[1]
-    assert "-- timeout 60 bash" in launch[1]  # the job stops on its own (review M8)
+    assert "-- timeout -k 60 60 bash" in launch[1]  # the job stops on its own, KILL after a grace (M8)
     assert "TUNE_ROUND_DONE|TUNE_ROUND_FAIL" in wait[1] and fetch[1] == "cat /scratch/s/rounds/1/kl.json"
 
     def refusing(host, command, timeout, stdin=None):
@@ -238,3 +238,50 @@ def test_rounds_without_a_measurement_count_as_stale_and_reruns_continue(tmp_pat
     (tmp_path / "s" / "rounds" / "9" / "round.json").write_text("{}")
     with pytest.raises(tl.LoopError, match="started but have no kl.json"):
         tl.run(config, tmp_path, 1, 2, refusing, "test", never, log=lambda line: None)
+
+
+def test_the_wrapper_never_overrides_the_gpu_gpu_cap_assigned(tmp_path: Path) -> None:
+    """Re-check NEW-1: remote.env must not set the GPU selection gpu_cap.sh made for the job."""
+    config = {"remote": {"env": {"CUDA_VISIBLE_DEVICES": "0", "PY": "/env/python"}}}
+    with pytest.raises(tl.LoopError, match="gpu_cap.sh assigns the GPU"):
+        tl.round_wrapper(config)
+    assert "export PY=/env/python" in tl.round_wrapper({"remote": {"env": {"PY": "/env/python"}}})
+
+
+def test_without_a_model_sha_the_measurement_must_be_of_the_sessions_model_id(tmp_path: Path) -> None:
+    """Re-check M4: a session whose table has no model SHA still refuses another model's kl.json."""
+    config, ledger = _session(tmp_path)
+    fixed = json.loads((tmp_path / "s" / "session.json").read_text())
+    fixed["model_sha"] = None
+    (tmp_path / "s" / "session.json").write_text(json.dumps(fixed))
+    record = lg.read_ledger(ledger)[0]["id"]
+    p1 = ta.propose(tmp_path / "s", "p1", ta.load_grid(_grid(tmp_path, qr.uniform("nvint4"))),
+                    tmp_path / "table.json", Fraction(9, 2), "x", [record], ledger)
+    meta = {**ENV, "model_sha": None, "seed": 43, "windows": 8, "seqlen": 512,
+            "source": {"split": "validation"}}
+    good = {"name": "p1", "recipe_sha256": p1["recipe_sha256"], "kl": 0.2, "patched": 196}
+    data = {"schema": "tricast.autotune.measure/2", "meta": meta, "results": [good]}
+    tl.check_measurement(config, tmp_path, data, ["p1"])
+    other = {**data, "meta": {**meta, "model_id": "meta-llama/Llama-3.2-1B"}}
+    with pytest.raises(tl.LoopError, match="Llama-3.2-1B is not the session's"):
+        tl.check_measurement(config, tmp_path, other, ["p1"])
+
+
+def test_a_rerun_ingests_a_saved_but_uningested_measurement_first(tmp_path: Path) -> None:
+    """Re-check m2: a run that stopped after saving kl.json but before its ingest must not lose the round."""
+    config, ledger = _session(tmp_path)
+    record = lg.read_ledger(ledger)[0]["id"]
+    p1 = ta.propose(tmp_path / "s", "p1", ta.load_grid(_grid(tmp_path, qr.uniform("nvint4"))),
+                    tmp_path / "table.json", Fraction(9, 2), "x", [record], ledger)
+    ta.round_script(tmp_path / "s", ["p1"], 1)
+    meta = {**ENV, "seed": 43, "windows": 8, "seqlen": 512, "source": {"split": "validation"}}
+    (tmp_path / "s" / "rounds" / "1" / "kl.json").write_text(json.dumps({
+        "schema": "tricast.autotune.measure/2", "meta": meta,
+        "results": [{"name": "p1", "recipe_sha256": p1["recipe_sha256"], "kl": 0.11, "patched": 196}]}))
+
+    def stop(analysis: dict, number: int, count: int) -> dict:
+        assert analysis["best"]["name"] == "p1" and number == 2  # round 1 was ingested before round 2
+        return {"analysis": "x", "stop": True, "proposals": []}
+
+    result = tl.run(config, tmp_path, 1, 2, stop, "test", lambda *a: None, log=lambda line: None)
+    assert result["best"] == "p1" and result["kl"] == 0.11

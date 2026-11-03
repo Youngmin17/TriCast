@@ -424,7 +424,9 @@ def _supersede(known: dict[str, dict[str, Any]], log: str, records: Sequence[dic
         target = table.get((record["layer"], record["method"]))
         if target is None or target["value"] != record["value"]:
             raise LedgerError(f"{log}{record['source']['pointer']}: not this value in the finished table")
-        differ = [field for field in ("model_sha", "setting") if record.get(field) != target.get(field)]
+        fields = ("model_sha", "setting") if record.get("model_sha") or target.get("model_sha") else \
+            ("model_id", "setting")  # no revision on either side: the model id must match
+        differ = [field for field in fields if record.get(field) != target.get(field)]
         if differ:
             raise LedgerError(f"{log}{record['source']['pointer']}: the finished table measured another "
                               f"model or window setting ({differ}); not superseded")

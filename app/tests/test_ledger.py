@@ -331,3 +331,20 @@ def test_a_slow_document_writer_cannot_leave_older_documents_than_the_ledger(tmp
     assert sorted(record["value"] for record in records) == [20.0, 21.0]
     docs = [json.loads(line) for line in lg.docs_path(ledger).read_text().splitlines()]
     assert docs == [{"schema": lg.DOCS_SCHEMA, **doc} for doc in lg.documents(records)]
+
+
+def test_without_revisions_supersession_needs_the_same_model_id(tmp_path: Path) -> None:
+    """Re-check M5: with no model SHA on either side, a table of another model id must not supersede a log."""
+    runs = tmp_path / "runs" / "t"
+    runs.mkdir(parents=True)
+    meta = {**META, "model_sha": None, "env": {**ENV, "model_sha": None}}
+    lines = [{"config": meta}, {"layer": O_PROJ, "method": "bf16", "kl": 0.0}]
+    (runs / "table.entries.jsonl").write_text("".join(json.dumps(line) + "\n" for line in lines))
+    path = tmp_path / "ledger.jsonl"
+    lg.ingest([runs], path, tmp_path)
+    other = {**meta, "model_id": "meta-llama/Llama-3.2-1B"}
+    table = {"schema": "tricast.autotune.table/2", "meta": other,
+             "layers": [{"name": O_PROJ, "block": 13, "kind": "o_proj", "kl": {"bf16": 0.0}}]}
+    (runs / "table.json").write_text(json.dumps(table))
+    with pytest.raises(lg.LedgerError, match="model_id"):
+        lg.ingest([runs], path, tmp_path)

@@ -56,6 +56,9 @@ from app import tune_agent as ta
 LOOP_SCHEMA = "tricast.tune.loop/1"
 TOP_LAYERS = 12  # layers with the largest single-layer loss shown to the proposer
 TOP_MOVES = 12  # tabled one-move neighbours shown to the proposer
+# set by gpu_cap.sh for the job it admits; a round wrapper must never change them
+GPU_CAP_OWNED = frozenset({"CUDA_VISIBLE_DEVICES", "NVIDIA_VISIBLE_DEVICES", "HIP_VISIBLE_DEVICES",
+                           "ROCR_VISIBLE_DEVICES", "GPU_DEVICE_ORDINAL"})
 _CHANGE = {"type": "object",
            "properties": {"block": {"type": "integer"}, "kind": {"type": "string", "enum": list(qr.KINDS)},
                           "method": {"type": "string", "enum": list(qr.METHODS)}},
@@ -223,7 +226,9 @@ def claude_command(config: dict[str, Any]) -> list[str]:
 
 
 def _user_memory() -> dict[str, Any]:
-    """The user-level CLAUDE.md Claude Code still loads outside --bare (instructions, recorded by hash)."""
+    """The user-level CLAUDE.md, recorded by hash in case a CLI version loads it: with ``claude_command``'s
+    flags from an empty directory, the 2026-11-03 probe (CLI 2.1.280) loaded 2,013 input tokens in all, so no
+    CLAUDE.md reached the proposer. Each round also records the input token count (``usage``)."""
     path = Path.home() / ".claude" / "CLAUDE.md"
     digest = hashlib.sha256(path.read_bytes()).hexdigest() if path.is_file() else None
     return {"path": str(path), "sha256": digest}
@@ -242,9 +247,13 @@ def claude_code(config: dict[str, Any], root: Path, runner: Callable[..., Any] =
                           timeout=(config.get("llm") or {}).get("timeout_s", 900))
         folder = root / config["session"] / "llm"
         folder.mkdir(parents=True, exist_ok=True)
+        try:
+            usage = json.loads(done.stdout).get("usage") if done.returncode == 0 else None
+        except (json.JSONDecodeError, AttributeError):
+            usage = None
         record = {"round": round_number, "started_utc": started, "command": command, "cwd": "empty temp dir",
-                  "user_memory": _user_memory(), "prompt": prompt, "returncode": done.returncode,
-                  "stdout": done.stdout, "stderr": done.stderr[-4000:]}
+                  "user_memory": _user_memory(), "usage": usage, "prompt": prompt,
+                  "returncode": done.returncode, "stdout": done.stdout, "stderr": done.stderr[-4000:]}
         (folder / f"round_{round_number}.json").write_text(json.dumps(record, indent=1, ensure_ascii=False),
                                                            encoding="utf-8")
         if done.returncode != 0:
@@ -300,6 +309,10 @@ def round_wrapper(config: dict[str, Any]) -> str:
     """The cluster-side wrapper of a round: the environment of ``remote.env`` (variable -> value), then the
     round's measure.sh. Written into the session by the loop itself."""
     env = (config["remote"].get("env") or {})
+    owned = sorted(set(env) & GPU_CAP_OWNED)
+    if owned:
+        raise LoopError(f"remote.env sets {owned}: gpu_cap.sh assigns the GPU, the wrapper must not "
+                        "override it")
     exports = "".join(f"export {key}={shlex.quote(str(value))}\n" for key, value in env.items()
                       if re.fullmatch(r"[A-Z_][A-Z0-9_]*", key))
     return ("# Written by app.tune_loop: S, T, R are set by the launch command.\n" + exports
@@ -333,6 +346,8 @@ def check_measurement(config: dict[str, Any], root: Path, data: Any, names: Sequ
         raise LoopError(f"kl.json windows {setting} are not the session's {measure}")
     if fixed.get("model_sha") and meta.get("model_sha") != fixed["model_sha"]:
         raise LoopError(f"kl.json model {meta.get('model_sha')} is not the session's {fixed['model_sha']}")
+    if not fixed.get("model_sha") and meta.get("model_id") != fixed["model_id"]:
+        raise LoopError(f"kl.json model {meta.get('model_id')} is not the session's {fixed['model_id']}")
 
 
 def measure_remote(config: dict[str, Any], root: Path, round_number: int, names: Sequence[str],
@@ -357,7 +372,7 @@ def measure_remote(config: dict[str, Any], root: Path, round_number: int, names:
     # the job itself stops at wait_s, so a loop that gives up leaves no GPU claim behind
     job = (f"S={target_dir} T={shlex.quote(remote['tree'])} R={round_number} nohup bash "
            f"{shlex.quote(remote.get('gpu_cap', '/scratch/uceeeee/bin/gpu_cap.sh'))} run {label} -- "
-           f"timeout {wait_s} bash {target_dir}/run_round.sh > {log} 2>&1 < /dev/null &")
+           f"timeout -k 60 {wait_s} bash {target_dir}/run_round.sh > {log} 2>&1 < /dev/null &")
     launch = f"setsid bash -c {shlex.quote(job)}; sleep 5; grep -m1 gpu_cap {log} || true"
     done = ssh(remote["host"], launch, 300)
     if b"DENY" in done.stdout:
@@ -388,6 +403,9 @@ def run(config: dict[str, Any], root: Path, rounds: int, per_round: int, propose
     if unfinished:
         raise LoopError(f"round(s) {unfinished} were started but have no kl.json: inspect the cluster log, "
                         "then fetch kl.json or remove the round folder")
+    measured = [path for path in sorted((session / "rounds").glob("*/kl.json"))]
+    if measured:  # a kl.json saved by a run that stopped before its ingest is ingested now (idempotent)
+        lg.ingest_and_document(measured, ledger, root)
     summary_path = session / "loop" / "summary.json"
     summary = json.loads(summary_path.read_text(encoding="utf-8")) if summary_path.is_file() else []
     refused: list[dict[str, Any]] = summary[-1]["refused"] if summary else []

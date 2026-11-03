@@ -321,3 +321,13 @@ def test_a_cited_recipe_supports_its_own_option_values(tmp_path: Path) -> None:
     ta.propose(tmp_path / "s", "next", grid, table, Fraction(9, 2), "99.5 gave 0.31", [measured], ledger)
     with pytest.raises(ta.TuneError, match="not supported"):
         ta.propose(tmp_path / "s", "next2", grid, table, Fraction(9, 2), "percentile 99.5", [record], ledger)
+
+
+def test_ids_named_in_the_rationale_must_be_ledger_records(tmp_path: Path) -> None:
+    """Loop spike finding: a rationale named "E3993cc21a10", which is no record (only cites were checked)."""
+    table = _table(tmp_path)
+    ledger, record = _ledger(tmp_path)
+    grid = ta.load_grid(_grid(tmp_path, qr.uniform("nvfp4")))
+    ta.propose(tmp_path / "s", "ok", grid, table, Fraction(9, 2), f"as {record} shows", [record], ledger)
+    with pytest.raises(ta.TuneError, match="not ledger records: \\['E3993cc21a10'\\]"):
+        ta.propose(tmp_path / "s", "bad", grid, table, Fraction(9, 2), "see E3993cc21a10", [record], ledger)

@@ -242,6 +242,9 @@ def propose(session: Path, name: str, spec: dict[str, Any], table_path: Path, bu
     unknown = [item for item in cites if item not in index]
     if unknown:
         raise TuneError(f"cited ids not in the ledger {ledger}: {unknown}")
+    mentioned = sorted(set(re.findall(r"\bE[0-9a-f]{6,}\b", rationale)) - set(index))
+    if mentioned:
+        raise TuneError(f"the rationale names ids that are not ledger records: {mentioned}")
     if parent is not None:
         read_proposal(session, parent)
     _session(session, table_path, write=False)

@@ -84,6 +84,31 @@ PPL 은 공식 `lib.eval.eval_ppl` 로 잰다 (WikiText-2 test, seqlen 4096). �
 - AC26 GPU 게이트의 판정은 G1 · G4 로 한다.
 - G2 · G3 는 재현 수준을 보고한다. 실패하면 "재현 미달 (Δ=…)" 로 적고 원인을 가린다.
 
+## 보정 결과 캐시 GPU 게이트 (Qwen3-0.6B, NVIDIA A100, 자율 루프 2라운드의 제안 4개)
+
+> 판정 기준은 측정 전에 이 커밋으로 적었고, 결과를 본 뒤 바꾸지 않는다.
+
+**설정**
+- 레시피는 `runs/20261103_tune/loop_s2` 2라운드의 제안 4개다: `ao_damp0.005_int8mse` · `noao_int8mse` · `ao_int8mse_swap_l2up_l21down` · `ao_int8mse_actmse`.
+- 측정은 루프와 같은 `app.autotune measure --calibrate` 이다. 검증 8 × 512, seed 43, 보정 wikitext2 train 128 × 2048, seed 42.
+- 한 작업 안에서 세 번 잰다.
+  - S1: 캐시 없음
+  - S2: `--calib-cache` 새 디렉터리 (채우기; 제안끼리 같은 층 명세는 서로 적중)
+  - S3: 같은 캐시로 다시 (전부 적중)
+- 같은 작업에서 NF4 의 bitsandbytes CUDA 비트 일치 테스트(`tests/test_weight_methods.py`, B1 이 GPU 를 못 돌린 1건)도 돌린다.
+
+**판정 기준**
+
+| # | 조건 | 기준 |
+|:-:|---|---|
+| CG1 | 결과가 같다 | 제안마다 S2 · S3 의 KL 이 S1 과 float 로 같다 |
+| CG2 | 전부 적중이면 빠르다 | S3 에서 보정 forward 0회, 제안당 `wall_s` 합이 S1 의 1/5 이하 |
+| CG3 | 부분 적중의 절감 (보고만) | S2 의 적중 · 미스 수와 `wall_s` |
+| CG4 | NF4 CUDA | `test_nf4_matches_bitsandbytes_cuda_bit_for_bit` 통과 |
+
+- 채택은 CG1 · CG2 · CG4 로 한다. CG1 이 실패하면 캐시는 쓰지 않는다.
+- 참고(판정 무관): S1 의 KL 을 루프가 트리 `1e93df6` 에서 잰 ledger 값과 비교한다 (그 뒤 코드 변경의 영향).
+
 ## R7 — 서버 GPU 작업 경로 (트리 `eff9e7f`, Tesla V100-PCIE-32GB, london)
 
 `POST /api/quantizer/jobs` (FastAPI TestClient, 포트를 열지 않는 배치) 로 `qd_nvfp4` PPL 을 재고, 같은 GPU 에서 `tricast run` 과 짝지어 비교했다.

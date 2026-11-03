@@ -187,7 +187,7 @@ def _unpredicted(spec: dict[str, Any], table: dict[str, Any]) -> str | None:
     if any(spec.get("options") or {}) or spec.get("kv_options"):
         return "method or KV options: the table has entries for the default options only"
     used = {method for row in spec["grid"] for method in row}
-    if used & set(qr.CALIBRATED) or spec.get("calibration"):
+    if used & set(qr.CALIBRATED_ALL) or spec.get("calibration"):
         windows = table["meta"].get("calibration_windows")
         settings = qr.check_calibration(spec.get("calibration"))
         keys = ("dataset", "samples", "seqlen", "seed")

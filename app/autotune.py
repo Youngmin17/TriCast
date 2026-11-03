@@ -28,14 +28,14 @@ distributions (OBJECTIVE). BF16 is 0 by definition and not run. After the method
   costs. BF16 is a skip (no patch), so it has no floor.
 - with --kv-presets, one KV entry per decoder block and preset (top-level ``kv``): only that block's KV cache
   quantized (``kv: {preset, mode: fakequant, layers: "<block>"}``), no Linear patched.
-Calibrated methods (app.quantizer_recipe.CALIBRATED; only with --calibrate) patch the one layer, run
+Calibrated methods (app.quantizer_recipe.CALIBRATED_ALL; only with --calibrate) patch the one layer, run
 ``tricast.calibration.calibrate`` on that model state with the recipe's own calibration block (the --calib-*
 settings, as ``tricast run`` calibrates the solved recipe), then measure. Input sharing: AWQ and SmoothQuant
 fit one scale for all Linears that read the same input (q/k/v; gate/up) in a full recipe, so a one-layer
-calibration of those kinds is not the spec the full recipe gives them. awq_nvfp4 and smoothquant_nvfp4 are
-therefore tabled only for the kinds with a unique input (UNIQUE_INPUT: o_proj, down_proj); on q/k/v/gate/up
-their value is null and solve never chooses them there. gptq_int4 is tabled for all seven kinds (GPTQ shares
-only the Hessian, which is the same for every reader of an input).
+calibration of those kinds is not the spec the full recipe gives them. awq_nvfp4, smoothquant_nvfp4 and
+awq_int4 are therefore tabled only for the kinds with a unique input (UNIQUE_INPUT: o_proj, down_proj); on
+q/k/v/gate/up their value is null and solve never chooses them there. gptq_int4 (and gptq_int3 / gptq_int2) is
+tabled for all seven kinds (GPTQ shares only the Hessian, which is the same for every reader of an input).
 Calibration and KL windows: --split validation draws the KL windows (table and measure) from WikiText-2
 validation instead of train. Whenever something is calibrated, ``calibration_overlap`` (table meta, measure
 result) records the tokens the KL windows share with the calibration windows: from one dataset split, both
@@ -86,10 +86,11 @@ TABLE_SCHEMA = "tricast.autotune.table/2"
 TABLE_SCHEMAS = ("tricast.autotune.table/1", TABLE_SCHEMA)  # what load_table reads
 MEASURE_SCHEMA = "tricast.autotune.measure/2"  # /2: results say whether and how they were calibrated
 SOLUTION_SCHEMA = "tricast.autotune.solution/2"
-FREE = tuple(m for m in qr.METHODS if m not in qr.CALIBRATED)  # bf16 nvfp4 nvint4 mxfp4 mxfp8 int8 bfp12
-# The Python-only methods (app.quantizer_recipe.EXTENDED: nf4 hqq_int4 razer_nvfp4) are calibration-free too;
-# they are tabled when --methods names them (the default stays FREE, the page's alphabet).
-SHARED_INPUT = ("awq_nvfp4", "smoothquant_nvfp4")  # one scale per input in a full recipe (module docstring)
+FREE = tuple(m for m in qr.METHODS if m not in qr.CALIBRATED_ALL)  # bf16 nvfp4 nvint4 mxfp4 mxfp8 int8 bfp12
+# The Python-only methods (app.quantizer_recipe.EXTENDED: nf4 hqq_int4 razer_nvfp4; LOWBIT, whose GPTQ and AWQ
+# methods are calibrated) are tabled when --methods names them (the default stays FREE, the page's alphabet).
+# one scale per input in a full recipe (module docstring)
+SHARED_INPUT = ("awq_nvfp4", "smoothquant_nvfp4", "awq_int4")
 UNIQUE_INPUT = ("o_proj", "down_proj")  # the kinds no other Linear of the block reads the input of
 # The patch floor: the layer patched with no quantization on the default MMA path (the control
 # runs/20261014_autotune/*/floor/ctrl_f23_b13_o.yaml of the v1 spike).
@@ -260,12 +261,12 @@ def solve_mckp(costs: Sequence[Sequence[Fraction | int | float]], values: Sequen
 # ---------- grids ----------
 def default_method(used: Sequence[str], allowed: Sequence[str]) -> str:
     """The grid default: the most frequent non-BF16 method in ``used``, ties to the earlier method in
-    app.quantizer_recipe.ALL_METHODS; with none, the first non-BF16 method of ``allowed`` (build needs
-    one)."""
+    app.quantizer_recipe.PYTHON_METHODS; with none, the first non-BF16 method of ``allowed`` (build
+    needs one)."""
     counts = Counter(method for method in used if method != "bf16")
     if counts:
-        return min(counts, key=lambda method: (-counts[method], list(qr.ALL_METHODS).index(method)))
-    return next(method for method in qr.ALL_METHODS if method in allowed and method != "bf16")
+        return min(counts, key=lambda method: (-counts[method], list(qr.PYTHON_METHODS).index(method)))
+    return next(method for method in qr.PYTHON_METHODS if method in allowed and method != "bf16")
 
 
 def write_grid(out_dir: Path, name: str, default: str, grid: qr.Grid, kv: str,
@@ -285,18 +286,19 @@ def applicable(method: str, kind: str) -> bool:
 
 
 def parse_methods(text: str, calibrate: bool = False) -> list[str]:
-    """Comma-separated method ids -> methods in app.quantizer_recipe.ALL_METHODS order; the calibrated ones
-    only with ``calibrate`` (table --calibrate)."""
+    """Comma-separated method ids -> methods in app.quantizer_recipe.PYTHON_METHODS order; the calibrated
+    ones only with ``calibrate`` (table --calibrate)."""
     given = {method.strip() for method in text.split(",") if method.strip()}
-    unknown = sorted(given - set(qr.ALL_METHODS))
+    unknown = sorted(given - set(qr.PYTHON_METHODS))
     if unknown:
-        raise AutotuneError(f"unknown methods {unknown}; known: {list(qr.ALL_METHODS)}")
-    calibrated = sorted(given & qr.CALIBRATED)
+        raise AutotuneError(f"unknown methods {unknown}; known: {list(qr.PYTHON_METHODS)}")
+    calibrated = sorted(given & qr.CALIBRATED_ALL)
     if calibrated and not calibrate:
+        free = [method for method in qr.PYTHON_METHODS if method not in qr.CALIBRATED_ALL]
         raise AutotuneError(f"{calibrated} need calibration data; add --calibrate to calibrate each "
                             f"one-layer entry on the --calib-* windows (without it, only the "
-                            f"calibration-free methods {[*FREE, *qr.EXTENDED]})")
-    methods = [method for method in qr.ALL_METHODS if method in given]
+                            f"calibration-free methods {free})")
+    methods = [method for method in qr.PYTHON_METHODS if method in given]
     if all(method == "bf16" for method in methods):
         raise AutotuneError("give at least one quantization method besides bf16")
     return methods
@@ -729,7 +731,7 @@ def cmd_table(args: argparse.Namespace, model_factory: ModelFactory | None = Non
     kv_presets = parse_kv_presets(args.kv_presets)
     calibration = calibration_settings(args)
     kl = kl_windows(args)
-    calibrated = [method for method in methods if method in qr.CALIBRATED]
+    calibrated = [method for method in methods if method in qr.CALIBRATED_ALL]
     if calibrated:
         refuse_identical_windows(kl, calibration_windows(method_recipe(calibrated[0], calibration)), "table")
     out = Path(args.out)
@@ -744,7 +746,7 @@ def _table(args: argparse.Namespace, model_factory: ModelFactory | None, methods
     session.meta["calibration"] = calibration
     layers, model_blocks = model_layers(session.model, args.blocks)
     blocks = sorted({layer.block for layer in layers})
-    recipes = {method: method_recipe(method, calibration if method in qr.CALIBRATED else None)
+    recipes = {method: method_recipe(method, calibration if method in qr.CALIBRATED_ALL else None)
                for method in methods if method != "bf16"}
     shas = {method: recipe.sha256 for method, recipe in recipes.items()}
     floor = floor_recipe()
@@ -753,7 +755,7 @@ def _table(args: argparse.Namespace, model_factory: ModelFactory | None, methods
     entries_path = out.with_name(out.stem + ".entries.jsonl")
     entry_shas = {**shas, "floor": floor.sha256, **{f"kv:{preset}": sha for preset, sha in kv_shas.items()}}
     done, runs = _resume(entries_path, {key: session.meta[key] for key in RESUME_KEYS}, entry_shas)
-    calibrated = [method for method in recipes if method in qr.CALIBRATED]
+    calibrated = [method for method in recipes if method in qr.CALIBRATED_ALL]
     overlap = None if not calibrated else window_overlap(session.tokenizer, kl_windows(args),
                                                          session.meta["dataset_fingerprint"],
                                                          calibration_windows(recipes[calibrated[0]]))
@@ -793,7 +795,7 @@ def _table(args: argparse.Namespace, model_factory: ModelFactory | None, methods
                     continue
                 entry_started = time.perf_counter()
                 entry: dict[str, Any] = {"layer": layer.name, "method": method}
-                if method in qr.CALIBRATED:
+                if method in qr.CALIBRATED_ALL:
                     kl, summary = _patched_kl(session, replace(recipes[method], include=[layer.name]),
                                               args.seed, [layer.name], calibrate=True)
                     assert summary is not None and overlap is not None
@@ -847,7 +849,7 @@ def _table(args: argparse.Namespace, model_factory: ModelFactory | None, methods
                 "kl": {preset: done[(attention_name(block), f"kv:{preset}")]["kl"] for preset in kv_presets}}
                for block in blocks] if kv_presets else []
     summaries = [done[(layer.name, method)]["calibration"] for layer, method in todo
-                 if method in qr.CALIBRATED]
+                 if method in qr.CALIBRATED_ALL]
     meta = {**session.meta, "methods": methods, "blocks": len(layers) // len(qr.KINDS),
             "model_blocks": model_blocks, "method_recipe_sha256": shas, "entries": len(todo),
             "entries_computed_this_run": computed["methods"],
@@ -983,7 +985,7 @@ def cmd_solve(args: argparse.Namespace) -> int:
     name = args.name or default_name(bits, args.kv)
     out = Path(args.out)
     meta = table["meta"]
-    calibration = meta.get("calibration") if any(method in qr.CALIBRATED for method in methods) else None
+    calibration = meta.get("calibration") if any(method in qr.CALIBRATED_ALL for method in methods) else None
     write_grid(out, name, default, grid, args.kv, calibration)
     achieved = solution.cost / params
     tabled = sorted({layer.block for layer in layers})
@@ -1063,7 +1065,7 @@ def _grid_specs(item: str) -> list[dict[str, Any]]:
 def cmd_predict(args: argparse.Namespace) -> int:
     table, raw, layers, methods = load_table(Path(args.table))
     floor = floors(table)
-    calibration = (table["meta"].get("calibration") if any(method in qr.CALIBRATED for method in methods)
+    calibration = (table["meta"].get("calibration") if any(method in qr.CALIBRATED_ALL for method in methods)
                    else None)
     results = []
     for item in args.grids:
@@ -1073,7 +1075,7 @@ def cmd_predict(args: argparse.Namespace) -> int:
             if carried:
                 raise AutotuneError(f"{item}: {spec['name']} sets {carried}; the v1 table has entries only "
                                     "for the methods without options")
-            uses_calibrated = any(method in qr.CALIBRATED for row in spec["grid"] for method in row)
+            uses_calibrated = any(method in qr.CALIBRATED_ALL for row in spec["grid"] for method in row)
             if calibration is not None and (spec.get("calibration") or uses_calibrated):
                 try:
                     settings = qr.check_calibration(spec.get("calibration"))
@@ -1155,8 +1157,8 @@ def main(argv: Sequence[str] | None = None, model_factory: ModelFactory | None =
     table.add_argument("--methods", default=",".join(FREE))
     table.add_argument("--blocks", type=int, help="only the first N decoder blocks")
     table.add_argument("--calibrate", action="store_true",
-                       help=f"accept the calibrated methods {sorted(qr.CALIBRATED)}: each entry calibrates "
-                            "its one layer (tricast calibrate) with the --calib-* settings")
+                       help=f"accept the calibrated methods {sorted(qr.CALIBRATED_ALL)}: each entry "
+                            "calibrates its one layer (tricast calibrate) with the --calib-* settings")
     for key in ("dataset", "samples", "seqlen", "seed"):
         spec = qr.CALIBRATION[key]
         table.add_argument(f"--calib-{key}", default=spec["default"], choices=spec.get("choices"),

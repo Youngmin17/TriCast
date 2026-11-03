@@ -78,7 +78,32 @@ EXTENDED: dict[str, dict[str, Any]] = {
     "razer_nvfp4": {"weight": None, "activation": _q("nvfp4"), "transform": "none", "weight_algo": "razer"},
 }
 ALL_METHODS: dict[str, dict[str, Any] | None] = {**METHODS, **EXTENDED}
+# Python-only methods of the paper's comparison tracks (M: 2-4 bit weight-only; C: W4A4 with a rotation).
+# Kept apart from EXTENDED, the 2026-11-03 set of calibration-free, option-free 4.5-bit weight-replacement
+# methods that app/tests pin (ALL_METHODS = METHODS + EXTENDED in that order is also the tune loop's proposal
+# alphabet). Off the page like EXTENDED (AC15 covers METHODS). gptq_int3 / gptq_int2: gptq_int4's spec with
+# the element format replaced (uint3 / uint2, group 128, FP16 scale, integer zero point); hqq_int3 / hqq_int2:
+# official HQQ 3 / 2-bit (weight_algo hqq3 / hqq2); awq_int4: AWQ scales searched with the int4_g128_zp weight
+# error, RTN, BF16 activations; had_nvfp4 / had_mxfp4: block Hadamard along K (block 0 = the largest power of
+# two <= 128 dividing K: 128 on every Qwen3-0.6B Linear) then NVFP4 / MXFP4 weights and activations.
+LOWBIT: dict[str, dict[str, Any]] = {
+    "gptq_int3": {"weight": {"scheme": "int4_g128_zp", "format": "uint3"}, "activation": None,
+                  "transform": "none", "weight_algo": "gptq"},
+    "gptq_int2": {"weight": {"scheme": "int4_g128_zp", "format": "uint2"}, "activation": None,
+                  "transform": "none", "weight_algo": "gptq"},
+    "hqq_int3": {"weight": None, "activation": None, "transform": "none", "weight_algo": "hqq3"},
+    "hqq_int2": {"weight": None, "activation": None, "transform": "none", "weight_algo": "hqq2"},
+    "awq_int4": {"weight": "int4_g128_zp", "activation": None,
+                 "transform": {"kind": "awq", "share_inputs": True}, "weight_algo": "rtn"},
+    "had_nvfp4": {"weight": _q("nvfp4"), "activation": _q("nvfp4"), "transform": {"kind": "hadamard"},
+                  "weight_algo": "rtn"},
+    "had_mxfp4": {"weight": _q("mxfp4"), "activation": _q("mxfp4"), "transform": {"kind": "hadamard"},
+                  "weight_algo": "rtn"},
+}
+PYTHON_METHODS: dict[str, dict[str, Any] | None] = {**ALL_METHODS, **LOWBIT}  # what build / resolve accept
+# page data (the page catalog's calibration flags); Python-side checks use CALIBRATED_ALL
 CALIBRATED = {"gptq_int4", "awq_nvfp4", "smoothquant_nvfp4"}
+CALIBRATED_ALL = CALIBRATED | {"gptq_int3", "gptq_int2", "awq_int4"}
 KV = {"none": None, "kivi2": {"preset": "kivi2", "mode": "fakequant"},
       "kivi4": {"preset": "kivi4", "mode": "fakequant"}, "kv_fp8": {"preset": "kv_fp8", "mode": "fakequant"}}
 DESCRIPTION = "Built with the Tri-Cast Quantizer demo (one method per Linear layer)."
@@ -126,11 +151,12 @@ _SCALED = ("weight.scale.method", "weight.scale.percentile", "weight.rounding",
 
 
 class _MethodOptions(dict):
-    """METHOD_OPTIONS names the page's methods (it is page data); a Python-only method (EXTENDED) has none."""
+    """METHOD_OPTIONS names the page's methods (it is page data); a Python-only method has the options of
+    LOWBIT_OPTIONS (EXTENDED: none)."""
 
     def __missing__(self, method: str) -> tuple[str, ...]:
-        if method in EXTENDED:
-            return ()
+        if method in EXTENDED or method in LOWBIT:
+            return LOWBIT_OPTIONS.get(method, ())
         raise KeyError(method)
 
 
@@ -153,6 +179,14 @@ METHOD_OPTIONS: dict[str, tuple[str, ...]] = _MethodOptions({
              "activation.observer.percentile"),
     "bfp12": ("weight.rounding", "activation.rounding"),
 })
+# LOWBIT options: low-bit GPTQ as gptq_int4; awq_int4 as awq_nvfp4 without the operand scale options (its
+# zero-point weight takes its range from [min, max], as GPTQ's) and with the int group size; the Hadamard
+# methods as their formats' plain methods. HQQ has none (its group of 64 is the adapter's).
+LOWBIT_OPTIONS: dict[str, tuple[str, ...]] = {
+    "gptq_int3": METHOD_OPTIONS["gptq_int4"], "gptq_int2": METHOD_OPTIONS["gptq_int4"],
+    "awq_int4": ("weight.group_size", "weight.rounding", "transform.grid", "transform.share_inputs"),
+    "had_nvfp4": METHOD_OPTIONS["nvfp4"], "had_mxfp4": METHOD_OPTIONS["mxfp4"],
+}
 CALIBRATING_OBSERVERS = ("minmax", "ema", "percentile")  # tricast: all observers but history calibrate
 # A transform / weight_algo that carries options is written as a complete mapping (every field, in dataclass
 # order): tricast merges an override's transform field by field onto the defaults' one.
@@ -245,7 +279,7 @@ def _check_options(options: Options | None) -> Options:
         return {}
     if not isinstance(options, dict):
         raise ValueError("options must map method ids to {option id: value}")
-    unknown = sorted(set(options) - set(ALL_METHODS))
+    unknown = sorted(set(options) - set(PYTHON_METHODS))
     if unknown:
         raise ValueError(f"options for unknown methods {unknown}")
     return {method: method_options(method, value) for method, value in options.items()}
@@ -254,7 +288,7 @@ def _check_options(options: Options | None) -> Options:
 def needs_calibration(method: str, options: dict[str, Any] | None = None) -> bool:
     """GPTQ, AWQ and SmoothQuant always; any method once a static activation observer is chosen."""
     chosen = method_options(method, options)
-    return method in CALIBRATED or chosen.get("activation.observer.kind") in CALIBRATING_OBSERVERS
+    return method in CALIBRATED_ALL or chosen.get("activation.observer.kind") in CALIBRATING_OBSERVERS
 
 
 def _complete(key: str, value: str | dict[str, Any]) -> dict[str, Any]:
@@ -271,7 +305,7 @@ def _variant(method: str, chosen: dict[str, Any], complete: set[str]) -> dict[st
     """METHODS[method] with the (checked) options written in. Operand options go inside the operand's scheme
     mapping (``mma_input`` stays last, as in ``_q``), so a later spec never inherits them; transform /
     weight_algo keys in ``complete`` (and those with options) become complete mappings."""
-    base = ALL_METHODS[method]
+    base = PYTHON_METHODS[method]
     if base is None:
         return None
     fragment = copy.deepcopy(base)
@@ -307,7 +341,7 @@ def fragments(default: str, options: Options | None = None) -> Fragments:
     inherits the default's values through tricast's field-by-field merge."""
     checked = _check_options(options)
     complete = _modified(checked.get(default, {}))
-    return {method: _variant(method, checked.get(method, {}), complete) for method in ALL_METHODS}
+    return {method: _variant(method, checked.get(method, {}), complete) for method in PYTHON_METHODS}
 
 
 def check_calibration(calibration: dict[str, Any] | None) -> dict[str, Any]:
@@ -372,7 +406,7 @@ def _rule(selector: dict[str, Any], method: str, table: Fragments) -> dict[str, 
 
 def overrides_for(default: str, grid: Grid, table: Fragments | None = None) -> list[dict[str, Any]]:
     """Minimal first-match rules that reproduce ``grid`` on top of ``default`` (``table``: ``fragments``)."""
-    table = ALL_METHODS if table is None else table
+    table = PYTHON_METHODS if table is None else table
     covered: dict[tuple[int, int], str] = {}
     block_rules: dict[str, list[int]] = {}
     for block, row in enumerate(grid):
@@ -398,7 +432,7 @@ def overrides_for(default: str, grid: Grid, table: Fragments | None = None) -> l
 def resolve(default: str, rules: list[dict[str, Any]], blocks: int = BLOCKS,
             table: Fragments | None = None) -> Grid:
     """Replay first-match override resolution to the method id each layer gets."""
-    table = ALL_METHODS if table is None else table
+    table = PYTHON_METHODS if table is None else table
     by_fields = {json.dumps(fields, sort_keys=True): method for method, fields in table.items() if fields}
     if len(by_fields) != sum(1 for fields in table.values() if fields):
         raise AssertionError("two methods have the same recipe fields")
@@ -427,12 +461,12 @@ def build(name: str, default: str, grid: Grid, kv: str = "none", description: st
           kv_options: dict[str, Any] | None = None) -> dict[str, Any]:
     """The recipe mapping for one grid (default method, per-layer methods, KV preset), with per-method
     ``options`` ({method: {option id: value}}), ``calibration`` settings and ``kv_options``."""
-    if default not in ALL_METHODS or default == "bf16":
+    if default not in PYTHON_METHODS or default == "bf16":
         raise ValueError(f"default method must be a quantization method, got {default!r}")
     if len(grid) < BLOCKS or any(len(row) != len(KINDS) for row in grid):
         # the page grid has BLOCKS rows; a model with more decoder blocks gets one row per block
         raise ValueError(f"grid must be >= {BLOCKS} blocks × {len(KINDS)} kinds")
-    unknown = sorted({m for row in grid for m in row} - set(ALL_METHODS))
+    unknown = sorted({m for row in grid for m in row} - set(PYTHON_METHODS))
     if unknown:
         raise ValueError(f"unknown methods {unknown}")
     kv_fields = _kv_fields(kv, kv_options)

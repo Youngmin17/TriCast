@@ -177,9 +177,11 @@
       "enum": [
         "nf4",
         "hqq",
-        "razer"
+        "razer",
+        "hqq3",
+        "hqq2"
       ],
-      "description": "Replace the weight by one method's quantize-dequantize result on BF16 (weight: null): bitsandbytes NF4 (block 64), official HQQ 4-bit (group 64), RaZeR NVFP4 (E4M3 block scale)."
+      "description": "Replace the weight by one method's quantize-dequantize result on BF16 (weight: null): bitsandbytes NF4 (block 64), official HQQ 4-bit (hqq) / 3-bit (hqq3) / 2-bit (hqq2) (group 64), RaZeR NVFP4 (E4M3 block scale)."
     },
     "algorithm": {
       "type": "string",

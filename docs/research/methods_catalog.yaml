@@ -61,7 +61,7 @@ methods:
   kb_key: null
   arxiv: "2210.17323"
   note: "README-tested env torch 1.10.1 / transformers 4.21.2, but gptq.py only needs torch + transformers.Conv1D isinstance."
-  tricast: official_adapter  # recipe official_gptq (src/tricast/official/gptq.py, llama_sequential at 2d65066); the older weight_algo gptq is TriCast's own re-implementation (per-row FP32 scale bit-identical to official on a probe; group 128 differs by 1-ulp scales)
+  tricast: official_adapter  # recipe official_gptq (src/tricast/official/gptq.py, llama_sequential at 2d65066); the older weight_algo gptq is TriCast's own re-implementation (per-row FP32 scale bit-identical to official on a probe; group 128 differs by 1-ulp scales); at 3 / 2 bits (uint3 / uint2 g128 zp; Quantizer gptq_int3 / gptq_int2, Python-only LOWBIT) it equals official fasterquant bit for bit once the fp16 group scale, the fp64 loop and fp32-rounded quantizer inputs are made the same, for group >= block, block = group or act_order; with group < block (e.g. group_size 32 / 64 at block 128) TriCast refreshes those groups from the corrected weights and differs from official GPTQ (which reads W before the block's updates) — tests/test_lowbit_methods.py
 - id: gptaq
   name: GPTAQ (GPTQv2)
   venue: ICML
@@ -118,7 +118,7 @@ methods:
   kb_key: null
   arxiv: null
   note: "Calibration-free (no activations). Repo moved mobiusml/hqq -> dropbox/hqq; PyPI hqq 0.2.8.post1 (2025-10-20) still lists mobiusml URL. setup: transformers>=4.36.1."
-  tricast: official_adapter  # weight_algo hqq (src/tricast/weight_quant/hqq.py): official HQQLinear, pip hqq==0.2.8.post1, BaseQuantizeConfig(nbits=4, group_size=64) (axis 1, optimize), compute_dtype bf16; Quantizer method hqq_int4 (Python-only); tests/test_weight_methods.py
+  tricast: official_adapter  # weight_algo hqq (src/tricast/weight_quant/hqq.py): official HQQLinear, pip hqq==0.2.8.post1, BaseQuantizeConfig(nbits=4, group_size=64) (axis 1, optimize), compute_dtype bf16; Quantizer method hqq_int4 (Python-only); tests/test_weight_methods.py; 3 / 2-bit as weight_algo hqq3 / hqq2 (nbits=3 / 2, round_zero false), official call bit for bit, Quantizer methods hqq_int3 / hqq_int2 (Python-only LOWBIT) — tests/test_lowbit_methods.py
 - id: sinq
   name: SINQ (Sinkhorn-Normalized Quantization)
   venue: ICML
@@ -461,7 +461,7 @@ methods:
   kb_key: null
   arxiv: "2306.00978"
   note: "Scale search is nested inside auto_scale_block per block type; only auto_clip_layer is truly per-Linear. AutoAWQ (casper-hansen) is third-party."
-  tricast: tricast_reimplementation  # transform awq (src/tricast/transforms.py), not the official code
+  tricast: tricast_reimplementation  # transform awq (src/tricast/transforms.py), not the official code; weight-only form (int4_g128_zp RTN, no activation spec; Quantizer awq_int4, Python-only LOWBIT, tricast_native) searches every grid candidate with the int4 weight spec — tests/test_lowbit_methods.py
 - id: smoothquant
   name: SmoothQuant
   venue: ICML
@@ -690,7 +690,7 @@ methods:
   kb_key: quarot-neurips24
   arxiv: "2404.00456"
   note: "fake_quant README: LLaMA-2 only (model_utils has llama/opt getters); Qwen3 not present."
-  tricast: tricast_partial  # transform hadamard / random_hadamard only; no QuaRot pipeline
+  tricast: tricast_partial  # transform hadamard / random_hadamard only; no QuaRot pipeline; per-Linear block Hadamard along K (block 128 on Qwen3) + NVFP4 / MXFP4 W and A (Quantizer had_nvfp4 / had_mxfp4, Python-only LOWBIT, tricast_native) tested in tests/test_lowbit_methods.py (no official-code parity)
 - id: spinquant
   name: SpinQuant
   venue: ICLR

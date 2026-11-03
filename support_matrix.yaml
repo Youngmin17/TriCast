@@ -77,12 +77,25 @@ quantization:
 transforms: {status: implemented, values: [hadamard, random_hadamard, smoothquant, awq],
              note: "smoothquant/awq share one scale across linears reading the same input (q/k/v, gate/up)",
              evidence: "tests/test_transforms.py, tests/test_calibrate.py (CPU)"}
-weight_algorithms: {status: implemented, values: [rtn, gptq], note: "gptq supports sequential calibration",
-                    evidence: "tests/test_gptq.py (CPU): GPTQ error < RTN"}
+weight_algorithms: {status: implemented, values: [rtn, gptq], note: "gptq supports sequential calibration.
+                      gptq with group < block (e.g. group_size 32 / 64 at block 128, no act_order) refreshes a
+                      group that starts inside a lazy block from the compensated weights and so differs from
+                      official GPTQ (which reads W before the block's updates); bit-identity with the
+                      instrumented official holds for group >= block, block = group, or act_order. CPU-only
+                      caveat: on macOS the Accelerate LAPACK behind torch.linalg.cholesky was not run-to-run
+                      deterministic at K = 512 (3 of 300 repeats differed), deterministic with
+                      VECLIB_MAXIMUM_THREADS=1 and at K = 256; the cluster GPU gates of 2026-11-03 were
+                      deterministic",
+                    evidence: "tests/test_gptq.py (CPU): GPTQ error < RTN; tests/test_lowbit_methods.py (CPU):
+                      gptq on uint3 / uint2 g128 zp vs official IST-DASLab/gptq 2d65066 fasterquant: not
+                      bit-identical as is (fp16 vs fp32 group scale, fp64 vs fp32 loop), bit-identical once both are
+                      made the same; groups starting inside a lazy block (group < block) refresh from compensated
+                      weights (official: stale W), act_order = official static_groups"}
 weight_methods:
   # weight_algo kinds that replace the whole weight by one method's quantize -> dequantize result on BF16
   # (weight: null; tricast.weight_quant.replace_weight). Quantizer methods nf4 / hqq_int4 / razer_nvfp4 are
-  # app.quantizer_recipe.EXTENDED: Auto-tune and the tune agent use them, the page does not list them yet.
+  # app.quantizer_recipe.EXTENDED and hqq_int3 / hqq_int2 are app.quantizer_recipe.LOWBIT: Auto-tune and the tune
+  # agent use them, the page does not list them yet.
   nf4: {status: implemented, kind: tricast_native,
         source: "bitsandbytes 0.50.2 CUDA kQuantizeBlockwise<NF4>: block 64, fp32 absmax, x * (1/absmax), the
           dQuantizeNF4 thresholds of csrc/kernels.cu (strict >), code * absmax, then BF16",
@@ -95,6 +108,16 @@ weight_methods:
         note: "HQQ's solver runs in fp32 on CPU and fp16 on CUDA, so CPU and GPU weights differ",
         evidence: "tests/test_weight_methods.py (CPU): adapter == the official call bit for bit, one BF16 scale and
           zero per 64, the solver changed the weights; another hqq release is refused"}
+  hqq3: {status: implemented, kind: official_adapter,
+         source: "the hqq adapter with BaseQuantizeConfig(nbits=3, group_size=64) (round_zero false below 4 bits)",
+         note: "Quantizer method hqq_int3 (app.quantizer_recipe.LOWBIT)",
+         evidence: "tests/test_lowbit_methods.py (CPU): == the official call bit for bit on normal / Student-t /
+           BF16 weights, at most 8 levels per group, the solver changed the weights"}
+  hqq2: {status: implemented, kind: official_adapter,
+         source: "the hqq adapter with BaseQuantizeConfig(nbits=2, group_size=64) (round_zero false below 4 bits)",
+         note: "Quantizer method hqq_int2 (app.quantizer_recipe.LOWBIT)",
+         evidence: "tests/test_lowbit_methods.py (CPU): == the official call bit for bit on normal / Student-t /
+           BF16 weights, at most 4 levels per group, the solver changed the weights"}
   razer: {status: implemented, kind: tricast_native,
           source: "abdelfattah-lab/NVFP4-RaZeR 78be7fc7 (MIT) quantize/quantizer.py quant_nvfp4_razer_e4m3:
             block 16, E4M3 block scale under an fp32 tensor scale, -0 remapped to -5 or +5 per block",
@@ -417,6 +440,16 @@ agent:
                 o_proj/down_proj), per-block KV entries, models with fewer blocks",
                 evidence: "app/tests/test_autotune_v2.py (CPU); GPU spike adopted, C1-C4 and C3' pass
                   (docs/spikes/2026-11-03_autotune_v2.md)"}
+  lowbit_methods: {status: implemented, methods: [gptq_int3, gptq_int2, hqq_int3, hqq_int2, awq_int4, had_nvfp4,
+                     had_mxfp4],
+                   note: "app.quantizer_recipe.LOWBIT (Python-only, off the page): track M (2-4 bit weight-only)
+                     and track C (Hadamard + NVFP4 / MXFP4 W4A4); calibrated gptq_int3 / gptq_int2 (all kinds) and
+                     awq_int4 (o_proj / down_proj only, like awq_nvfp4) are in CALIBRATED_ALL, the page's
+                     CALIBRATED is unchanged; not in ALL_METHODS, so the tune loop's proposal schema does not offer
+                     them yet; no GPU table or measurement yet",
+                   evidence: "app/tests/test_lowbit_extended.py (CPU: grids, --from-json, calibrated tiny table and
+                     solve, bits, recorded hashes, page bundle unchanged); tests/test_lowbit_methods.py (CPU
+                     fidelity)"}
   structured_parse: {status: implemented, note: "Claude API (claude-opus-5-5, json_schema output) or offline
                      parser; live API path untested here (no ANTHROPIC_API_KEY)",
                      evidence: "tests/test_agent_parser.py, tests/test_agent_request.py (mocked client)"}

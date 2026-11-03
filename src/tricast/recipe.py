@@ -39,10 +39,11 @@ OFFICIAL_GPTQ_DEFAULTS = {"groupsize": -1, "sym": False, "act_order": False, "st
 _SELECTORS = {"match", "layers", "modules"}
 _LAYER_INDEX = re.compile(r"(?:^|\.)layers\.(\d+)(?:\.|$)")
 # weight_algo kinds that replace the whole weight by one method's quantize -> dequantize result on BF16
-# (tricast.weight_quant.replace_weight), so they take weight: null: nf4 (bitsandbytes NF4, block 64), hqq
-# (official HQQ 4-bit, group 64), razer (RaZeR NVFP4, E4M3 block scale). quant.spec.WeightAlgoSpec (a shared
-# spec) knows rtn / gptq only; these kinds are carried by WeightMethodSpec, a subclass with the same fields.
-WEIGHT_METHODS = ("nf4", "hqq", "razer")
+# (tricast.weight_quant.replace_weight), so they take weight: null: nf4 (bitsandbytes NF4, block 64), hqq /
+# hqq3 / hqq2 (official HQQ 4 / 3 / 2-bit, group 64), razer (RaZeR NVFP4, E4M3 block scale).
+# quant.spec.WeightAlgoSpec (a shared spec) knows rtn / gptq only; these kinds are carried by
+# WeightMethodSpec, a subclass with the same fields.
+WEIGHT_METHODS = ("nf4", "hqq", "razer", "hqq3", "hqq2")
 
 
 @dataclass(frozen=True)

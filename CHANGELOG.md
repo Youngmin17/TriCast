@@ -13,6 +13,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 - Per-layer NF4, HQQ and RaZeR (`weight_algo: nf4|hqq|razer`, Python-only Quantizer methods `nf4`,
   `hqq_int4`, `razer_nvfp4`): bit-identical on CPU to bitsandbytes NF4, HQQ 0.2.8.post1 and the pinned RaZeR
   function; refused with official GPTQ or a transform. Four-over-Six does not match fouroversix 1.0.5 (recorded).
+- Paper-track Quantizer methods (`app.quantizer_recipe.LOWBIT`, Python-only): GPTQ / HQQ 3- and 2-bit
+  (`weight_algo: hqq3|hqq2`), weight-only AWQ INT4 and Hadamard + NVFP4 / MXFP4, with official-code fidelity
+  tests (`tests/test_lowbit_methods.py`); the page, `CALIBRATED` and `ALL_METHODS` are unchanged.
 - Opt-in calibration result cache (`calibrate(..., cache_dir=...)`): per-layer states keyed by model, source,
   runtime, calibration windows and spec; bit-identical to a fresh calibration, no forward when every layer hits.
 - Grids for models deeper than the page's 28 blocks (Llama-3.1-8B, Qwen3-8B): one row per decoder block in

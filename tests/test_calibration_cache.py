@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import copy
+import json
+import zipfile
 
 import pytest
 import torch
+from torch import nn
 
-from tricast.calibration import calibrate
+from tricast.calibration import _sha256_json, calibrate
 from tricast.nn import iter_emulinear
 from tricast.recipe import load_recipe
 
@@ -254,3 +257,155 @@ def test_sequential_calibration_is_uncacheable(tiny, tmp_path):
         assert result["full_model_forwards"] == plain["full_model_forwards"]
         _assert_same_model(reference, model)
     assert not list(tmp_path.glob("layer-*.pt")) and not list(tmp_path.glob("inputs-*.json"))
+
+
+@pytest.mark.parametrize("context", ["autocast_hit", "inference_mode_fill"])
+def test_caller_autocast_or_inference_mode_is_uncacheable(tiny, tmp_path, context):
+    if context == "autocast_hit":  # filled normally; a hit under autocast would load fp32-fitted states
+        recipe = _mixed()
+        _calibrate(tiny, recipe, tmp_path)
+        with torch.autocast("cpu", dtype=torch.bfloat16):
+            reference, plain = _calibrate(tiny, recipe)
+            model, result = _calibrate(tiny, recipe, tmp_path)
+        recorded, reason = result, "autocast"
+    else:  # filled under inference mode, whose tensors hide that q/k/v and gate/up share an input
+        recipe = _recipe(defaults=SMOOTH)
+        filled_model = copy.deepcopy(tiny)
+        with torch.inference_mode():
+            recorded = calibrate(filled_model, recipe, cache_dir=tmp_path, **WINDOWS)
+        reference, plain = _calibrate(tiny, recipe)
+        model, result = _calibrate(tiny, recipe, tmp_path)
+        reason = "inference_mode"
+    assert result["groups"] == plain["groups"]
+    _assert_same_model(reference, model)
+    assert recorded["cache"]["hits"] == [] and recorded["cache"]["misses"] == []
+    assert list(recorded["cache"]["uncacheable"]) == recorded["layers"]
+    assert all(reason in text for text in recorded["cache"]["uncacheable"].values())
+    if context == "inference_mode_fill":
+        assert result["cache"]["hits"] == [] and result["cache"]["inputs"] == "written"
+
+
+class _Doubling(nn.Module):  # a model whose class is not under torch, transformers or tricast
+    def __init__(self) -> None:
+        super().__init__()
+        self.config = None
+        self.embed = nn.Embedding(32, 16)
+        self.proj = nn.Linear(16, 16, bias=False)
+
+    def forward(self, input_ids):
+        return self.proj(self.embed(input_ids) * 2)
+
+
+@pytest.mark.parametrize("change", ["module_swap", "forward_hook", "global_hook", "no_config",
+                                    "patching_alone"])
+def test_model_structure_and_hooks_reach_the_key(tiny, tmp_path, change):
+    recipe, base, handle = _mixed(), copy.deepcopy(tiny), None
+    if change == "patching_alone":  # guard: patching o_proj that the filling recipe left a Linear keeps hits
+        _calibrate(tiny, _mixed(o={"modules": ["o_proj"], "skip": True}), tmp_path)
+    elif change == "no_config":
+        recipe, base = _recipe(defaults=STATIC), _Doubling()
+        _calibrate(base, recipe, tmp_path)
+    else:
+        _calibrate(tiny, recipe, tmp_path)
+    activation = type(base.model.layers[0].mlp.act_fn) if change != "no_config" else None
+    if change == "module_swap":  # same class, weights and config; one inner module differs
+        base.model.layers[0].mlp.act_fn = nn.ReLU()
+    elif change == "forward_hook":
+        base.model.layers[0].mlp.register_forward_pre_hook(lambda module, args: (args[0] * 2,))
+    elif change == "global_hook":
+        handle = torch.nn.modules.module.register_module_forward_pre_hook(
+            lambda module, args: (args[0] * 2,) if isinstance(module, activation) else None)
+    try:
+        reference, _ = _calibrate(base, recipe)
+        model, result = _calibrate(base, recipe, tmp_path)
+        _assert_same(_state(reference), _state(model))
+        if change == "no_config":
+            _assert_same(reference(PROBE), model(PROBE), "output")
+        else:
+            _assert_same(reference(PROBE).logits, model(PROBE).logits, "logits")
+    finally:
+        if handle is not None:
+            handle.remove()
+    cache = result["cache"]
+    if change == "patching_alone":
+        assert cache["misses"] == _names(model, ("o_proj",)) and cache["uncacheable"] == {}
+        assert set(cache["hits"]) == set(result["layers"]) - set(cache["misses"])
+    elif change == "module_swap":
+        assert cache["hits"] == [] and cache["misses"] == result["layers"]
+    else:
+        reason = {"forward_hook": "forward hooks", "global_hook": "global module forward hooks",
+                  "no_config": "no config"}[change]
+        assert cache["hits"] == [] and list(cache["uncacheable"]) == result["layers"]
+        assert all(reason in text for text in cache["uncacheable"].values())
+
+
+@pytest.mark.parametrize("tamper", ["edited", "re_signed"])
+def test_input_sharing_record_is_verified(tiny, tmp_path, tamper):
+    q, k = "model.layers.0.self_attn.q_proj", "model.layers.0.self_attn.k_proj"
+
+    def only(*names):
+        recipe = _recipe(defaults=SMOOTH)
+        recipe.include = list(names)
+        return recipe
+
+    for name in (q, k):  # each alone: singleton entries keyed under the true record (k reads q's input)
+        _calibrate(tiny, only(name), tmp_path)
+    (record,) = tmp_path.glob("inputs-*.json")
+    text = record.read_text()
+    edited = text.replace(f'"{k}": "{q}"', f'"{k}": "{k}"')  # claim k reads its own input
+    assert edited != text
+    if tamper == "re_signed":  # a valid digest over the false content
+        data = json.loads(edited)
+        if "classes" in data:
+            data["digest"] = _sha256_json(data["classes"])
+        edited = json.dumps(data)
+    record.write_text(edited)
+    reference, plain = _calibrate(tiny, only(q, k))
+    model, result = _calibrate(tiny, only(q, k), tmp_path)
+    assert result["groups"] == plain["groups"] == [[q, k]]
+    _assert_same_model(reference, model)
+    assert result["cache"]["hits"] == [] and result["full_model_forwards"] == plain["full_model_forwards"]
+    assert result["cache"]["inputs"] == "rewritten"
+    refused = {k: "stored under a different input-sharing record",
+               q: "stored under a different input-sharing record"} if tamper == "re_signed" else {}
+    assert result["cache"]["corrupt"] == refused
+    again_model, again = _calibrate(tiny, only(q, k), tmp_path)
+    assert again["cache"]["hits"] == [q, k] and again["full_model_forwards"] == 0
+    _assert_same_model(reference, again_model)
+
+
+def _flip_storage_bit(path) -> None:
+    """Flip one exponent bit of the first element of the largest tensor storage, in place in the zip."""
+    with zipfile.ZipFile(path) as archive:
+        info = max((item for item in archive.infolist() if "/data/" in item.filename),
+                   key=lambda item: item.file_size)
+    raw = bytearray(path.read_bytes())
+    header = info.header_offset
+    start = (header + 30 + int.from_bytes(raw[header + 26:header + 28], "little")
+             + int.from_bytes(raw[header + 28:header + 30], "little"))
+    raw[start + 1] ^= 0x40
+    path.write_bytes(bytes(raw))
+
+
+@pytest.mark.parametrize("damage", ["bit_flip", "truncated"])
+def test_corrupt_entry_is_refitted_and_overwritten(tiny, tmp_path, damage):
+    recipe, target = _mixed(), "model.layers.0.mlp.down_proj"
+    _calibrate(tiny, recipe, tmp_path)
+    (entry,) = [path for path in tmp_path.glob("layer-*.pt")
+                if torch.load(path, weights_only=True)["name"] == target]
+    if damage == "bit_flip":  # key and name unchanged; torch.load(weights_only=True) still accepts it
+        _flip_storage_bit(entry)
+        assert torch.load(entry, weights_only=True)["name"] == target
+    else:
+        entry.write_bytes(entry.read_bytes()[: entry.stat().st_size // 2])
+    reference, _ = _calibrate(tiny, recipe)
+    model, result = _calibrate(tiny, recipe, tmp_path)
+    _assert_same_model(reference, model)
+    assert list(result["cache"]["corrupt"]) == [target] and result["cache"]["misses"] == [target]
+    assert set(result["cache"]["hits"]) == set(result["layers"]) - {target}
+    problem = result["cache"]["corrupt"][target]
+    assert problem == "content digest mismatch" if damage == "bit_flip" else problem.startswith("unreadable")
+    again_model, again = _calibrate(tiny, recipe, tmp_path)  # the refitted entry overwrote the damaged one
+    assert again["cache"]["hits"] == again["layers"] and again["cache"]["corrupt"] == {}
+    assert again["full_model_forwards"] == 0
+    _assert_same_model(reference, again_model)

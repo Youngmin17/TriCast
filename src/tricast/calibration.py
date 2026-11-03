@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import functools
 import hashlib
+import importlib.metadata
+import inspect
 import io
 import json
 import os
@@ -18,17 +20,19 @@ from typing import Any
 
 import torch
 from torch import nn
+from torch.nn.modules import module as torch_module
 
 from .formats import FloatFormat, IntFormat, Pow2Format
 from .mma.operand import Operand, tensor_state
 from .nn import EmuLinear, iter_emuattention, iter_emuconv2d, iter_emulinear, patch_model
+from .nn.attention import _InstanceForward
 from .quant.observer import ObserverState
 from .quant.spec import ObserverSpec
 from .recipe import Recipe, _json_value, load_recipe
 from .transforms import LinearTransform, fit_transform_group
 
 DEFAULT_HESSIAN_MAX_BYTES = 4 * 1024**3
-CACHE_FORMAT = 1  # bump when the stored layer state or the key layout changes
+CACHE_FORMAT = 2  # bump when the stored layer state or the key layout changes
 _FORMATS = {"float": FloatFormat, "int": IntFormat, "pow2": Pow2Format}
 
 
@@ -387,13 +391,24 @@ def _source_sha256() -> str:
     return digest.hexdigest()
 
 
+def _package_version(name: str) -> str | None:
+    try:
+        return importlib.metadata.version(name)
+    except importlib.metadata.PackageNotFoundError:
+        return None
+
+
 def _runtime(device: torch.device) -> dict:
     """Library and kernel settings that can change the bits of a calibration forward."""
     runtime = {"torch": torch.__version__,
                "transformers": getattr(sys.modules.get("transformers"), "__version__", None),
+               "triton": _package_version("triton"), "default_dtype": str(torch.get_default_dtype()),
                "device": device.type, "threads": torch.get_num_threads(),
                "mkl_cbwr": os.environ.get("MKL_CBWR"), "precision": torch.get_float32_matmul_precision(),
-               "deterministic": torch.are_deterministic_algorithms_enabled()}
+               "deterministic": torch.are_deterministic_algorithms_enabled(),
+               "mkldnn": torch.backends.mkldnn.enabled,
+               "cudnn": [torch.backends.cudnn.enabled, torch.backends.cudnn.benchmark,
+                         torch.backends.cudnn.deterministic]}
     if device.type == "cuda":
         backends = torch.backends.cuda
         runtime.update(gpu=torch.cuda.get_device_name(device), cuda=torch.version.cuda,
@@ -404,6 +419,84 @@ def _runtime(device: torch.device) -> dict:
                        sdpa=[backends.flash_sdp_enabled(), backends.mem_efficient_sdp_enabled(),
                              backends.math_sdp_enabled()])
     return runtime
+
+
+def _execution_context() -> str | None:
+    """Why the caller's grad-mode context changes calibration (None: it does not). Autocast changes the
+    passthrough arithmetic; inference tensors carry no version counter, so input sharing is not seen."""
+    for device_type in ("cpu", "cuda"):
+        if torch.is_autocast_enabled(device_type):
+            return f"{device_type} autocast ({torch.get_autocast_dtype(device_type)}) is active"
+    if torch.is_inference_mode_enabled():
+        return "torch.inference_mode is active (inference tensors hide input sharing)"
+    return None
+
+
+def _structure(model: nn.Module) -> tuple[list, str | None]:
+    """Each module's name, class and extra_repr (plus its source file's sha256 for a class outside torch,
+    transformers and tricast), and why the forward may still differ from that description (None: it
+    cannot). A passthrough EmuLinear is described as the Linear it wraps, so patching alone keeps the key."""
+    kv = getattr(model, "_tricast_kv_patch", None)
+    own = set() if kv is None else {kv.forward_hook.id, kv.clear_hook.id}  # the KV patch's mask hooks
+    reasons = []
+    if torch_module._global_forward_hooks or torch_module._global_forward_pre_hooks:
+        reasons.append("global module forward hooks are registered")
+    if getattr(model, "config", None) is None:
+        reasons.append("the model has no config")
+    sources: dict[str, str] = {}
+    entries = []
+    for name, module in model.named_modules():
+        label = name or "model"
+        shown = module._original if isinstance(module, EmuLinear) else module
+        cls = type(shown)
+        entry = [name, f"{cls.__module__}.{cls.__qualname__}", shown.extra_repr()]
+        if cls.__module__.split(".")[0] not in ("torch", "transformers", "tricast"):
+            try:
+                path = inspect.getsourcefile(cls)
+            except TypeError:
+                path = None
+            if path is None or not os.path.isfile(path):
+                reasons.append(f"{label}: class {cls.__qualname__} has no source file to fingerprint")
+            else:
+                if path not in sources:
+                    sources[path] = hashlib.sha256(Path(path).read_bytes()).hexdigest()
+                entry.append(sources[path])
+        entries.append(entry)
+        hooks = set(module._forward_hooks) | set(module._forward_pre_hooks)
+        if hooks - (own if module is model else set()):
+            reasons.append(f"{label} has forward hooks")
+        forward = module.__dict__.get("forward")
+        if forward is not None and not isinstance(forward, _InstanceForward):
+            reasons.append(f"{label} has an instance-level forward")
+        if isinstance(module, EmuLinear) and type(module._original) is not nn.Linear:
+            reasons.append(f"{label} wraps a Linear subclass whose forward the passthrough replaces")
+    return entries, reasons[0] if reasons else None
+
+
+def _content_sha256(value: Any) -> str:
+    """sha256 over the non-tensor values and every tensor's dtype, shape and bytes, in sorted-key order."""
+    def skeleton(item: Any) -> Any:
+        if isinstance(item, torch.Tensor):
+            return ["tensor", str(item.dtype), list(item.shape), _tensor_sha256(item)]
+        if isinstance(item, dict):
+            return {key: skeleton(entry) for key, entry in item.items()}
+        if isinstance(item, (list, tuple)):
+            return [skeleton(entry) for entry in item]
+        return item
+    return _sha256_json(skeleton(value))
+
+
+def _read_inputs(path: Path) -> tuple[dict | None, str]:
+    """The input-sharing record if its embedded digest matches its classes; else None and why."""
+    if not path.exists():
+        return None, "missing"
+    try:
+        data = json.loads(path.read_text())
+        classes = data["classes"]
+        valid = isinstance(classes, dict) and data["digest"] == _sha256_json(classes)
+    except (ValueError, KeyError, TypeError):
+        valid = False
+    return (classes, "valid") if valid else (None, "invalid")
 
 
 def _uncacheable(layer: EmuLinear, mode: str) -> str | None:
@@ -509,16 +602,19 @@ class _LayerCache:
     """Nonsequential per-layer calibration results, keyed by everything they are computed from.
 
     Every EmuLinear is a passthrough during nonsequential calibration, so a layer's inputs are
-    those of the unquantized model (all parameters and buffers, config, KV and attention
-    patches, runtime) on the windows, and its result depends on that, its own weight and spec
-    and, for a jointly fitted shared-input transform, the other members' specs. The MMA spec is
-    left out: calibration runs no GEMM. Which layers share an input is recorded from every
-    fitting pass, so later runs know transform groups before any forward.
+    those of the unquantized model (all parameters and buffers, module structure, config, KV and
+    attention patches, runtime) on the windows, and its result depends on that, its own weight
+    and spec and, for a jointly fitted shared-input transform, the other members' specs. The MMA
+    spec is left out: calibration runs no GEMM. Which layers share an input is recorded, with a
+    digest of its content, from every fitting pass, so later runs know transform groups before
+    any forward; each shared-input entry keeps the digest of the record it was keyed under.
+    Entries carry a content digest and are verified before use: an unreadable or mismatching
+    entry is refitted and overwritten (``report()["corrupt"]``).
     """
 
     def __init__(
         self, directory: str | os.PathLike, model: nn.Module, layers: list[tuple[str, EmuLinear]],
-        calibration: dict, mode: str, device: torch.device,
+        calibration: dict, mode: str, device: torch.device, context: str | None,
     ) -> None:
         self.dir = Path(directory)
         self.dir.mkdir(parents=True, exist_ok=True)
@@ -538,13 +634,14 @@ class _LayerCache:
         if config_data is not None:
             config_data.pop("use_cache", None)  # calibration turns it off
         kv = getattr(model, "_tricast_kv_patch", None)
+        structure, structural = _structure(model)
         self.source_sha256 = _source_sha256()
         self.base = _sha256_json({
             "format": CACHE_FORMAT, "source": self.source_sha256, "runtime": _runtime(device),
             "model": {"class": f"{type(model).__module__}.{type(model).__qualname__}",
                       "commit": getattr(config, "_commit_hash", None), "config": config_data,
                       "attn_implementation": getattr(config, "_attn_implementation", None),
-                      "tensors": tensors},
+                      "tensors": tensors, "structure": structure},
             "kv": None if kv is None else [_json_value(kv.kv), sorted(kv.indices), kv.names],
             "attention": [[name, _json_value(module._tricast_attention.spec),
                            module._tricast_attention.backend] for name, module in iter_emuattention(model)],
@@ -557,14 +654,20 @@ class _LayerCache:
             self.entries[name] = {"name": name, "weight": tensors[f"{name}.weight"],
                                   "bias": tensors.get(f"{name}.bias"), "spec": spec, "backend": layer.backend}
         conv = next((name for name, _ in iter_emuconv2d(model)), None)
+        # A model-wide reason makes every layer uncacheable; its forwards record no input sharing.
+        self.context = context or structural or (
+            None if conv is None else f"EmuConv2d {conv} quantizes upstream activations during calibration")
         self.reasons = {}
         for name, layer in layers:
-            reason = (_uncacheable(layer, mode) if conv is None
-                      else f"EmuConv2d {conv} quantizes upstream activations during calibration")
+            reason = self.context or _uncacheable(layer, mode)
             if reason is not None:
                 self.reasons[name] = reason
+        self.shared = {name for name, layer in layers  # transform groups depend on the input record
+                       if layer.spec.transform.share_inputs
+                       and layer.spec.transform.kind in ("smoothquant", "awq")}
         self.inputs_path = self.dir / f"inputs-{self.base}.json"
-        self.inputs = json.loads(self.inputs_path.read_text()) if self.inputs_path.exists() else None
+        self.inputs, self.inputs_status = _read_inputs(self.inputs_path)
+        self.inputs_digest = None if self.inputs is None else _sha256_json(self.inputs)
         self.observed: dict[str, str | None] | None = None
         self.groups = {name: self._group(name, layer) for name, layer in layers}
         intrinsic = dict(self.reasons)
@@ -574,11 +677,20 @@ class _LayerCache:
                 self.reasons[name] = f"its transform is fitted jointly with uncacheable {partner}"
         self.keys = {name: self._key(name, group) for name, group in self.groups.items()
                      if group is not None and name not in self.reasons}
-        found = {name for name, key in self.keys.items() if self._path(key).exists()}
+        self.loaded: dict[str, dict] = {}
+        self.corrupt: dict[str, str] = {}
+        for name, key in self.keys.items():
+            if self._path(key).exists():
+                state, problem = self._read_entry(name)
+                if problem is None:
+                    self.loaded[name] = state
+                else:
+                    self.corrupt[name] = problem
         # A jointly fitted transform group is loaded whole or fitted whole.
         self.hits = [name for name, _ in layers
-                     if name in found and all(member in found for member in self.groups[name])]
+                     if name in self.loaded and all(member in self.loaded for member in self.groups[name])]
         self.hit_set = set(self.hits)
+        self.loaded = {name: self.loaded[name] for name in self.hits}
 
     def _path(self, key: str) -> Path:
         return self.dir / f"layer-{key}.pt"
@@ -598,20 +710,34 @@ class _LayerCache:
         members = None if len(group) == 1 else [self.entries[member] for member in group]
         return _sha256_json({"base": self.base, "layer": self.entries[name], "group": members})
 
+    def _read_entry(self, name: str) -> tuple[dict | None, str | None]:
+        """A stored state checked against its content digest, key and input-sharing evidence; else why not."""
+        path = self._path(self.keys[name])
+        try:
+            data = torch.load(path, map_location="cpu", weights_only=True)
+            payload = {field: data[field] for field in ("key", "name", "inputs", "state")}
+            digest = data["digest"]
+        except Exception as error:  # truncated, not a torch archive, or another layout: refit it
+            return None, f"unreadable ({type(error).__name__})"
+        if digest != _content_sha256(payload):
+            return None, "content digest mismatch"
+        if payload["key"] != self.keys[name] or payload["name"] != name:
+            return None, "key or name mismatch"
+        if payload["inputs"] != (self.inputs_digest if name in self.shared else None):
+            return None, "stored under a different input-sharing record"
+        return payload["state"], None
+
     def load(self) -> list[list[str]]:
         """Restore every hit; return their transform groups."""
         layers = dict(self.layers)
         for name in self.hits:
-            data = torch.load(self._path(self.keys[name]), map_location="cpu", weights_only=True)
-            if data["key"] != self.keys[name] or data["name"] != name:
-                raise ValueError(f"{self._path(self.keys[name])}: cache entry does not match its key")
-            _restore_layer(layers[name], data["state"])
+            _restore_layer(layers[name], self.loaded.pop(name))
         return [self.groups[name] for name in self.hits if self.groups[name][0] == name]
 
     def probed(self, model: nn.Module, run: Callable[[_InputGroups | None], None]) -> Callable:
         """``run`` that records, on its first pass, which Linear modules read the same input."""
         def first_pass(tracker: _InputGroups | None) -> None:
-            if self.observed is not None:
+            if self.observed is not None or self.context is not None:
                 return run(tracker)
             probe = _InputGroups(self.linears)
             handle = model.register_forward_pre_hook(lambda *_: probe.next_batch())
@@ -624,12 +750,18 @@ class _LayerCache:
         return first_pass
 
     def store(self, fitted: list[list[str]]) -> None:
-        if self.observed is not None:
-            if self.inputs is None:
-                _write_atomic(self.inputs_path, json.dumps(self.observed).encode("utf-8"))
-            elif self.inputs != self.observed:
-                raise RuntimeError(f"{self.inputs_path}: recorded input sharing differs from this run for "
-                                   "the same model, windows and code; remove the cache directory")
+        evidence = None if self.observed is None else _sha256_json(self.observed)
+        if self.observed is not None and self.inputs == self.observed:
+            self.inputs_status = "verified"
+        elif self.observed is not None:
+            if any(name in self.shared for name in self.hits):
+                raise RuntimeError(f"{self.inputs_path}: this run's input sharing contradicts the record its "
+                                   "cached shared-input layers were loaded under; remove the cache directory")
+            record = {"digest": evidence, "classes": self.observed}
+            _write_atomic(self.inputs_path, json.dumps(record).encode("utf-8"))
+            self.inputs_status = "written" if self.inputs_status == "missing" else "rewritten"
+            for name in self.shared:  # groups predicted from a missing, invalid or contradicted record
+                self.groups[name] = None
         actual = {name: group for group in fitted for name in group}
         for name, layer in self.layers:
             if name in self.hit_set or name in self.reasons:
@@ -644,15 +776,20 @@ class _LayerCache:
             elif self.groups[name] != group:
                 raise RuntimeError(f"{name}: cached input sharing predicted transform group "
                                    f"{self.groups[name]}, but calibration fitted {group}")
+            payload = {"key": self.keys[name], "name": name,
+                       "inputs": evidence if name in self.shared else None, "state": _layer_state(layer)}
             buffer = io.BytesIO()
-            torch.save({"key": self.keys[name], "name": name, "state": _layer_state(layer)}, buffer)
+            torch.save({**payload, "digest": _content_sha256(payload)}, buffer)
             _write_atomic(self._path(self.keys[name]), buffer.getvalue())
 
     def report(self) -> dict:
+        """``corrupt``: entries found but refused (and refitted); ``inputs``: the input-sharing record's
+        state (missing / invalid / valid when no forward ran, else verified / written / rewritten)."""
         names = [name for name, _ in self.layers]
         return {"dir": str(self.dir), "hits": list(self.hits),
                 "misses": [name for name in names if name not in self.hit_set and name not in self.reasons],
                 "uncacheable": {name: self.reasons[name] for name in names if name in self.reasons},
+                "corrupt": dict(self.corrupt), "inputs": self.inputs_status,
                 "source_sha256": self.source_sha256}
 
 
@@ -675,6 +812,7 @@ def calibrate(
     calls (see _LayerCache): only layers without a stored result are fitted, with no
     forward when all hit; ``result["cache"]`` lists hits, misses and uncacheable layers.
     """
+    context = None if cache_dir is None else _execution_context()  # the caller's, before any of ours
     if isinstance(hessian_max_bytes, bool) or not isinstance(hessian_max_bytes, int) or hessian_max_bytes < 0:
         raise ValueError("hessian_max_bytes must be a nonnegative integer")
     recipe = load_recipe(recipe)
@@ -719,7 +857,7 @@ def calibrate(
                 "dataset": config["dataset"], "split": config["split"], "samples": len(windows),
                 "seqlen": seqlen, "seed": seed, "source": source, "windows": fingerprint.hexdigest(),
                 "mode": mode,
-            }, mode, device)
+            }, mode, device, context)
             pending = [(name, layer) for name, layer in layers if name not in cache.hit_set]
             if cache.hits:  # only nonsequential layers hit; the single stage keeps the layers left to fit
                 stages = [pending] if pending else []

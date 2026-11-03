@@ -249,7 +249,14 @@ def propose(session: Path, name: str, spec: dict[str, Any], table_path: Path, bu
     computed = evaluate(spec, table_path, budget)
     evidence = [number for item in cites for number in _numbers(index[item]["value"])]
     evidence += [number for item in cites for number in _numbers(index[item].get("stderr"))]
-    unsupported = unsupported_numbers(rationale, evidence + _numbers(computed))
+    # parameters: the proposal's own, and those of the session's proposals whose records are cited
+    specs = {json.loads(path.read_text(encoding="utf-8"))["recipe_sha256"]: json.loads(path.read_text(
+        encoding="utf-8"))["spec"] for path in (session / "proposals").glob("*/proposal.json")}
+    cited_specs = [specs[index[item]["recipe_hash"]] for item in cites
+                   if index[item].get("recipe_hash") in specs]
+    own = [number for item in (spec, *cited_specs)
+           for number in _numbers(item.get("options")) + _numbers(item.get("calibration"))]
+    unsupported = unsupported_numbers(rationale, evidence + _numbers(computed) + own)
     if unsupported:
         raise TuneError(f"rationale numbers not supported by the cited records or the proposal: "
                         f"{unsupported}")

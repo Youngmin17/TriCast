@@ -420,7 +420,7 @@ calibration: {seed: 42}
 
 ## 6. 수용 기준
 
-각 기준은 EARS 문형 "[조건]일 때, TriCast는 [동작]한다"로 쓰고, 조건 유형을 [ ]에 표시했습니다. **모든 기준은 테스트나 측정으로 판정합니다.** AC1–AC14 는 v1.0 그대로이고, AC15–AC26 이 Quantizer 개편의 기준입니다 (판정 테스트는 `app/tests/` 와 `scripts/quantizer/`).
+각 기준은 EARS 문형 "[조건]일 때, TriCast는 [동작]한다"로 쓰고, 조건 유형을 [ ]에 표시했습니다. **모든 기준은 테스트나 측정으로 판정합니다.** AC1–AC14 는 v1.0 그대로이고, AC15–AC27 이 Quantizer 개편의 기준입니다 (판정 테스트는 `app/tests/` 와 `scripts/quantizer/`).
 
 | AC | 유형 | 수용 기준 (EARS) | 판정 방법 (테스트 · 측정) | 현재 결과 | 인터뷰 |
 |:-:|:-:|---|---|---|:-:|
@@ -450,11 +450,12 @@ calibration: {seed: 42}
 | **AC24** | 이벤트 기반 | 에이전트가 격자를 제안하면, TriCast는 생성기로 만들 수 없거나 · 크기 예산을 넘거나 · 표에 없는 방법을 쓰거나 · ledger 에 없는 근거를 인용하거나 · 인용한 레코드가 뒷받침하지 않는 측정값을 적은 제안을 기록하지 않고 거부하며, 측정 라운드는 세션에 고정한 검증 창(WikiText-2 validation, seed 43 — 보정 · 표 · test 와 다른 창)과 같은 모델의 기록만 결과로 묶는다. | `app/tests/test_tune_agent.py::test_bad_proposals_are_refused` · `test_a_valid_proposal_is_recorded_with_its_recipe_and_prediction` · `test_numbers_are_supported_at_their_written_precision` · `test_neighbours_fit_the_budget_and_come_sorted` · `test_round_measures_on_validation_windows_and_state_joins_by_recipe_hash` · `test_v2_tables_rank_neighbours_on_the_floor_subtracted_kl_and_add_the_kv_entries` · `test_option_sizes_count_and_option_variants_are_not_predicted` · `test_a_table_of_part_of_the_model_is_refused` · `test_shell_metacharacters_in_the_model_id_stay_one_argument` | ✅ CPU 통과 · 탐색 효과는 스파이크 측정 예정 (docs/spikes/2026-11-03_tune_agent.md) | 07 09 10 13 |
 | **AC25** | 선택 기능 | 레시피에 `prune` (Wanda · SparseGPT · magnitude) 이 지정된 경우, TriCast는 고정 커밋의 공식 저장소 함수를 소스 수정 없이 호출하고 (다른 커밋 · 수정된 트리는 거부), 모델 API 차이를 메운 조정과 파라미터 매핑을 리포트에 남기며, 양자화 패치 전에 가지치기를 적용하고 `sparsity` 와 함께 쓰면 거부한다. | `tests/test_official_prune.py::test_ensure_refuses_other_commit_and_edited_tree` · `test_load_module_is_isolated` · `test_compat_official_layer_call_is_bit_identical` · `test_wanda_unstructured_prunes_half_of_every_row` · `test_wanda_2_4_zeros_two_of_every_four` · `test_sparsegpt_unstructured_half_density` · `test_wanda_mask_differs_from_magnitude_mask` · `test_seqlen_maps_the_official_default_to_shorter_windows` · `test_recipe_prune_block` · `test_runner_prunes_before_patching_and_reloads` | ✅ CPU 통과 (tiny Llama · Qwen3) · GPU 재현 게이트 (Llama-2-7B, 공식 README 수치) 예정 | 10 |
 | **AC26** | 선택 기능 | 레시피에 `official_gptq` 가 지정된 경우, TriCast는 고정 커밋의 공식 GPTQ (`llama_sequential`) 를 소스 수정 없이 호출해 모든 디코더 Linear 를 한 번씩 양자화하고 (그룹 크기 준수), 가지치기 뒤 · 양자화 패치 전에 적용하며, TriCast 의 `weight_algo: gptq` 나 가중치 명세와 함께 쓰면 거부하고, `tricast run` 의 `hessian_max_bytes` 는 실행 식별자를 바꾸지 않고 보정까지 전달한다. | `tests/test_official_gptq.py::test_official_gptq_quantizes_every_decoder_linear_once` · `test_groupsize_gives_each_group_its_own_grid` · `test_default_data_is_official_get_loaders` · `test_official_gptq_recipe_block` · `test_runner_prunes_then_quantizes_then_patches_and_reloads` · `tests/test_runner_hessian_budget.py::test_the_budget_reaches_calibrate_and_not_the_run_identity` · `test_the_budget_is_enforced_by_calibrate` · `test_a_bad_budget_is_refused` | ✅ CPU 통과 (tiny Llama · Qwen3) · GPU 게이트 예정 | 07 10 |
+| **AC27** | 이벤트 기반 | 자율 튜닝 루프를 실행하면, TriCast는 라운드마다 ledger 와 표에서 층별 근거 분석(현재 최선 · 측정 이력과 부모 대비 효과 · 손실이 몰린 층과 대안 · 예측 대 실측 · 옵션 공간 · 방법 카드, 근거 레코드 id 포함)을 만들어 제안 엔진(Claude Code headless: 도구 없음 · 스키마 강제 · 비용 상한, 또는 자동 탐색)에 넘기고, 모든 제안을 AC24 검사로 거르고 거부 사유를 다음 라운드에 되먹이며, 통과한 제안만 GPU 에서 측정 · 수집하고, 2라운드 연속 개선이 없거나 제안 엔진이 멈추면 정지하며, 제안 엔진의 입력과 응답을 라운드마다 남긴다. | `app/tests/test_tune_loop.py::test_the_analysis_cites_the_records_behind_its_numbers` · `test_the_loop_measures_accepted_proposals_feeds_back_refusals_and_stops` · `test_claude_code_runs_without_tools_under_the_schema_and_is_logged` · `test_the_remote_measurement_syncs_launches_waits_and_fetches` · `test_auto_greedy_proposes_unmeasured_neighbours_of_the_best` | ✅ CPU 통과 · GPU 루프 실행은 docs/spikes/2026-11-03_tune_loop.md | 07 09 10 13 |
 
 ```mermaid
 pie showData
-    title 수용 기준 26개의 현재 판정
-    "✅ 통과" : 25
+    title 수용 기준 27개의 현재 판정
+    "✅ 통과" : 26
     "⬜ 예정" : 1
 ```
 

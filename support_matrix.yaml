@@ -378,6 +378,9 @@ agent:
                cited ledger ids and supported numbers; measurement rounds on validation windows. Driven by the
                Claude Code session (docs/prompts/tune_agent.md); search effect not measured yet
                (docs/spikes/2026-11-03_tune_agent.md)", evidence: "app/tests/test_tune_agent.py (CPU)"}
+  tune_loop: {status: implemented, note: "app/tune_loop.py: per-layer evidence analysis -> proposer (Claude Code
+               headless, no tools, schema, spend cap; or auto-greedy) -> AC24 checks -> gpu_cap measurement -> ingest,
+               no human step", evidence: "app/tests/test_tune_loop.py (CPU, fakes for LLM/GPU/ssh)"}
   autotune_v2: {status: implemented, note: "patch floor, calibrated methods (gptq_int4 all kinds; awq/smoothquant
                 o_proj/down_proj), per-block KV entries, models with fewer blocks",
                 evidence: "app/tests/test_autotune_v2.py (CPU); GPU spike planned (docs/spikes/2026-11-03_autotune_v2.md)"}

@@ -63,6 +63,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 - The README now shows the 9-slide business overview as images (`assets/readme/`, slide 7
   animated), rendered from the v3 deck PDF, followed by a short Korean text section.
 
+### Fixed
+- C4 calibration (`calibration.dataset: c4`) loads its shard with no config name: under datasets 4.x config
+  `en` carries the split sizes of all of C4 and one shard failed split verification (ExpectedMoreSplitsError,
+  found on the 2026-11-04 Llama-2-7B GPU run), as the official prune path already did.
+
 ### Added
 - `docs/PROBLEM.md` §3-0 lists behaviour, cost and workaround evidence and the unaffected group in the interview
   log's own words; `docs/ontology.md` §4-4 shows the interview passage behind each class. `tests/test_ontology.py`

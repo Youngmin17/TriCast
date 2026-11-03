@@ -45,8 +45,10 @@ def _dataset_texts(dataset: str, split: str):
         if split not in ("train", "validation"):
             raise ValueError("c4 calibration split must be train or validation")
         shards = "01024" if split == "train" else "00008"
-        # Arrow-backed random access keeps the corpus off the Python heap.
-        return load_dataset("allenai/c4", "en", split=split, keep_in_memory=False,
+        # Arrow-backed random access keeps the corpus off the Python heap. No config name: in datasets 4.x
+        # config "en" carries the split sizes of all of C4, so one shard fails split verification
+        # (ExpectedMoreSplitsError, 2026-11-04 GPU run) — as tricast.official.prune (1e93df6).
+        return load_dataset("allenai/c4", split=split, keep_in_memory=False,
                             data_files={split: f"en/c4-{split}.00000-of-{shards}.json.gz"})
     elif dataset == "pile":
         data = load_dataset("NeelNanda/pile-10k", split=split)

@@ -2,20 +2,34 @@
 
 from __future__ import annotations
 
+import functools
 import hashlib
+import io
+import json
+import os
 import random
+import sys
+import tempfile
 import weakref
 from collections.abc import Callable
+from dataclasses import fields
+from pathlib import Path
 from typing import Any
 
 import torch
 from torch import nn
 
-from .nn import EmuLinear, iter_emulinear, patch_model
-from .recipe import Recipe, load_recipe
-from .transforms import fit_transform_group
+from .formats import FloatFormat, IntFormat, Pow2Format
+from .mma.operand import Operand, tensor_state
+from .nn import EmuLinear, iter_emuattention, iter_emuconv2d, iter_emulinear, patch_model
+from .quant.observer import ObserverState
+from .quant.spec import ObserverSpec
+from .recipe import Recipe, _json_value, load_recipe
+from .transforms import LinearTransform, fit_transform_group
 
 DEFAULT_HESSIAN_MAX_BYTES = 4 * 1024**3
+CACHE_FORMAT = 1  # bump when the stored layer state or the key layout changes
+_FORMATS = {"float": FloatFormat, "int": IntFormat, "pow2": Pow2Format}
 
 
 def _dataset_texts(dataset: str, split: str):
@@ -352,11 +366,302 @@ def _fit_stage(
     return [[name for name, _ in group] for group in groups]
 
 
+def _sha256_json(value: Any) -> str:
+    text = json.dumps(value, sort_keys=True, separators=(",", ":"), default=str)
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def _tensor_sha256(tensor: torch.Tensor) -> str:
+    data = tensor.detach().cpu().contiguous().reshape(-1).view(torch.uint8)
+    return hashlib.sha256(data.numpy()).hexdigest()
+
+
+@functools.lru_cache(maxsize=1)
+def _source_sha256() -> str:
+    """Every tricast .py file (relative path and content hash, sorted by path), read once per process."""
+    root = Path(__file__).resolve().parent
+    digest = hashlib.sha256()
+    for path in sorted(root.rglob("*.py"), key=lambda path: path.relative_to(root).as_posix()):
+        content = hashlib.sha256(path.read_bytes()).hexdigest()
+        digest.update(f"{path.relative_to(root).as_posix()}\0{content}\n".encode())
+    return digest.hexdigest()
+
+
+def _runtime(device: torch.device) -> dict:
+    """Library and kernel settings that can change the bits of a calibration forward."""
+    runtime = {"torch": torch.__version__,
+               "transformers": getattr(sys.modules.get("transformers"), "__version__", None),
+               "device": device.type, "threads": torch.get_num_threads(),
+               "mkl_cbwr": os.environ.get("MKL_CBWR"), "precision": torch.get_float32_matmul_precision(),
+               "deterministic": torch.are_deterministic_algorithms_enabled()}
+    if device.type == "cuda":
+        backends = torch.backends.cuda
+        runtime.update(gpu=torch.cuda.get_device_name(device), cuda=torch.version.cuda,
+                       capability=list(torch.cuda.get_device_capability(device)),
+                       tf32=backends.matmul.allow_tf32, cudnn_tf32=torch.backends.cudnn.allow_tf32,
+                       reduced=[backends.matmul.allow_bf16_reduced_precision_reduction,
+                                backends.matmul.allow_fp16_reduced_precision_reduction],
+                       sdpa=[backends.flash_sdp_enabled(), backends.mem_efficient_sdp_enabled(),
+                             backends.math_sdp_enabled()])
+    return runtime
+
+
+def _uncacheable(layer: EmuLinear, mode: str) -> str | None:
+    """Why a layer's calibrated state depends on more than its cache key (``None``: it does not)."""
+    spec = layer.spec
+    activation = spec.activation
+    if mode == "sequential":
+        return "sequential calibration feeds each block the outputs of earlier quantized blocks"
+    if spec.transform.kind in ("smoothquant", "awq") and spec.weight_algo.kind == "gptq":
+        return "fitted-diagonal GPTQ accumulates its Hessian in a transformed replay (_hessian_replay)"
+    if activation is not None and activation.observer is not None and activation.observer.kind == "history":
+        return "a history observer keeps online delayed-scaling state"
+    if activation is not None and activation.rounding.value == "sr":
+        return "stochastic activation rounding"
+    if spec.weight is not None and spec.weight.rounding.value == "sr":
+        return "stochastic weight rounding draws noise from the seeded RNG stream in layer order"
+    return None
+
+
+def _input_classes(signatures: dict[str, list[tuple[int, int]]]) -> dict[str, str | None]:
+    """Label each module by the first module that read the same input in every batch (None: never ran)."""
+    first: dict[tuple, str] = {}
+    return {name: first.setdefault(tuple(signature), name) if signature else None
+            for name, signature in signatures.items()}
+
+
+def _cpu(tensor: torch.Tensor | None) -> torch.Tensor | None:
+    return None if tensor is None else tensor.detach().cpu()
+
+
+def _to(tensor: torch.Tensor | None, device: torch.device) -> torch.Tensor | None:
+    return None if tensor is None else tensor.to(device)
+
+
+def _format_data(fmt) -> dict | None:
+    return None if fmt is None else {"kind": fmt.kind, **{f.name: getattr(fmt, f.name) for f in fields(fmt)}}
+
+
+def _format(data: dict | None):
+    if data is None:
+        return None
+    data = dict(data)
+    return _FORMATS[data.pop("kind")](**data)
+
+
+def _operand_data(operand: Operand | None) -> dict | None:
+    if operand is None:
+        return None
+    return {"values": _cpu(operand.values), "fmt": _format_data(operand.fmt), "scale": _cpu(operand.scale),
+            "scale_fmt": _format_data(operand.scale_fmt), "scale_kind": operand.scale_kind,
+            "k_domain": operand.k_domain, "alpha": _cpu(operand.alpha)}
+
+
+def _operand(data: dict | None, device: torch.device) -> Operand | None:
+    from .nn.linear import _pack
+
+    if data is None:
+        return None
+    return _pack(Operand(_to(data["values"], device), _format(data["fmt"]), _to(data["scale"], device),
+                         _format(data["scale_fmt"]), data["scale_kind"], data["k_domain"],
+                         _to(data["alpha"], device)))
+
+
+def _layer_state(layer: EmuLinear) -> dict:
+    """The fields calibrate() snapshots, as tensors and plain values (``torch.load(weights_only=True)``)."""
+    transform = layer.transform
+    return {"mode": layer.mode, "fitted": layer._fitted, "calibrated": layer._calibrated,
+            "transform": {"kind": transform.kind, "block": transform.block, "diag": _cpu(transform.diag)},
+            "observer": None if layer.observer is None else layer.observer.state_dict(),
+            "weight_operand": _operand_data(layer._weight_operand),
+            "outlier_operand": _operand_data(layer._outlier_operand),
+            "weight_noise": _cpu(layer._weight_noise)}
+
+
+def _restore_layer(layer: EmuLinear, state: dict) -> None:
+    # Operands, diagonals and noise live with the weight; observer statistics live on the CPU.
+    device = layer.weight.device
+    transform = state["transform"]
+    layer.mode, layer._fitted, layer._calibrated = state["mode"], state["fitted"], state["calibrated"]
+    layer.transform = LinearTransform(transform["kind"], transform["block"], _to(transform["diag"], device))
+    layer.observer = None
+    if state["observer"] is not None:
+        layer.observer = ObserverState(ObserverSpec(**state["observer"]["spec"]))
+        layer.observer.load_state_dict(state["observer"])
+    layer._weight_operand = _operand(state["weight_operand"], device)
+    layer._outlier_operand = _operand(state["outlier_operand"], device)
+    layer._weight_noise = _to(state["weight_noise"], device)
+    layer._weight_state = tensor_state(layer.weight)
+
+
+def _write_atomic(path: Path, data: bytes) -> None:
+    fd, temporary = tempfile.mkstemp(dir=path.parent, prefix=path.name + ".", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "wb") as handle:
+            handle.write(data)
+    except BaseException:
+        os.unlink(temporary)
+        raise
+    os.replace(temporary, path)
+
+
+class _LayerCache:
+    """Nonsequential per-layer calibration results, keyed by everything they are computed from.
+
+    Every EmuLinear is a passthrough during nonsequential calibration, so a layer's inputs are
+    those of the unquantized model (all parameters and buffers, config, KV and attention
+    patches, runtime) on the windows, and its result depends on that, its own weight and spec
+    and, for a jointly fitted shared-input transform, the other members' specs. The MMA spec is
+    left out: calibration runs no GEMM. Which layers share an input is recorded from every
+    fitting pass, so later runs know transform groups before any forward.
+    """
+
+    def __init__(
+        self, directory: str | os.PathLike, model: nn.Module, layers: list[tuple[str, EmuLinear]],
+        calibration: dict, mode: str, device: torch.device,
+    ) -> None:
+        self.dir = Path(directory)
+        self.dir.mkdir(parents=True, exist_ok=True)
+        self.layers = layers
+        self.linears = [(name, module) for name, module in model.named_modules()
+                        if isinstance(module, (nn.Linear, EmuLinear))]
+        tensors = {}
+        for prefix, module in model.named_modules():
+            owned = (*module.named_parameters(recurse=False), *module.named_buffers(recurse=False))
+            for name, tensor in owned:
+                if isinstance(module, EmuLinear) and name == "bias":
+                    tensor = tensor.to(module.weight.dtype)  # EmuLinear keeps an fp32 copy of the bias
+                tensors[f"{prefix}.{name}" if prefix else name] = [str(tensor.dtype), list(tensor.shape),
+                                                                   _tensor_sha256(tensor)]
+        config = getattr(model, "config", None)
+        config_data = config.to_dict() if hasattr(config, "to_dict") else None
+        if config_data is not None:
+            config_data.pop("use_cache", None)  # calibration turns it off
+        kv = getattr(model, "_tricast_kv_patch", None)
+        self.source_sha256 = _source_sha256()
+        self.base = _sha256_json({
+            "format": CACHE_FORMAT, "source": self.source_sha256, "runtime": _runtime(device),
+            "model": {"class": f"{type(model).__module__}.{type(model).__qualname__}",
+                      "commit": getattr(config, "_commit_hash", None), "config": config_data,
+                      "attn_implementation": getattr(config, "_attn_implementation", None),
+                      "tensors": tensors},
+            "kv": None if kv is None else [_json_value(kv.kv), sorted(kv.indices), kv.names],
+            "attention": [[name, _json_value(module._tricast_attention.spec),
+                           module._tricast_attention.backend] for name, module in iter_emuattention(model)],
+            "calibration": calibration,
+        })
+        self.entries = {}
+        for name, layer in layers:
+            spec = _json_value(layer.spec)
+            del spec["mma"]
+            self.entries[name] = {"name": name, "weight": tensors[f"{name}.weight"],
+                                  "bias": tensors.get(f"{name}.bias"), "spec": spec, "backend": layer.backend}
+        conv = next((name for name, _ in iter_emuconv2d(model)), None)
+        self.reasons = {}
+        for name, layer in layers:
+            reason = (_uncacheable(layer, mode) if conv is None
+                      else f"EmuConv2d {conv} quantizes upstream activations during calibration")
+            if reason is not None:
+                self.reasons[name] = reason
+        self.inputs_path = self.dir / f"inputs-{self.base}.json"
+        self.inputs = json.loads(self.inputs_path.read_text()) if self.inputs_path.exists() else None
+        self.observed: dict[str, str | None] | None = None
+        self.groups = {name: self._group(name, layer) for name, layer in layers}
+        intrinsic = dict(self.reasons)
+        for name, group in self.groups.items():
+            partner = next((member for member in group or () if member in intrinsic and member != name), None)
+            if name not in self.reasons and partner is not None:
+                self.reasons[name] = f"its transform is fitted jointly with uncacheable {partner}"
+        self.keys = {name: self._key(name, group) for name, group in self.groups.items()
+                     if group is not None and name not in self.reasons}
+        found = {name for name, key in self.keys.items() if self._path(key).exists()}
+        # A jointly fitted transform group is loaded whole or fitted whole.
+        self.hits = [name for name, _ in layers
+                     if name in found and all(member in found for member in self.groups[name])]
+        self.hit_set = set(self.hits)
+
+    def _path(self, key: str) -> Path:
+        return self.dir / f"layer-{key}.pt"
+
+    def _group(self, name: str, layer: EmuLinear) -> list[str] | None:
+        """The layer's transform-fitting group as _InputGroups.groups forms it; None before any record."""
+        spec = layer.spec.transform
+        if not (spec.share_inputs and spec.kind in ("smoothquant", "awq")):
+            return [name]
+        candidates = [other for other, module in self.layers if module.spec.transform == spec]
+        if self.inputs is None or any(other not in self.inputs for other in candidates):
+            return None
+        label = self.inputs[name]
+        return [other for other in candidates if label is not None and self.inputs[other] == label] or [name]
+
+    def _key(self, name: str, group: list[str]) -> str:
+        members = None if len(group) == 1 else [self.entries[member] for member in group]
+        return _sha256_json({"base": self.base, "layer": self.entries[name], "group": members})
+
+    def load(self) -> list[list[str]]:
+        """Restore every hit; return their transform groups."""
+        layers = dict(self.layers)
+        for name in self.hits:
+            data = torch.load(self._path(self.keys[name]), map_location="cpu", weights_only=True)
+            if data["key"] != self.keys[name] or data["name"] != name:
+                raise ValueError(f"{self._path(self.keys[name])}: cache entry does not match its key")
+            _restore_layer(layers[name], data["state"])
+        return [self.groups[name] for name in self.hits if self.groups[name][0] == name]
+
+    def probed(self, model: nn.Module, run: Callable[[_InputGroups | None], None]) -> Callable:
+        """``run`` that records, on its first pass, which Linear modules read the same input."""
+        def first_pass(tracker: _InputGroups | None) -> None:
+            if self.observed is not None:
+                return run(tracker)
+            probe = _InputGroups(self.linears)
+            handle = model.register_forward_pre_hook(lambda *_: probe.next_batch())
+            try:
+                run(tracker)
+            finally:
+                handle.remove()
+                probe.close()
+            self.observed = _input_classes(probe.signatures)
+        return first_pass
+
+    def store(self, fitted: list[list[str]]) -> None:
+        if self.observed is not None:
+            if self.inputs is None:
+                _write_atomic(self.inputs_path, json.dumps(self.observed).encode("utf-8"))
+            elif self.inputs != self.observed:
+                raise RuntimeError(f"{self.inputs_path}: recorded input sharing differs from this run for "
+                                   "the same model, windows and code; remove the cache directory")
+        actual = {name: group for group in fitted for name in group}
+        for name, layer in self.layers:
+            if name in self.hit_set or name in self.reasons:
+                continue
+            group = actual[name]
+            partner = next((member for member in group if member in self.reasons), None)
+            if partner is not None:
+                self.reasons[name] = f"its transform is fitted jointly with uncacheable {partner}"
+                continue
+            if self.groups[name] is None:
+                self.groups[name], self.keys[name] = group, self._key(name, group)
+            elif self.groups[name] != group:
+                raise RuntimeError(f"{name}: cached input sharing predicted transform group "
+                                   f"{self.groups[name]}, but calibration fitted {group}")
+            buffer = io.BytesIO()
+            torch.save({"key": self.keys[name], "name": name, "state": _layer_state(layer)}, buffer)
+            _write_atomic(self._path(self.keys[name]), buffer.getvalue())
+
+    def report(self) -> dict:
+        names = [name for name, _ in self.layers]
+        return {"dir": str(self.dir), "hits": list(self.hits),
+                "misses": [name for name in names if name not in self.hit_set and name not in self.reasons],
+                "uncacheable": {name: self.reasons[name] for name in names if name in self.reasons},
+                "source_sha256": self.source_sha256}
+
+
 @torch.no_grad()
 def calibrate(
     model: nn.Module, recipe: Recipe, tokenizer=None, *, texts=None, input_ids=None,
     samples: int | None = None, seqlen: int | None = None, seed: int | None = None, device=None,
     sequential: bool | None = None, hessian_max_bytes: int = DEFAULT_HESSIAN_MAX_BYTES,
+    cache_dir: str | os.PathLike | None = None,
 ) -> dict:
     """Fit transforms/observers/GPTQ with a 4-GiB default live-Hessian storage budget.
 
@@ -366,6 +671,9 @@ def calibrate(
     blocks; unsupported chains explicitly report why full-model replay was used.
     C4 uses memory-mapped Arrow documents and exactly GPTQ's seeded document
     draws with replacement/window bounds, tokenizing one selected document at a time.
+    ``cache_dir`` (opt-in) reuses bit-identical nonsequential per-layer results across
+    calls (see _LayerCache): only layers without a stored result are fitted, with no
+    forward when all hit; ``result["cache"]`` lists hits, misses and uncacheable layers.
     """
     if isinstance(hessian_max_bytes, bool) or not isinstance(hessian_max_bytes, int) or hessian_max_bytes < 0:
         raise ValueError("hessian_max_bytes must be a nonnegative integer")
@@ -384,6 +692,9 @@ def calibrate(
     else:
         config["dataset"], config["split"] = None, None
     windows = _windows(tokenizer, texts, input_ids, samples, seqlen, seed, document_local=document_local)
+    fingerprint = hashlib.sha256()
+    for ids in windows:
+        fingerprint.update(ids.cpu().contiguous().numpy().astype("<i8").tobytes())
     target = torch.device(device) if device is not None else next(model.parameters()).device
     devices = [target.index if target.index is not None else torch.cuda.current_device()] \
         if target.type == "cuda" else []
@@ -402,6 +713,16 @@ def calibrate(
         if not layers:
             raise ValueError("the recipe selects no Linear modules for calibration")
         stages, mode, reason = _stages(model, layers, config["sequential"])
+        cache, pending, cached_groups = None, layers, []
+        if cache_dir is not None:
+            cache = _LayerCache(cache_dir, model, layers, {
+                "dataset": config["dataset"], "split": config["split"], "samples": len(windows),
+                "seqlen": seqlen, "seed": seed, "source": source, "windows": fingerprint.hexdigest(),
+                "mode": mode,
+            }, mode, device)
+            pending = [(name, layer) for name, layer in layers if name not in cache.hit_set]
+            if cache.hits:  # only nonsequential layers hit; the single stage keeps the layers left to fit
+                stages = [pending] if pending else []
         training = [(module, module.training) for module in model.modules()]
         state_fields = ("mode", "observer", "transform", "_fitted", "_weight_operand", "_outlier_operand",
                         "_weight_state", "_weight_noise", "_calibrated")
@@ -423,6 +744,8 @@ def calibrate(
                 model(input_ids=ids.to(device))
 
         try:
+            if cache is not None:
+                cached_groups = cache.load()
             for _, layer in layers:
                 layer._calibration_passthrough = True
             if mode == "sequential":
@@ -444,7 +767,7 @@ def calibrate(
                     reason = "online history or stochastic activations require full-model sequential replay"
                 else:
                     capture = _DecoderInputs(blocks)
-            preflight = _InputGroups(layers)
+            preflight = _InputGroups(pending)
             try:
                 if capture is not None:
                     for ids in windows:
@@ -457,7 +780,7 @@ def calibrate(
                         reason = "cached decoder replay unavailable: " + capture.reason
                         capture.close()
                         capture = None
-                elif any(layer.spec.weight_algo.kind == "gptq" for _, layer in layers):
+                elif any(layer.spec.weight_algo.kind == "gptq" for _, layer in pending):
                     run_model(preflight, windows[:1])
                 hessian_groups, hessian_bytes, unshared_bytes = _hessian_plan(
                     stages, preflight, hessian_max_bytes,
@@ -467,8 +790,9 @@ def calibrate(
                 if capture is not None:
                     capture.close()
             if capture is None:
+                run = run_model if cache is None else cache.probed(model, run_model)
                 for stage, shared in zip(stages, hessian_groups, strict=True):
-                    group_names.extend(_fit_stage(stage, shared, run_model))
+                    group_names.extend(_fit_stage(stage, shared, run))
             else:
                 hidden = [state for state, _ in capture.samples]
                 # Only one layer of hidden states is retained, independent of decoder depth.
@@ -489,6 +813,11 @@ def calibrate(
                         ))
                     if index + 1 < len(capture.blocks):
                         hidden = capture.run(index, hidden, device)
+            if cache is not None:
+                cache.store(group_names)
+                # Groups ordered by first member, as one fitting pass over every layer lists them.
+                order = {name: index for index, (name, _) in enumerate(layers)}
+                group_names = sorted(group_names + cached_groups, key=lambda group: order[group[0]])
         except Exception:
             for layer, state in states:
                 for key, value in state.items():
@@ -504,14 +833,14 @@ def calibrate(
                 layer.clear_calibration()
             for module, was_training in training:
                 module.training = was_training
-    fingerprint = hashlib.sha256()
-    for ids in windows:
-        fingerprint.update(ids.cpu().contiguous().numpy().astype("<i8").tobytes())
-    return {**config, "samples": len(windows), "source": source,
-            "n_tokens": sum(ids.numel() for ids in windows), "mode": mode, "reason": reason,
-            "config": config, "groups": group_names, "sequential_cached": capture is not None,
-            "hessian_max_bytes": hessian_max_bytes, "hessian_bytes": hessian_bytes,
-            "hessian_unshared_bytes": unshared_bytes,
-            "hessian_groups": [[name for name, _ in group] for stage in hessian_groups for group in stage],
-            "full_model_forwards": full_model_forwards,
-            "dataset_fingerprint": fingerprint.hexdigest(), "layers": [name for name, _ in layers]}
+    result = {**config, "samples": len(windows), "source": source,
+              "n_tokens": sum(ids.numel() for ids in windows), "mode": mode, "reason": reason,
+              "config": config, "groups": group_names, "sequential_cached": capture is not None,
+              "hessian_max_bytes": hessian_max_bytes, "hessian_bytes": hessian_bytes,
+              "hessian_unshared_bytes": unshared_bytes,
+              "hessian_groups": [[name for name, _ in group] for stage in hessian_groups for group in stage],
+              "full_model_forwards": full_model_forwards,
+              "dataset_fingerprint": fingerprint.hexdigest(), "layers": [name for name, _ in layers]}
+    if cache is not None:
+        result["cache"] = cache.report()
+    return result

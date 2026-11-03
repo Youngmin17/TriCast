@@ -10,8 +10,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   `tricast.rag.search_evidence` ranks per-layer, per-recipe and per-method documents plus the method catalog.
 - Autonomous tune loop (`app/tune_loop.py`, AC27): per-layer evidence analysis, Claude Code headless (or
   auto-greedy) proposals, checks, GPU measurement through gpu_cap and ingest, round after round without a human.
-- Black-box controls for the tune loop (`--proposer evolution|random`, `--stale-rounds 0`): EvoPress-style
-  level-switch mutations plus option mutations under the same checks and measurement, for equal-budget runs.
+- Per-layer NF4, HQQ and RaZeR (`weight_algo: nf4|hqq|razer`, Python-only Quantizer methods `nf4`,
+  `hqq_int4`, `razer_nvfp4`): bit-identical on CPU to bitsandbytes NF4, HQQ 0.2.8.post1 and the pinned RaZeR
+  function; refused with official GPTQ or a transform. Four-over-Six does not match fouroversix 1.0.5 (recorded).
+- Opt-in calibration result cache (`calibrate(..., cache_dir=...)`): per-layer states keyed by model, source,
+  runtime, calibration windows and spec; bit-identical to a fresh calibration, no forward when every layer hits.
+- Black-box controls for the tune loop (`--proposer evolution|random`): EvoPress-style level-switch mutations
+  plus option mutations under the same checks and measurement; `--measurements N` runs a fixed budget (refused
+  proposals made up, shortfall recorded); proposals are deduplicated by recipe hash.
 - Agent tune tools (`app/tune_agent.py`, AC24) and their protocol (`docs/prompts/tune_agent.md`): proposals are
   refused unless they build, fit the budget, cite ledger records and state only supported numbers.
 - Auto-tune v2 (`app/autotune.py`): per-layer patch floor, calibrated methods (GPTQ; AWQ and SmoothQuant on

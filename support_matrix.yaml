@@ -79,13 +79,15 @@ weight_algorithms: {status: implemented, values: [rtn, gptq], note: "gptq suppor
 official_methods:
   # Methods absorbed by calling the official code at a pinned commit (src/tricast/official); the method catalog
   # with every surveyed method and TriCast's status for it is docs/research/methods_catalog.yaml.
-  pruning: {status: implemented, methods: [wanda, sparsegpt, magnitude],
+  pruning: {status: verified, methods: [wanda, sparsegpt, magnitude],
             source: "locuslab/wanda 8e8fc87b (MIT; its SparseGPT copy), lib.prune.prune_<method> called unchanged",
             note: "recipe prune block, applied before patch_model; compat shim for transformers >= 4.48 decoders
               (eager attention, position_embeddings, tuple return) and deviations recorded in the run record;
               optional seqlen recorded as a parameter mapping",
-            evidence: "tests/test_official_prune.py (CPU, tiny Llama and Qwen3); GPU gate in progress
-              (docs/evidence/2026-11-03_v2_agent_runs.md)"}
+            evidence: "tests/test_official_prune.py (CPU, tiny Llama and Qwen3); GPU gate on Llama-2-7B (H200,
+              1e93df6): dense 5.1166, Wanda 50% 6.4631, SparseGPT 50% 6.5168, SparseGPT 2:4 10.1807 within 1% of the
+              pinned README; Wanda 2:4 11.3392 vs README 11.02 (+2.9%) but -0.25% from the same official code in the
+              old env (11.3679) — docs/evidence/2026-11-03_v2_agent_runs.md"}
   gptq: {status: implemented, methods: [official_gptq],
          source: "IST-DASLab/gptq 2d65066e (Apache-2.0), llama.py llama_sequential called unchanged",
          note: "recipe official_gptq block, after prune and before patch_model; refused with weight_algo gptq or a
@@ -377,13 +379,16 @@ agent:
   tune_agent: {status: implemented, note: "app/tune_agent.py: proposals checked for budget, table coverage,
                cited ledger ids and supported numbers; measurement rounds on validation windows. Driven by the
                Claude Code session (docs/prompts/tune_agent.md); search effect not measured yet
-               (docs/spikes/2026-11-03_tune_agent.md)", evidence: "app/tests/test_tune_agent.py (CPU)"}
-  tune_loop: {status: implemented, note: "app/tune_loop.py: per-layer evidence analysis -> proposer (Claude Code
+               (docs/spikes/2026-11-03_tune_agent.md, adopted: test PPL 21.63 vs auto 21.86 vs start 21.88)",
+               evidence: "app/tests/test_tune_agent.py (CPU)"}
+  tune_loop: {status: verified, note: "app/tune_loop.py: per-layer evidence analysis -> proposer (Claude Code
                headless, no tools, schema, spend cap; or auto-greedy) -> AC24 checks -> gpu_cap measurement -> ingest,
-               no human step", evidence: "app/tests/test_tune_loop.py (CPU, fakes for LLM/GPU/ssh)"}
-  autotune_v2: {status: implemented, note: "patch floor, calibrated methods (gptq_int4 all kinds; awq/smoothquant
+               no human step", evidence: "app/tests/test_tune_loop.py (CPU, fakes for LLM/GPU/ssh); 2 rounds on
+               geneva A100 with claude-opus-5-5, validation KL 0.05967 -> 0.05538 (docs/spikes/2026-11-03_tune_loop.md)"}
+  autotune_v2: {status: verified, note: "patch floor, calibrated methods (gptq_int4 all kinds; awq/smoothquant
                 o_proj/down_proj), per-block KV entries, models with fewer blocks",
-                evidence: "app/tests/test_autotune_v2.py (CPU); GPU spike planned (docs/spikes/2026-11-03_autotune_v2.md)"}
+                evidence: "app/tests/test_autotune_v2.py (CPU); GPU spike adopted, C1-C4 and C3' pass
+                  (docs/spikes/2026-11-03_autotune_v2.md)"}
   structured_parse: {status: implemented, note: "Claude API (claude-opus-5-5, json_schema output) or offline
                      parser; live API path untested here (no ANTHROPIC_API_KEY)",
                      evidence: "tests/test_agent_parser.py, tests/test_agent_request.py (mocked client)"}

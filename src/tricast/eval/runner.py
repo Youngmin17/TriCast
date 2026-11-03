@@ -258,6 +258,13 @@ def run_config(cfg: dict | str | Path, *, calibration: dict | None = None) -> li
     if not task_config or set(task_config) - {"ppl", "lm_eval"}:
         raise ValueError("tasks must contain ppl and/or lm_eval")
     overrides = {**(cfg.get("calibration") or {}), **(calibration or {})}
+    # Storage budget for GPTQ's live Hessians (tricast.calibration.calibrate): a memory limit, not a numerical
+    # setting, so it is not part of a run's identity; the value used is in the run's calibration record.
+    hessian_max_bytes = cfg.get("hessian_max_bytes")
+    if hessian_max_bytes is not None and (isinstance(hessian_max_bytes, bool)
+                                          or not isinstance(hessian_max_bytes, int) or hessian_max_bytes < 0):
+        raise ValueError("hessian_max_bytes must be a nonnegative integer")
+    budget = {} if hessian_max_bytes is None else {"hessian_max_bytes": hessian_max_bytes}
     recipes = _recipes(cfg, base_dir)
     for recipe in recipes:
         if not recipe.name or re.search(r"[/\\]", recipe.name) or recipe.name in {".", ".."}:
@@ -342,7 +349,8 @@ def run_config(cfg: dict | str | Path, *, calibration: dict | None = None) -> li
                     record["error"] = "recipe selected no modules: zero patches were applied"
             if "error" not in record:
                 if recipe is not None and recipe.needs_calibration:
-                    record["calibration"] = calibrate(model, recipe, tokenizer=tokenizer, device=device)
+                    record["calibration"] = calibrate(model, recipe, tokenizer=tokenizer, device=device,
+                                                      **budget)
                     run_env["dataset_fingerprints"]["calibration"] = record["calibration"].get(
                         "dataset_fingerprint",
                     )

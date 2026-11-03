@@ -1,0 +1,1763 @@
+# TriCast method catalog: LLM quantization / sparsity methods and their official-code entry points.
+# Provenance (2026-11-03):
+#   - repo/license/last_push: GitHub REST `repos/{owner}/{repo}` (license.spdx_id, pushed_at = any branch). Redirects resolved
+#     (mobiusml/hqq -> dropbox/hqq, quic/aimet -> qualcomm/aimet, mit-han-lab/deepcompressor -> nunchux-ai/deepcompressor,
+#     NVIDIA/TensorRT-Model-Optimizer -> NVIDIA/Model-Optimizer, CASIA-IVA-Lab/FLAP -> CASIA-LMC-Lab/FLAP).
+#     license "none" = GitHub detects no LICENSE file (all rights reserved by default).
+#   - entry: read from a depth-1 clone of the default branch (source only, never executed). file:symbol + signature as in source.
+#   - deps_conflict: only pins visible in requirements*/setup.py/pyproject/README vs torch 2.8 + transformers 4.55.
+#   - arxiv: confirmed against export.arxiv.org titles; venue: KB card, arXiv comment, or README badge.
+#     A note "venue: prior knowledge" marks venues not re-verified in this pass.
+#   - pip: only packages whose PyPI project URL points to the official repo (or is named in the official README).
+# tricast_fit legend:
+#   per_layer_callable  official symbol works on one Linear weight (+ calib stats) / one K,V tensor / one activation.
+#                       An entry marked "(metric inline)" is classified model_script: its scoring expression exists only
+#                       inside the whole-model function, and copying it would be a re-implementation (user rule
+#                       2026-10-30) — TriCast calls the official whole-model function instead (src/tricast/official).
+#   model_script        official code runs only as whole-model script / model-specific traversal or patched modeling file.
+#   kernel_or_system    effect requires custom CUDA/Triton kernels or an inference engine.
+#   training            QAT / fine-tuning / learned masks, rotations, gates needing gradient training.
+#   no_official_code    no official repo found.
+# TriCast status field (added 2026-11-03 in this repository): tricast = official_adapter | verified_against_official |
+#   tricast_native | tricast_reimplementation | tricast_partial | none (support_matrix.yaml is the status source).
+checked: 2026-11-03
+methods:
+
+# ---------------------------------------------------------------- rounding / GPTQ family (W)
+- id: rtn
+  name: RTN (round-to-nearest, min-max)
+  venue: n/a
+  year: null
+  axes: [W]
+  category: rounding
+  basic_or_latest: basic
+  repo: https://github.com/IST-DASLab/gptq
+  official: true
+  license: Apache-2.0
+  last_push: 2024-03-27
+  pip: null
+  tricast_fit: per_layer_callable
+  entry: "quant.py:Quantizer().configure(bits, perchannel=True, sym=True, mse=False); .find_params(W, weight=True); quant.py:quantize(x, scale, zero, maxq)"
+  deps_conflict: null
+  kb_key: null
+  arxiv: null
+  note: "No single 'RTN paper'; GPTQ repo uses the same Quantizer for its RTN baseline (llama.py --nearest)."
+  tricast: tricast_native  # weight_algo rtn over TriCast's own formats
+- id: gptq
+  name: GPTQ
+  venue: ICLR
+  year: 2023
+  axes: [W]
+  category: calibration-gptq-family
+  basic_or_latest: basic
+  repo: https://github.com/IST-DASLab/gptq
+  official: true
+  license: Apache-2.0
+  last_push: 2024-03-27
+  pip: null
+  tricast_fit: per_layer_callable
+  entry: "gptq.py:GPTQ(layer).add_batch(inp, out); .quantizer = quant.py:Quantizer(); .fasterquant(blocksize=128, percdamp=.01, groupsize=-1, actorder=False, static_groups=False)"
+  deps_conflict: null
+  kb_key: null
+  arxiv: "2210.17323"
+  note: "README-tested env torch 1.10.1 / transformers 4.21.2, but gptq.py only needs torch + transformers.Conv1D isinstance."
+  tricast: tricast_reimplementation  # weight_algo gptq (src/tricast/weight_quant/gptq.py), not the official code
+- id: gptaq
+  name: GPTAQ (GPTQv2)
+  venue: ICML
+  year: 2025
+  axes: [W, A]
+  category: calibration-gptq-family
+  basic_or_latest: latest
+  repo: https://github.com/Intelligent-Computing-Lab-Panda/GPTAQ
+  official: true
+  license: none
+  last_push: 2025-07-28
+  pip: null
+  tricast_fit: per_layer_callable
+  entry: "fake_quant/gptaq_utils.py:GPTAQ(layer); .fp_inp.append(fp_input) then .add_batch(inp, out); .quantizer = fake_quant/quant_utils.py:WeightQuantizer; .fasterquant(blocksize=128, percdamp=.01, groupsize=-1, actorder=False, static_groups=False, alpha=0.25)"
+  deps_conflict: "requirements pin torch==2.2.1, transformers==4.38.0 (whole-model scripts); module uses flat imports (import utils, quant_utils, model_utils) so fake_quant/ must be on sys.path; hadamard_utils imports fast_hadamard_transform"
+  kb_key: null
+  arxiv: "2504.02692"
+  note: "Needs two inputs per layer: quantized-model input (add_batch) and FP-model input (fp_inp) -> two calibration passes. Built on the QuaRot/SpinQuant codebase."
+  tricast: none
+- id: mr-gptq
+  name: MR-GPTQ (micro-rotated GPTQ, FP-Quant) for MXFP4/NVFP4
+  venue: ICLR
+  year: 2026
+  axes: [W, A, format, rotation/transform]
+  category: format/scale
+  basic_or_latest: latest
+  repo: https://github.com/IST-DASLab/FP-Quant
+  official: true
+  license: none
+  last_push: 2026-02-26
+  pip: fp_quant
+  tricast_fit: per_layer_callable
+  entry: "src/quantization/gptq.py:GPTQ(layer, quantizer, quantization_order='default', block_size=128, rel_damp=1e-2).update(input); .quantize(); quantizer = src/quantization/quantizer.py:Quantizer(bits, symmetric, format='nvfp'|'mxfp'|'int', granularity, group_size, scale_precision); block Hadamard = src/transforms/transforms.py:HadamardTransform"
+  deps_conflict: null
+  kb_key: mrgptq-iclr26
+  arxiv: "2509.23202"
+  note: "Repo has src/utils/qwen3_utils.py (Qwen3 path). pip fp_quant (inference_lib) is the export/runtime side; real FP4 kernels via QuTLASS (Blackwell). Block-wise rotation applied in gptq_quantization model loop."
+  tricast: none
+- id: hqq
+  name: HQQ (Half-Quadratic Quantization)
+  venue: blog
+  year: 2023
+  axes: [W]
+  category: rounding
+  basic_or_latest: basic
+  repo: https://github.com/dropbox/hqq
+  official: true
+  license: Apache-2.0
+  last_push: 2026-02-26
+  pip: hqq
+  tricast_fit: per_layer_callable
+  entry: "hqq/core/quantize.py:Quantizer.quantize(tensor, nbits=4, channel_wise=True, group_size=64, optimize=True, round_zero=False, axis=0, bitpack=True, ...) -> (W_q, meta); Quantizer.dequantize(W_q, meta); module form HQQLinear(linear_layer, quant_config)"
+  deps_conflict: null
+  kb_key: null
+  arxiv: null
+  note: "Calibration-free (no activations). Repo moved mobiusml/hqq -> dropbox/hqq; PyPI hqq 0.2.8.post1 (2025-10-20) still lists mobiusml URL. setup: transformers>=4.36.1."
+  tricast: none
+- id: sinq
+  name: SINQ (Sinkhorn-Normalized Quantization)
+  venue: ICML
+  year: 2026
+  axes: [W]
+  category: rounding
+  basic_or_latest: latest
+  repo: https://github.com/huawei-csl/SINQ
+  official: true
+  license: Apache-2.0
+  last_push: 2026-05-08
+  pip: sinq
+  tricast_fit: per_layer_callable
+  entry: "sinq/quantizer.py:Quantizer.quantize(tensor, layer_activations, nbits=4, group_size=64, round_zero=False, axis=0, bitpack=True, ..., tiling_mode='1D', method='sinq'); module form sinq/sinqlinear_hf.py:SINQLinear(linear_layer=..., quant_config=..., layer_activations=None)"
+  deps_conflict: "req.txt lists transformers>=5.2.0 and gemlite==0.5.1.post1 (conflicts with transformers 4.55 if installed from req.txt); quantizer core is torch-only"
+  kb_key: null
+  arxiv: "2509.22944"
+  note: "Calibration-free dual-scale (row+column Sinkhorn) quantizer derived from HQQ; layer_activations used only by the calibrated A-SINQ variant. Venue from repo description."
+  tricast: none
+- id: quip
+  name: QuIP
+  venue: NeurIPS
+  year: 2023
+  axes: [W, rotation/transform]
+  category: codebook/vector
+  basic_or_latest: basic
+  repo: https://github.com/Cornell-RelaxML/QuIP
+  official: true
+  license: none
+  last_push: 2024-02-24
+  pip: null
+  tricast_fit: per_layer_callable
+  entry: "bal.py:Balance(layer) (base method.py:QuantMethod): .add_batch(inp, out); .configure(qmethod, nbits, npasses, unbiased); .preproc(preproc_gptqH=False, percdamp=.01, preproc_rescale=False, preproc_proj=False, preproc_proj_extra=0); .fasterquant(); .postproc()"
+  deps_conflict: null
+  kb_key: null
+  arxiv: "2307.13304"
+  note: "Incoherence processing (random orthogonal / butterfly in method.py) + LDLQ; per-layer state machine. Venue: prior knowledge."
+  tricast: none
+- id: quip-sharp
+  name: "QuIP#"
+  venue: ICML
+  year: 2024
+  axes: [W, rotation/transform]
+  category: codebook/vector
+  basic_or_latest: basic
+  repo: https://github.com/Cornell-RelaxML/quip-sharp
+  official: true
+  license: GPL-3.0
+  last_push: 2024-10-29
+  pip: null
+  tricast_fit: per_layer_callable
+  entry: "lib/algo/quip.py:quantize(H_orig, W_orig, rank, codebook_orig, args, device='cpu') (RHT incoherence + LDLQ with E8P codebook); full pipeline lib/algo/finetune.py:quantize_finetune_decoder_layer"
+  deps_conflict: "requirements pin torch==2.4.0, transformers==4.40.1, fast_hadamard_transform==1.0.4.post1 (CUDA build), flash_attn==2.6.1, lm_eval==0.3.0; E8P decode uses quiptools CUDA ext"
+  kb_key: null
+  arxiv: "2402.04396"
+  note: "Per-layer fn needs a precomputed Hessian (hessian_offline_* scripts); paper numbers include per-block + e2e fine-tuning. GPL-3.0 is copyleft."
+  tricast: none
+- id: aqlm
+  name: AQLM (Additive Quantization)
+  venue: ICML
+  year: 2024
+  axes: [W]
+  category: codebook/vector
+  basic_or_latest: basic
+  repo: https://github.com/Vahe1994/AQLM
+  official: true
+  license: Apache-2.0
+  last_push: 2026-02-26
+  pip: aqlm
+  tricast_fit: per_layer_callable
+  entry: "aq_engine.py:AQEngine(layer: nn.Linear, accumulator_dtype=torch.float64).add_batch(inp); .quantize(*, args: Namespace, verbose=True) -> QuantizedWeight"
+  deps_conflict: "requirements pin transformers==4.40.1, accelerate==0.29.3, datasets==2.19.0 (torch>=2.3.0)"
+  kb_key: null
+  arxiv: "2401.06118"
+  note: "Per-layer codebook learning uses Adam + beam search (local, no model gradient). pip aqlm 1.1.7 = inference kernels only, not the quantizer."
+  tricast: none
+- id: pv-tuning
+  name: PV-Tuning
+  venue: arXiv
+  year: 2024
+  axes: [W]
+  category: qat
+  basic_or_latest: basic
+  repo: https://github.com/Vahe1994/AQLM
+  official: true
+  license: Apache-2.0
+  last_push: 2026-02-26
+  pip: null
+  tricast_fit: training
+  entry: "AQLM repo finetune scripts (PV-Tuning global fine-tuning of codes + codebooks)"
+  deps_conflict: "same as AQLM (transformers==4.40.1)"
+  kb_key: null
+  arxiv: "2405.14852"
+  note: "Lives in the AQLM repo; whole-model fine-tuning, not a per-layer PTQ step. arXiv comment says Preprint (venue not verified)."
+  tricast: none
+- id: qtip
+  name: QTIP (trellis-coded quantization)
+  venue: NeurIPS
+  year: 2024
+  axes: [W, rotation/transform]
+  category: codebook/vector
+  basic_or_latest: basic
+  repo: https://github.com/Cornell-RelaxML/qtip
+  official: true
+  license: GPL-3.0
+  last_push: 2025-06-22
+  pip: null
+  tricast_fit: model_script
+  entry: "lib/algo/finetune.py:quantize_finetune_decoder_layer (per decoder block); inner per-layer lib/algo/ldlq.py:LDLQ with bitshift trellis codebook; custom model/llama.py"
+  deps_conflict: "requirements pin torch==2.4.0, transformers==4.45.2, fast_hadamard_transform==1.0.4.post1, lm_eval==0.4.4; trellis decode needs CUDA kernels"
+  kb_key: null
+  arxiv: "2406.11235"
+  note: "Ships its own Llama modeling file; Qwen3 not present. GPL-3.0."
+  tricast: none
+- id: squeezellm
+  name: SqueezeLLM (dense-and-sparse non-uniform)
+  venue: ICML
+  year: 2024
+  axes: [W]
+  category: codebook/vector
+  basic_or_latest: basic
+  repo: https://github.com/SqueezeAILab/SqueezeLLM
+  official: true
+  license: MIT
+  last_push: 2024-08-13
+  pip: null
+  tricast_fit: per_layer_callable
+  entry: "quantization/nuq.py:kmeans_fit((weights_np_row, fisher_row_as_sample_weight, n_cluster)) -> (centroids, labels) per output row"
+  deps_conflict: "nuq.py uses np.cast['byte'] (removed in NumPy>=2.0) and sklearn KMeans; Fisher gradients come from a separate gradient-collection step (--gradient dir); requirements transformers==4.29.0"
+  kb_key: squeezellm-icml24
+  arxiv: "2306.07629"
+  note: "Weighted k-means per row given Fisher diag; dense-and-sparse outlier split is a separate option. Needs NumPy<2 or a shim."
+  tricast: none
+- id: spqr
+  name: SpQR (sparse-quantized representation)
+  venue: ICLR
+  year: 2024
+  axes: [W]
+  category: outlier-split
+  basic_or_latest: basic
+  repo: https://github.com/Vahe1994/SpQR
+  official: true
+  license: Apache-2.0
+  last_push: 2026-02-08
+  pip: spqr_quant
+  tricast_fit: per_layer_callable
+  entry: "spqr_engine.py:SPQRUtil(layer).add_batch(inp, out); .quantize(*, bits=2, blocksize=128, percdamp=1e-2, groupsize=None, keep_last_columns=0, outlier_relative_threshold=inf, permutation_order='identity', simplified_outliers=False, perchannel=True, sym=False, ...) -> QuantizationResult"
+  deps_conflict: null
+  kb_key: spqr-iclr24
+  arxiv: "2306.03078"
+  note: "GPTQ-style with bilevel small-group stats + FP16 outliers. pip spqr_quant 0.2.0 = inference kernels."
+  tricast: tricast_partial  # outliers: magnitude-selected float outliers, not SpQR's sensitivity selection
+- id: owq
+  name: OWQ (outlier-aware weight quantization)
+  venue: AAAI
+  year: 2024
+  axes: [W]
+  category: outlier-split
+  basic_or_latest: basic
+  repo: https://github.com/xvyaward/owq
+  official: true
+  license: none
+  last_push: 2024-03-07
+  pip: null
+  tricast_fit: per_layer_callable
+  entry: "owq/recon.py:GPTQ_OWQ(layer).add_batch(inp, out); .hessian_sorting(actorder=False, frob_norm=None); .fasterquant(blocksize=128, percdamp=.01, groupsize=-1, actorder=False); quantizer owq/quant.py:Quantizer"
+  deps_conflict: null
+  kb_key: owq-aaai24
+  arxiv: "2306.02272"
+  note: "Keeps sensitivity-selected weak columns in FP16, GPTQ on the rest."
+  tricast: none
+- id: slim-llm
+  name: SliM-LLM (salience-driven mixed precision)
+  venue: ICML
+  year: 2025
+  axes: [W]
+  category: mixed-precision
+  basic_or_latest: latest
+  repo: https://github.com/Aaronhuang-778/SliM-LLM
+  official: true
+  license: none
+  last_push: 2024-08-09
+  pip: null
+  tricast_fit: per_layer_callable
+  entry: "slim-llm/slim_gptq.py:SliMGPTQ(layer, quantizer, disable_gptq=False, layer_index=0, salient_block=-1, nonsalient_block=-1, bit_width=2).add_batch(inp, out); .fasterquant(blocksize=128, percdamp=0.01, layer_name='', saved_block_precision=None); group-bit search slim-llm/utils/bitsearch.py"
+  deps_conflict: "requirements pin torch==2.2.1, transformers==4.35.0"
+  kb_key: null
+  arxiv: "2405.14917"
+  note: "Group-wise bit allocation inside each layer. Venue: prior knowledge (arXiv comment has none)."
+  tricast: none
+- id: billm
+  name: BiLLM (1-bit PTQ)
+  venue: ICML
+  year: 2024
+  axes: [W]
+  category: rounding
+  basic_or_latest: basic
+  repo: https://github.com/Aaronhuang-778/BiLLM
+  official: true
+  license: MIT
+  last_push: 2025-01-11
+  pip: null
+  tricast_fit: per_layer_callable
+  entry: "bigptq.py:BRAGPTQ(layer, braq_quantizer, salient_metric, disable_gptq=False).add_batch(inp, out); .fasterquant(blocksize=128, percdamp=0.01, partition=3, orders=(1,1,2)); quantizer binary.py:Binarization"
+  deps_conflict: "requirements pin transformers==4.35.0, datasets==2.14.6"
+  kb_key: null
+  arxiv: "2402.04291"
+  note: "Residual binarization of salient columns + bell-shaped split. Venue: prior knowledge."
+  tricast: none
+- id: gptvq
+  name: GPTVQ
+  venue: arXiv
+  year: 2024
+  axes: [W]
+  category: codebook/vector
+  basic_or_latest: basic
+  repo: https://github.com/Qualcomm-AI-research/gptvq
+  official: true
+  license: BSD-3-Clause-Clear
+  last_push: 2024-03-28
+  pip: null
+  tricast_fit: per_layer_callable
+  entry: "gptq.py:GPTQ(layer).add_batch(inp, out); .fasterquant(blocksize=128, percdamp=0.01, groupsize=-1, actorder=False, static_groups=False, include_m_step=False, use_vq=False, svd_rank=None, hessian_weighted_lookups=False, only_init_kmeans=False)"
+  deps_conflict: "requirements pin torch==2.0.1, transformers==4.37.2"
+  kb_key: null
+  arxiv: "2402.15319"
+  note: "Vector-quantization extension of GPTQ (use_vq=True). Peer-reviewed venue not verified."
+  tricast: none
+- id: autoround
+  name: AutoRound / SignRound
+  venue: EMNLP-Findings
+  year: 2024
+  axes: [W, A, format]
+  category: rounding
+  basic_or_latest: basic
+  repo: https://github.com/intel/auto-round
+  official: true
+  license: Apache-2.0
+  last_push: 2026-11-03
+  pip: auto-round
+  tricast_fit: model_script
+  entry: "auto_round/autoround.py:AutoRound (exported in auto_round/__init__.py; HF model + tokenizer + bits/group_size); block tuning auto_round/algorithms/quantization/sign_round/quantizer.py:SignRoundQuantizer.quantize_block(block, fp_inputs, input_others, fp_outputs, q_inputs, block_ctx, ...); per-Linear wrapper auto_round/wrapper.py:WrapperLinear(orig_layer, ...)"
+  deps_conflict: null
+  kb_key: null
+  arxiv: "2309.05516"
+  note: "Model-agnostic HF API (handles traversal itself); signed-gradient tuning of rounding/minmax per decoder block. torch>=2.13 pin is only in auto_round_extension/ark."
+  tricast: none
+- id: adaround
+  name: AdaRound (AIMET)
+  venue: ICML
+  year: 2020
+  axes: [W]
+  category: rounding
+  basic_or_latest: basic
+  repo: https://github.com/qualcomm/aimet
+  official: true
+  license: BSD-3-Clause
+  last_push: 2026-11-02
+  pip: aimet-torch
+  tricast_fit: model_script
+  entry: "aimet_torch adaround: Adaround.apply_adaround(model, dummy_input, AdaroundParameters(...), path, filename_prefix) (impl _base/adaround/adaround_weight.py:AdaroundBase.apply_adaround); per-module optimizer _base/adaround/adaround_optimizer.py:AdaroundOptimizer.adaround_module"
+  deps_conflict: "GitHub LICENSE = BSD-3-Clause (spdx NOASSERTION); GenAILab/requirements-pinned.txt pins transformers==5.17.0 (examples only)"
+  kb_key: null
+  arxiv: "2004.10568"
+  note: "Requires AIMET QuantizationSimModel wrapping; local gradient optimization of rounding per module. Original paper code was not released separately."
+  tricast: none
+- id: brecq
+  name: BRECQ
+  venue: ICLR
+  year: 2021
+  axes: [W, A]
+  category: rounding
+  basic_or_latest: basic
+  repo: https://github.com/yhhhli/BRECQ
+  official: true
+  license: MIT
+  last_push: 2021-08-01
+  pip: null
+  tricast_fit: model_script
+  entry: "quant/block_recon.py:block_reconstruction(model, block, cali_data, ...); quant/layer_recon.py:layer_reconstruction; quant/adaptive_rounding.py:AdaRoundQuantizer; wrapper quant/quant_model.py:QuantModel"
+  deps_conflict: null
+  kb_key: null
+  arxiv: "2102.05426"
+  note: "CNN/ImageNet codebase (ResNet/MobileNet block specializations); no LLM support. Gradient-based reconstruction."
+  tricast: none
+- id: qdrop
+  name: QDrop
+  venue: ICLR
+  year: 2022
+  axes: [W, A]
+  category: rounding
+  basic_or_latest: basic
+  repo: https://github.com/wimh966/QDrop
+  official: true
+  license: MIT
+  last_push: 2025-09-23
+  pip: null
+  tricast_fit: model_script
+  entry: "qdrop/solver/ (reconstruction driver) with qdrop/quantization/quantized_module.py:QLinear/QConv2d and fake_quant.py quantizers"
+  deps_conflict: null
+  kb_key: null
+  arxiv: "2203.05740"
+  note: "CNN/ImageNet codebase (default branch 'qdrop'); BRECQ-style block reconstruction with random activation-quant dropping. No LLM path."
+  tricast: none
+- id: lsq
+  name: LSQ (learned step size quantization)
+  venue: ICLR
+  year: 2020
+  axes: [W, A]
+  category: qat
+  basic_or_latest: basic
+  repo: null
+  official: false
+  license: null
+  last_push: null
+  pip: null
+  tricast_fit: no_official_code
+  entry: null
+  deps_conflict: null
+  kb_key: null
+  arxiv: "1902.08153"
+  note: "No author (IBM) repo found; GitHub search only returns third-party ports (e.g. hustzxd/LSQuantization). LSQ-style quantizers ship inside ParetoQ / EfficientQAT."
+  tricast: none
+# ---------------------------------------------------------------- scaling / smoothing (W, A)
+- id: awq
+  name: AWQ
+  venue: MLSys
+  year: 2024
+  axes: [W]
+  category: scaling-transform
+  basic_or_latest: basic
+  repo: https://github.com/mit-han-lab/llm-awq
+  official: true
+  license: MIT
+  last_push: 2025-07-17
+  pip: null
+  tricast_fit: model_script
+  entry: "awq/quantize/auto_scale.py:auto_scale_block(module, module_kwargs, w_bit, q_config, input_feat) + apply_scale(module, scales_list, input_feat_dict); per-Linear clip awq/quantize/auto_clip.py:auto_clip_layer(w, input_feat, n_bit, q_config, n_grid=20, max_shrink=0.5); fake quant awq/quantize/quantizer.py:pseudo_quantize_tensor(w, n_bit, zero_point, q_group_size)"
+  deps_conflict: "pyproject pins torch==2.3.0, transformers==4.46.0; auto_scale_block has no Qwen3 branch (isinstance checks name OPTDecoderLayer and (LlamaDecoderLayer, Qwen2DecoderLayer) among others) and apply_scale accepts only LayerNorm/LlamaRMSNorm/Qwen2RMSNorm -> Qwen3 blocks unsupported"
+  kb_key: null
+  arxiv: "2306.00978"
+  note: "Scale search is nested inside auto_scale_block per block type; only auto_clip_layer is truly per-Linear. AutoAWQ (casper-hansen) is third-party."
+  tricast: tricast_reimplementation  # transform awq (src/tricast/transforms.py), not the official code
+- id: smoothquant
+  name: SmoothQuant
+  venue: ICML
+  year: 2023
+  axes: [W, A]
+  category: scaling-transform
+  basic_or_latest: basic
+  repo: https://github.com/mit-han-lab/smoothquant
+  official: true
+  license: MIT
+  last_push: 2024-07-12
+  pip: null
+  tricast_fit: per_layer_callable
+  entry: "smoothquant/smooth.py:smooth_ln_fcs_llama_like(ln, fcs, act_scales, alpha=0.5) (norm + list of Linears); act_scales from smoothquant/calibration.py:get_act_scales(model, tokenizer, dataset_path, num_samples=512, seq_len=512); fake W8A8 smoothquant/fake_quant.py:W8A8Linear.from_float(module, weight_quant='per_channel', act_quant='per_token')"
+  deps_conflict: "README env transformers==4.36.0; smooth_ln_fcs_llama_like asserts isinstance(ln, (LlamaRMSNorm, MistralRMSNorm, MixtralRMSNorm)) -> Qwen3RMSNorm rejected; Llama-3.2 OK"
+  kb_key: null
+  arxiv: "2211.10438"
+  note: "PyPI 'smoothquant' 0.0.1.dev0 is not the official package."
+  tricast: tricast_reimplementation  # transform smoothquant (src/tricast/transforms.py), not the official code
+- id: omniquant
+  name: OmniQuant
+  venue: ICLR
+  year: 2024
+  axes: [W, A]
+  category: scaling-transform
+  basic_or_latest: basic
+  repo: https://github.com/OpenGVLab/OmniQuant
+  official: true
+  license: MIT
+  last_push: 2025-11-26
+  pip: null
+  tricast_fit: model_script
+  entry: "quantize/omniquant.py:omniquant(lm, args, dataloader, act_scales, act_shifts, logger=None); quantizer quantize/quantizer.py:UniformAffineQuantizer(n_bits, symmetric, ..., lwc=False)"
+  deps_conflict: null
+  kb_key: null
+  arxiv: "2308.13137"
+  note: "Block-wise gradient calibration (LWC/LET) through model-specific QuantLlama/QuantOPT/QuantFalcon/Mixtral decoder layers; no Qwen3 layer. PyPI 'omniquant' 0.0.1 (2022) is unrelated."
+  tricast: none
+- id: atom
+  name: Atom
+  venue: MLSys
+  year: 2024
+  axes: [W, A, KV]
+  category: mixed-precision
+  basic_or_latest: basic
+  repo: https://github.com/efeslab/Atom
+  official: true
+  license: none
+  last_push: 2024-07-02
+  pip: null
+  tricast_fit: model_script
+  entry: "model/modelutils_llama.py:reorder_model_llama + add_act_quant_wrapper_llama + quantize_model_gptq_llama; outlier channel selection model/outlier.py:get_act_stats_llama / get_reorder_index"
+  deps_conflict: "requirements pin torch==2.0.1/2.1.0, transformers==4.33.2/4.34.1/4.39.0, lm-eval==0.3.0"
+  kb_key: atom-mlsys24
+  arxiv: "2310.19102"
+  note: "Llama/OPT/Mixtral only; real W4A4 needs Atom kernels (serving path)."
+  tricast: none
+- id: qserve-qoq
+  name: QServe / QoQ (W4A8KV4)
+  venue: MLSys
+  year: 2025
+  axes: [W, A, KV]
+  category: scaling-transform
+  basic_or_latest: basic
+  repo: https://github.com/nunchux-ai/deepcompressor
+  official: true
+  license: Apache-2.0
+  last_push: 2025-08-14
+  pip: deepcompressor-toolkit
+  tricast_fit: model_script
+  entry: "python -m deepcompressor.app.llm.ptq <config.yaml> (deepcompressor/app/llm); serving kernels in mit-han-lab/omniserve"
+  deps_conflict: "pyproject torch>=2.5.0, transformers>=4.46.0 (compatible); QServe README names branch lmquant-v0.0.0-deprecated for paper numbers"
+  kb_key: qserve-mlsys25
+  arxiv: "2405.04532"
+  note: "Config-driven whole-model pipeline (smooth/rotate/reorder/GPTQ). Repo redirected from mit-han-lab/deepcompressor."
+  tricast: none
+- id: arcquant
+  name: ARCQuant (augmented residual channels for NVFP4)
+  venue: ACL
+  year: 2026
+  axes: [W, A, format]
+  category: outlier-split
+  basic_or_latest: latest
+  repo: https://github.com/actypedef/ARCQuant
+  official: true
+  license: none
+  last_push: 2026-09-21
+  pip: null
+  tricast_fit: model_script
+  entry: "model/model_utils.py:reorder_model_llama / reorder_model_qwen; fake NVFP4 kernels/fake.py:quantize_nvfp4_tensor(tensor, group_size=16) + Quantizer"
+  deps_conflict: "requirements pin transformers==4.44.0, datasets==3.4.0, lm-eval==0.4.8"
+  kb_key: arcquant-acl26
+  arxiv: "2601.07475"
+  note: "Patched Qwen2/Llama/Mixtral decoder layers (model/qQwenLayer.py); Qwen3 not present."
+  tricast: none
+- id: mixllm
+  name: MixLLM (global mixed precision between output features)
+  venue: MLSys
+  year: 2026
+  axes: [W, A]
+  category: mixed-precision
+  basic_or_latest: latest
+  repo: https://github.com/microsoft/MixLLM
+  official: true
+  license: MIT
+  last_push: 2026-03-31
+  pip: null
+  tricast_fit: model_script
+  entry: "mixllm/quantization/searcher.py (global bit allocation) + mixllm/quantization/quantizer.py; runtime mixllm/nn/modules/linear.py:LinearMixLLM (CUDA ext build)"
+  deps_conflict: "CUDA extension build (setup.py CustomBuildExt); vLLM v0.9.0 patch for serving"
+  kb_key: mixllm-mlsys26
+  arxiv: "2412.14590"
+  note: "W4.x A8 with 8-bit salient output features; search is global across the model."
+  tricast: none
+- id: microxcaling
+  name: MX formats (MXFP8/6/4, MXINT8) emulation
+  venue: arXiv
+  year: 2023
+  axes: [W, A, format]
+  category: format/scale
+  basic_or_latest: basic
+  repo: https://github.com/microsoft/microxcaling
+  official: true
+  license: MIT
+  last_push: 2026-07-17
+  pip: null
+  tricast_fit: per_layer_callable
+  entry: "mx/mx_ops.py:quantize_mx_op(A, mx_specs, elem_format=None, block_size=None, axes=None, round='nearest'); drop-in mx/linear.py:Linear / linear(); specs mx/specs.py:MxSpecs, finalize_mx_specs"
+  deps_conflict: "requirements pin torch==2.2.0 (optional custom CUDA ext; pure-PyTorch path available)"
+  kb_key: null
+  arxiv: "2310.10537"
+  note: "Official OCP MX emulation library (Microsoft). Not on PyPI."
+  tricast: verified_against_official  # tests/test_microxcaling_parity.py (MX formats bit parity)
+- id: nvfp4-modelopt
+  name: NVFP4 / MXFP4 PTQ (NVIDIA Model Optimizer)
+  venue: NVIDIA
+  year: 2025
+  axes: [W, A, KV, format]
+  category: format/scale
+  basic_or_latest: latest
+  repo: https://github.com/NVIDIA/Model-Optimizer
+  official: true
+  license: Apache-2.0
+  last_push: 2026-11-03
+  pip: nvidia-modelopt
+  tricast_fit: model_script
+  entry: "modelopt/torch/quantization/model_quant.py:quantize(model, config, forward_loop=None) (mtq.quantize) with config.py NVFP4_*/MXFP4_* configs (e.g. NVFP4_AWQ_LITE_CFG); per-tensor nn/modules/tensor_quantizer.py:TensorQuantizer"
+  deps_conflict: "HEAD pyproject: torch>=2.10, hf extra transformers>=5.5,<5.19 -> conflicts with torch 2.8 / transformers 4.55 (needs an older nvidia-modelopt release)"
+  kb_key: nvfp4-nvidia25
+  arxiv: null
+  note: "Reference implementation of the NVFP4 recipe (E2M1 + FP8 E4M3 block-16 scale + FP32 tensor scale); model-agnostic module replacement."
+  tricast: none
+- id: four-over-six
+  name: Four Over Six (adaptive NVFP4 block scale)
+  venue: arXiv
+  year: 2025
+  axes: [W, A, format]
+  category: format/scale
+  basic_or_latest: latest
+  repo: https://github.com/mit-han-lab/fouroversix
+  official: true
+  license: MIT
+  last_push: 2026-04-21
+  pip: fouroversix
+  tricast_fit: per_layer_callable
+  entry: "src/fouroversix/quantize/frontend.py:quantize(x, QuantizationConfig(dtype=DataType.nvfp4, scale_rule=ScaleRule.mse, pseudo_quantize=True, rht=False, backend=...)) ; dequantize(); model helper quantize_model(model, ModelQuantizationConfig)"
+  deps_conflict: "pyproject torch>=2.7.0 (core); an optional group pins torch~=2.10.0; README installs with --no-build-isolation (CUDA ext optional, PyTorch/Triton backends exist)"
+  kb_key: fouroversix-arxiv25
+  arxiv: "2512.02010"
+  note: "Chooses per block between scaling to 6 or 4 (MSE rule). PyPI fouroversix 1.0.5 (README install line)."
+  tricast: tricast_reimplementation  # scale.method four_over_six (scheme nvfp4_4o6)
+- id: razer
+  name: RaZeR (redundant zero remapping for NVFP4/MXFP4)
+  venue: NeurIPS
+  year: 2026
+  axes: [W, A, format]
+  category: format/scale
+  basic_or_latest: latest
+  repo: https://github.com/abdelfattah-lab/NVFP4-RaZeR
+  official: true
+  license: MIT
+  last_push: 2026-07-27
+  pip: null
+  tricast_fit: per_layer_callable
+  entry: "quantize/quantizer.py:quant_nvfp4_razer_e4m3(w_fp, n_bits=4, groupsize=None) / quant_nvfp4_razer_e3m3 / quant_mxfp4_razer(w_fp, n_bits=4, groupsize=None, is_act=False); baselines quant_nvfp4, quant_nvfp4_4over6, quant_mxfp4"
+  deps_conflict: null
+  kb_key: razer-neurips26
+  arxiv: "2501.04052"
+  note: "Fake-quant tensor functions; repo also has models/qmodule_qwen3.py and qmodule_llama.py. Venue from KB card (arXiv v3 comment still says 'under review')."
+  tricast: none
+- id: duquant-pp
+  name: "DuQuant++ (fine-grained rotation for MXFP4)"
+  venue: arXiv
+  year: 2026
+  axes: [W, A, rotation/transform, format]
+  category: rotation
+  basic_or_latest: latest
+  repo: https://github.com/Hsu1023/DuQuant-v2
+  official: true
+  license: MIT
+  last_push: 2026-04-24
+  pip: null
+  tricast_fit: model_script
+  entry: "quantize/duquant.py:duquant(...) whole-model loop; rotation/permutation in quantize/quantizer.py:UniformAffineQuantizer.rotation / permutation_zigzag"
+  deps_conflict: "requirements pin transformers==4.43.1, datasets==2.17.1, lm-eval==0.4.4"
+  kb_key: duquantpp-arxiv26
+  arxiv: "2604.17789"
+  note: "DuQuant codebase extended to MXFP4; model-specific Quant*DecoderLayer files."
+  tricast: none
+# ---------------------------------------------------------------- rotation / transform (W, A, KV)
+- id: quarot
+  name: QuaRot
+  venue: NeurIPS
+  year: 2024
+  axes: [W, A, KV, rotation/transform]
+  category: rotation
+  basic_or_latest: basic
+  repo: https://github.com/spcl/QuaRot
+  official: true
+  license: Apache-2.0
+  last_push: 2024-11-26
+  pip: null
+  tricast_fit: model_script
+  entry: "fake_quant/rotation_utils.py:rotate_model(model, args) (fuse norms + rotate embeddings/heads/MLP); online Hadamard fake_quant/hadamard_utils.py:apply_exact_had_to_linear(module, had_dim=-1, output=False); act quant fake_quant/quant_utils.py:add_actquant / ActQuantizer; weights fake_quant/gptq_utils.py:GPTQ"
+  deps_conflict: "requirements pin torch==2.2.1, transformers==4.38.0; hadamard_utils imports fast_hadamard_transform (CUDA build)"
+  kb_key: quarot-neurips24
+  arxiv: "2404.00456"
+  note: "fake_quant README: LLaMA-2 only (model_utils has llama/opt getters); Qwen3 not present."
+  tricast: tricast_partial  # transform hadamard / random_hadamard only; no QuaRot pipeline
+- id: spinquant
+  name: SpinQuant
+  venue: ICLR
+  year: 2025
+  axes: [W, A, KV, rotation/transform]
+  category: rotation
+  basic_or_latest: basic
+  repo: https://github.com/facebookresearch/SpinQuant
+  official: true
+  license: CC-BY-NC-4.0
+  last_push: 2025-02-14
+  pip: null
+  tricast_fit: training
+  entry: "optimize_rotation.py:train (Cayley SGD on R1/R2, train_utils/optimizer.py:SGDG) then ptq.py; R3/R4 online Hadamard train_utils/apply_r3_r4.py"
+  deps_conflict: "requires Dao-AILab fast-hadamard-transform built from source; custom modeling_llama_quant; non-commercial license (spdx NOASSERTION, LICENSE = CC BY-NC 4.0)"
+  kb_key: spinquant-iclr25
+  arxiv: "2405.16406"
+  note: "Learned rotations (8-GPU torchrun scripts); Llama family only."
+  tricast: none
+- id: duquant
+  name: DuQuant
+  venue: NeurIPS
+  year: 2024
+  axes: [W, A, rotation/transform]
+  category: rotation
+  basic_or_latest: basic
+  repo: https://github.com/Hsu1023/DuQuant
+  official: true
+  license: MIT
+  last_push: 2026-04-24
+  pip: null
+  tricast_fit: model_script
+  entry: "quantize/duquant.py:duquant(...) (OmniQuant-style block loop); block rotation + zigzag permutation in quantize/quantizer.py:UniformAffineQuantizer.rotation / permutation_zigzag"
+  deps_conflict: "requirements pin transformers==4.35.2, datasets==2.17.1"
+  kb_key: duquant-neurips24
+  arxiv: "2406.01721"
+  note: "Rotation computed from calibration (no gradient for rotation); model-specific DuLlamaRMSNorm / Quant*DecoderLayer files."
+  tricast: none
+- id: ostquant
+  name: OSTQuant
+  venue: ICLR
+  year: 2025
+  axes: [W, A, KV, rotation/transform]
+  category: rotation
+  basic_or_latest: latest
+  repo: https://github.com/BrotherHappy/OSTQuant
+  official: true
+  license: Apache-2.0
+  last_push: 2025-04-08
+  pip: null
+  tricast_fit: training
+  entry: "quant/ost_train.py:rotate_smooth_train (learned orthogonal + scaling, quant/ost_model_utils.py:RotateModule/SmoothModule); custom models/modeling_llama.py"
+  deps_conflict: "fast_hadamard_transform imported in 5 files"
+  kb_key: null
+  arxiv: "2501.13987"
+  note: "Gradient-trained transforms (KL-Top loss). Qwen references exist in model utils."
+  tricast: none
+- id: flatquant
+  name: FlatQuant
+  venue: ICML
+  year: 2025
+  axes: [W, A, KV, rotation/transform]
+  category: rotation
+  basic_or_latest: latest
+  repo: https://github.com/ruikangliu/FlatQuant
+  official: true
+  license: MIT
+  last_push: 2025-11-25
+  pip: null
+  tricast_fit: training
+  entry: "flatquant/train_utils.py (layer-wise learned Kronecker affine transforms, flatquant/flat_utils.py); deploy kernels deploy/"
+  deps_conflict: "requirements pin transformers==4.36.0 / 4.45.0 (two files), accelerate==0.32.0, lm-eval==0.4.4/0.4.9.1; fast_hadamard_transform imported"
+  kb_key: null
+  arxiv: "2410.09426"
+  note: "Per-layer gradient calibration of affine transforms; Qwen2 fake-quantized model in vllm_custom/; Llama supported."
+  tricast: none
+- id: resq
+  name: ResQ (low-rank residual mixed precision)
+  venue: ICML
+  year: 2025
+  axes: [W, A, KV, rotation/transform]
+  category: mixed-precision
+  basic_or_latest: latest
+  repo: https://github.com/utkarsh-dmx/project-resq
+  official: true
+  license: none
+  last_push: 2025-03-28
+  pip: null
+  tricast_fit: model_script
+  entry: "fake_quant/get_basis.py:get_basis(model_args, training_args, ptq_args) (PCA subspace per layer) then fake_quant ptq with rotations (fake_quant/utils/hadamard_utils.py)"
+  deps_conflict: "requirements pin transformers==4.48.1, flash-attn==2.7.2.post1, lm-eval==0.4.5; fast_hadamard_transform imported"
+  kb_key: resq-icml25
+  arxiv: "2412.14363"
+  note: "SpinQuant-derived codebase; high-variance subspace kept in 8-bit."
+  tricast: none
+- id: guidedquant
+  name: GuidedQuant (end-loss guided)
+  venue: ICML
+  year: 2025
+  axes: [W]
+  category: calibration-gptq-family
+  basic_or_latest: latest
+  repo: https://github.com/snu-mllab/GuidedQuant
+  official: true
+  license: MIT
+  last_push: 2026-04-13
+  pip: null
+  tricast_fit: model_script
+  entry: "layerwise_nuq.py / full_nuq.py (non-uniform scalar), qtip/ (trellis) and spin_quant/ (W-A) sub-pipelines; saliency from end-loss gradients"
+  deps_conflict: "requirements pin torch==2.5.1, transformers==4.52.3, accelerate==0.29.3, lm-eval==0.4.3; fast_hadamard_transform imported"
+  kb_key: null
+  arxiv: "2505.07004"
+  note: "Needs model-level gradient pass for the guidance Hessian, then layer-wise quantizers."
+  tricast: none
+- id: efficientqat
+  name: EfficientQAT
+  venue: ACL
+  year: 2025
+  axes: [W]
+  category: qat
+  basic_or_latest: basic
+  repo: https://github.com/OpenGVLab/EfficientQAT
+  official: true
+  license: MIT
+  last_push: 2026-04-10
+  pip: null
+  tricast_fit: training
+  entry: "Block-AP (block-wise all-parameter training) + E2E-QP scripts; quantizer quantize/quantizer.py:UniformAffineQuantizer"
+  deps_conflict: "requirements pin torch==2.2.2, transformers==4.40.1, triton==2.2.0, lm_eval==0.4.2"
+  kb_key: null
+  arxiv: "2407.11062"
+  note: "Venue from arXiv comment (ACL 2025 Main)."
+  tricast: none
+- id: paretoq
+  name: ParetoQ
+  venue: NeurIPS
+  year: 2025
+  axes: [W]
+  category: qat
+  basic_or_latest: latest
+  repo: https://github.com/facebookresearch/ParetoQ
+  official: true
+  license: BSD (Meta "BSD License For ParetoQ software"; spdx NOASSERTION)
+  last_push: 2025-10-15
+  pip: null
+  tricast_fit: training
+  entry: "train.py with models/utils_quant.py:QuantizeLinear (StretchedElasticQuant / LsqBinaryTernaryExtension) inside models/modeling_llama_quant.py"
+  deps_conflict: null
+  kb_key: null
+  arxiv: "2502.02631"
+  note: "QAT for 1/1.58/2/3/4-bit (Llama/MobileLLM). Venue from arXiv comment."
+  tricast: none
+- id: bitnet-b158
+  name: BitNet b1.58
+  venue: arXiv
+  year: 2024
+  axes: [W, A]
+  category: qat
+  basic_or_latest: basic
+  repo: https://github.com/microsoft/BitNet
+  official: true
+  license: MIT
+  last_push: 2026-07-27
+  pip: null
+  tricast_fit: kernel_or_system
+  entry: "bitnet.cpp inference framework (setup_env.py / run_inference.py, gpu/ kernels); no training recipe in repo"
+  deps_conflict: "llama.cpp-based C++ build"
+  kb_key: bitnet158-arxiv24
+  arxiv: "2402.17764"
+  note: "Ternary weights need pretraining/QAT from scratch; repo only serves released BitNet checkpoints. Not applicable as PTQ on Qwen3/Llama-3.2."
+  tricast: none
+- id: quartet
+  name: Quartet (native FP4 training)
+  venue: NeurIPS
+  year: 2025
+  axes: [W, A, format]
+  category: qat
+  basic_or_latest: latest
+  repo: https://github.com/IST-DASLab/Quartet
+  official: true
+  license: MIT
+  last_push: 2026-03-18
+  pip: null
+  tricast_fit: training
+  entry: "src/main.py pretraining with MXFP4 forward/backward quantizers (Hadamard via fast_hadamard_transform); kernels via QuTLASS"
+  deps_conflict: "fast_hadamard_transform imported in 7 files; Blackwell FP4 kernels for speed"
+  kb_key: null
+  arxiv: "2505.14669"
+  note: "Pretraining recipe, not PTQ. Successor IST-DASLab/Quartet-II exists (not catalogued)."
+  tricast: none
+- id: quest-qat
+  name: QuEST (stable low-bit training)
+  venue: ICML
+  year: 2025
+  axes: [W, A]
+  category: qat
+  basic_or_latest: latest
+  repo: https://github.com/IST-DASLab/QuEST
+  official: true
+  license: MIT
+  last_push: 2025-11-25
+  pip: null
+  tricast_fit: training
+  entry: "src/main.py with src/models/quantization/base_linear.py quantizers (HalfHadamardClipQuantizer, trust-estimation variants)"
+  deps_conflict: "requirements pin torch==2.5.1; fast_hadamard_transform imported"
+  kb_key: null
+  arxiv: "2502.05003"
+  note: "Pretraining from scratch with Hadamard + trust gradient estimator."
+  tricast: none
+- id: nanoquant
+  name: NanoQuant (sub-1-bit)
+  venue: ICML
+  year: 2026
+  axes: [W]
+  category: codebook/vector
+  basic_or_latest: latest
+  repo: https://github.com/SamsungLabs/NanoQuant
+  official: true
+  license: Apache-2.0
+  last_push: 2026-07-03
+  pip: null
+  tricast_fit: training
+  entry: "src/nanoquant/core/compress_model.py:compress_model_recon (block reconstruction w/ KL to teacher); per-weight ADMM factorization src/nanoquant/core/admm_nq.py:factorize_admm_nanoquant(W, i_norm, o_norm, mid_rank, ...)"
+  deps_conflict: "requirements pin transformers==4.51.3 (torch>=2.6.0)"
+  kb_key: nanoquant-icml26
+  arxiv: null
+  note: "Binary low-rank factorization; factorize_admm_nanoquant is per-layer but the method includes gradient block tuning (tune_fact)."
+  tricast: none
+# ---------------------------------------------------------------- bitsandbytes formats (W)
+- id: llm-int8
+  name: LLM.int8() (vector-wise INT8 + outlier decomposition)
+  venue: NeurIPS
+  year: 2022
+  axes: [W, A]
+  category: outlier-split
+  basic_or_latest: basic
+  repo: https://github.com/bitsandbytes-foundation/bitsandbytes
+  official: true
+  license: MIT
+  last_push: 2026-11-02
+  pip: bitsandbytes
+  tricast_fit: per_layer_callable
+  entry: "bitsandbytes/nn/modules.py:Linear8bitLt(in, out, bias, has_fp16_weights=False, threshold=6.0) (drop-in nn.Linear); tensor op bitsandbytes/functional.py:int8_vectorwise_quant(A, threshold=0.0)"
+  deps_conflict: null
+  kb_key: llmint8-neurips22
+  arxiv: "2208.07339"
+  note: "Real INT8 matmul + FP16 outlier columns inside bnb kernels (not fake quant). setup: torch>=2.4, transformers>=4.30.1."
+  tricast: none
+- id: nf4
+  name: NF4 / FP4 block quantization (QLoRA)
+  venue: NeurIPS
+  year: 2023
+  axes: [W, format]
+  category: format/scale
+  basic_or_latest: basic
+  repo: https://github.com/bitsandbytes-foundation/bitsandbytes
+  official: true
+  license: MIT
+  last_push: 2026-11-02
+  pip: bitsandbytes
+  tricast_fit: per_layer_callable
+  entry: "bitsandbytes/functional.py:quantize_4bit(A, blocksize=None, compress_statistics=False, quant_type='nf4'|'fp4') -> (packed, QuantState); dequantize_4bit(A, quant_state, quant_type=...); module bitsandbytes/nn/modules.py:Linear4bit / LinearNF4"
+  deps_conflict: null
+  kb_key: qlora-neurips23
+  arxiv: "2305.14314"
+  note: "QLoRA defines NF4 + double quant; the format lives in bitsandbytes (artidoro/qlora is the fine-tuning repo)."
+  tricast: none
+# ---------------------------------------------------------------- KV cache
+- id: kivi
+  name: KIVI (2-bit asymmetric KV)
+  venue: ICML
+  year: 2024
+  axes: [KV]
+  category: kv-cache
+  basic_or_latest: basic
+  repo: https://github.com/jy-yuan/KIVI
+  official: true
+  license: MIT
+  last_push: 2025-11-20
+  pip: null
+  tricast_fit: model_script
+  entry: "models/llama_kivi.py / mistral_kivi.py (patched attention with FP residual window); tensor ops quant/new_pack.py:quant_and_pack_kcache(k, group_size, bits) (per-channel K), quant_and_pack_vcache(v, group_size, bits) (per-token V)"
+  deps_conflict: "requirements pin torch==2.1.2 / 2.4.1, transformers==4.36.2 / 4.43.1, flash-attn==2.5.6, triton==2.1.0"
+  kb_key: kivi-icml24
+  arxiv: "2402.02750"
+  note: "Pack ops are Triton; the residual-length streaming logic is only in the patched model files. PyPI 'kivi' is an unrelated package."
+  tricast: tricast_reimplementation  # kv presets kivi2 / kivi4 (src/tricast/kv), not the official code
+- id: kvquant
+  name: KVQuant
+  venue: NeurIPS
+  year: 2024
+  axes: [KV]
+  category: kv-cache
+  basic_or_latest: basic
+  repo: https://github.com/SqueezeAILab/KVQuant
+  official: true
+  license: none
+  last_push: 2024-08-13
+  pip: null
+  tricast_fit: per_layer_callable
+  entry: "quant/kvquant/simquant_module_quantizer.py:SimQuant(layer=k_proj|v_proj, bits, perchannel=True, qchannel=0, include_rope=False).add_batch(inp, out); .quantize(include_sparse=False, sparsity_threshold=0.999, nuq=False, fisher=False, norm=False, cap_outliers=False, first_few_fp16=-1); sim module QuantLinearSim"
+  deps_conflict: "quant/pyproject pins torch<2.2.0 (torch==2.0.1 in README env), transformers>=4.28.0; NUQ+Fisher needs gradients from gradients/ step"
+  kb_key: kvquant-neurips24
+  arxiv: "2401.18079"
+  note: "Quantizes k_proj/v_proj outputs (pre-RoPE K), dense-and-sparse outliers, attention-sink FP16 option. torch<2.2 pin conflicts with torch 2.8."
+  tricast: none
+- id: zipcache
+  name: ZipCache
+  venue: NeurIPS
+  year: 2024
+  axes: [KV]
+  category: kv-cache
+  basic_or_latest: basic
+  repo: https://github.com/ThisisBillhe/ZipCache
+  official: true
+  license: MIT
+  last_push: 2025-03-30
+  pip: null
+  tricast_fit: model_script
+  entry: "zipcache/models/CompressUtils/compress_class.py:CompressUnion(compress_kwargs).compress(...)/decompress(...) used inside patched Llama/Mistral modeling files"
+  deps_conflict: "requirements pin torch==2.2.0, transformers==4.38.2, triton==2.2.0"
+  kb_key: null
+  arxiv: "2405.14256"
+  note: "Salient-token mixed precision (normalized attention score). Venue: prior knowledge."
+  tricast: none
+- id: qjl
+  name: QJL (1-bit quantized JL for keys)
+  venue: AAAI
+  year: 2025
+  axes: [KV]
+  category: kv-cache
+  basic_or_latest: basic
+  repo: https://github.com/amirzandieh/QJL
+  official: true
+  license: Apache-2.0
+  last_push: 2025-01-27
+  pip: null
+  tricast_fit: kernel_or_system
+  entry: "models/llama3_utils_qjl.py:QJLSketch(dim, dim_outlier, device, rng, rot=True, rht=False) -> quantize via qjl_kernel.qjl_quant (CUDA ext) ; attention LlamaAttention_QJL + QJLCache"
+  deps_conflict: "requirements pin torch==2.4.1+cu121, transformers==4.46.3, flash-attn==2.6.3, triton==3.0.0; qjl_kernel CUDA build"
+  kb_key: null
+  arxiv: "2406.03482"
+  note: "Quantize path calls the compiled kernel directly. Venue: prior knowledge."
+  tricast: none
+- id: polarquant
+  name: PolarQuant (polar key cache, Wu et al.)
+  venue: NeurIPS
+  year: 2025
+  axes: [KV]
+  category: kv-cache
+  basic_or_latest: latest
+  repo: https://github.com/ericshwu/PolarQuant
+  official: true
+  license: none
+  last_push: 2026-04-02
+  pip: null
+  tricast_fit: model_script
+  entry: "models/modeling_qwen_polar.py:Qwen2PolarGroupAttention (quantize_and_pack_nbit) and benchmark/models/modeling_llama_polar.py:LlamaPolarGroupAttention"
+  deps_conflict: null
+  kb_key: null
+  arxiv: "2502.00527"
+  note: "Not to be confused with Google's PolarQuant (Han, Karbasi, Kacham, Zandieh) which has no public code found. Venue from arXiv comment."
+  tricast: none
+- id: turboquant
+  name: TurboQuant (online VQ, near-optimal distortion)
+  venue: ICLR
+  year: 2026
+  axes: [KV, W]
+  category: kv-cache
+  basic_or_latest: latest
+  repo: null
+  official: false
+  license: null
+  last_push: null
+  pip: null
+  tricast_fit: no_official_code
+  entry: null
+  deps_conflict: null
+  kb_key: null
+  arxiv: "2504.19874"
+  note: "No Google release found (probed google-research/turboquant, google-research/google-research/turboquant: 404). PyPI 'turboquant', 'turboquant-impl' are third-party."
+  tricast: none
+- id: kitty
+  name: Kitty (2-bit KV with dynamic channel promotion)
+  venue: MLSys
+  year: 2026
+  axes: [KV]
+  category: kv-cache
+  basic_or_latest: latest
+  repo: https://github.com/Summer-Summer/Kitty
+  official: true
+  license: MIT
+  last_push: 2026-05-20
+  pip: null
+  tricast_fit: per_layer_callable
+  entry: "src/kitty_sim/kitty_simulate.py:KittyKVCache(KittyKVCacheConfig) (subclass of transformers DynamicCache, pass as past_key_values); tensor op src/kitty_sim/utils_quant.py:fake_quant_groupwise_lastdim(data, group_size, bit, promote_mask=None, promote_bit=4)"
+  deps_conflict: "imports transformers.cache_utils.CacheConfig/DynamicCache internals (cache API changed in 4.5x; compatibility with 4.55 unverified)"
+  kb_key: kitty-mlsys26
+  arxiv: null
+  note: "KV analogue of a per-layer callable: HF Cache object; repo also has a Qwen3 modeling file (src/kitty/models/qwen3)."
+  tricast: none
+- id: palu
+  name: Palu (low-rank KV projection)
+  venue: ICLR
+  year: 2025
+  axes: [KV]
+  category: kv-cache
+  basic_or_latest: basic
+  repo: https://github.com/shadowpa0327/Palu
+  official: true
+  license: MIT
+  last_push: 2025-02-20
+  pip: null
+  tricast_fit: model_script
+  entry: "palu/decomposition.py:compress_model(...) (whitened SVD of k/v proj), palu/rank_search.py:rank_search; custom PaluLlama/PaluMistral models"
+  deps_conflict: "requirements pin torch==2.4.0, transformers==4.37.2, triton==3.0.0; fast_hadamard_transform for its quantization"
+  kb_key: palu-iclr25
+  arxiv: "2407.21118"
+  note: "Low-rank + optional quantization of latent KV."
+  tricast: none
+# ---------------------------------------------------------------- unstructured / N:M weight pruning
+- id: sparsegpt
+  name: SparseGPT
+  venue: ICML
+  year: 2023
+  axes: [weight_sparsity]
+  category: weight-pruning
+  basic_or_latest: basic
+  repo: https://github.com/IST-DASLab/sparsegpt
+  official: true
+  license: Apache-2.0
+  last_push: 2024-08-20
+  pip: null
+  tricast_fit: per_layer_callable
+  entry: "sparsegpt.py:SparseGPT(layer).add_batch(inp, out); .fasterprune(sparsity, prunen=0, prunem=0, blocksize=128, percdamp=.01) (optional joint quant via .quantizer = quant.py:Quantizer)"
+  deps_conflict: null
+  kb_key: sparsegpt-icml23
+  arxiv: "2301.00774"
+  note: "README-tested torch 1.10.1 / transformers 4.21.2; class is torch-only. Same class is vendored in wanda/RIA/DSnoT/Pruner-Zero repos."
+  tricast: official_adapter  # src/tricast/official (wanda repo's SparseGPT copy, recipe prune.method sparsegpt)
+- id: wanda
+  name: Wanda
+  venue: ICLR
+  year: 2024
+  axes: [weight_sparsity]
+  category: weight-pruning
+  basic_or_latest: basic
+  repo: https://github.com/locuslab/wanda
+  official: true
+  license: MIT
+  last_push: 2024-08-09
+  pip: null
+  tricast_fit: model_script
+  entry: "lib/layerwrapper.py:WrappedGPT(layer).add_batch(inp, out) -> .scaler_row; (metric inline) lib/prune.py:prune_wanda line 166: W_metric = |W| * sqrt(scaler_row), per-output-row sort (or N:M groups)"
+  deps_conflict: null
+  kb_key: wanda-iclr24
+  arxiv: "2306.11695"
+  note: "INSTALL.md env torch 1.10.1 / transformers 4.28.0; WrappedGPT is torch-only. Metric is not exposed as a function."
+  tricast: official_adapter  # src/tricast/official (recipe prune.method wanda)
+- id: ria
+  name: RIA (relative importance and activation, plug-and-play)
+  venue: ICLR
+  year: 2024
+  axes: [weight_sparsity]
+  category: weight-pruning
+  basic_or_latest: basic
+  repo: https://github.com/biomedical-cybernetics/Relative-importance-and-activation-pruning
+  official: true
+  license: none
+  last_push: 2024-06-10
+  pip: null
+  tricast_fit: model_script
+  entry: "lib/layerwrapper.py:WrappedGPT(layer).add_batch(inp, out); (metric inline) lib/prune.py:prune_ria lines 156/239: (|W|/colsum + |W|/rowsum) * sqrt(scaler_row)^a; channel permutation for N:M lib/prune.py:lexsort / maximize_total_value"
+  deps_conflict: null
+  kb_key: ria-iclr24
+  arxiv: null
+  note: "ICLR 2024 (OpenReview, no arXiv id in KB). Metric inline in whole-model loop."
+  tricast: none
+- id: owl
+  name: OWL (outlier-weighed layerwise sparsity)
+  venue: ICML
+  year: 2024
+  axes: [weight_sparsity]
+  category: weight-pruning
+  basic_or_latest: basic
+  repo: https://github.com/luuyin/OWL
+  official: true
+  license: MIT
+  last_push: 2025-07-07
+  pip: null
+  tricast_fit: model_script
+  entry: "lib/prune_all.py:prune_wanda_outlier(args, model, tokenizer, device, prune_n, prune_m) (layer-ratio allocation from outlier ratio, inline) then Wanda per layer"
+  deps_conflict: null
+  kb_key: owl-icml24
+  arxiv: "2310.05175"
+  note: "Contribution is the non-uniform layer-sparsity schedule; computed inline in the whole-model function."
+  tricast: none
+- id: dsnot
+  name: DSnoT (dynamic sparse no training)
+  venue: ICLR
+  year: 2024
+  axes: [weight_sparsity]
+  category: weight-pruning
+  basic_or_latest: basic
+  repo: https://github.com/zyxxmu/DSnoT
+  official: true
+  license: none
+  last_push: 2024-04-09
+  pip: null
+  tricast_fit: model_script
+  entry: "lib/prune.py:prune_DSnoT(args, model, tokenizer, device, prune_n, prune_m) (prune-and-grow loop inline; stats from lib/layerwrapper.py:WrappedGPT)"
+  deps_conflict: null
+  kb_key: dsnot-iclr24
+  arxiv: "2310.08915"
+  note: "Mask refinement on top of Wanda/SparseGPT masks; inline per layer inside whole-model loop."
+  tricast: none
+- id: alps
+  name: ALPS (ADMM one-shot pruning)
+  venue: NeurIPS
+  year: 2024
+  axes: [weight_sparsity]
+  category: weight-pruning
+  basic_or_latest: basic
+  repo: https://github.com/mazumder-lab/ALPS
+  official: true
+  license: MIT
+  last_push: 2026-02-03
+  pip: null
+  tricast_fit: per_layer_callable
+  entry: "alps.py:ALPS_prune(layer, nsamples, seqlen).add_batch(inp, out); .ALPS_admm(sp, nm_n=0, nm_m=0, rho=0.1, max_iter=300, update_iter=3, switch_iter=30)"
+  deps_conflict: null
+  kb_key: alps-neurips24
+  arxiv: "2406.07831"
+  note: "Layer-wise ADMM + PCG refinement; supports unstructured and N:M."
+  tricast: none
+- id: oats
+  name: OATS (outlier-aware sparse + low-rank)
+  venue: ICLR
+  year: 2025
+  axes: [weight_sparsity]
+  category: weight-pruning
+  basic_or_latest: latest
+  repo: https://github.com/stephenqz/OATS
+  official: true
+  license: none
+  last_push: 2025-04-16
+  pip: null
+  tricast_fit: per_layer_callable
+  entry: "OATS/prune_oats.py:altern_ls(weight, diag_approx, num_iters, target_rank, unstruct_sparse, prune_n=0, prune_m=0) (alternating thresholding -> sparse S + low-rank L); driver prune_oats(model_adapter, ...)"
+  deps_conflict: null
+  kb_key: oats-iclr25
+  arxiv: "2409.13652"
+  note: "Output is S + L (adds a low-rank term), so the effective layer is not purely sparse. diag_approx = activation second-moment diagonal."
+  tricast: none
+- id: alphapruning
+  name: AlphaPruning (HT-SR layerwise sparsity)
+  venue: NeurIPS
+  year: 2024
+  axes: [weight_sparsity]
+  category: weight-pruning
+  basic_or_latest: basic
+  repo: https://github.com/haiquanlu/AlphaPruning
+  official: true
+  license: MIT
+  last_push: 2025-06-09
+  pip: null
+  tricast_fit: model_script
+  entry: "lib/prune.py:ww_sparsity(...) (layer ratios from ESD alpha, lib/esd_utils.py:net_esd_estimator) then prune_wanda / prune_sparsegpt"
+  deps_conflict: "README env torch==1.10.1 / transformers==4.47.1"
+  kb_key: alphapruning-neurips24
+  arxiv: "2410.10912"
+  note: "Layer-ratio allocator; weight-only spectral metric (no calibration) but wired to whole-model prune functions."
+  tricast: none
+- id: besa
+  name: BESA (blockwise parameter-efficient sparsity allocation)
+  venue: ICLR
+  year: 2024
+  axes: [weight_sparsity]
+  category: weight-pruning
+  basic_or_latest: basic
+  repo: https://github.com/OpenGVLab/LLMPrune-BESA
+  official: true
+  license: none
+  last_push: 2024-03-04
+  pip: null
+  tricast_fit: training
+  entry: "models/sparse_layers.py:SparseLinear (init_learn_sparsity / update_sparsity) with block-wise reconstruction training; CUDA mask_gen op models/ops/mask_gen"
+  deps_conflict: "custom CUDA op build (models/ops)"
+  kb_key: besa-iclr24
+  arxiv: "2402.16880"
+  note: "Learns per-row sparsity via gradient per decoder block."
+  tricast: none
+- id: maskllm
+  name: MaskLLM (learnable 2:4)
+  venue: NeurIPS
+  year: 2024
+  axes: [weight_sparsity]
+  category: weight-pruning
+  basic_or_latest: basic
+  repo: https://github.com/NVlabs/MaskLLM
+  official: true
+  license: NVIDIA-Source-Code-License (non-commercial)
+  last_push: 2025-01-01
+  pip: null
+  tricast_fit: training
+  entry: "pretrain_maskllm.py (Megatron-LM Gumbel-softmax mask learning); tool_compute_mask_hf.py exports/applies masks to HF models"
+  deps_conflict: "Megatron-LM training stack (Docker run_docker.sh)"
+  kb_key: maskllm-neurips24
+  arxiv: "2409.17481"
+  note: "End-to-end mask training on large token budgets."
+  tricast: none
+- id: proxsparse
+  name: ProxSparse (regularized semi-structured mask learning)
+  venue: ICML
+  year: 2025
+  axes: [weight_sparsity]
+  category: weight-pruning
+  basic_or_latest: latest
+  repo: https://github.com/amazon-science/ProxSparse
+  official: true
+  license: Apache-2.0
+  last_push: 2025-06-24
+  pip: null
+  tricast_fit: training
+  entry: "end-to-end/prox_linear.py:ProxLinear + replace_prox_linear (proximal regularizer during training), end-to-end/prox_op.py"
+  deps_conflict: null
+  kb_key: proxsparse-icml25
+  arxiv: "2502.00258"
+  note: "Gradient training of 2:4 masks with proximal operator."
+  tricast: none
+- id: permllm
+  name: PermLLM (learnable channel permutation for N:M)
+  venue: NeurIPS
+  year: 2025
+  axes: [weight_sparsity]
+  category: weight-pruning
+  basic_or_latest: latest
+  repo: https://github.com/lanchengzou/PermLLM
+  official: true
+  license: none
+  last_push: 2025-09-29
+  pip: null
+  tricast_fit: training
+  entry: "lib/learnable_sparsity.py:LearnablePerm (Sinkhorn soft permutation) + lib/layer_utils.py:SparseLinear; lib/prune.py driver"
+  deps_conflict: "requirements pin torch==2.1.0+cu118, transformers==4.43.1, triton==2.1.0"
+  kb_key: permllm-neurips25
+  arxiv: "2510.10136"
+  note: "Permutation learned by gradient per block, then Wanda/RIA-style N:M."
+  tricast: none
+- id: elsa
+  name: ELSA (surrogate-free ADMM, extreme sparsity)
+  venue: ICLR
+  year: 2026
+  axes: [weight_sparsity]
+  category: weight-pruning
+  basic_or_latest: latest
+  repo: https://github.com/LOG-postech/elsa
+  official: true
+  license: none
+  last_push: 2026-02-21
+  pip: null
+  tricast_fit: training
+  entry: "lib/prune.py:globalprune_admm (AdmmTrainingArguments; ADMM with gradient training on the true loss), projection lib/utils.py:projection"
+  deps_conflict: "requirements pin torch==2.7.0, transformers==4.45.0, triton==3.3.0, lm_eval==0.4.7"
+  kb_key: elsa-iclr26
+  arxiv: "2510.01650"
+  note: "Global objective, not layer-wise reconstruction."
+  tricast: none
+- id: slim
+  name: SLiM (one-shot sparse + quant + low-rank)
+  venue: ICML
+  year: 2025
+  axes: [W, weight_sparsity]
+  category: weight-pruning
+  basic_or_latest: latest
+  repo: https://github.com/Paramathic/slim
+  official: true
+  license: MIT
+  last_push: 2025-11-28
+  pip: null
+  tricast_fit: model_script
+  entry: "slim/prune.py:prune_and_quantize(...) (whole model) using slim/quantization/quantization.py:Quantizer, slim/utils.py:prune_nm(mat, n, m), slim/lora.py:add_lora"
+  deps_conflict: "requirements pin accelerate==0.34.2"
+  kb_key: slim-icml25
+  arxiv: "2410.09615"
+  note: "Saliency-based low-rank adapter compensates joint 2:4 + 4-bit error; also contains JSQ helpers."
+  tricast: none
+# ---------------------------------------------------------------- structured pruning
+- id: slicegpt
+  name: SliceGPT
+  venue: ICLR
+  year: 2024
+  axes: [weight_sparsity, rotation/transform]
+  category: structured-pruning
+  basic_or_latest: basic
+  repo: https://github.com/microsoft/TransformerCompression
+  official: true
+  license: MIT
+  last_push: 2026-09-10
+  pip: null
+  tricast_fit: model_script
+  entry: "experiments/run_slicegpt.py:slicing_main; src/slicegpt (layernorm_fusion.fuse_modules, rotate.rotate_and_slice) via model adapters src/slicegpt/adapters/*_adapter.py"
+  deps_conflict: "pyproject pins transformers==4.41.0, lm-eval==0.4.1; torch>=2.10.0 listed"
+  kb_key: null
+  arxiv: "2401.15024"
+  note: "Needs a LayerAdapter per architecture (OPT/Llama/Phi etc.); Qwen3 adapter not present."
+  tricast: none
+- id: llm-pruner
+  name: LLM-Pruner
+  venue: NeurIPS
+  year: 2023
+  axes: [weight_sparsity]
+  category: structured-pruning
+  basic_or_latest: basic
+  repo: https://github.com/horseee/LLM-Pruner
+  official: true
+  license: Apache-2.0
+  last_push: 2024-10-07
+  pip: null
+  tricast_fit: model_script
+  entry: "hf_prune.py driver with LLMPruner/pruner/hf_llama_pruner.py (HFAttentionPrunner, HFRMSNormPrunner, TaylorImportance) on torch-pruning dependency graph; optional LoRA recovery"
+  deps_conflict: "requirements transformers>=4.1, torch>=1.7 (loose); model-specific pruners (Llama/Baichuan/ChatGLM)"
+  kb_key: null
+  arxiv: "2305.11627"
+  note: "Gradient-based (Taylor) importance needs backward pass; recovery is LoRA fine-tuning."
+  tricast: none
+- id: shortgpt
+  name: ShortGPT (block influence layer removal)
+  venue: ACL-Findings
+  year: 2025
+  axes: [weight_sparsity]
+  category: structured-pruning
+  basic_or_latest: basic
+  repo: null
+  official: false
+  license: null
+  last_push: null
+  pip: null
+  tricast_fit: no_official_code
+  entry: null
+  deps_conflict: null
+  kb_key: null
+  arxiv: "2403.03853"
+  note: "No author repo found (paper and arXiv page list none; baichuan-inc/ShortGPT 404). Third-party ports only."
+  tricast: none
+- id: flap
+  name: FLAP (fluctuation-based adaptive structured pruning)
+  venue: AAAI
+  year: 2024
+  axes: [weight_sparsity]
+  category: structured-pruning
+  basic_or_latest: basic
+  repo: https://github.com/CASIA-LMC-Lab/FLAP
+  official: true
+  license: Apache-2.0
+  last_push: 2024-01-06
+  pip: null
+  tricast_fit: model_script
+  entry: "lib/prune.py:prune_flap(...) with lib/layerwrapper.py:BiasGPT (fluctuation stats) + compress(); custom models/hf_llama/modeling_llama.py (bias compensation)"
+  deps_conflict: null
+  kb_key: null
+  arxiv: "2312.11983"
+  note: "Llama-specific modeling file; redirected from CASIA-IVA-Lab/FLAP."
+  tricast: none
+- id: sleb
+  name: SLEB (transformer block elimination)
+  venue: ICML
+  year: 2024
+  axes: [weight_sparsity]
+  category: structured-pruning
+  basic_or_latest: basic
+  repo: https://github.com/jiwonsong-dev/SLEB
+  official: true
+  license: MIT
+  last_push: 2025-02-04
+  pip: null
+  tricast_fit: model_script
+  entry: "utils/block_remove.py:block_remove(model, kill_list) (block_remove_llama / block_remove_opt); greedy on/off scan utils/onoff_utils/onoff_llama.py"
+  deps_conflict: "requirements pin torch==2.2.0, transformers==4.37.2"
+  kb_key: null
+  arxiv: "2402.09025"
+  note: "Greedy block removal by PPL; Llama/OPT only."
+  tricast: none
+# ---------------------------------------------------------------- activation sparsity
+- id: teal
+  name: TEAL (training-free activation sparsity)
+  venue: ICLR
+  year: 2025
+  axes: [activation_sparsity]
+  category: activation-sparsity
+  basic_or_latest: basic
+  repo: https://github.com/FasterDecoding/TEAL
+  official: true
+  license: MIT
+  last_push: 2025-02-15
+  pip: null
+  tricast_fit: per_layer_callable
+  entry: "utils/utils.py:SparsifyFn(distr, init_sparsity=None, init_threshold=None, apply_prefill=True) applied to a Linear's input (threshold from utils/utils.py:Distribution histogram); greedy per-layer sparsity teal/greedyopt.py; model glue teal/model.py monkeypatch (Llama/Mistral)"
+  deps_conflict: "setup pins torch==2.4.0; speedup kernels in kernels/ + gpt-fast"
+  kb_key: teal-iclr25
+  arxiv: "2408.14690"
+  note: "Magnitude thresholding of hidden states; SparsifyFn is decode-only unless apply_prefill=True. Histograms collected by a grab-activations pass."
+  tricast: none
+- id: cats
+  name: CATS (contextually-aware thresholding)
+  venue: COLM
+  year: 2024
+  axes: [activation_sparsity]
+  category: activation-sparsity
+  basic_or_latest: basic
+  repo: https://github.com/ScalingIntelligence/CATS
+  official: true
+  license: MIT
+  last_push: 2024-11-11
+  pip: null
+  tricast_fit: model_script
+  entry: "experiments/models/sparse_silu/utils.py:SparseSiLU (threshold on gate activation) inside custom sparse Mistral/Llama model classes; experiments/models/sparse_mistral/sparse_silu.py"
+  deps_conflict: "requirements pin transformers==4.36.2, triton==2.1.0"
+  kb_key: null
+  arxiv: "2404.08763"
+  note: "README: HF-generic integration still in development. PyPI simple-cats is not verified as official."
+  tricast: none
+- id: r-sparse
+  name: R-Sparse (rank-aware activation sparsity)
+  venue: ICLR
+  year: 2025
+  axes: [activation_sparsity]
+  category: activation-sparsity
+  basic_or_latest: latest
+  repo: https://github.com/VITA-Group/R-Sparse
+  official: true
+  license: none
+  last_push: 2025-04-28
+  pip: null
+  tricast_fit: model_script
+  entry: "models/modeling_llama.py:R_Sparse_Linear(in_features, out_features, bias) (sparse input channels + low-rank remainder); thresholds utils/setup.py:set_threshold_r_sparse; low-rank weights utils/prepare_low_rank_weight.py"
+  deps_conflict: null
+  kb_key: null
+  arxiv: "2504.19449"
+  note: "Linear module exists but needs precomputed SVD + per-layer thresholds from model-level setup; Llama modeling file only."
+  tricast: none
+- id: wina
+  name: WINA (weight-informed neuron activation)
+  venue: ICLR
+  year: 2026
+  axes: [activation_sparsity]
+  category: activation-sparsity
+  basic_or_latest: latest
+  repo: https://github.com/microsoft/wina
+  official: true
+  license: none
+  last_push: 2026-07-02
+  pip: null
+  tricast_fit: model_script
+  entry: "wina/model.py:SparseModelMixin + wina/mlp.py/_monkeypatch_mlp, wina/self_attn.py (column-norm weighting); thresholding utils/utils.py:SparsifyFn(distr, init_sparsity, ..., mask_by='threshold'|'topk')"
+  deps_conflict: "requirements pin torch==2.4.0, transformers==4.50.0, flash-attn==2.6.1"
+  kb_key: null
+  arxiv: "2505.19427"
+  note: "TEAL fork; weight column norms are set inside the monkeypatched MLP/attention (Llama/Qwen2/Phi). Venue from README."
+  tricast: none
+# ---------------------------------------------------------------- attention sparsity / low-bit attention
+- id: minference
+  name: MInference
+  venue: NeurIPS
+  year: 2024
+  axes: [attention_sparsity]
+  category: attention-sparsity
+  basic_or_latest: basic
+  repo: https://github.com/microsoft/MInference
+  official: true
+  license: MIT
+  last_push: 2026-10-10
+  pip: minference
+  tricast_fit: kernel_or_system
+  entry: "minference/models_patch.py:MInference(attn_type='minference', model_name, config_path, ...)(model) patch; op minference/ops/pit_sparse_flash_attention_v2.py:vertical_slash_sparse_attention(query, key, value, v_idx, s_idx, block_size_M=64, block_size_N=64)"
+  deps_conflict: "README: transformers>=4.46.0 (pins transformers==4.48.0 in one requirements); CUDA/Triton kernels (setup.py builds CUDAExtension)"
+  kb_key: minference-neurips24
+  arxiv: "2407.02490"
+  note: "Per-head pattern configs are model-specific (offline search for new models). PyPI minference 0.1.6.0."
+  tricast: none
+- id: spargeattn
+  name: SpargeAttn
+  venue: ICML
+  year: 2025
+  axes: [attention_sparsity, A]
+  category: attention-sparsity
+  basic_or_latest: latest
+  repo: https://github.com/thu-ml/SpargeAttn
+  official: true
+  license: Apache-2.0
+  last_push: 2026-02-25
+  pip: null
+  tricast_fit: kernel_or_system
+  entry: "spas_sage_attn/core.py:spas_sage2_attn_meansim_cuda(q, k, v, attn_mask=None, is_causal=False, scale=None, smooth_k=True, simthreshd1=0.6, cdfthreshd=0.98, pvthreshd=50, tensor_layout='HND', ...); Triton variant Triton_SpargeAttn/triton_kernel_example.py:spas_sage_attn_meansim"
+  deps_conflict: "README torch>=2.3.0; CUDA build (SageAttention2 INT8/FP8 core)"
+  kb_key: spargeattn-icml25
+  arxiv: "2502.18137"
+  note: "Sparse + quantized attention in one kernel; per-layer hyper-parameter tuning step for best accuracy. Not on PyPI."
+  tricast: none
+- id: xattention
+  name: XAttention (antidiagonal block scoring)
+  venue: ICML
+  year: 2025
+  axes: [attention_sparsity]
+  category: attention-sparsity
+  basic_or_latest: latest
+  repo: https://github.com/mit-han-lab/x-attention
+  official: true
+  license: none
+  last_push: 2025-07-06
+  pip: null
+  tricast_fit: kernel_or_system
+  entry: "xattn/src/Xattention.py:Xattention_prefill(query_states, key_states, value_states, stride, norm=1, threshold=0.8, block_size=128, use_triton=True, causal=True, ...); estimator xattn_estimate"
+  deps_conflict: "requirements pin torch==2.4.0/2.5.1, transformers==4.45.2, flash-attn==2.6.0.post1/2.7.3; Triton estimation kernels (use_triton=True)"
+  kb_key: xattention-icml25
+  arxiv: "2503.16428"
+  note: "Prefill-only block-sparse attention."
+  tricast: none
+- id: flexprefill
+  name: FlexPrefill
+  venue: ICLR
+  year: 2025
+  axes: [attention_sparsity]
+  category: attention-sparsity
+  basic_or_latest: latest
+  repo: https://github.com/ByteDance-Seed/FlexPrefill
+  official: true
+  license: Apache-2.0
+  last_push: 2025-10-13
+  pip: null
+  tricast_fit: kernel_or_system
+  entry: "flex_prefill/ops/flex_prefill_attention.py:flex_prefill_attention(q, k, v, gamma, tau=0, min_budget=None, max_budget=None, gqa_interleave=False, softmax_scale=None, block_size=128, return_computational_ratio=False)"
+  deps_conflict: "Triton kernels (setup.py has no CUDAExtension); extra_requirements.txt for experiments"
+  kb_key: flexprefill-iclr25
+  arxiv: "2502.20766"
+  note: "Context-aware per-head query-aware vs vertical-slash pattern selection; prefill only."
+  tricast: none
+- id: sageattention
+  name: SageAttention / SageAttention2 (INT8 QK, FP8 PV)
+  venue: ICLR
+  year: 2025
+  axes: [A, attention_sparsity]
+  category: format/scale
+  basic_or_latest: latest
+  repo: https://github.com/thu-ml/SageAttention
+  official: true
+  license: Apache-2.0
+  last_push: 2026-01-17
+  pip: sageattention
+  tricast_fit: kernel_or_system
+  entry: "sageattention/core.py:sageattn(q, k, v, tensor_layout='HND', is_causal=False, sm_scale=None, return_lse=False, **kwargs) (dispatches to SA2 CUDA kernels per arch)"
+  deps_conflict: "SA2: pip install sageattention==2.2.0 --no-build-isolation (CUDA build, sm80+); SA1 Triton: sageattention==1.0.6 (PyPI latest wheel)"
+  kb_key: sageattention-iclr25
+  arxiv: "2410.02367"
+  note: "Low-bit attention (not sparsity): smooth-K + INT8 QK^T (SA2: INT4/INT8 + FP8 PV). SA2 = ICML 2025, arXiv 2411.10958 (kb sageattention2-icml25)."
+  tricast: none
+- id: sageattention3
+  name: SageAttention3 (FP4 microscaling attention)
+  venue: NeurIPS
+  year: 2025
+  axes: [A, format]
+  category: format/scale
+  basic_or_latest: latest
+  repo: https://github.com/thu-ml/SageAttention
+  official: true
+  license: Apache-2.0
+  last_push: 2026-01-17
+  pip: null
+  tricast_fit: kernel_or_system
+  entry: "sageattention3_blackwell/sageattn3/api.py:sageattn3_blackwell(q, k, v, attn_mask=None, is_causal=False, ...)"
+  deps_conflict: "Blackwell-only FP4 kernels (sm_100/sm_120 build)"
+  kb_key: sageattention3-neurips25
+  arxiv: "2505.11594"
+  note: "Separate sub-package in the same repo; no fallback for pre-Blackwell GPUs."
+  tricast: none
+- id: seerattention
+  name: SeerAttention (learned attention gating)
+  venue: NeurIPS
+  year: 2025
+  axes: [attention_sparsity]
+  category: attention-sparsity
+  basic_or_latest: latest
+  repo: https://github.com/microsoft/SeerAttention
+  official: true
+  license: MIT
+  last_push: 2026-07-10
+  pip: null
+  tricast_fit: training
+  entry: "distillation_prefill.py:AttnGateTrainer (self-distilled AttnGate); inference seer_attn/prefill_sparse, seer_attn/decode_sparse/{qwen2,qwen3} + Triton kernels seer_attn/kernels"
+  deps_conflict: "requirements pin torch==2.4.1, transformers==4.44.2 / 4.51.0, triton==3.0.0"
+  kb_key: seerattention-neurips25
+  arxiv: "2410.13276"
+  note: "Gate parameters must be trained (or downloaded) per model; Qwen3 decode-sparse model files present."
+  tricast: none
+- id: duoattention
+  name: DuoAttention (retrieval vs streaming heads)
+  venue: ICLR
+  year: 2025
+  axes: [attention_sparsity, KV]
+  category: attention-sparsity
+  basic_or_latest: basic
+  repo: https://github.com/mit-han-lab/duo-attention
+  official: true
+  license: MIT
+  last_push: 2025-02-10
+  pip: null
+  tricast_fit: training
+  entry: "duo_attn/train.py (optimizes per-head gate on synthetic passkey data) + duo_attn/patch (apply streaming/full heads)"
+  deps_conflict: "needs Block-Sparse-Attention / flashinfer for efficient runtime"
+  kb_key: null
+  arxiv: "2410.10819"
+  note: "Head classification learned by gradient; demo also has W8A8KV4 path. Venue: prior knowledge."
+  tricast: none
+- id: quest-attn
+  name: Quest (query-aware KV page selection)
+  venue: ICML
+  year: 2024
+  axes: [attention_sparsity, KV]
+  category: attention-sparsity
+  basic_or_latest: basic
+  repo: https://github.com/mit-han-lab/Quest
+  official: true
+  license: MIT
+  last_push: 2025-07-10
+  pip: null
+  tricast_fit: kernel_or_system
+  entry: "quest/utils/controller.py:InferenceController + quest/utils/__init__.py:decode_estimate / decode_topk / decode_sparse_attn (CUDA kernels in kernels/)"
+  deps_conflict: "requirements pin torch==2.5.0, transformers==4.45.2; custom CUDA kernels (flashinfer-based)"
+  kb_key: quest-icml24
+  arxiv: "2406.10774"
+  note: "Decode-time page top-k by per-page min/max key bounds."
+  tricast: none
+- id: snapkv
+  name: SnapKV
+  venue: NeurIPS
+  year: 2024
+  axes: [KV, attention_sparsity]
+  category: kv-cache
+  basic_or_latest: basic
+  repo: https://github.com/FasterDecoding/SnapKV
+  official: true
+  license: Apache-2.0
+  last_push: 2025-07-10
+  pip: null
+  tricast_fit: model_script
+  entry: "snapkv/monkeypatch/snapkv_utils.py:SnapKVCluster(window_size=64, max_capacity_prompt=320, kernel_size=5, pooling='avgpool').update_kv(key_states, query_states, value_states, attention_mask, num_key_value_groups); patched forwards snapkv/monkeypatch/llama_hijack_4_37.py"
+  deps_conflict: "monkeypatch targets transformers 4.37 attention internals (llama/mistral/mixtral _4_37 files)"
+  kb_key: snapkv-neurips24
+  arxiv: "2404.14469"
+  note: "update_kv itself is tensor-level; integration point is the hijacked attention forward."
+  tricast: none
+- id: streamingllm
+  name: StreamingLLM (attention sinks)
+  venue: ICLR
+  year: 2024
+  axes: [KV, attention_sparsity]
+  category: kv-cache
+  basic_or_latest: basic
+  repo: https://github.com/mit-han-lab/streaming-llm
+  official: true
+  license: MIT
+  last_push: 2024-07-11
+  pip: null
+  tricast_fit: model_script
+  entry: "streaming_llm/enable_streaming_llm.py:enable_streaming_llm(model, start_size, recent_size) -> streaming_llm/kv_cache.py:StartRecentKVCache(start_size=4, recent_size=512, k_seq_dim=2, v_seq_dim=2)"
+  deps_conflict: "operates on legacy tuple past_key_values + pos-shift attention patches for Llama/GPT-NeoX/Falcon/MPT (pre-Cache-class transformers)"
+  kb_key: streamingllm-iclr24
+  arxiv: "2309.17453"
+  note: "Sink + recent window eviction."
+  tricast: none

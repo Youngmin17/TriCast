@@ -84,16 +84,80 @@ def _tokens(text: str) -> list[str]:
     return re.findall(r"[a-z]+[a-z0-9]*|\d+|[가-힣]+", text.casefold())
 
 
-def search(query: str, k: int = 5) -> list[dict]:
-    """Rank local sections by BM25; ties use source then section lexicographically."""
+def _check(query: str, k: int) -> None:
     if not isinstance(query, str):
         raise ValueError("query must be a string")
     if type(k) is not int or not 0 <= k <= 50:
         raise ValueError("k must be an integer in [0, 50]")
+
+
+def search(query: str, k: int = 5) -> list[dict]:
+    """Rank local sections by BM25; ties use source then section lexicographically."""
+    _check(query, k)
+    return _rank(_documents(), query, k)
+
+
+def _evidence_documents(ledgers: list[str] | None = None) -> list[dict]:
+    """Documents of the evidence ledgers (``config/rag.yaml`` ``ledgers``, written by ``python -m
+    app.ledger``): one JSON object per line with string ``source``, ``section`` and ``text``. They are records
+    rendered as text — external input, so a malformed line is refused, never guessed at."""
+    root = _root()
+    path = root / "config" / "rag.yaml"
+    config = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
+    documents = []
+    for name in config.get("ledgers", []) if ledgers is None else ledgers:
+        ledger = Path(name) if Path(name).is_absolute() else root / name
+        if not ledger.is_file():
+            continue
+        for number, line in enumerate(ledger.read_text(encoding="utf-8").splitlines(), start=1):
+            if not line.strip():
+                continue
+            item = json.loads(line)
+            if not all(isinstance(item.get(key), str) for key in ("source", "section", "text")):
+                raise ValueError(f"{ledger}:{number}: a ledger document needs string source, section, text")
+            documents.append({key: item[key] for key in ("source", "section", "text")})
+    return documents
+
+
+CARD_FIELDS = ("name", "venue", "year", "axes", "category", "basic_or_latest", "tricast", "tricast_fit",
+               "repo", "license", "pip", "entry", "deps_conflict", "arxiv", "note")
+
+
+def _catalog_documents(catalogs: list[str] | None = None) -> list[dict]:
+    """One document per method card of the method catalogs (``config/rag.yaml`` ``catalogs``, e.g.
+    docs/research/methods_catalog.yaml): which methods exist, their official code and TriCast's status."""
+    import yaml
+
+    root = _root()
+    path = root / "config" / "rag.yaml"
+    config = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
+    documents = []
+    for name in config.get("catalogs", []) if catalogs is None else catalogs:
+        catalog = Path(name) if Path(name).is_absolute() else root / name
+        if not catalog.is_file():
+            continue
+        for card in (yaml.safe_load(catalog.read_text(encoding="utf-8")) or {}).get("methods", []):
+            if not isinstance(card, dict) or not isinstance(card.get("id"), str):
+                raise ValueError(f"{catalog}: a method card needs a string id")
+            lines = [f"{key}: {card[key]}" for key in CARD_FIELDS if card.get(key) is not None]
+            documents.append({"source": str(name), "section": f"method card {card['id']}",
+                              "text": "\n".join(lines)})
+    return documents
+
+
+def search_evidence(query: str, k: int = 5, ledgers: list[str] | None = None,
+                    catalogs: list[str] | None = None) -> list[dict]:
+    """BM25 over the evidence ledgers (measured per-layer and per-recipe results) and the method catalogs,
+    ranked the way :func:`search` ranks the contract; ``ledgers`` / ``catalogs`` override
+    ``config/rag.yaml``'s lists."""
+    _check(query, k)
+    return _rank(_evidence_documents(ledgers) + _catalog_documents(catalogs), query, k)
+
+
+def _rank(documents: list[dict], query: str, k: int) -> list[dict]:
     terms = set(_tokens(query))
-    if not terms or k == 0:
+    if not terms or k == 0 or not documents:
         return []
-    documents = _documents()
     counts = [Counter(_tokens(doc["section"] + " " + doc["text"])) for doc in documents]
     lengths = [sum(count.values()) for count in counts]
     average = sum(lengths) / max(len(lengths), 1)

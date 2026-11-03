@@ -1,4 +1,6 @@
 {
   "documents": ["docs/SPEC.md"],
-  "glossary": "AGENTS.md"
+  "glossary": "AGENTS.md",
+  "ledgers": ["runs/ledger.docs.jsonl"],
+  "catalogs": ["docs/research/methods_catalog.yaml"]
 }

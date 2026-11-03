@@ -326,6 +326,16 @@ def run_config(cfg: dict | str | Path, *, calibration: dict | None = None) -> li
             if recipe is None:
                 record["patch_report"] = {"native": True}
             else:
+                if recipe.prune is not None:
+                    from ..official import prune as official_prune
+
+                    block = recipe.prune
+                    record["prune"] = official_prune.prune(
+                        model, tokenizer, block["method"], block["ratio"], prune_n=block["n"],
+                        prune_m=block["m"], nsamples=block["nsamples"], seed=block["seed"], device=device,
+                        dataset=block["dataset"], seqlen=block.get("seqlen"),
+                    )
+                    model._tricast_pruned = block  # patch_model refuses a prune recipe on an unpruned model
                 report = patch_model(model, recipe)
                 record["patch_report"] = asdict(report)
                 if not report.patched and not report.kv:
@@ -358,6 +368,8 @@ def run_config(cfg: dict | str | Path, *, calibration: dict | None = None) -> li
             try:
                 unpatch_model(model)
             finally:
+                if recipe is not None and recipe.prune is not None:
+                    model = tokenizer = None  # pruning changed weights in place: reload for the next run
                 record["wall_time_s"] = time.perf_counter() - started
                 _write_json(output_dir / "env.json", run_env)
                 _write_json(path, record)

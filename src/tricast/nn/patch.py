@@ -84,6 +84,9 @@ def patch_model(
     silently described as emulated.
     """
     recipe = load_recipe(recipe)
+    if recipe.prune is not None and getattr(model, "_tricast_pruned", None) != recipe.prune:
+        raise ValueError("prune: the eval runner (tricast run / ppl / eval) applies official pruning before "
+                         "patching; this entry point would quantize the unpruned model")
     backend = backend or recipe.backend
     report = PatchReport()
     replacements = []

@@ -43,6 +43,16 @@
         }
       ]
     },
+    "prune": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/prune"
+        }
+      ]
+    },
     "backend": {
       "type": "string",
       "enum": [
@@ -871,6 +881,62 @@
           "description": "Collect statistics using previously quantized decoder layers."
         }
       },
+      "additionalProperties": false
+    },
+    "prune": {
+      "type": "object",
+      "description": "Official pruning code (wanda repository lib.prune, pinned in tricast.official.repos) run by the eval runner before patching; zeros weights in place, so quantization sees the pruned weights. Not combinable with sparsity.",
+      "properties": {
+        "method": {
+          "type": "string",
+          "enum": [
+            "wanda",
+            "sparsegpt",
+            "magnitude"
+          ]
+        },
+        "ratio": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "exclusiveMaximum": 1,
+          "description": "Sparsity ratio; 0.5 for 2:4 and 4:8 (official main.py)."
+        },
+        "n": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Official prune_n: pruned weights per group of m (0 = unstructured)."
+        },
+        "m": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Official prune_m: group length along K (0 = unstructured)."
+        },
+        "nsamples": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Calibration sequences (default 128; at most 128 for wanda)."
+        },
+        "seed": {
+          "type": "integer"
+        },
+        "dataset": {
+          "type": "string",
+          "enum": [
+            "c4",
+            "wikitext2"
+          ],
+          "description": "Official get_loaders source (default c4)."
+        },
+        "seqlen": {
+          "type": "integer",
+          "minimum": 2,
+          "description": "Calibration sequence length; absent = official rule (config.max_position_embeddings). Set only where that is infeasible (Qwen3: 40960); recorded as a parameter mapping. At most max_position_embeddings."
+        }
+      },
+      "required": [
+        "method",
+        "ratio"
+      ],
       "additionalProperties": false
     },
     "layers": {

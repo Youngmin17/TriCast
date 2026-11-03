@@ -30,6 +30,8 @@ CALIBRATION_DEFAULTS = {
     "dataset": "wikitext2", "split": "train", "samples": 128, "seqlen": 2048,
     "seed": 0, "sequential": False,
 }
+# official main.py; an absent prune.seqlen means the official rule and stays absent (hash unchanged)
+PRUNE_DEFAULTS = {"n": 0, "m": 0, "nsamples": 128, "seed": 0, "dataset": "c4"}
 _SELECTORS = {"match", "layers", "modules"}
 _LAYER_INDEX = re.compile(r"(?:^|\.)layers\.(\d+)(?:\.|$)")
 
@@ -170,6 +172,7 @@ class Recipe:
     backend: str = "auto"
     kv: KVSpec | None = None
     kv_layers: str | None = None
+    prune: dict | None = None  # official pruning run by the eval runner before patching (tricast.official)
 
     def _selection(self, module_name: str, num_layers: int | None,
                    decoder: tuple[str, int] | None = None) -> tuple[int | None, str | None]:
@@ -230,7 +233,7 @@ class Recipe:
         kv = _json_value(self.kv)
         if kv is not None and self.kv_layers is not None:
             kv["layers"] = self.kv_layers
-        return {
+        data = {
             "name": self.name,
             "description": self.description,
             "defaults": _json_value(self.defaults),
@@ -241,6 +244,9 @@ class Recipe:
             "backend": self.backend,
             "kv": kv,
         }
+        if self.prune is not None:  # left out when unset, so recipes without it keep their JSON and hash
+            data["prune"] = copy.deepcopy(self.prune)
+        return data
 
     @property
     def sha256(self) -> str:
@@ -371,10 +377,24 @@ def load_recipe(source: str | Path | dict | Recipe) -> Recipe:
     _validate(data)
     defaults = _linear_spec(data.get("defaults", {}), "defaults")
     overrides = data.get("overrides", [])
+    specs = [defaults]
     for index, entry in enumerate(overrides):
         if "layers" in entry:
             _parse_layers(entry["layers"], f"overrides[{index}].layers")
-        _linear_spec(_merge(_json_value(defaults), _override_changes(entry)), f"overrides[{index}]")
+        specs.append(_linear_spec(_merge(_json_value(defaults), _override_changes(entry)),
+                                  f"overrides[{index}]"))
+    prune = data.get("prune")
+    if prune is not None:
+        if any(spec.sparsity.kind != "none" for spec in specs):
+            raise ValueError("prune: cannot be combined with sparsity (two pruning paths); keep one of them")
+        prune = {**PRUNE_DEFAULTS, **prune}
+        from .official.prune import check_args
+
+        try:
+            check_args(prune["method"], prune["ratio"], prune["n"], prune["m"], prune["nsamples"],
+                       prune["dataset"])
+        except ValueError as exc:
+            raise ValueError(f"prune.{exc}") from exc
     kv_data = data.get("kv")
     kv_layers = None
     if isinstance(kv_data, dict):
@@ -390,5 +410,5 @@ def load_recipe(source: str | Path | dict | Recipe) -> Recipe:
         name=data["name"], description=data.get("description", ""), defaults=defaults,
         include=data.get("include", ["*"]), exclude=data.get("exclude", ["lm_head"]),
         overrides=overrides, calibration=data.get("calibration"), backend=data.get("backend", "auto"),
-        kv=kv, kv_layers=kv_layers,
+        kv=kv, kv_layers=kv_layers, prune=prune,
     )

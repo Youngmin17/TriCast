@@ -92,15 +92,17 @@ def _data_source(data: ModuleType, dataset: str, loader: Sequence | None, nsampl
 
 def _c4_config_shim(load_dataset: Callable[..., Any], deviations: list[str | dict]) -> Callable[..., Any]:
     """datasets>=2.x: the script-less ``allenai/c4`` hub repo has no config ``allenai--c4`` (builder.py
-    raises "BuilderConfig not found"); the same data_files and split load under config ``en``."""
+    raises "BuilderConfig not found"). The same data_files and split load with no config name (the packaged
+    json builder over exactly those shards). Not config ``en``: in datasets 4.x it carries the split sizes of
+    all of C4, so one shard fails split verification (ExpectedMoreSplitsError, found on the GPU gate)."""
 
     def shim(path: str, name: str | None = None, *args: Any, **kwargs: Any) -> Any:
         if (path, name) == ("allenai/c4", "allenai--c4"):
-            note = ("datasets API drift: load_dataset('allenai/c4', 'allenai--c4', ...) called with "
-                    "config 'en' (same data_files and split)")
+            note = ("datasets API drift: load_dataset('allenai/c4', 'allenai--c4', ...) called with no "
+                    "config name (same data_files and split)")
             if note not in deviations:
                 deviations.append(note)
-            name = "en"
+            name = None
         return load_dataset(path, name, *args, **kwargs)
 
     return shim

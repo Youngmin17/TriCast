@@ -274,8 +274,8 @@ def test_default_data_is_official_c4_sampling(monkeypatch):
     model = _tiny("llama")
     report = official_prune.prune(model, _tokenizer(), "wanda", 0.5, nsamples=NSAMPLES)
     train, validation = "en/c4-train.00000-of-01024.json.gz", "en/c4-validation.00000-of-00008.json.gz"
-    assert calls == [("allenai/c4", "en", {"train": train}, "train"),
-                     ("allenai/c4", "en", {"validation": validation}, "validation")]
+    assert calls == [("allenai/c4", None, {"train": train}, "train"),
+                     ("allenai/c4", None, {"validation": validation}, "validation")]
     assert report["data"] == {"source": "official lib.data.get_loaders('c4')", "dataset": "c4",
                               "requests": ["c4"]}
     assert any("allenai--c4" in note for note in report["deviations"])

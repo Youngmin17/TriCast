@@ -84,13 +84,15 @@ PPL 은 공식 `lib.eval.eval_ppl` 로 잰다 (WikiText-2 test, seqlen 4096). �
 - AC26 GPU 게이트의 판정은 G1 · G4 로 한다.
 - G2 · G3 는 재현 수준을 보고한다. 실패하면 "재현 미달 (Δ=…)" 로 적고 원인을 가린다.
 
-## 보정 결과 캐시 GPU 게이트 (Qwen3-0.6B, NVIDIA A100, 자율 루프 2라운드의 제안 4개)
+## 보정 결과 캐시 GPU 게이트 (Qwen3-0.6B, 자율 루프 2라운드의 제안 4개)
 
 > 판정 기준은 측정 전에 이 커밋으로 적었고, 결과를 본 뒤 바꾸지 않는다.
 
 **설정**
 - 레시피는 `runs/20261103_tune/loop_s2` 2라운드의 제안 4개다: `ao_damp0.005_int8mse` · `noao_int8mse` · `ao_int8mse_swap_l2up_l21down` · `ao_int8mse_actmse`.
 - 측정은 루프와 같은 `app.autotune measure --calibrate` 이다. 검증 8 × 512, seed 43, 보정 wikitext2 train 128 × 2048, seed 42.
+- GPU: 루프와 같은 geneva A100 이 cap(2) 에 차 있어서(실행 전 확인) berlin H200 에서 돌린다. 이 수정은 결과를 보기 전에 했다.
+  - CG1–CG4 는 같은 작업 안의 상대 비교라 GPU 와 무관하다. 아래 "참고" 비교만 GPU 가 달라 해석이 약해진다.
 - 한 작업 안에서 세 번 잰다.
   - S1: 캐시 없음
   - S2: `--calib-cache` 새 디렉터리 (채우기; 제안끼리 같은 층 명세는 서로 적중)

@@ -266,27 +266,31 @@ def _session(session: Path, table_path: Path, write: bool) -> dict[str, Any]:
 
 def propose(session: Path, name: str, spec: dict[str, Any], table_path: Path, budget: Fraction,
             rationale: str, cites: Sequence[str], ledger: Path, *, author: str = "claude-code",
-            parent: str | None = None) -> dict[str, Any]:
-    """Validate and record one proposal: session/proposals/<name>/{grid.json, recipe.yaml, proposal.json}."""
+            parent: str | None = None, checks: bool = True) -> dict[str, Any]:
+    """Validate and record one proposal: session/proposals/<name>/{grid.json, recipe.yaml, proposal.json}.
+    ``checks=False`` (the no-check ablation) keeps the build and the budget but drops the evidence checks:
+    rationale, cited ids, ids named in the rationale and the supported-numbers guard."""
     target = _proposal_dir(session, name)
     if target.exists():
         raise TuneError(f"proposal {name!r} exists; proposals are never overwritten")
-    if not rationale.strip():
-        raise TuneError("a proposal needs a rationale")
-    if not cites:
-        raise TuneError("a proposal cites at least one ledger record")
     index = {record["id"]: record for record in lg.read_ledger(ledger)}
-    unknown = [item for item in cites if item not in index]
-    if unknown:
-        raise TuneError(f"cited ids not in the ledger {ledger}: {unknown}")
-    mentioned = sorted(set(re.findall(r"\bE[0-9a-f]{6,}\b", rationale)) - set(index))
-    if mentioned:
-        raise TuneError(f"the rationale names ids that are not ledger records: {mentioned}")
+    if checks:
+        if not rationale.strip():
+            raise TuneError("a proposal needs a rationale")
+        if not cites:
+            raise TuneError("a proposal cites at least one ledger record")
+        unknown = [item for item in cites if item not in index]
+        if unknown:
+            raise TuneError(f"cited ids not in the ledger {ledger}: {unknown}")
+        mentioned = sorted(set(re.findall(r"\bE[0-9a-f]{6,}\b", rationale)) - set(index))
+        if mentioned:
+            raise TuneError(f"the rationale names ids that are not ledger records: {mentioned}")
     if parent is not None:
         read_proposal(session, parent)
     _session(session, table_path, write=False)
     recipe = _recipe(name, spec)
     computed = evaluate(spec, table_path, budget)
+    cites = [item for item in cites if item in index]  # unchecked proposals keep only real records
     evidence = [number for item in cites for number in _numbers(index[item]["value"])]
     evidence += [number for item in cites for number in _numbers(index[item].get("stderr"))]
     # parameters ("damp=0.005") may come from the proposal's own options or those of cited session recipes
@@ -295,14 +299,14 @@ def propose(session: Path, name: str, spec: dict[str, Any], table_path: Path, bu
     cited_specs = [specs[index[item]["recipe_hash"]] for item in cites
                    if index[item].get("recipe_hash") in specs]
     measured_text = _strip_parameters(rationale, [spec, *cited_specs])
-    unsupported = unsupported_numbers(measured_text, evidence + _numbers(computed))
+    unsupported = unsupported_numbers(measured_text, evidence + _numbers(computed)) if checks else []
     if unsupported:
         raise TuneError(f"rationale numbers not supported by the cited records or the proposal: "
                         f"{unsupported}")
     _session(session, table_path, write=True)  # only a proposal that passed every check fixes the session
     proposal = {"schema": PROPOSAL_SCHEMA, "name": name, "author": author, "parent": parent,
                 "created_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"),
-                "rationale": rationale, "cites": list(cites), **computed,
+                "rationale": rationale, "cites": list(cites), "checks": checks, **computed,
                 "recipe_sha256": _recipe_sha256(recipe), "spec": spec}
     target.mkdir(parents=True)
     (target / "grid.json").write_text(json.dumps({"name": name, **spec}, indent=1) + "\n", encoding="utf-8")

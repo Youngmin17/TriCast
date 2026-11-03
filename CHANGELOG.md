@@ -17,6 +17,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   runtime, calibration windows and spec; bit-identical to a fresh calibration, no forward when every layer hits.
 - Grids for models deeper than the page's 28 blocks (Llama-3.1-8B, Qwen3-8B): one row per decoder block in
   `quantizer_recipe.build`, auto-tune tables, `solve` and the tune loop; 28-block grids are unchanged.
+- Comparison arms for the tune loop: Optuna TPE (`--proposer tpe`, study rebuilt from the session each round),
+  option-only coordinate search (`option-greedy`), LLM-seeded TPE (`claude-then-tpe`), analysis masks for the
+  Claude proposer (`llm.mask`) and the no-check ablation (`checks: false`, budget still enforced).
 - Black-box controls for the tune loop (`--proposer evolution|random`): EvoPress-style level-switch mutations
   plus option mutations under the same checks and measurement; `--measurements N` runs a fixed budget (refused
   proposals made up, shortfall recorded); proposals are deduplicated by recipe hash.

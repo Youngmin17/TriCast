@@ -80,10 +80,10 @@
 | 블랙박스 | random (시작점 변이, 선택 없음) | N | 이력 | `--proposer random` |
 | 블랙박스 | evolution μ=1 (EvoPress 식 (1+λ)) · μ=4 | N | 이력 | `--proposer evolution --parents` |
 | 블랙박스 | EvoPress · AMQ 공식 코드 | N | 이력 | 공식 코드, 같은 N 곡선으로 맞춤 |
-| 블랙박스 | TPE (Optuna) · LLM-seeded BO 하이브리드 | N | 이력 (+LLM 시드) | 추가 예정 |
-| 옵션 sweep | 배낭 해 + 방법 옵션 전역 격자 (act_order × damp × scale method) | N | 표 | 추가 예정 — 지금까지의 에이전트 이득을 설명하는 가장 단순한 대안 |
+| 블랙박스 | TPE (Optuna 4.5.0) · LLM-seeded TPE 하이브리드 | N | 이력 (+LLM 시드) | `--proposer tpe` · `claude-then-tpe` |
+| 옵션 탐색 | 최선 배정에서 방법 옵션 하나씩 바꾸는 좌표 탐색 (칸은 고정) | N | 이력 | `--proposer option-greedy` — 지금까지의 에이전트 이득을 설명하는 가장 단순한 대안 |
 | 에이전트 | Claude Opus · Sonnet · Haiku + 오픈 모델 1종 | N | 전체 분석 | `--proposer claude-code` |
-| 절제 | 에이전트 − 측정 이력 · − 원장 검색(카탈로그 · 카드) · − 표 분석 · − 결정적 검사 · 방법 이름 익명화 | N | 마스킹 | analyze 필드 마스킹 (추가 예정) |
+| 절제 | 에이전트 − 측정 이력 · − 원장 검색(카탈로그 · 카드) · − 표 분석 · − 옵션 공간 · − 결정적 검사 · 방법 이름 익명화 | N | 마스킹 | `llm.mask` (no-history · no-evidence · no-table · no-options), `checks: false`; 익명화는 추가 예정 |
 | 정보 맞춤 | 블랙박스 + 표 정보(표 예측 가중 변이) · LLM 제안 + 탐욕 선택 | N | 표 | 추가 예정 — "정책 vs 연산자" 귀속 분리 (AIRA-dojo) |
 | C3 확인 | CALM (층별 GPTQ/AWQ/SQ, CKA greedy) | — | — | 재구현 (공식 코드 미확인) |
 
@@ -120,7 +120,8 @@
 | 격자 블록 수 = 모델 블록 수 | 다음 | 28 블록 레시피 바이트 동일(AC15), 32 · 36 블록 모델 표 · 레시피 생성 |
 | 트랙 M 풀: int3 · int2 GPTQ/HQQ, W-only AWQ | 계획 | 공식 수치 대비 충실도 |
 | 트랙 C 연산 비용 모델 | 계획 | 출처 있는 처리량 비, 배낭 이중 제약 |
-| TPE · LLM-seeded BO · 옵션 sweep · 정보 맞춤 arm · 절제 마스킹 | 계획 | 같은 루프, 같은 측정 수, 같은 검사 |
+| TPE · LLM-seeded TPE · 옵션 탐색 · 절제 마스킹 · 무검사 | 구현 (CPU 테스트) | 같은 루프, 같은 측정 수, 같은 검사 |
+| 정보 맞춤 arm · 이름 익명화 · 28 블록 초과 격자 | 격자는 `7120c41`, 나머지 계획 | 같은 루프, 같은 측정 수 |
 | 외부 공식 비교군: ModelOpt AutoQuantize · EvoPress · AMQ | 계획 | quant-eval 재현 게이트 |
 | 공식 GPTQ GPU 게이트 (AC26) | 실행 중 (berlin H200, 2차) | 증거 문서 G1–G4 |
 | 경쟁작 본문 (AutoQS, Explorer–Reviewer) | 사용자 결정 | 기관 접근 · 로그인 브라우저로 PDF 입수 |

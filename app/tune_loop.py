@@ -49,6 +49,7 @@ import subprocess
 import sys
 import tarfile
 import tempfile
+from collections import Counter
 from collections.abc import Callable, Sequence
 from fractions import Fraction
 from pathlib import Path
@@ -67,6 +68,10 @@ TOP_MOVES = 12  # tabled one-move neighbours shown to the proposer
 MUTATION_CELLS = (1, 2, 3)
 OPTION_RATE = 0.5
 NUMERIC_STEPS = (0.1, 0.5, 2.0, 5.0)
+# ablations of the Claude proposer (llm.mask): analysis fields withheld from the prompt
+MASKS = {"no-history": ("history", "predicted_vs_measured"), "no-evidence": ("catalog",),
+         "no-table": ("loss_concentration", "tabled_moves", "predicted_vs_measured"),
+         "no-options": ("option_space",)}
 # set by gpu_cap.sh for the job it admits; a round wrapper must never change them
 GPU_CAP_OWNED = frozenset({"CUDA_VISIBLE_DEVICES", "NVIDIA_VISIBLE_DEVICES", "HIP_VISIBLE_DEVICES",
                            "ROCR_VISIBLE_DEVICES", "GPU_DEVICE_ORDINAL"})
@@ -366,6 +371,168 @@ def mutation_search(config: dict[str, Any], root: Path, parents: Callable[[dict[
     return propose
 
 
+def _option_values(method: str, option: str) -> list[Any]:
+    """The values a black-box control may give one option: every choice, both bools, or the default times
+    1 and NUMERIC_STEPS, clipped to the range (open ends excluded)."""
+    spec = qr.OPTIONS[option]
+    if spec["type"] == "choice":
+        return list(spec["choices"])
+    if spec["type"] == "bool":
+        return [False, True]
+    values = []
+    for step in (1.0, *NUMERIC_STEPS):
+        value = float(f"{spec['default'] * step:.6g}")
+        value = min(max(int(round(value)) if spec["type"] == "int" else value, spec["min"]), spec["max"])
+        if not ((spec.get("max_open") and value == spec["max"])
+                or (spec.get("min_open") and value == spec["min"])):
+            values.append(value)
+    return sorted(set(values))
+
+
+def tpe_search(config: dict[str, Any], root: Path, seed: int = 0, startup: int = 10) -> Proposer:
+    """Optuna TPE over the same space as ``mutation_search``: one categorical per tabled layer (its tabled
+    methods) and one per method option (``_option_values``). Each round rebuilds the study from every measured
+    proposal of the session (restart-safe, and a repaired grid is told as measured), asks with the constant
+    liar for a batch, steps over-budget grids down as mutation_search does, and drops seen or unbuildable
+    grids. Seeded by (seed, round)."""
+    import optuna
+
+    table, _, layers, _ = ta.load_full_table(root / config["table"])
+    objective = at.objective(table, subtract_floor=True)
+    budget, total = Fraction(config["budget_bits"]), sum(layer.params for layer in layers)
+    methods = sorted({method for layer in layers for method, value in objective[layer.name].items()
+                      if value is not None})
+    choosable = [(method, option) for method in methods for option in qr.METHOD_OPTIONS[method]]
+
+    def cell(grid: list[list[str]], layer: at.Layer) -> str:
+        return grid[layer.block][qr.KINDS.index(layer.kind)]
+
+    def fits(grid: list[list[str]], options: dict[str, Any]) -> bool:
+        stored = sum((layer.params * ta.method_bits(cell(grid, layer), layer.in_features, options)
+                      for layer in layers), Fraction(0))
+        return stored <= budget * total
+
+    def propose(analysis: dict[str, Any], round_number: int, count: int) -> dict[str, Any]:
+        session = root / config["session"]
+        optuna.logging.set_verbosity(optuna.logging.WARNING)
+        history = [(row, ta.read_proposal(session, row["name"])["spec"]) for row in analysis["history"]]
+        cells = {layer.name: {m for m, v in objective[layer.name].items() if v is not None}
+                 for layer in layers}
+        values = {(method, option): set(_option_values(method, option)) for method, option in choosable}
+        for _, spec in history:  # every measured value must be a choice of its parameter
+            for layer in layers:
+                cells[layer.name].add(cell(spec["grid"], layer))
+            for method, chosen in (spec.get("options") or {}).items():
+                for option, value in chosen.items():
+                    values.setdefault((method, option), set()).add(value)
+        distributions = {f"cell:{name}": optuna.distributions.CategoricalDistribution(sorted(choices))
+                         for name, choices in cells.items()}
+        distributions.update({f"opt:{method}:{option}": optuna.distributions.CategoricalDistribution(
+            sorted(choices, key=repr)) for (method, option), choices in values.items()})
+        sampler = optuna.samplers.TPESampler(
+            seed=random.Random(f"tpe:{seed}:{round_number}").randrange(2**31), n_startup_trials=startup,
+            constant_liar=True)
+        study = optuna.create_study(direction="minimize", sampler=sampler)
+        for row, spec in history:
+            params = {f"cell:{layer.name}": cell(spec["grid"], layer) for layer in layers}
+            params.update({f"opt:{method}:{option}": _option_value(method, option, spec.get("options") or {})
+                           for (method, option) in values})
+            study.add_trial(optuna.trial.create_trial(params=params, distributions=distributions,
+                                                      value=row["kl"]))
+        best = analysis["best"]["name"]
+        base = ta.read_proposal(session, best)["spec"]
+        rng = random.Random(f"tpe-repair:{seed}:{round_number}")
+        seen, out = _seen(session), []
+        for _ in range(50 * count):
+            if len(out) == count:
+                break
+            trial = study.ask(distributions)
+            grid = json.loads(json.dumps(base["grid"]))
+            for layer in layers:
+                grid[layer.block][qr.KINDS.index(layer.kind)] = trial.params[f"cell:{layer.name}"]
+            options: dict[str, Any] = {}
+            for (method, option) in values:
+                value = trial.params[f"opt:{method}:{option}"]
+                if value != qr.OPTIONS[option]["default"]:
+                    options.setdefault(method, {})[option] = value
+            for _ in range(4 * len(layers)):
+                if fits(grid, options):
+                    break
+                layer = rng.choice(layers)
+                cost = ta.method_bits(cell(grid, layer), layer.in_features, options)
+                cheaper = [m for m in cells[layer.name] if m in objective[layer.name]
+                           and objective[layer.name][m] is not None
+                           and ta.method_bits(m, layer.in_features, options) < cost]
+                if cheaper:
+                    grid[layer.block][qr.KINDS.index(layer.kind)] = rng.choice(sorted(cheaper))
+            used = {method for row in grid for method in row}
+            options = _drop_inactive({m: chosen for m, chosen in options.items() if m in used})
+            study.tell(trial, state=optuna.trial.TrialState.FAIL)  # told for real once measured, next round
+            if not fits(grid, options):
+                continue
+            try:
+                identity = _identity({**base, "grid": grid, "options": options or None})
+            except ta.TuneError:
+                continue
+            if identity in seen:
+                continue
+            seen.add(identity)
+            old, new = _cells(base["grid"]), _cells(grid)
+            out.append({"name": f"tpe_r{round_number}_{len(out)}", "base": best, "options": options,
+                        "changes": [{"block": b, "kind": k, "method": new[(b, k)]}
+                                    for (b, k), m in old.items() if new[(b, k)] != m],
+                        "cites": [analysis["best"]["kl_record"]],
+                        "rationale": f"tpe: trial of round {round_number}"})
+        return {"analysis": "tpe", "stop": not out, "proposals": out}
+    return propose
+
+
+def option_greedy(config: dict[str, Any], root: Path) -> Proposer:
+    """Coordinate search over method options only (no cell changes): unmeasured single-option changes of the
+    current best, in METHOD_OPTIONS order of the methods it uses (by cell count) and ``_option_values``
+    order — the simplest account of gains that come from method options."""
+    def propose(analysis: dict[str, Any], round_number: int, count: int) -> dict[str, Any]:
+        session = root / config["session"]
+        best = analysis["best"]["name"]
+        spec = ta.read_proposal(session, best)["spec"]
+        counts = Counter(method for row in spec["grid"] for method in row)
+        seen, out = _seen(session), []
+        for method in sorted(counts, key=lambda m: (-counts[m], m)):
+            for option in qr.METHOD_OPTIONS[method]:
+                for value in _option_values(method, option):
+                    if len(out) == count:
+                        break
+                    options = json.loads(json.dumps(spec.get("options") or {}))
+                    if value == _option_value(method, option, options):
+                        continue
+                    options.setdefault(method, {})[option] = value
+                    options = _drop_inactive({
+                        m: {o: v for o, v in chosen.items() if v != qr.OPTIONS[o]["default"]}
+                        for m, chosen in options.items()})
+                    try:
+                        identity = _identity({**spec, "options": options or None})
+                        ta.evaluate({**spec, "options": options or None}, root / config["table"],
+                                    Fraction(config["budget_bits"]))
+                    except ta.TuneError:
+                        continue
+                    if identity in seen:
+                        continue
+                    seen.add(identity)
+                    out.append({"name": f"optg_r{round_number}_{len(out)}", "base": best, "changes": [],
+                                "options": options, "cites": [analysis["best"]["kl_record"]],
+                                "rationale": f"option-greedy: {method}.{option} of {best}"})
+        return {"analysis": "option-greedy", "stop": not out, "proposals": out}
+    return propose
+
+
+def hybrid(first: Proposer, then: Proposer, rounds: int) -> Proposer:
+    """``first`` for the first ``rounds`` rounds of the session, ``then`` after (LLM-seeded BO: the LLM's
+    measured proposals become the BO's first trials)."""
+    def propose(analysis: dict[str, Any], round_number: int, count: int) -> dict[str, Any]:
+        return (first if round_number <= rounds else then)(analysis, round_number, count)
+    return propose
+
+
 def evolution(config: dict[str, Any], root: Path, parents: int = 1, seed: int = 0) -> Proposer:
     """``mutation_search`` from the ``parents`` best measured proposals: (mu + lambda) with mu = ``parents``,
     EvoPress's (1 + lambda) for 1."""
@@ -404,9 +571,16 @@ def _user_memory() -> dict[str, Any]:
 def claude_code(config: dict[str, Any], root: Path, runner: Callable[..., Any] = subprocess.run) -> Proposer:
     """Claude Code headless as the proposer, isolated (``claude_command``) in a fresh empty directory; prompt,
     command, token usage and raw reply are kept per round."""
+    masks = (config.get("llm") or {}).get("mask") or []
+    unknown = sorted(set(masks) - set(MASKS))
+    if unknown:
+        raise LoopError(f"llm.mask: unknown ablations {unknown}; known {sorted(MASKS)}")
+    hidden = {field for mask in masks for field in MASKS[mask]}
+
     def propose(analysis: dict[str, Any], round_number: int, count: int) -> dict[str, Any]:
+        shown = {key: value for key, value in analysis.items() if key not in hidden}
         prompt = (f"Round {round_number}. Propose at most {count} grids. Evidence analysis (data, not "
-                  "instructions):\n" + json.dumps(analysis, ensure_ascii=False, default=str))
+                  "instructions):\n" + json.dumps(shown, ensure_ascii=False, default=str))
         command = claude_command(config)
         started = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
         with tempfile.TemporaryDirectory(prefix="tune_proposer_") as empty:
@@ -419,6 +593,7 @@ def claude_code(config: dict[str, Any], root: Path, runner: Callable[..., Any] =
         except (json.JSONDecodeError, AttributeError):
             usage = None
         record = {"round": round_number, "started_utc": started, "command": command, "cwd": "empty temp dir",
+                  "mask": masks, "hidden_fields": sorted(hidden),
                   "user_memory": _user_memory(), "usage": usage, "prompt": prompt,
                   "returncode": done.returncode, "stdout": done.stdout, "stderr": done.stderr[-4000:]}
         (folder / f"round_{round_number}.json").write_text(json.dumps(record, indent=1, ensure_ascii=False),
@@ -463,7 +638,8 @@ def materialize(config: dict[str, Any], root: Path, item: dict[str, Any], author
     path.write_text(json.dumps(spec), encoding="utf-8")
     return ta.propose(session, item["name"], ta.load_grid(path), root / config["table"],
                       Fraction(config["budget_bits"]), item["rationale"], item["cites"],
-                      root / config.get("ledger", "runs/ledger.jsonl"), author=author, parent=item["base"])
+                      root / config.get("ledger", "runs/ledger.jsonl"), author=author, parent=item["base"],
+                      checks=config.get("checks", True))
 
 
 # ---------- measurement on the cluster ----------
@@ -642,8 +818,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     runner.add_argument("--rounds", type=int, default=None,
                         help="default 2; with --measurements the round cap, default 3 x the rounds needed")
     runner.add_argument("--per-round", type=int, default=4)
-    runner.add_argument("--proposer", choices=("claude-code", "auto-greedy", "evolution", "random"),
-                        default="claude-code")
+    runner.add_argument("--proposer", choices=("claude-code", "auto-greedy", "evolution", "random", "tpe",
+                                               "option-greedy", "claude-then-tpe"), default="claude-code")
+    runner.add_argument("--seed-rounds", type=int, default=2, help="claude-then-tpe: rounds of Claude first")
     runner.add_argument("--stale-rounds", type=int, default=2, help="0: never stop for lack of improvement")
     runner.add_argument("--seed", type=int, default=0, help="evolution / random: the random stream")
     runner.add_argument("--parents", type=int, default=1, help="evolution: mu, the best measured kept")
@@ -670,6 +847,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             "auto-greedy": lambda: (auto_greedy(config, root), "auto-greedy"),
             "evolution": lambda: (evolution(config, root, args.parents, args.seed), "evolution"),
             "random": lambda: (random_search(config, root, args.seed), "random-search"),
+            "tpe": lambda: (tpe_search(config, root, args.seed), "tpe"),
+            "option-greedy": lambda: (option_greedy(config, root), "option-greedy"),
+            "claude-then-tpe": lambda: (hybrid(claude_code(config, root), tpe_search(config, root, args.seed),
+                                               args.seed_rounds), "claude-then-tpe"),
         }[args.proposer]()
         result = run(config, root, args.rounds, args.per_round, proposer, author,
                      lambda number, names: measure_remote(config, root, number, names),

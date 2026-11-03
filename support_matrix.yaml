@@ -84,8 +84,13 @@ official_methods:
             note: "recipe prune block, applied before patch_model; compat shim for transformers >= 4.48 decoders
               (eager attention, position_embeddings, tuple return) and deviations recorded in the run record;
               optional seqlen recorded as a parameter mapping",
-            evidence: "tests/test_official_prune.py (CPU, tiny Llama and Qwen3); GPU reproduction gate
-              (Llama-2-7B, wanda README numbers) planned"}
+            evidence: "tests/test_official_prune.py (CPU, tiny Llama and Qwen3); GPU gate in progress
+              (docs/evidence/2026-11-03_v2_agent_runs.md)"}
+  gptq: {status: implemented, methods: [official_gptq],
+         source: "IST-DASLab/gptq 2d65066e (Apache-2.0), llama.py llama_sequential called unchanged",
+         note: "recipe official_gptq block, after prune and before patch_model; refused with weight_algo gptq or a
+           TriCast weight spec; official default seqlen 2048, other values recorded as parameter mappings",
+         evidence: "tests/test_official_gptq.py (CPU, tiny Llama and Qwen3); GPU gate planned"}
 weight_structure:
   sparsity: {status: verified, values: ["n:m", unstructured], source: "team interviews, log 10",
              note: "magnitude pruning after the transform, before quantization; dense K order in the accumulator

@@ -14,6 +14,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   `o_proj`/`down_proj`), per-block KV entries, models with fewer blocks, calibrated `measure`.
 - Official-code pruning (`src/tricast/official`, recipe `prune:`, AC25): Wanda, SparseGPT and magnitude from
   locuslab/wanda at a pinned commit, called unchanged through a transformers ≥ 4.48 compat shim.
+- Official-code GPTQ (recipe `official_gptq:`): IST-DASLab/gptq `llama_sequential` at a pinned commit; `tricast run`
+  takes `hessian_max_bytes` for GPTQ's live-Hessian budget.
 - Method catalog (`docs/research/methods_catalog.yaml`): 91 quantization and sparsity methods with official
   code, license, per-layer entry point and TriCast status; pre-registered spikes for auto-tune v2 and the agent.
 - Quantizer page (`app/web/quantizer.html`) and its reference generator `app/quantizer_recipe.py`: pick one of

@@ -83,6 +83,9 @@ def run_quantizer(args: QuantizerArgs, progress: Progress, *,
     env = capture_env(args.model_id, {"seed": 42, "dtype": dtype, "device": args.device})
     revision = env.get("model_sha") if env.get("model_kind") == "hf" else None
     model, tokenizer = (model_factory or _load)(args.model_id, dtype, args.device, revision)
+    actual = getattr(model.config, "_commit_hash", None)  # the revision tricast run records (eval/runner.py)
+    if actual and env.get("model_kind") != "local":
+        env["model_sha"] = actual
     recipe = load_recipe(args.recipe)
     if args.calibration:  # as tricast run / report apply --calib-* (tricast.cli._calibration_overrides)
         recipe = load_recipe({**recipe.to_dict(),

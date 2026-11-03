@@ -195,3 +195,34 @@ def test_an_exact_layer_name_finds_its_own_document_first(tmp_path: Path) -> Non
         assert hits[0]["section"] == f"layer {name}"
     hits = rag.search_evidence("v_proj block 13", 3, ledgers=[str(docs_file)], catalogs=[])
     assert "block 13 block13" in next(hit["text"] for hit in hits if hit["section"] == f"layer {O_PROJ}")
+
+
+def _ingest_each(paths: list[str], ledger: str, root: str) -> None:
+    for path in paths:
+        lg.ingest([Path(path)], Path(ledger), Path(root))
+
+
+def test_concurrent_ingests_lose_no_record(tmp_path: Path) -> None:
+    """A tune loop and a person ingest into the same ledger: every record of both must survive."""
+    import multiprocessing
+
+    runs = tmp_path / "runs"
+    runs.mkdir()
+    files = []
+    for index in range(24):
+        run = {"run_hash": f"r{index}", "recipe_hash": f"h{index}", "recipe": {"name": f"x{index}"},
+               "env": ENV, "metrics": {"ppl": {"ppl": 20.0 + index, "n_tokens": 1}}}
+        path = runs / f"run{index}.json"
+        path.write_text(json.dumps(run))
+        files.append(str(path))
+    ledger = tmp_path / "ledger.jsonl"
+    context = multiprocessing.get_context("spawn")
+    workers = [context.Process(target=_ingest_each, args=(files[part::2], str(ledger), str(tmp_path)))
+               for part in range(2)]
+    for worker in workers:
+        worker.start()
+    for worker in workers:
+        worker.join(120)
+        assert worker.exitcode == 0
+    values = sorted(record["value"] for record in lg.read_ledger(ledger))
+    assert values == [20.0 + index for index in range(24)]

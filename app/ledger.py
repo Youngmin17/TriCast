@@ -39,6 +39,7 @@ rounded to 6 significant digits, the records keep the exact values. Stdlib only.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import hashlib
 import json
 import os
@@ -46,6 +47,11 @@ import sys
 import tempfile
 from collections import defaultdict
 from collections.abc import Iterator, Sequence
+
+try:
+    import fcntl
+except ImportError:  # not POSIX: ingests are not serialised
+    fcntl = None
 from pathlib import Path
 from typing import Any
 
@@ -299,9 +305,25 @@ def read_ledger(path: Path) -> list[dict[str, Any]]:
     return records
 
 
+@contextlib.contextmanager
+def _exclusive(ledger: Path) -> Iterator[None]:
+    """Serialise ingests into one ledger (a tune loop and a person may ingest at the same time): the whole
+    read-modify-write runs under an exclusive lock on ``<ledger>.lock``."""
+    ledger.parent.mkdir(parents=True, exist_ok=True)
+    with open(ledger.with_name(ledger.name + ".lock"), "w", encoding="utf-8") as handle:
+        if fcntl is not None:
+            fcntl.flock(handle, fcntl.LOCK_EX)
+        yield
+
+
 def ingest(paths: Sequence[Path], ledger: Path, root: Path) -> dict[str, Any]:
     """Add the records of ``paths`` to ``ledger`` under the re-ingest rules of the module docstring; returns
-    counts. Nothing is written when a file is refused."""
+    counts. Nothing is written when a file is refused. Concurrent ingests are serialised (``_exclusive``)."""
+    with _exclusive(ledger):
+        return _ingest(paths, ledger, root)
+
+
+def _ingest(paths: Sequence[Path], ledger: Path, root: Path) -> dict[str, Any]:
     known = {record["id"]: record for record in read_ledger(ledger)}
     added: dict[str, int] = defaultdict(int)
     skipped = refreshed = superseded = 0

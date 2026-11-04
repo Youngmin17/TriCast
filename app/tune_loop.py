@@ -68,6 +68,7 @@ TOP_MOVES = 12  # tabled one-move neighbours shown to the proposer
 MUTATION_CELLS = (1, 2, 3)
 OPTION_RATE = 0.5
 NUMERIC_STEPS = (0.1, 0.5, 2.0, 5.0)
+GUIDED_MOVES = 50  # evolution-table draws from this many tabled moves of a parent (auto-greedy's 50)
 # ablations of the Claude proposer (llm.mask): analysis fields withheld from the prompt
 # "anonymous" also writes every method id as a seeded alias (method_aliases) in the prompt and the schema, so
 # the proposer sees option spaces and measurements but not method names; its catalog cards would name them.
@@ -306,18 +307,31 @@ def _mutate_option(rng: random.Random, grid: list[list[str]], options: dict[str,
 
 
 def mutation_search(config: dict[str, Any], root: Path, parents: Callable[[dict[str, Any]], list[str]],
-                    label: str, seed: int = 0) -> Proposer:
+                    label: str, seed: int = 0, guided: bool = False) -> Proposer:
     """Black-box control: each offspring copies a parent (uniform over ``parents(analysis)``), switches
     MUTATION_CELLS random layers to another method the table has an entry for, changes one option with
     OPTION_RATE, then steps random layers down to cheaper tabled methods until the grid fits the budget
     (EvoPress-style level switches, one fidelity), and drops the options of methods no longer in the grid.
     Offspring that are seen, over budget after repair, or do not build are dropped before they are proposed.
     No table prediction or catalog is used. Deterministic: the random stream is seeded by (label, seed,
-    round)."""
+    round). ``guided`` (the information-matched control): instead of the random switches, the offspring
+    takes one of the parent's GUIDED_MOVES budget-fitting tabled moves (``app.tune_agent.neighbors``, the
+    analysis' ``tabled_moves``) with weight 1 / (rank + 1); options mutate and selection uses measurements
+    as without it."""
     table, _, layers, _ = ta.load_full_table(root / config["table"])
     objective = at.objective(table, subtract_floor=True)
     allowed = {layer.name: sorted(method for method, value in objective[layer.name].items()
                                   if value is not None) for layer in layers}
+    tabled: dict[str, list[dict[str, Any]]] = {}
+
+    def moves(parent: str, spec: dict[str, Any]) -> list[dict[str, Any]]:
+        if parent not in tabled:  # ranked without options: the table has entries for the defaults only
+            try:
+                tabled[parent] = ta.neighbors({**spec, "options": None}, root / config["table"],
+                                              Fraction(config["budget_bits"]), GUIDED_MOVES)
+            except ta.TuneError:
+                tabled[parent] = []
+        return tabled[parent]
     budget = Fraction(config["budget_bits"])
     total = sum(layer.params for layer in layers)
 
@@ -340,11 +354,19 @@ def mutation_search(config: dict[str, Any], root: Path, parents: Callable[[dict[
             spec = json.loads(json.dumps(ta.read_proposal(session, parent)["spec"]))
             base = _cells(spec["grid"])
             grid, options = spec["grid"], dict(spec.get("options") or {})
-            switches = rng.choice(MUTATION_CELLS)
-            for layer in rng.sample(layers, switches):
-                current = grid[layer.block][qr.KINDS.index(layer.kind)]
-                grid[layer.block][qr.KINDS.index(layer.kind)] = rng.choice(
-                    [method for method in allowed[layer.name] if method != current] or [current])
+            if guided:
+                ranked = moves(parent, spec)
+                if not ranked:
+                    break
+                move = rng.choices(ranked, weights=[1 / (rank + 1) for rank in range(len(ranked))])[0]
+                grid = spec["grid"] = json.loads(json.dumps(move["grid"]))
+                switches = sum(1 for key, method in _cells(grid).items() if base[key] != method)
+            else:
+                switches = rng.choice(MUTATION_CELLS)
+                for layer in rng.sample(layers, switches):
+                    current = grid[layer.block][qr.KINDS.index(layer.kind)]
+                    grid[layer.block][qr.KINDS.index(layer.kind)] = rng.choice(
+                        [method for method in allowed[layer.name] if method != current] or [current])
             option = _mutate_option(rng, grid, options) if rng.random() < OPTION_RATE else None
             for _ in range(4 * len(layers)):
                 if fits(grid, options):
@@ -540,12 +562,40 @@ def hybrid(first: Proposer, then: Proposer, rounds: int) -> Proposer:
     return propose
 
 
-def evolution(config: dict[str, Any], root: Path, parents: int = 1, seed: int = 0) -> Proposer:
+def table_select(proposer: Proposer, config: dict[str, Any], root: Path, factor: int = 3) -> Proposer:
+    """The other information-matched control: ``proposer`` (Claude Code) writes ``factor`` x as many
+    proposals, and the table picks which are measured: least predicted KL sum (floors subtracted) first,
+    proposals the table cannot predict (options, other calibration) after them in the proposer's order;
+    proposals that do not build or are over budget are passed on, so the usual checks refuse them."""
+    def propose(analysis: dict[str, Any], round_number: int, count: int) -> dict[str, Any]:
+        reply = check_reply(proposer(analysis, round_number, factor * count))
+        session, budget = root / config["session"], Fraction(config["budget_bits"])
+        scored = []
+        for order, item in enumerate(reply["proposals"]):
+            try:
+                spec = json.loads(json.dumps(ta.read_proposal(session, item["base"])["spec"]))
+                for change in item["changes"]:
+                    spec["grid"][change["block"]][qr.KINDS.index(change["kind"])] = change["method"]
+                if item.get("options") is not None:
+                    spec["options"] = item["options"] or None
+                predicted = ta.evaluate(spec, root / config["table"], budget)["predicted"][
+                    "predicted_kl_sum_minus_floor"]
+            except (ta.TuneError, IndexError, KeyError, ValueError):
+                predicted = None
+            scored.append((predicted is None, predicted or 0.0, order, item))
+        chosen = [item for *_, item in sorted(scored, key=lambda row: row[:3])[:count]]
+        return {**reply, "analysis": f"{reply['analysis']} [table-select {len(chosen)} of "
+                                     f"{len(reply['proposals'])}]", "proposals": chosen}
+    return propose
+
+
+def evolution(config: dict[str, Any], root: Path, parents: int = 1, seed: int = 0,
+              guided: bool = False) -> Proposer:
     """``mutation_search`` from the ``parents`` best measured proposals: (mu + lambda) with mu = ``parents``,
     EvoPress's (1 + lambda) for 1."""
     def best(analysis: dict[str, Any]) -> list[str]:
         return [row["name"] for row in analysis["history"][:parents]]
-    return mutation_search(config, root, best, "evolution", seed)
+    return mutation_search(config, root, best, "evolution-table" if guided else "evolution", seed, guided)
 
 
 def random_search(config: dict[str, Any], root: Path, seed: int = 0) -> Proposer:
@@ -893,7 +943,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                         help="default 2; with --measurements the round cap, default 3 x the rounds needed")
     runner.add_argument("--per-round", type=int, default=4)
     runner.add_argument("--proposer", choices=("claude-code", "auto-greedy", "evolution", "random", "tpe",
-                                               "option-greedy", "claude-then-tpe"), default="claude-code")
+                                               "option-greedy", "claude-then-tpe", "evolution-table",
+                                               "claude-table-select"), default="claude-code")
     runner.add_argument("--seed-rounds", type=int, default=2, help="claude-then-tpe: rounds of Claude first")
     runner.add_argument("--stale-rounds", type=int, default=2, help="0: never stop for lack of improvement")
     runner.add_argument("--seed", type=int, default=0, help="evolution / random: the random stream")
@@ -925,6 +976,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             "option-greedy": lambda: (option_greedy(config, root), "option-greedy"),
             "claude-then-tpe": lambda: (hybrid(claude_code(config, root), tpe_search(config, root, args.seed),
                                                args.seed_rounds), "claude-then-tpe"),
+            "evolution-table": lambda: (evolution(config, root, args.parents, args.seed, guided=True),
+                                        "evolution-table"),
+            "claude-table-select": lambda: (table_select(claude_code(config, root), config, root),
+                                            "claude-table-select"),
         }[args.proposer]()
         result = run(config, root, args.rounds, args.per_round, proposer, author,
                      lambda number, names: measure_remote(config, root, number, names),

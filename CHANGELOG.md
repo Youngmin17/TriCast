@@ -30,6 +30,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   and the Quantizer methods `awq_clip_int4|3` (AWQ scales, then the clip); `awq_int4|3` stay scale-only.
 - One GEMM accumulation per recipe (`quantizer_recipe.build(mma=...)`, `autotune table --mma fp32_fma`): the
   table's method recipes and floors use it, solve writes it, and the tune loop refuses a grid with another.
+- Information-matched controls: `--proposer evolution-table` (evolution drawing one of the parent's 50 tabled
+  moves by rank) and `--proposer claude-table-select` (Claude proposes 3x, the table picks what is measured).
 - Anonymous-methods ablation of the Claude proposer (`llm.mask: anonymous`, `llm.alias_seed`): method ids
   become seeded aliases in the prompt and schema, cards are withheld, replies are decoded before the checks.
 - Comparison arms for the tune loop: Optuna TPE (`--proposer tpe`, study rebuilt from the session each round),

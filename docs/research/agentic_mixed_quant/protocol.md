@@ -97,7 +97,7 @@
 | 옵션 탐색 | 최선 배정에서 방법 옵션 하나씩 바꾸는 좌표 탐색 (칸은 고정) | N | 이력 | `--proposer option-greedy` — 지금까지의 에이전트 이득을 설명하는 가장 단순한 대안 |
 | 에이전트 | Claude Opus · Sonnet · Haiku + 오픈 모델 1종 | N | 전체 분석 | `--proposer claude-code` |
 | 절제 | 에이전트 − 측정 이력 · − 원장 검색(카탈로그 · 카드) · − 표 분석 · − 옵션 공간 · − 결정적 검사 · 방법 이름 익명화 | N | 마스킹 | `llm.mask` (no-history · no-evidence · no-table · no-options · anonymous), `checks: false`. anonymous = 방법 이름을 seed 고정 별칭(`method_<letters>`)으로 바꾸고 카드를 숨김; 옵션 공간 · 비트 비용 · 측정값은 보인다 |
-| 정보 맞춤 | 블랙박스 + 표 정보(표 예측 가중 변이) · LLM 제안 + 탐욕 선택 | N | 표 | 추가 예정 — "정책 vs 연산자" 귀속 분리 (AIRA-dojo) |
+| 정보 맞춤 | 블랙박스 + 표 정보 · LLM 제안 + 표 선택 | N | 표 | `--proposer evolution-table`: 부모의 표 예측 상위 50개 이동(분석의 `tabled_moves`와 같음) 중 하나를 1/(순위+1) 가중으로 뽑는 진화, 선택은 측정만. `--proposer claude-table-select`: Claude 가 3배를 제안하고 표 예측 KL 순으로 측정할 것을 고른다. "정책 vs 연산자" 귀속 분리 (AIRA-dojo) |
 | C3 확인 | CALM (층별 GPTQ/AWQ/SQ, CKA greedy) | — | — | 재구현 (공식 코드 미확인) |
 
 - 정보량이 다르다는 점(블랙박스는 이력만, 에이전트는 층별 손실 · 예측 · 카탈로그까지)은 2026-11-03 리뷰가 지적했다. 그래서 "정보 맞춤" 행과 절제 행으로 귀속을 나눈다.
@@ -143,7 +143,7 @@
 | 트랙 M 풀: int2–4 GPTQ · RHT+GPTQ · AWQ int3/4 · HQQ · int8_w, 누산 `--mma` | `dd36b02` + 2026-11-04 (CPU 테스트), Llama-2-7B 균일 충실도 GPU 실행 중 | 공식 수치 대비 충실도 (AWQ v5 Tab 4 · OmniQuant v3 Tab 1 앵커) |
 | 트랙 C 연산 비용 모델 | 계획 | 출처 있는 처리량 비, 배낭 이중 제약 |
 | TPE · LLM-seeded TPE · 옵션 탐색 · 절제 마스킹 · 무검사 | 구현 (CPU 테스트) | 같은 루프, 같은 측정 수, 같은 검사 |
-| 정보 맞춤 arm · 이름 익명화 · 28 블록 초과 격자 | 격자 `7120c41`, 익명화 2026-11-04 (CPU 테스트), 정보 맞춤 arm 계획 | 같은 루프, 같은 측정 수 |
+| 정보 맞춤 arm · 이름 익명화 · 28 블록 초과 격자 | 격자 `7120c41`, 익명화 · 정보 맞춤 arm 2026-11-04 (CPU 테스트) | 같은 루프, 같은 측정 수 |
 | 외부 공식 비교군: ModelOpt AutoQuantize · EvoPress · AMQ | 재현 가능성 정적 조사 완료 ([lane_baselines.md](./lane_baselines.md)): EvoPress 높음 · ModelOpt 0.43.0 중간(측정 수 고정) · AMQ 중간. 실행 전 | quant-eval 재현 게이트 (EvoPress Tab 7 앵커, 공식 env) |
 | 공식 GPTQ GPU 게이트 (AC26) | 통과 (G1–G4, H200) | 증거 문서 G1–G4 |
 | 경쟁작 본문 (AutoQS, Explorer–Reviewer) | 사용자 결정 | 기관 접근 · 로그인 브라우저로 PDF 입수 |

@@ -461,7 +461,7 @@ methods:
   kb_key: null
   arxiv: "2306.00978"
   note: "Scale search is nested inside auto_scale_block per block type; only auto_clip_layer is truly per-Linear. AutoAWQ (casper-hansen) is third-party."
-  tricast: tricast_reimplementation  # transform awq (src/tricast/transforms.py), not the official code; weight-only form (int4_g128_zp RTN, no activation spec; Quantizer awq_int4, Python-only LOWBIT, tricast_native) searches every grid candidate with the int4 weight spec — tests/test_lowbit_methods.py
+  tricast: tricast_reimplementation  # transform awq (src/tricast/transforms.py), not the official code; weight-only form (int4_g128_zp RTN, no activation spec; Quantizer awq_int4, Python-only LOWBIT, tricast_native) searches every grid candidate with the int4 weight spec — tests/test_lowbit_methods.py; auto_clip absorbed 2026-11-04 as weight_algo awq_clip (tricast.weight_quant.clip, == the pinned official auto_clip_layer with the official quantizer, tests/test_awq_clip.py), Quantizer awq_clip_int4 / awq_clip_int3. Scale-search differences kept: alpha grid linspace(0,1,20) vs {0..0.95}, zero floor 1e-5 vs clamp 1e-4, summed Linear outputs vs module2inspect outputs, 4096-row reservoir
 - id: smoothquant
   name: SmoothQuant
   venue: ICML

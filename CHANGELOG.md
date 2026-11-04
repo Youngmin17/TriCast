@@ -26,6 +26,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   GPTQ with the rotated inputs' Hessian: QuIP#'s incoherence without its codebook), `awq_int3` and `int8_w`
   (W8A16). Every proposer, Claude Code included, now chooses among all Python-side methods. `hqq_int3` counts
   3.7 bits (ten 3-bit codes per int32), not 3.5.
+- AWQ's weight clipping (`weight_algo: awq_clip`, the official auto_clip_layer bit for bit with its quantizer)
+  and the Quantizer methods `awq_clip_int4|3` (AWQ scales, then the clip); `awq_int4|3` stay scale-only.
 - One GEMM accumulation per recipe (`quantizer_recipe.build(mma=...)`, `autotune table --mma fp32_fma`): the
   table's method recipes and floors use it, solve writes it, and the tune loop refuses a grid with another.
 - Comparison arms for the tune loop: Optuna TPE (`--proposer tpe`, study rebuilt from the session each round),

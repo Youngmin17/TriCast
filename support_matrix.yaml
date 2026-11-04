@@ -446,12 +446,14 @@ agent:
                 evidence: "app/tests/test_autotune_v2.py (CPU); GPU spike adopted, C1-C4 and C3' pass
                   (docs/spikes/2026-11-03_autotune_v2.md)"}
   lowbit_methods: {status: implemented, methods: [gptq_int3, gptq_int2, hqq_int3, hqq_int2, awq_int4, had_nvfp4,
-                     had_mxfp4, rht_gptq_int4, rht_gptq_int3, rht_gptq_int2, awq_int3, int8_w],
+                     had_mxfp4, rht_gptq_int4, rht_gptq_int3, rht_gptq_int2, awq_int3, int8_w, awq_clip_int4,
+                     awq_clip_int3],
                    note: "app.quantizer_recipe.LOWBIT (Python-only, off the page): track M (2-8 bit weight-only)
                      and track C (Hadamard + NVFP4 / MXFP4 W4A4). rht_gptq_*: QuIP#'s input-side incoherence
                      (random_hadamard, seed 0, block <= 128) then GPTQ on the rotated weight with the rotated
                      inputs' Hessian (tricast_native; no E8P codebook, no output-side rotation); awq_int3: AWQ on
-                     uint3 g128; int8_w: W8A16 per-row RTN. Calibrated gptq_int3 / gptq_int2 / rht_gptq_* (all
+                     uint3 g128 (awq_int4 / awq_int3: the AWQ scale search only); awq_clip_int4 / awq_clip_int3:
+                     the scales then the official auto_clip (weight_algo awq_clip); int8_w: W8A16 per-row RTN. Calibrated gptq_int3 / gptq_int2 / rht_gptq_* (all
                      kinds) and awq_int4 / awq_int3 (o_proj / down_proj only, like awq_nvfp4) are in
                      CALIBRATED_ALL, the page's CALIBRATED is unchanged; not in ALL_METHODS. Every proposer,
                      Claude Code included, chooses among PYTHON_METHODS (user decision 2026-11-04). WEIGHT_BITS
@@ -461,6 +463,17 @@ agent:
                    evidence: "app/tests/test_lowbit_extended.py (CPU: grids, --from-json, calibrated tiny table and
                      solve, bits, recorded hashes, page bundle unchanged); tests/test_lowbit_methods.py (CPU
                      fidelity)"}
+  awq_clip: {status: implemented, kind: tricast_reimplementation,
+             source: "mit-han-lab/llm-awq d6e797a4 (MIT) awq/quantize/auto_clip.py auto_clip_layer / auto_clip_block
+               / apply_clip: per [row, group] shrink 1 - i/20 (i < 10), output MSE on 512 subsampled calibration
+               tokens, q_ / k_ Linears unclipped, after the AWQ scales",
+             note: "weight_algo awq_clip (tricast.recipe.ClipSearchSpec, tricast.weight_quant.clip); the layer's
+               own weight spec quantizes (FP16 scale, not the official pseudo_quantize_tensor), the samples are the
+               4096-row calibration reservoir (official: every calibration token, then stride 512), a set smaller
+               than 512 tokens keeps all of them (the official stride would be 0); calibration cache format 4
+               stores the clip",
+             evidence: "tests/test_awq_clip.py (CPU): == the pinned official auto_clip_layer bit for bit with the
+               official quantizer (3 shapes, 2/3/4 bits); EmuLinear wiring, q/k skip, cache state, recipe checks"}
   track_mma: {status: implemented, note: "one GEMM accumulation per recipe (quantizer_recipe.build mma ->
                 defaults.mma, every quantized cell inherits it); autotune table --mma (method recipes, floors,
                 meta mma), solve writes it into grid.json / recipe.yaml, the tune loop keeps it through every

@@ -35,9 +35,9 @@ Calibrated methods (app.quantizer_recipe.CALIBRATED_ALL; only with --calibrate) 
 ``tricast.calibration.calibrate`` on that model state with the recipe's own calibration block (the --calib-*
 settings, as ``tricast run`` calibrates the solved recipe), then measure. Input sharing: AWQ and SmoothQuant
 fit one scale for all Linears that read the same input (q/k/v; gate/up) in a full recipe, so a one-layer
-calibration of those kinds is not the spec the full recipe gives them. awq_nvfp4, smoothquant_nvfp4,
-awq_int4 and awq_int3 are therefore tabled only for the kinds with a unique input (UNIQUE_INPUT: o_proj,
-down_proj); on q/k/v/gate/up their value is null and solve never chooses them there. gptq_int4 (and
+calibration of those kinds is not the spec the full recipe gives them. awq_nvfp4, smoothquant_nvfp4 and
+the awq_int / awq_clip_int methods are therefore tabled only for the kinds with a unique input (UNIQUE_INPUT:
+o_proj, down_proj); on q/k/v/gate/up their value is null and solve never chooses them there. gptq_int4 (and
 gptq_int3 / gptq_int2, the rht_gptq methods) is tabled for all seven kinds (GPTQ shares only the Hessian,
 which is the same for every reader of an input; the random Hadamard is fixed by its seed, not fitted).
 Calibration and KL windows: --split validation draws the KL windows (table and measure) from WikiText-2
@@ -94,7 +94,7 @@ FREE = tuple(m for m in qr.METHODS if m not in qr.CALIBRATED_ALL)  # bf16 nvfp4 
 # The Python-only methods (app.quantizer_recipe.EXTENDED: nf4 hqq_int4 razer_nvfp4; LOWBIT, whose GPTQ and AWQ
 # methods are calibrated) are tabled when --methods names them (the default stays FREE, the page's alphabet).
 # one scale per input in a full recipe (module docstring)
-SHARED_INPUT = ("awq_nvfp4", "smoothquant_nvfp4", "awq_int4", "awq_int3")
+SHARED_INPUT = ("awq_nvfp4", "smoothquant_nvfp4", "awq_int4", "awq_int3", "awq_clip_int4", "awq_clip_int3")
 UNIQUE_INPUT = ("o_proj", "down_proj")  # the kinds no other Linear of the block reads the input of
 # The patch floor: the layer patched with no quantization on the default MMA path (the control
 # runs/20261014_autotune/*/floor/ctrl_f23_b13_o.yaml of the v1 spike).

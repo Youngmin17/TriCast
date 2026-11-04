@@ -16,9 +16,10 @@ from ..quant.api import fake_quant, quantize
 from ..quant.observer import ObserverState
 from ..quant.spec import ObserverSpec, QuantSpec, TransformSpec
 from ..quant.structure import outlier_mask, sparsity_mask
-from ..recipe import WEIGHT_METHODS, LinearSpec
+from ..recipe import WEIGHT_METHODS, WEIGHT_SEARCHES, LinearSpec
 from ..transforms import LinearTransform, StatsCollector, fit_transform
 from ..weight_quant import quantize_weight, replace_weight
+from ..weight_quant.clip import apply_clip, clip_search, clip_skipped
 
 
 def _operand_value(operand: Operand) -> torch.Tensor:
@@ -158,6 +159,7 @@ class EmuLinear(nn.Module):
         self._weight_state = None
         self._weight_noise = None
         self._weight_operand = None
+        self._clip: torch.Tensor | None = None  # awq_clip: [rows, groups, 1], fitted in calibration
         self._outlier_operand = None
         self._calibrated = not self.needs_calibration
         if self._calibrated:
@@ -186,6 +188,8 @@ class EmuLinear(nn.Module):
         weight = (self.weight.detach() if self.spec.transform.kind == "none"
                   else self.transform.apply_weight(self.weight.detach()))
         weight, outliers, zeros = self._structure(weight)
+        if self._clip is not None:
+            weight = apply_clip(weight, self._clip)
         self._weight_noise = self._noise(weight, self.spec.weight)
         if self.spec.weight_algo.kind in WEIGHT_METHODS:
             operand = as_operand(replace_weight(weight, self.spec.weight_algo), compact=True)
@@ -279,7 +283,7 @@ class EmuLinear(nn.Module):
     @property
     def needs_calibration(self) -> bool:
         return (self.spec.transform.kind in ("smoothquant", "awq")
-                or self.spec.weight_algo.kind == "gptq"
+                or self.spec.weight_algo.kind in ("gptq", *WEIGHT_SEARCHES)
                 or (self.observer is not None and self.observer.spec.kind != "history"))
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
@@ -381,7 +385,8 @@ class EmuLinear(nn.Module):
         self._calibrated = False
         self._calibration_passthrough = True
         self._stats = StatsCollector(self.in_features, want_xtx=False,
-                                     want_samples=self.spec.transform.kind == "awq")
+                                     want_samples=self.spec.transform.kind == "awq"
+                                     or self.spec.weight_algo.kind in WEIGHT_SEARCHES)
         self._hessian, self._n_rows = None, 0
         self._hessian_accumulator = (hessian_accumulator if hessian_accumulator is not None
                                      else HessianAccumulator())
@@ -393,6 +398,22 @@ class EmuLinear(nn.Module):
             self.observer = ObserverState(self.spec.activation.observer)
             if self.spec.transform.kind in ("smoothquant", "awq"):
                 self._diagonal_observer = _DiagonalObserverStats(self.observer.spec)
+
+    def _fit_clip(self) -> torch.Tensor | None:
+        """awq_clip: the clip values of the transformed weight on the transformed calibration samples (AWQ
+        clips after its scales), or None for every other weight_algo and for the Linears AWQ skips."""
+        algo = self.spec.weight_algo
+        if algo.kind not in WEIGHT_SEARCHES or clip_skipped(self.name):
+            return None
+        samples = self._stats.result().samples
+        if samples is None or samples.shape[0] == 0:
+            raise ValueError(f"{self.name}: {algo.kind} needs calibration samples")
+        weight = self.transform.apply_weight(self.weight.detach()).float()
+        inputs = self.transform.apply_activation(samples.to(weight.device)).float()
+        spec = self.spec.weight
+        group = spec.group_size if spec.granularity == "group" else self.in_features
+        return clip_search(weight, inputs, lambda w: fake_quant(w, spec, backend=self.backend), group,
+                           n_grid=algo.n_grid, max_shrink=algo.max_shrink, n_sample_token=algo.n_sample_token)
 
     @torch.no_grad()
     def prepare_calibration(self, transform: LinearTransform | None = None) -> None:
@@ -415,6 +436,7 @@ class EmuLinear(nn.Module):
             self.observer = self._diagonal_observer.restore(self.transform, self.weight.device)
         self._hessian_replay = (self.spec.transform.kind in ("smoothquant", "awq")
                                 and self.spec.weight_algo.kind == "gptq")
+        self._clip = self._fit_clip()
         self._calibration_prepared = True
 
     @torch.no_grad()

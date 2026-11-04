@@ -183,6 +183,13 @@
       ],
       "description": "Replace the weight by one method's quantize-dequantize result on BF16 (weight: null): bitsandbytes NF4 (block 64), official HQQ 4-bit (hqq) / 3-bit (hqq3) / 2-bit (hqq2) (group 64), RaZeR NVFP4 (E4M3 block scale)."
     },
+    "weight_search": {
+      "type": "string",
+      "enum": [
+        "awq_clip"
+      ],
+      "description": "Search each [row, group] quantization range on calibration inputs, then round to nearest with the weight spec: AWQ's auto_clip (shrink 1 - i/n_grid, i < max_shrink * n_grid, output MSE on n_sample_token tokens; q_/k_ Linears unclipped)."
+    },
     "algorithm": {
       "type": "string",
       "enum": [
@@ -677,7 +684,7 @@
     },
     "weight_algo_object": {
       "type": "object",
-      "description": "Weight rounding algorithm and GPTQ solver parameters.",
+      "description": "Weight rounding algorithm, GPTQ solver parameters and awq_clip search parameters.",
       "properties": {
         "kind": {
           "anyOf": [
@@ -686,6 +693,9 @@
             },
             {
               "$ref": "#/$defs/weight_method"
+            },
+            {
+              "$ref": "#/$defs/weight_search"
             }
           ]
         },
@@ -699,6 +709,19 @@
         },
         "act_order": {
           "type": "boolean"
+        },
+        "n_grid": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_shrink": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "exclusiveMaximum": 1
+        },
+        "n_sample_token": {
+          "type": "integer",
+          "minimum": 1
         }
       },
       "additionalProperties": false
@@ -710,6 +733,9 @@
         },
         {
           "$ref": "#/$defs/weight_method"
+        },
+        {
+          "$ref": "#/$defs/weight_search"
         },
         {
           "$ref": "#/$defs/weight_algo_object"

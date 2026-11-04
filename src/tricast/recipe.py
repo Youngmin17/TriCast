@@ -55,8 +55,39 @@ class WeightMethodSpec(WeightAlgoSpec):
             raise ValueError(f"unknown weight algorithm {self.kind!r}")
 
 
+# weight_algo kinds that search the weight's quantization range on calibration inputs, then round it to
+# nearest with the layer's weight spec: awq_clip (AWQ's auto_clip, tricast.weight_quant.clip). Carried by
+# ClipSearchSpec, a WeightAlgoSpec subclass with the search's own fields (GPTQ's three are unused).
+WEIGHT_SEARCHES = ("awq_clip",)
+
+
+@dataclass(frozen=True)
+class ClipSearchSpec(WeightAlgoSpec):
+    """weight_algo awq_clip: per [row, group] clip search (shrink 1 - i/n_grid, i < max_shrink * n_grid)
+    on ``n_sample_token`` calibration tokens, then RTN; Linears named q_ / k_ / query / key / Wqkv are not
+    clipped (llm-awq auto_clip_block). ``block_size`` / ``damp`` / ``act_order`` are GPTQ's and unused."""
+
+    n_grid: int = 20
+    max_shrink: float = 0.5
+    n_sample_token: int = 512
+
+    def __post_init__(self) -> None:
+        if self.kind not in WEIGHT_SEARCHES:
+            raise ValueError(f"unknown weight algorithm {self.kind!r}")
+        if isinstance(self.n_grid, bool) or not isinstance(self.n_grid, int) or self.n_grid < 1:
+            raise ValueError("n_grid must be a positive integer")
+        if not 0 < self.max_shrink < 1:
+            raise ValueError("max_shrink must be in (0, 1)")
+        if (isinstance(self.n_sample_token, bool) or not isinstance(self.n_sample_token, int)
+                or self.n_sample_token < 1):
+            raise ValueError("n_sample_token must be a positive integer")
+
+
 def _weight_algo(data: dict) -> WeightAlgoSpec:
-    return (WeightMethodSpec if data.get("kind") in WEIGHT_METHODS else WeightAlgoSpec)(**data)
+    kind = data.get("kind")
+    if kind in WEIGHT_SEARCHES:
+        return ClipSearchSpec(**data)
+    return (WeightMethodSpec if kind in WEIGHT_METHODS else WeightAlgoSpec)(**data)
 
 
 @dataclass
@@ -82,11 +113,17 @@ class LinearSpec:
             # the transform fit (e.g. AWQ's scale search) quantizes with the weight spec, which is null here,
             # so it would never see this method's weight error
             raise ValueError(f"transform: not supported with weight_algo {self.weight_algo.kind}")
-        if self.weight_algo.kind == "gptq":
+        if self.weight_algo.kind in ("gptq", *WEIGHT_SEARCHES):
             if self.sparsity.kind != "none":
-                raise ValueError("sparsity: not supported with gptq")
+                raise ValueError(f"sparsity: not supported with {self.weight_algo.kind}")
             if self.outliers is not None:
-                raise ValueError("outliers: not supported with gptq")
+                raise ValueError(f"outliers: not supported with {self.weight_algo.kind}")
+        if self.weight_algo.kind in WEIGHT_SEARCHES:
+            if self.weight is None:
+                raise ValueError(f"weight_algo: {self.weight_algo.kind} requires a weight QuantSpec")
+            if self.weight.granularity not in ("group", "row"):
+                raise ValueError(f"weight_algo: {self.weight_algo.kind} needs a group or row weight spec, "
+                                 f"not {self.weight.granularity}")
 
 
 def _json_value(value: Any) -> Any:
@@ -253,7 +290,7 @@ class Recipe:
         )
         return any(
             spec.transform.kind in ("smoothquant", "awq")
-            or spec.weight_algo.kind == "gptq"
+            or spec.weight_algo.kind in ("gptq", *WEIGHT_SEARCHES)
             or any(q is not None and q.observer is not None and q.observer.kind != "history"
                    for q in (spec.weight, spec.activation))
             for spec in specs

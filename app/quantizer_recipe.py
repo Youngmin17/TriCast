@@ -89,7 +89,9 @@ ALL_METHODS: dict[str, dict[str, Any] | None] = {**METHODS, **EXTENDED}
 # 2026-11-04 (track M, lower budgets): rht_gptq_int4 / int3 / int2: QuIP#'s incoherence processing on the
 # input side (random_hadamard T = D H, seed 0, the same block rule) then GPTQ on W T with the Hessian of the
 # rotated inputs, BF16 activations rotated online (weight-only; tricast_native, no codebook); awq_int3:
-# awq_int4 on uint3; int8_w: W8A16, int8's per-row weight with BF16 activations.
+# awq_int4 on uint3; int8_w: W8A16, int8's per-row weight with BF16 activations. awq_int4 / awq_int3 search
+# the AWQ scales only; awq_clip_int4 / awq_clip_int3 add the official auto_clip (weight_algo awq_clip), as
+# llm-awq's INT recipe does.
 LOWBIT: dict[str, dict[str, Any]] = {
     "gptq_int3": {"weight": {"scheme": "int4_g128_zp", "format": "uint3"}, "activation": None,
                   "transform": "none", "weight_algo": "gptq"},
@@ -112,12 +114,16 @@ LOWBIT: dict[str, dict[str, Any]] = {
     "awq_int3": {"weight": {"scheme": "int4_g128_zp", "format": "uint3"}, "activation": None,
                  "transform": {"kind": "awq", "share_inputs": True}, "weight_algo": "rtn"},
     "int8_w": {"weight": _q("int8_row"), "activation": None, "transform": "none", "weight_algo": "rtn"},
+    "awq_clip_int4": {"weight": "int4_g128_zp", "activation": None,
+                      "transform": {"kind": "awq", "share_inputs": True}, "weight_algo": "awq_clip"},
+    "awq_clip_int3": {"weight": {"scheme": "int4_g128_zp", "format": "uint3"}, "activation": None,
+                      "transform": {"kind": "awq", "share_inputs": True}, "weight_algo": "awq_clip"},
 }
 PYTHON_METHODS: dict[str, dict[str, Any] | None] = {**ALL_METHODS, **LOWBIT}  # what build / resolve accept
 # page data (the page catalog's calibration flags); Python-side checks use CALIBRATED_ALL
 CALIBRATED = {"gptq_int4", "awq_nvfp4", "smoothquant_nvfp4"}
 CALIBRATED_ALL = CALIBRATED | {"gptq_int3", "gptq_int2", "awq_int4", "rht_gptq_int4", "rht_gptq_int3",
-                               "rht_gptq_int2", "awq_int3"}
+                               "rht_gptq_int2", "awq_int3", "awq_clip_int4", "awq_clip_int3"}
 KV = {"none": None, "kivi2": {"preset": "kivi2", "mode": "fakequant"},
       "kivi4": {"preset": "kivi4", "mode": "fakequant"}, "kv_fp8": {"preset": "kv_fp8", "mode": "fakequant"}}
 DESCRIPTION = "Built with the Tri-Cast Quantizer demo (one method per Linear layer)."
@@ -202,7 +208,8 @@ LOWBIT_OPTIONS: dict[str, tuple[str, ...]] = {
     "gptq_int3": METHOD_OPTIONS["gptq_int4"], "gptq_int2": METHOD_OPTIONS["gptq_int4"], "awq_int4": _AWQ_INT,
     "had_nvfp4": METHOD_OPTIONS["nvfp4"], "had_mxfp4": METHOD_OPTIONS["mxfp4"],
     "rht_gptq_int4": METHOD_OPTIONS["gptq_int4"], "rht_gptq_int3": METHOD_OPTIONS["gptq_int4"],
-    "rht_gptq_int2": METHOD_OPTIONS["gptq_int4"], "awq_int3": _AWQ_INT,
+    "rht_gptq_int2": METHOD_OPTIONS["gptq_int4"], "awq_int3": _AWQ_INT, "awq_clip_int4": _AWQ_INT,
+    "awq_clip_int3": _AWQ_INT,
     "int8_w": ("weight.scale.method", "weight.scale.percentile", "weight.rounding"),
 }
 CALIBRATING_OBSERVERS = ("minmax", "ema", "percentile")  # tricast: all observers but history calibrate

@@ -85,6 +85,7 @@ WEIGHT_BITS: dict[str, tuple[int, int, int | None]] = {
     # as gptq_int4 / int3 / int2: the RHT's signs come from its seed, so they are not stored
     "rht_gptq_int4": (4, 20, 128), "rht_gptq_int3": (3, 19, 128), "rht_gptq_int2": (2, 18, 128),
     "awq_int3": (3, 19, 128),    # as gptq_int3
+    "awq_clip_int4": (4, 20, 128), "awq_clip_int3": (3, 19, 128),  # as awq_int4 / awq_int3 (clipping is free)
     "int8_w": (8, 32, None),     # as int8: fp32 scale per output row
 }
 

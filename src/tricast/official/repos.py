@@ -37,6 +37,11 @@ REPOS: dict[str, OfficialRepo] = {
         "https://github.com/IST-DASLab/gptq.git", "2d65066eeb06a5c9ff5184d8cebdf33662c67faf",
         "Apache-2.0", ("gptq.py", "quant.py", "datautils.py", "llama.py"),
     ),
+    "awq": OfficialRepo(  # read by the fidelity test of tricast.weight_quant.clip (no runtime use; the
+        # modules import the awq_inference_engine CUDA extension, so the test runs the two pinned functions)
+        "https://github.com/mit-han-lab/llm-awq.git", "d6e797a42b9ef7778de8ee2352116e0f48a78d61", "MIT",
+        ("awq/quantize/auto_clip.py", "awq/quantize/quantizer.py"),
+    ),
     "razer": OfficialRepo(  # read by the fidelity test of tricast.weight_quant.razer (no runtime use)
         "https://github.com/abdelfattah-lab/NVFP4-RaZeR.git", "78be7fc78857b635ef789edf817cab77cc7f4a01",
         "MIT",

@@ -36,7 +36,7 @@
 
 | 트랙 | 방법 풀 | 제약 | 비교 대상 문헌 |
 |---|---|---|---|
-| **M (메모리)** | 가중치 전용(A16): GPTQ int2/3/4 · RHT+GPTQ int2/3/4 · AWQ int3/4 · HQQ 2/3/4 · NF4 · INT8 (W8A16) | 평균 가중치 저장 비트 ≤ B | 혼합 정밀도 PTQ (SliM-LLM 등, 감사로 확정) |
+| **M (메모리)** | 가중치 전용(A16): GPTQ int2/3/4 · RHT+GPTQ int2/3/4 · AWQ int3/4 (스케일만 · 스케일+clip) · HQQ 2/3/4 · NF4 · INT8 (W8A16) | 평균 가중치 저장 비트 ≤ B | 혼합 정밀도 PTQ (SliM-LLM 등, 감사로 확정) |
 | **C (칩 연산)** | 칩 형식 W×A: NVFP4 · MXFP4 · MXFP8 · INT8 · SmoothQuant · AWQ+NVFP4 · RaZeR · Four-over-Six (+ 회전 계열은 흡수 후) | 가중치 비트 ≤ B **그리고** 연산 비용 ≤ C | W4A4/FP4 PTQ |
 
 - 트랙 C 의 연산 비용은 MAC 가중 합으로 센다. 가중치는 형식별 텐서코어 처리량의 역수다.

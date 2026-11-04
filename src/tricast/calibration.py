@@ -32,7 +32,7 @@ from .recipe import Recipe, _json_value, load_recipe
 from .transforms import LinearTransform, fit_transform_group
 
 DEFAULT_HESSIAN_MAX_BYTES = 4 * 1024**3
-CACHE_FORMAT = 3  # bump when the stored layer state or the key layout changes
+CACHE_FORMAT = 4  # bump when the stored layer state or the key layout changes (4: awq_clip values)
 _FORMATS = {"float": FloatFormat, "int": IntFormat, "pow2": Pow2Format}
 
 
@@ -584,7 +584,7 @@ def _layer_state(layer: EmuLinear) -> dict:
             "observer": None if layer.observer is None else layer.observer.state_dict(),
             "weight_operand": _operand_data(layer._weight_operand),
             "outlier_operand": _operand_data(layer._outlier_operand),
-            "weight_noise": _cpu(layer._weight_noise)}
+            "weight_noise": _cpu(layer._weight_noise), "clip": _cpu(layer._clip)}
 
 
 def _restore_layer(layer: EmuLinear, state: dict) -> None:
@@ -600,6 +600,7 @@ def _restore_layer(layer: EmuLinear, state: dict) -> None:
     layer._weight_operand = _operand(state["weight_operand"], device)
     layer._outlier_operand = _operand(state["outlier_operand"], device)
     layer._weight_noise = _to(state["weight_noise"], device)
+    layer._clip = _to(state["clip"], device)
     layer._weight_state = tensor_state(layer.weight)
 
 

@@ -180,6 +180,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     at._seed(args.seed)
     env = capture_env(args.model, {"seed": args.seed, "dtype": dtype, "device": args.device})
     model, tokenizer = at._load(args.model, dtype, args.device, args.revision or env.get("model_sha"))
+    actual = getattr(model.config, "_commit_hash", None)  # the revision loaded, as app.autotune.open_session
+    if actual and env.get("model_kind") != "local":
+        env["model_sha"] = actual
     layers, blocks = at.model_layers(model)
     texts = _dataset_texts("wikitext2", args.split)
     windows = _windows(tokenizer, texts, None, args.windows, args.seqlen, args.seed)

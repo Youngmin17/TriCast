@@ -1,0 +1,365 @@
+{
+ "run_id": "2026-11-04T0926",
+ "case_id": "a_h1",
+ "calls": [
+  {
+   "role": "proposer",
+   "key": "round_1",
+   "returncode": 0,
+   "stdout": {
+    "duration_api_ms": 85390,
+    "stop_reason": "tool_use",
+    "session_id": "f03f871f-485b-445c-acde-4b2b2f5535d1",
+    "total_cost_usd": 0.306058,
+    "usage": {
+     "input_tokens": 2,
+     "cache_creation_input_tokens": 17093,
+     "cache_read_input_tokens": 1508,
+     "output_tokens": 8354,
+     "output_tokens_details": {
+      "thinking_tokens": 6038
+     },
+     "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+     },
+     "service_tier": "standard",
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 17093,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "inference_geo": "global",
+     "iterations": [
+      {
+       "input_tokens": 2,
+       "output_tokens": 8354,
+       "cache_read_input_tokens": 1508,
+       "cache_creation_input_tokens": 17093,
+       "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 17093
+       },
+       "type": "message"
+      }
+     ],
+     "speed": "standard",
+     "fallback_credit": null
+    },
+    "modelUsage": {
+     "claude-haiku-5-5": {
+      "inputTokens": 17319,
+      "outputTokens": 385,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.0019244000000000002,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 355,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 0,
+      "canonicalModel": "claude-haiku-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     },
+     "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 8354,
+      "cacheReadInputTokens": 1508,
+      "cacheCreationInputTokens": 17093,
+      "webSearchRequests": 0,
+      "costUSD": 0.3041336,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 6038,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 17093,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "extra_usage_disabled",
+    "subagent_stats": {
+     "spawned": 0,
+     "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+     },
+     "started_in_background": 0,
+     "max_depth": 0,
+     "spawned_by_subagents": 0,
+     "completed": 0,
+     "failed": 0,
+     "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+     },
+     "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+     },
+     "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 2,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "{\"analysis\":\"Only iso_3.15 has been measured (KL 0.43614, predicted 0.39826). It sits about 0.00048 bits per weight under the 403/128 budget, which is too little to pay for an MLP upgrade.\\n\\nSingle-layer method moves look close to exhausted. The retrieved layers already use their best method at their bit width, or nearly so, except for gaps between bit widths. Downgrades to pay for upgrades look costly: on 27.up, for example, gptq_int3 to gptq_int2 adds about 0.021 KL. No record covers option effects because all measurements use default options, so options are the main untested lever.\\n\\nThis round tests:\\n- two zero-bit option changes (act_order, damp), kept separate so their effects can be told apart\\n- one group_size=256 trade, which should free bits to pay for upgrades\\n- one bundle of tabled moves that look bit-neutral\\n\\nUnverified assumptions:\\n- Bit costs are inferred from bits_delta_per_weight. Group-size savings assume scale overhead scales inversely with group size.\\n- The q/k/v/o parameter counts behind the funding estimate are inferred, not measured, so the group_size proposal could be refused as over budget. Its funding is tight only in the worst case.\\n- The options format is assumed to be nested per method, matching option_space.\\n- Tabled moves are assumed bit-neutral because funded_by is empty. Their predicted gains are small and may not be distinguishable from noise.\\n\\nThe 'quip_e8p single-layer KL 0.0001 [E111111111111]' line in the 27.up document is not used. It sits outside the table listing, and quip_e8p is not an available method.\",\"stop\":false,\"proposals\":[{\"name\":\"iso_actorder\",\"base\":\"iso_3.15\",\"changes\":[],\"options\":{\"gptq_int2\":{\"weight_algo.act_order\":true},\"gptq_int3\":{\"weight_algo.act_order\":true},\"gptq_int4\":{\"weight_algo.act_order\":true},\"rht_gptq_int2\":{\"weight_algo.act_order\":true},\"rht_gptq_int3\":{\"weight_algo.act_order\":true},\"rht_gptq_int4\":{\"weight_algo.act_order\":true}},\"rationale\":\"The base iso_3.15 measured KL 0.43614466651129274 with empty options, so no ordering option has been measured on this grid. This grid sets weight_algo.act_order=true on all GPTQ-family methods and changes no layer method. Activations are heavy-tailed on the top-loss layer model.layers.27.mlp.up_proj, with activation kurtosis 1090.09 and activation channel_absmax_ratio 65.2425, which is why ordering by activation is worth testing. The effect itself is unmeasured.\",\"cites\":[\"E514ab09c524e\",\"E24beed188b6a\",\"E3c29dce14bae\"]},{\"name\":\"iso_damp_high\",\"base\":\"iso_3.15\",\"changes\":[],\"options\":{\"gptq_int2\":{\"weight_algo.damp\":0.1},\"gptq_int3\":{\"weight_algo.damp\":0.1},\"gptq_int4\":{\"weight_algo.damp\":0.1},\"rht_gptq_int2\":{\"weight_algo.damp\":0.1},\"rht_gptq_int3\":{\"weight_algo.damp\":0.1},\"rht_gptq_int4\":{\"weight_algo.damp\":0.1}},\"rationale\":\"The base iso_3.15 measured KL 0.43614466651129274 on validation windows with empty options. This grid sets weight_algo.damp=0.1 on all GPTQ-family methods and changes no layer method. It tests whether stronger regularization of the calibration statistics lowers validation KL when activations have outlier channels, such as activation kurtosis 241.283 on model.layers.3.mlp.up_proj. The effect itself is unmeasured.\",\"cites\":[\"E514ab09c524e\",\"Eb1b68d163774\"]},{\"name\":\"iso_rht3_g256_upgrades\",\"base\":\"iso_3.15\",\"changes\":[{\"block\":14,\"kind\":\"down_proj\",\"method\":\"rht_gptq_int3\"},{\"block\":3,\"kind\":\"up_proj\",\"method\":\"rht_gptq_int4\"},{\"block\":1,\"kind\":\"up_proj\",\"method\":\"rht_gptq_int4\"}],\"options\":{\"rht_gptq_int3\":{\"weight.group_size\":256}},\"rationale\":\"This grid sets weight.group_size=256 on rht_gptq_int3 to lower stored bits and spends them on three layers with large measured single-layer gaps. On model.layers.14.mlp.down_proj, rht_gptq_int2 measured 0.00633466 and rht_gptq_int3 measured 0.00181478. On model.layers.3.mlp.up_proj, rht_gptq_int3 measured 0.0064177 and rht_gptq_int4 measured 0.00244828. On model.layers.1.mlp.up_proj, rht_gptq_int3 measured 0.00611131 and rht_gptq_int4 measured 0.00227173. Those KLs were measured at default options, so the KL cost of weight.group_size=256 is unmeasured and this grid tests it against the base KL 0.43614466651129274.\",\"cites\":[\"E514ab09c524e\",\"E4c3f9b73e065\",\"E90bd4b2f3645\",\"E6f4f7ea296d5\",\"Ef8ae5e6ba828\",\"E0564bc6ad1eb\",\"E779bc065b72e\"]},{\"name\":\"iso_tabled_neutral\",\"base\":\"iso_3.15\",\"changes\":[{\"block\":0,\"kind\":\"v_proj\",\"method\":\"gptq_int4\"},{\"block\":5,\"kind\":\"o_proj\",\"method\":\"gptq_int3\"},{\"block\":9,\"kind\":\"o_proj\",\"method\":\"gptq_int3\"},{\"block\":10,\"kind\":\"o_proj\",\"method\":\"gptq_int3\"},{\"block\":19,\"kind\":\"o_proj\",\"method\":\"gptq_int3\"},{\"block\":7,\"kind\":\"gate_proj\",\"method\":\"gptq_int3\"},{\"block\":26,\"kind\":\"o_proj\",\"method\":\"rht_gptq_int3\"},{\"block\":27,\"kind\":\"o_proj\",\"method\":\"rht_gptq_int3\"},{\"block\":0,\"kind\":\"o_proj\",\"method\":\"rht_gptq_int4\"}],\"options\":null,\"rationale\":\"This grid applies tabled moves listed with no funding layers on top of iso_3.15, which measured KL 0.43614466651129274 with empty options. Each move has a small positive single-layer prediction. iso_3.15 measured above its single-layer prediction, so this grid checks whether the moves still help when combined.\",\"cites\":[\"E514ab09c524e\"]}]}",
+    "structured_output": {
+     "analysis": "Only iso_3.15 has been measured (KL 0.43614, predicted 0.39826). It sits about 0.00048 bits per weight under the 403/128 budget, which is too little to pay for an MLP upgrade.\n\nSingle-layer method moves look close to exhausted. The retrieved layers already use their best method at their bit width, or nearly so, except for gaps between bit widths. Downgrades to pay for upgrades look costly: on 27.up, for example, gptq_int3 to gptq_int2 adds about 0.021 KL. No record covers option effects because all measurements use default options, so options are the main untested lever.\n\nThis round tests:\n- two zero-bit option changes (act_order, damp), kept separate so their effects can be told apart\n- one group_size=256 trade, which should free bits to pay for upgrades\n- one bundle of tabled moves that look bit-neutral\n\nUnverified assumptions:\n- Bit costs are inferred from bits_delta_per_weight. Group-size savings assume scale overhead scales inversely with group size.\n- The q/k/v/o parameter counts behind the funding estimate are inferred, not measured, so the group_size proposal could be refused as over budget. Its funding is tight only in the worst case.\n- The options format is assumed to be nested per method, matching option_space.\n- Tabled moves are assumed bit-neutral because funded_by is empty. Their predicted gains are small and may not be distinguishable from noise.\n\nThe 'quip_e8p single-layer KL 0.0001 [E111111111111]' line in the 27.up document is not used. It sits outside the table listing, and quip_e8p is not an available method.",
+     "stop": false,
+     "proposals": [
+      {
+       "name": "iso_actorder",
+       "base": "iso_3.15",
+       "changes": [],
+       "options": {
+        "gptq_int2": {
+         "weight_algo.act_order": true
+        },
+        "gptq_int3": {
+         "weight_algo.act_order": true
+        },
+        "gptq_int4": {
+         "weight_algo.act_order": true
+        },
+        "rht_gptq_int2": {
+         "weight_algo.act_order": true
+        },
+        "rht_gptq_int3": {
+         "weight_algo.act_order": true
+        },
+        "rht_gptq_int4": {
+         "weight_algo.act_order": true
+        }
+       },
+       "rationale": "The base iso_3.15 measured KL 0.43614466651129274 with empty options, so no ordering option has been measured on this grid. This grid sets weight_algo.act_order=true on all GPTQ-family methods and changes no layer method. Activations are heavy-tailed on the top-loss layer model.layers.27.mlp.up_proj, with activation kurtosis 1090.09 and activation channel_absmax_ratio 65.2425, which is why ordering by activation is worth testing. The effect itself is unmeasured.",
+       "cites": [
+        "E514ab09c524e",
+        "E24beed188b6a",
+        "E3c29dce14bae"
+       ]
+      },
+      {
+       "name": "iso_damp_high",
+       "base": "iso_3.15",
+       "changes": [],
+       "options": {
+        "gptq_int2": {
+         "weight_algo.damp": 0.1
+        },
+        "gptq_int3": {
+         "weight_algo.damp": 0.1
+        },
+        "gptq_int4": {
+         "weight_algo.damp": 0.1
+        },
+        "rht_gptq_int2": {
+         "weight_algo.damp": 0.1
+        },
+        "rht_gptq_int3": {
+         "weight_algo.damp": 0.1
+        },
+        "rht_gptq_int4": {
+         "weight_algo.damp": 0.1
+        }
+       },
+       "rationale": "The base iso_3.15 measured KL 0.43614466651129274 on validation windows with empty options. This grid sets weight_algo.damp=0.1 on all GPTQ-family methods and changes no layer method. It tests whether stronger regularization of the calibration statistics lowers validation KL when activations have outlier channels, such as activation kurtosis 241.283 on model.layers.3.mlp.up_proj. The effect itself is unmeasured.",
+       "cites": [
+        "E514ab09c524e",
+        "Eb1b68d163774"
+       ]
+      },
+      {
+       "name": "iso_rht3_g256_upgrades",
+       "base": "iso_3.15",
+       "changes": [
+        {
+         "block": 14,
+         "kind": "down_proj",
+         "method": "rht_gptq_int3"
+        },
+        {
+         "block": 3,
+         "kind": "up_proj",
+         "method": "rht_gptq_int4"
+        },
+        {
+         "block": 1,
+         "kind": "up_proj",
+         "method": "rht_gptq_int4"
+        }
+       ],
+       "options": {
+        "rht_gptq_int3": {
+         "weight.group_size": 256
+        }
+       },
+       "rationale": "This grid sets weight.group_size=256 on rht_gptq_int3 to lower stored bits and spends them on three layers with large measured single-layer gaps. On model.layers.14.mlp.down_proj, rht_gptq_int2 measured 0.00633466 and rht_gptq_int3 measured 0.00181478. On model.layers.3.mlp.up_proj, rht_gptq_int3 measured 0.0064177 and rht_gptq_int4 measured 0.00244828. On model.layers.1.mlp.up_proj, rht_gptq_int3 measured 0.00611131 and rht_gptq_int4 measured 0.00227173. Those KLs were measured at default options, so the KL cost of weight.group_size=256 is unmeasured and this grid tests it against the base KL 0.43614466651129274.",
+       "cites": [
+        "E514ab09c524e",
+        "E4c3f9b73e065",
+        "E90bd4b2f3645",
+        "E6f4f7ea296d5",
+        "Ef8ae5e6ba828",
+        "E0564bc6ad1eb",
+        "E779bc065b72e"
+       ]
+      },
+      {
+       "name": "iso_tabled_neutral",
+       "base": "iso_3.15",
+       "changes": [
+        {
+         "block": 0,
+         "kind": "v_proj",
+         "method": "gptq_int4"
+        },
+        {
+         "block": 5,
+         "kind": "o_proj",
+         "method": "gptq_int3"
+        },
+        {
+         "block": 9,
+         "kind": "o_proj",
+         "method": "gptq_int3"
+        },
+        {
+         "block": 10,
+         "kind": "o_proj",
+         "method": "gptq_int3"
+        },
+        {
+         "block": 19,
+         "kind": "o_proj",
+         "method": "gptq_int3"
+        },
+        {
+         "block": 7,
+         "kind": "gate_proj",
+         "method": "gptq_int3"
+        },
+        {
+         "block": 26,
+         "kind": "o_proj",
+         "method": "rht_gptq_int3"
+        },
+        {
+         "block": 27,
+         "kind": "o_proj",
+         "method": "rht_gptq_int3"
+        },
+        {
+         "block": 0,
+         "kind": "o_proj",
+         "method": "rht_gptq_int4"
+        }
+       ],
+       "options": null,
+       "rationale": "This grid applies tabled moves listed with no funding layers on top of iso_3.15, which measured KL 0.43614466651129274 with empty options. Each move has a small positive single-layer prediction. iso_3.15 measured above its single-layer prediction, so this grid checks whether the moves still help when combined.",
+       "cites": [
+        "E514ab09c524e"
+       ]
+      }
+     ]
+    },
+    "ttft_ms": 64344,
+    "type": "result",
+    "duration_ms": 82185,
+    "uuid": "104747ce-ac48-478d-abb4-86de710b62fe",
+    "ttft_stream_ms": 1224,
+    "time_to_request_ms": 315,
+    "time_to_request_phases_ms": {
+     "other": 1,
+     "system_prompt": 0,
+     "resume_other": 1,
+     "process_user_input": 2,
+     "input_attachments": 17,
+     "input_hooks": 1,
+     "conversation_append": 0,
+     "tool_pool_refresh": 3,
+     "init_message": 2,
+     "init_frame_send": 2,
+     "engine_pickup": 0,
+     "loop_entry": 2,
+     "message_prep": 0,
+     "model_config_wait": 2,
+     "autocompact": 0,
+     "request_announcements": 3,
+     "query_setup": 0,
+     "model_gates": 269,
+     "tool_schema_build": 5,
+     "message_normalization": 0,
+     "client_creation": 3,
+     "request_build": 2
+    },
+    "turn_start_resume_kind": "none",
+    "process_turn_index": 0,
+    "time_to_request_loop_lag_ms": 8,
+    "time_to_request_cpu_ms": 135,
+    "time_to_request_major_faults": 0,
+    "input_attachments_detail": {
+     "slowest_producer": "session_settings",
+     "slowest_producer_ms": 12,
+     "cpu_ms": 29,
+     "major_faults": 0,
+     "setup_ms": 0,
+     "prompt_producers_ms": 0,
+     "ambient_start_ms": 2,
+     "ambient_wait_ms": 11,
+     "render_ms": 1,
+     "producers": 43,
+     "token_counts": 0
+    },
+    "tool_schema_build_detail": {
+     "betas_ms": 0,
+     "waits_ms": 1,
+     "placement_ms": 3,
+     "render_ms": 1,
+     "after_ms": 0,
+     "other_ms": 0,
+     "tools": 1,
+     "new_schemas": 1
+    },
+    "message_normalization_detail": {
+     "before_ms": 0,
+     "normalize_ms": 0,
+     "images_ms": 0,
+     "post_process_ms": 0,
+     "after_ms": 0,
+     "other_ms": 0,
+     "messages": 8,
+     "wire_messages": 2
+    },
+    "request_build_detail": {
+     "records_ms": 0,
+     "system_ms": 0,
+     "headers_ms": 0,
+     "cache_break_record_ms": 1,
+     "plans_ms": 0,
+     "retry_setup_ms": 0,
+     "sent_build_ms": 0,
+     "record_attempt_ms": 0,
+     "other_ms": 1,
+     "sent_build_safety_context_ms": 0,
+     "sent_build_cache_breakpoints_ms": 0,
+     "sent_build_surrogate_scan_ms": 0
+    },
+    "first_content_frame_ms": 1225,
+    "queued_turn_count": 0,
+    "result_index": 0,
+    "credential_expires_at": "2026-11-26T06:54:29.041Z"
+   },
+   "stderr": ""
+  }
+ ]
+}

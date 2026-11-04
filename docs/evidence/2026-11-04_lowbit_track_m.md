@@ -107,3 +107,34 @@
 - 배낭 2.5 · 3.0 · 3.5 · 4.25 비트, 균일 기준선 15개. 검증 KL (seed 43) 과 test PPL.
 - 실행 스크립트 `runs/20261104_lowbit/qz_trackm_qwen.sh` (`MODE=auto|uniform`). geneva A100-SXM4 에 고정한다 (트랙 M 세션의 GPU 모델, §1.5).
 - 이 결과는 논문 프로토콜 §8 판정 기준을 정하기 전에 본다. 그래서 §8 의 수치 기준을 이 결과에 맞춰 고르지 않는다는 점을 사전 등록 커밋에 적는다.
+
+### 2.1 균일 기준선 결과 (geneva A100-SXM4, 트리 `9ecd7cb`, 02:14–03:18 UTC)
+
+- 출력 `/scratch/uceeeee/tricast/qz_trackm_qwen/`: `kl_seed43_uniform.json`, `ppl_uniform/`
+- 검증 KL: WikiText-2 validation 8 × 512 창, seed 43.
+- test PPL: 2048 창, `tricast run`.
+- 모든 레시피는 `defaults.mma: fp32_fma` 이고, 보정은 WikiText-2 train 128 × 2048, seed 42 다.
+- 비트는 `WEIGHT_BITS` 로 센 값이다. int8_w 는 행마다 fp32 스케일 하나라 종류에 따라 조금씩 다르다.
+
+| 방법 | 레시피 해시 | 비트 | test PPL | 검증 KL |
+|---|---|---:|---:|---:|
+| BF16 (native, 패치 없음) | — | 16 | 20.966 | — |
+| int8_w | `7c45b40934` | ≈8.02 | 21.057 | 0.00630 |
+| rht_gptq_int4 | `de0acd0d73` | 4.16 | 22.558 | 0.1131 |
+| awq_clip_int4 | `21c7dcc672` | 4.16 | 23.546 | 0.1558 |
+| nf4 | `baf57997ca` | 4.50 | 23.718 | 0.2048 |
+| awq_int4 | `d9cb50cbab` | 4.16 | 24.013 | 0.1840 |
+| hqq_int4 | `7c8d9e89cf` | 4.50 | 24.550 | 0.2402 |
+| gptq_int4 | `177c15a9b6` | 4.16 | 24.725 | 0.2167 |
+| awq_clip_int3 | `15cd11ec74` | 3.15 | 33.31 | 0.6148 |
+| rht_gptq_int3 | `63577322c3` | 3.15 | 35.81 | 0.6467 |
+| awq_int3 | `5771ca9e13` | 3.15 | 44.36 | 0.9482 |
+| gptq_int3 | `1822ce0b35` | 3.15 | 48.14 | 1.0486 |
+| hqq_int3 | `8cfd19c703` | 3.70 | 123.57 | 1.9411 |
+| rht_gptq_int2 | `065f7e9289` | 2.14 | 1.73e6 | 11.24 |
+| gptq_int2 | `d5cba7fda6` | 2.14 | 8.41e6 | 12.21 |
+| hqq_int2 | `0ac165eb34` | 2.50 | 8.35e6 | 12.77 |
+
+- 0.6B 에서는 방법 차이가 크다. 4비트에서 RHT+GPTQ 가 GPTQ 보다 8.8% 낮고 (22.56 vs 24.72), 3비트에서 AWQ+clip 이 GPTQ 보다 31% 낮다 (33.3 vs 48.1).
+- 균일 3비트 이하는 무너진다. 3비트는 BF16 대비 +59% 이상이고, 2비트는 모두 붕괴했다. 그래서 2.5 · 3.0 비트 예산의 결과는 층별 혼합에 달려 있다 (H4 가 겨냥하는 영역).
+- 검증 KL 순위와 test PPL 순위는 두 쌍(awq_int4 · nf4, gptq_int4 · hqq_int4)만 뒤바뀌고 나머지는 같다. 두 쌍 모두 두 지표의 차이가 약 2% 안이다.

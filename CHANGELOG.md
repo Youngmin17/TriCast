@@ -5,6 +5,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 ## [Unreleased]
 
 ### Added
+- Tune evals (`evals/EVAL_DESIGN.md`, `evals/tune_evalset.jsonl`, `evals/tune_judge_prompt.md`,
+  `evals/run_tune_evals.py`): 27 cases over tune-request parsing (AC28) and evidence-cited proposals (AC24/27),
+  code graders first and an LLM judge only for clarification and rationale quality, stored and live modes,
+  results and `history.csv`; the runner was delegated (`docs/prompts/delegation_evals.md`) and checked by fault
+  injection. Thresholds, absolute-rule expectations and judge labels are drafts for the team to set.
 - Auto-tune page (`app/web/autotune.html`): a budget slider or a request sentence, the exact knapsack solved
   in the browser (`app/web/js/mckp.js`, equal to `app.autotune solve` per budget in
   `scripts/quantizer/autotune_check.mjs`), the tune agent's evidence-cited proposals with their checks, and

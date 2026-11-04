@@ -145,7 +145,7 @@
 | 보정 결과 캐시 | `7ed0f5d` · `28396ed` · `84187eb`: 비트 동일 통과, 속도 기준(측정 전체 5×) 실패 3.8× — 가속용으로는 미채택 (증거 문서) | 비트 동일 KL, 전부 적중 시 측정당 ≥ 5× 단축 |
 | 격자 블록 수 = 모델 블록 수 | `7120c41` (CPU 테스트) | 28 블록 레시피 바이트 동일(AC15), 32 · 36 블록 모델 표 · 레시피 생성 |
 | 트랙 M 풀: int2–4 GPTQ · RHT+GPTQ · AWQ int3/4 · HQQ · int8_w, 누산 `--mma` | `dd36b02` + 2026-11-04 (CPU 테스트). Llama-2-7B 균일 충실도: GPTQ int4/3 · AWQ int4 (스케일만 · +clip) · RHT+GPTQ int3/2 · int8_w 통과, AWQ int3 은 clip 을 넣어도 +0.067 미달 (원인 격리 대기, 증거 문서 2026-11-04 §1.3–1.4) | 공식 수치 대비 충실도 (AWQ v5 Tab 4 · OmniQuant v3 Tab 1 앵커) |
-| 트랙 C 연산 비용 모델 | 처리량 비 출처 확인 (NVIDIA HGX B200 사양) · `solve --compute-budget` 2차원 정확 DP (CPU 테스트, v2 표에서 bound 0). 튜닝 루프 · 제안 검사의 연산 예산은 미구현 | 출처 있는 처리량 비, 배낭 이중 제약 |
+| 트랙 C 연산 비용 모델 | 처리량 비 출처 확인 (NVIDIA HGX B200 사양) · `solve --compute-budget` 2차원 정확 DP (CPU 테스트, v2 표에서 bound 0) · 튜닝 루프 `compute_budget` (제안 검사 · 이웃 · 모든 arm 의 복구, CPU 테스트; 연산 예산이 없으면 이전과 출력 동일) | 출처 있는 처리량 비, 배낭 이중 제약 |
 | TPE · LLM-seeded TPE · 옵션 탐색 · 절제 마스킹 · 무검사 | 구현 (CPU 테스트) | 같은 루프, 같은 측정 수, 같은 검사 |
 | 정보 맞춤 arm · 이름 익명화 · 28 블록 초과 격자 | 격자 `7120c41`, 익명화 · 정보 맞춤 arm 2026-11-04 (CPU 테스트) | 같은 루프, 같은 측정 수 |
 | 외부 공식 비교군: ModelOpt AutoQuantize · EvoPress · AMQ | 재현 가능성 정적 조사 완료 ([lane_baselines.md](./lane_baselines.md)): EvoPress 높음 · ModelOpt 0.43.0 중간(측정 수 고정) · AMQ 중간. 실행 전 | quant-eval 재현 게이트 (EvoPress Tab 7 앵커, 공식 env) |

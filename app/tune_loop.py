@@ -4,7 +4,8 @@ measurement -> ingest -> next round, with no human step (docs/SPEC.md AC27, docs
     python -m app.tune_loop run --config loop.json --rounds 2 --per-round 4 --proposer claude-code
     python -m app.tune_loop analyze --config loop.json     # the evidence a proposer is given (no LLM)
 
-loop.json (paths relative to the repository root):
+loop.json (paths relative to the repository root; track C adds "compute_budget": "3/8", the average MAC
+weight of the B200 GEMMs with BF16 = 1, and "drop_unrated": true when the table has unrated methods):
     {"session": "runs/<s>", "table": "runs/<t>/table.json", "budget_bits": "9/2",
      "ledger": "runs/ledger.jsonl", "gpu": "NVIDIA H200 NVL",
      "llm": {"model": null, "max_budget_usd": 2, "timeout_s": 900},
@@ -121,6 +122,58 @@ class LoopError(ValueError):
     """A refused configuration or a failed step; the CLI prints it and exits with status 2."""
 
 
+def _compute_budget(config: dict[str, Any]) -> Fraction | None:
+    """Track C's ``compute_budget`` (``app.autotune.COMPUTE_WEIGHT`` per Linear MAC, BF16 = 1), or None."""
+    value = config.get("compute_budget")
+    return None if value is None else Fraction(value)
+
+
+def _rated(config: dict[str, Any], method: str) -> bool:
+    """Whether the arms may choose ``method``: always without a compute budget; with one, only methods with a
+    sourced B200 rate (``analyze`` refuses a table with others unless ``drop_unrated``)."""
+    return _compute_budget(config) is None or at.compute_class(method) is not None
+
+
+def _budget_fit(config: dict[str, Any], layers: Sequence[at.Layer]) -> tuple[
+        Callable[[list[list[str]], dict[str, Any]], bool],
+        Callable[[list[list[str]], dict[str, Any], at.Layer, Sequence[str]], list[str]]]:
+    """(fits, toward) for the black-box arms' repair. fits: the grid is within the bit budget and, with a
+    compute budget, the compute budget. toward: the candidates that, put on ``layer``, lower an exceeded total
+    without raising another exceeded one or pushing a total over its budget; without a compute budget, the
+    candidates with fewer stored bits."""
+    budget, compute = Fraction(config["budget_bits"]), _compute_budget(config)
+    total = sum(layer.params for layer in layers)
+    limits = [budget * total] + ([] if compute is None else [compute * total])
+
+    def cost(method: str, layer: at.Layer, options: dict[str, Any]) -> list[Fraction]:
+        bits = layer.params * ta.method_bits(method, layer.in_features, options)
+        return [bits] + ([] if compute is None else [layer.params * ta.method_compute(method)])
+
+    def spent(grid: list[list[str]], options: dict[str, Any]) -> list[Fraction]:
+        totals = [Fraction(0)] * len(limits)
+        for layer in layers:
+            totals = [t + c for t, c in zip(totals, cost(grid[layer.block][qr.KINDS.index(layer.kind)], layer,
+                                                          options), strict=True)]
+        return totals
+
+    def fits(grid: list[list[str]], options: dict[str, Any]) -> bool:
+        return all(t <= limit for t, limit in zip(spent(grid, options), limits, strict=True))
+
+    def toward(grid: list[list[str]], options: dict[str, Any], layer: at.Layer,
+               candidates: Sequence[str]) -> list[str]:
+        totals = spent(grid, options)
+        old = cost(grid[layer.block][qr.KINDS.index(layer.kind)], layer, options)
+        out = []
+        for method in candidates:
+            after = [t - o + n for t, o, n in zip(totals, old, cost(method, layer, options), strict=True)]
+            over = [(t, a) for t, a, limit in zip(totals, after, limits, strict=True) if t > limit]
+            within = all(a <= limit for t, a, limit in zip(totals, after, limits, strict=True) if t <= limit)
+            if over and all(a <= t for t, a in over) and any(a < t for t, a in over) and within:
+                out.append(method)
+        return out
+    return fits, toward
+
+
 # ---------- analysis ----------
 def _measured(session: Path, ledger: Path) -> list[dict[str, Any]]:
     """The session's proposals with a validation KL, best first (ties: fewer bits, then name)."""
@@ -152,7 +205,7 @@ def analyze(config: dict[str, Any], root: Path, refused: Sequence[dict[str, Any]
 
     session, table_path = root / config["session"], root / config["table"]
     ledger = root / config.get("ledger", "runs/ledger.jsonl")
-    budget = Fraction(config["budget_bits"])
+    budget, compute = Fraction(config["budget_bits"]), _compute_budget(config)
     measured = _measured(session, ledger)
     if not measured:
         raise LoopError(f"{session}: no measured proposal yet (measure the start proposal first)")
@@ -162,7 +215,11 @@ def analyze(config: dict[str, Any], root: Path, refused: Sequence[dict[str, Any]
                 "change_vs_parent": row["kl"] - kls[row["parent"]] if row["parent"] in kls else None,
                 "diff": _diff(session, row["name"], row["parent"])} for row in measured]
     best = measured[0]
-    table, _, layers, _ = ta.load_full_table(table_path)
+    table, _, layers, methods = ta.load_full_table(table_path)
+    unrated = [method for method in methods if at.compute_class(method) is None]
+    if compute is not None and unrated and not config.get("drop_unrated"):
+        raise LoopError(f"{unrated} have no sourced B200 Tensor Core rate; a compute budget needs "
+                        '"drop_unrated": true, which leaves them out of every arm')
     objective = at.objective(table, subtract_floor=True)
     spec = ta.read_proposal(session, best["name"])["spec"]
     cells = _cells(spec["grid"])
@@ -172,7 +229,7 @@ def analyze(config: dict[str, Any], root: Path, refused: Sequence[dict[str, Any]
     for layer in layers:
         current = cells[(layer.block, layer.kind)]
         others = [(value, method) for method, value in objective[layer.name].items()
-                  if value is not None and method != current]
+                  if value is not None and method != current and _rated(config, method)]
         value, alternative = min(others) if others else (None, None)
         delta_bits = None if alternative is None else float(
             ta.method_bits(alternative, layer.in_features, spec.get("options"))
@@ -181,17 +238,25 @@ def analyze(config: dict[str, Any], root: Path, refused: Sequence[dict[str, Any]
                      "record": ids.get((layer.name, current)), "best_alternative": alternative,
                      "alternative_kl_minus_floor": value,
                      "alternative_record": ids.get((layer.name, alternative)),
-                     "params": layer.params, "bits_delta_per_weight": delta_bits})
+                     "params": layer.params, "bits_delta_per_weight": delta_bits,
+                     **({} if compute is None or alternative is None else {"compute_delta_per_mac": float(
+                         ta.method_compute(alternative) - ta.method_compute(current))})})
     loss.sort(key=lambda item: -(item["kl_minus_floor"] or 0.0))
     try:
-        moves = ta.neighbors({**spec, "options": None}, table_path, budget, TOP_MOVES)
+        moves = ta.neighbors({**spec, "options": None}, table_path, budget, TOP_MOVES, compute)
     except ta.TuneError:
         moves = []
     used = sorted(set(cells.values()))
     cards = [{"method": method, "card": hit["section"], "text": hit["text"][:600]} for method in used
              for hit in search_evidence(method.replace("_", " "), 1, ledgers=[])]
     counts = {method: list(cells.values()).count(method) for method in used}
-    return {"schema": LOOP_SCHEMA, "budget_bits": str(budget),
+    spending = {} if compute is None else {"compute": {
+        "budget": str(compute), "best": ta.evaluate(spec, table_path, budget, compute)["avg_compute"],
+        "unit": "average MAC weight of the B200 GEMMs, BF16 = 1, uniform FP4 = 0.25; A16 methods run a BF16 "
+                "GEMM. A proposal over the compute budget is refused too.",
+        "weights": {method: float(ta.method_compute(method)) for method in methods if _rated(config, method)},
+        "unrated_left_out": unrated}}
+    return {"schema": LOOP_SCHEMA, "budget_bits": str(budget), **spending,
             "best": {"name": best["name"], "kl": best["kl"], "kl_record": best["kl_id"],
                      "avg_bits": best["avg_bits"], "options": spec.get("options") or {},
                      "method_counts": counts},
@@ -236,7 +301,8 @@ def auto_greedy(config: dict[str, Any], root: Path) -> Proposer:
         spec = ta.read_proposal(session, best)["spec"]
         seen = _seen(session)
         out = []
-        for move in ta.neighbors(spec, root / config["table"], Fraction(config["budget_bits"]), 50):
+        for move in ta.neighbors(spec, root / config["table"], Fraction(config["budget_bits"]), 50,
+                                 _compute_budget(config)):
             if _identity({**spec, "grid": move["grid"]}) in seen:
                 continue
             base, new = _cells(spec["grid"]), _cells(move["grid"])
@@ -311,7 +377,8 @@ def mutation_search(config: dict[str, Any], root: Path, parents: Callable[[dict[
     """Black-box control: each offspring copies a parent (uniform over ``parents(analysis)``), switches
     MUTATION_CELLS random layers to another method the table has an entry for, changes one option with
     OPTION_RATE, then steps random layers down to cheaper tabled methods until the grid fits the budget
-    (EvoPress-style level switches, one fidelity), and drops the options of methods no longer in the grid.
+    (EvoPress-style level switches, one fidelity; with a compute budget, to methods that lower an exceeded
+    total, ``_budget_fit``), and drops the options of methods no longer in the grid.
     Offspring that are seen, over budget after repair, or do not build are dropped before they are proposed.
     No table prediction or catalog is used. Deterministic: the random stream is seeded by (label, seed,
     round). ``guided`` (the information-matched control): instead of the random switches, the offspring
@@ -321,26 +388,19 @@ def mutation_search(config: dict[str, Any], root: Path, parents: Callable[[dict[
     table, _, layers, _ = ta.load_full_table(root / config["table"])
     objective = at.objective(table, subtract_floor=True)
     allowed = {layer.name: sorted(method for method, value in objective[layer.name].items()
-                                  if value is not None) for layer in layers}
+                                  if value is not None and _rated(config, method)) for layer in layers}
     tabled: dict[str, list[dict[str, Any]]] = {}
 
     def moves(parent: str, spec: dict[str, Any]) -> list[dict[str, Any]]:
         if parent not in tabled:  # ranked without options: the table has entries for the defaults only
             try:
                 tabled[parent] = ta.neighbors({**spec, "options": None}, root / config["table"],
-                                              Fraction(config["budget_bits"]), GUIDED_MOVES)
+                                              Fraction(config["budget_bits"]), GUIDED_MOVES,
+                                              _compute_budget(config))
             except ta.TuneError:
                 tabled[parent] = []
         return tabled[parent]
-    budget = Fraction(config["budget_bits"])
-    total = sum(layer.params for layer in layers)
-
-    def bits(grid: list[list[str]], options: dict[str, Any], layer: at.Layer) -> Fraction:
-        return ta.method_bits(grid[layer.block][qr.KINDS.index(layer.kind)], layer.in_features, options)
-
-    def fits(grid: list[list[str]], options: dict[str, Any]) -> bool:
-        stored = sum((layer.params * bits(grid, options, layer) for layer in layers), Fraction(0))
-        return stored <= budget * total
+    fits, toward = _budget_fit(config, layers)
 
     def propose(analysis: dict[str, Any], round_number: int, count: int) -> dict[str, Any]:
         session = root / config["session"]
@@ -372,9 +432,7 @@ def mutation_search(config: dict[str, Any], root: Path, parents: Callable[[dict[
                 if fits(grid, options):
                     break
                 layer = rng.choice(layers)
-                cost = bits(grid, options, layer)
-                cheaper = [method for method in allowed[layer.name]
-                           if ta.method_bits(method, layer.in_features, options) < cost]
+                cheaper = toward(grid, options, layer, allowed[layer.name])
                 if cheaper:
                     grid[layer.block][qr.KINDS.index(layer.kind)] = rng.choice(cheaper)
             used = {method for row in grid for method in row}
@@ -428,25 +486,21 @@ def tpe_search(config: dict[str, Any], root: Path, seed: int = 0, startup: int =
 
     table, _, layers, _ = ta.load_full_table(root / config["table"])
     objective = at.objective(table, subtract_floor=True)
-    budget, total = Fraction(config["budget_bits"]), sum(layer.params for layer in layers)
     methods = sorted({method for layer in layers for method, value in objective[layer.name].items()
-                      if value is not None})
+                      if value is not None and _rated(config, method)})
     choosable = [(method, option) for method in methods for option in qr.METHOD_OPTIONS[method]]
 
     def cell(grid: list[list[str]], layer: at.Layer) -> str:
         return grid[layer.block][qr.KINDS.index(layer.kind)]
 
-    def fits(grid: list[list[str]], options: dict[str, Any]) -> bool:
-        stored = sum((layer.params * ta.method_bits(cell(grid, layer), layer.in_features, options)
-                      for layer in layers), Fraction(0))
-        return stored <= budget * total
+    fits, toward = _budget_fit(config, layers)
 
     def propose(analysis: dict[str, Any], round_number: int, count: int) -> dict[str, Any]:
         session = root / config["session"]
         optuna.logging.set_verbosity(optuna.logging.WARNING)
         history = [(row, ta.read_proposal(session, row["name"])["spec"]) for row in analysis["history"]]
-        cells = {layer.name: {m for m, v in objective[layer.name].items() if v is not None}
-                 for layer in layers}
+        cells = {layer.name: {m for m, v in objective[layer.name].items()
+                              if v is not None and _rated(config, m)} for layer in layers}
         values = {(method, option): set(_option_values(method, option)) for method, option in choosable}
         for _, spec in history:  # every measured value must be a choice of its parameter
             for layer in layers:
@@ -488,10 +542,9 @@ def tpe_search(config: dict[str, Any], root: Path, seed: int = 0, startup: int =
                 if fits(grid, options):
                     break
                 layer = rng.choice(layers)
-                cost = ta.method_bits(cell(grid, layer), layer.in_features, options)
-                cheaper = [m for m in cells[layer.name] if m in objective[layer.name]
-                           and objective[layer.name][m] is not None
-                           and ta.method_bits(m, layer.in_features, options) < cost]
+                tabled = [m for m in cells[layer.name]
+                          if m in objective[layer.name] and objective[layer.name][m] is not None]
+                cheaper = toward(grid, options, layer, tabled)
                 if cheaper:
                     grid[layer.block][qr.KINDS.index(layer.kind)] = rng.choice(sorted(cheaper))
             used = {method for row in grid for method in row}
@@ -578,8 +631,8 @@ def table_select(proposer: Proposer, config: dict[str, Any], root: Path, factor:
                     spec["grid"][change["block"]][qr.KINDS.index(change["kind"])] = change["method"]
                 if item.get("options") is not None:
                     spec["options"] = item["options"] or None
-                predicted = ta.evaluate(spec, root / config["table"], budget)["predicted"][
-                    "predicted_kl_sum_minus_floor"]
+                predicted = ta.evaluate(spec, root / config["table"], budget, _compute_budget(config))[
+                    "predicted"]["predicted_kl_sum_minus_floor"]
             except (ta.TuneError, IndexError, KeyError, ValueError):
                 predicted = None
             scored.append((predicted is None, predicted or 0.0, order, item))
@@ -758,7 +811,7 @@ def materialize(config: dict[str, Any], root: Path, item: dict[str, Any], author
     return ta.propose(session, item["name"], ta.load_grid(path), root / config["table"],
                       Fraction(config["budget_bits"]), item["rationale"], item["cites"],
                       root / config.get("ledger", "runs/ledger.jsonl"), author=author, parent=item["base"],
-                      checks=config.get("checks", True))
+                      checks=config.get("checks", True), compute_budget=_compute_budget(config))
 
 
 # ---------- measurement on the cluster ----------

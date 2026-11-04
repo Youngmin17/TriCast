@@ -479,13 +479,15 @@ agent:
                 meta mma), solve writes it into grid.json / recipe.yaml, the tune loop keeps it through every
                 proposal and refuses a grid whose mma is not the table's",
               evidence: "app/tests/test_track_mma.py (CPU)"}
-  compute_budget: {status: partial, note: "track C: autotune solve --compute-budget bounds Linear MACs weighted
+  compute_budget: {status: implemented, note: "track C: autotune solve --compute-budget bounds Linear MACs weighted
                      by the inverse dense B200 Tensor Core throughput of each method's GEMM (COMPUTE_WEIGHT
                      fp4 1/4, fp8 1/2, int8 1/2, bf16 1; COMPUTE_SOURCE = the NVIDIA HGX B200 spec page), A16
                      methods counted as a BF16 GEMM; nvint4 / razer_nvfp4 / bfp12 unrated (refused, or left out
                      and recorded with --drop-unrated); exact DP over both rounded costs (solve_mckp2). The tune
-                     loop and proposal checks do not bound compute yet",
-                   evidence: "app/tests/test_autotune_compute.py (CPU: classes, brute force, CLI)"}
+                     loop's compute_budget (with drop_unrated) bounds it in tune_agent evaluate / propose /
+                     neighbors and in every arm's repair; without it every output is unchanged",
+                   evidence: "app/tests/test_autotune_compute.py (CPU: classes, brute force, CLI);
+                     app/tests/test_tune_compute.py (CPU: checks, neighbours, arms, TPE with optuna)"}
   structured_parse: {status: implemented, note: "Claude API (claude-opus-5-5, json_schema output) or offline
                      parser; live API path untested here (no ANTHROPIC_API_KEY)",
                      evidence: "tests/test_agent_parser.py, tests/test_agent_request.py (mocked client)"}

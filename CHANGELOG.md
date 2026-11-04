@@ -29,6 +29,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 - Track C compute budget (`autotune solve --compute-budget`): Linear MACs weighted by the inverse dense B200
   Tensor Core throughput of each method's GEMM (FP4 : FP8 = INT8 : BF16 = 4 : 2 : 1, NVIDIA HGX B200 spec
   page), solved with bits by an exact two-dimensional DP (`solve_mckp2`); unrated methods need `--drop-unrated`.
+  The tune loop's `compute_budget` holds every proposal, neighbour and arm to it as well.
 - AWQ's weight clipping (`weight_algo: awq_clip`, the official auto_clip_layer bit for bit with its quantizer)
   and the Quantizer methods `awq_clip_int4|3` (AWQ scales, then the clip); `awq_int4|3` stay scale-only.
 - One GEMM accumulation per recipe (`quantizer_recipe.build(mma=...)`, `autotune table --mma fp32_fma`): the

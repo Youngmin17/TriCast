@@ -8,6 +8,7 @@ repeats; the tools keep every proposal checkable and every number traceable.
     python -m app.tune_agent propose --session S --name p1 --table T --budget-bits 9/2 --grid grid.json \
         --rationale "..." --cite E1a2b3c4d5e6,E...                   # validated proposal (+ recipe.yaml)
     python -m app.tune_agent neighbors --session S --from p1 --table T --budget-bits 9/2 --top 8
+                                     [--compute-budget 3/8]       # track C: B200 GEMM weight, BF16 = 1
     python -m app.tune_agent round --session S --names p1,p2 --round 1   # GPU measure script for them
     python -m app.tune_agent state --session S                       # proposals with their measurements
 
@@ -183,6 +184,16 @@ def method_bits(method: str, in_features: int, options: dict[str, Any] | None) -
     return at.weight_bits(method, in_features)
 
 
+def method_compute(method: str) -> Fraction:
+    """MAC weight of the method's B200 GEMM (``app.autotune.COMPUTE_WEIGHT``, BF16 = 1; no option changes
+    the GEMM); refuses an unrated method, which a compute budget cannot count."""
+    rate = at.compute_class(method)
+    if rate is None:
+        raise TuneError(f"{method} has no sourced B200 Tensor Core rate (unrated); a compute budget cannot "
+                        "count it")
+    return at.COMPUTE_WEIGHT[rate]
+
+
 def _unpredicted(spec: dict[str, Any], table: dict[str, Any]) -> str | None:
     """Why the table cannot predict ``spec`` (its entries are each method's defaults), or None."""
     if any(spec.get("options") or {}) or spec.get("kv_options"):
@@ -198,9 +209,11 @@ def _unpredicted(spec: dict[str, Any], table: dict[str, Any]) -> str | None:
     return None
 
 
-def evaluate(spec: dict[str, Any], table_path: Path, budget: Fraction) -> dict[str, Any]:
-    """Average bits (options included) and, when the table can predict it, the table's prediction for
-    ``spec``; refuses an over-budget grid, a partial table, or a method the table has no entry for."""
+def evaluate(spec: dict[str, Any], table_path: Path, budget: Fraction,
+             compute_budget: Fraction | None = None) -> dict[str, Any]:
+    """Average bits (options included), with ``compute_budget`` the average MAC weight (``method_compute``),
+    and, when the table can predict it, the table's prediction for ``spec``; refuses a grid over either
+    budget, a partial table, or a method the table has no entry for."""
     table, raw, layers, methods = load_full_table(table_path)
     if spec.get("mma") != table["meta"].get("mma"):
         # a session measures with one accumulation: the table's (cofda F=23 and fp32_fma move KL 0.7-1.9%)
@@ -208,9 +221,17 @@ def evaluate(spec: dict[str, Any], table_path: Path, budget: Fraction) -> dict[s
     chosen = [spec["grid"][layer.block][qr.KINDS.index(layer.kind)] for layer in layers]
     total = sum((layer.params * method_bits(method, layer.in_features, spec.get("options"))
                  for layer, method in zip(layers, chosen, strict=True)), Fraction(0))
-    bits = total / sum(layer.params for layer in layers)
+    params = sum(layer.params for layer in layers)
+    bits = total / params
     if bits > budget:
         raise TuneError(f"average bits {float(bits):.6g} exceed the budget {float(budget):.6g}")
+    compute = None
+    if compute_budget is not None:
+        compute = sum((layer.params * method_compute(method)
+                       for layer, method in zip(layers, chosen, strict=True)), Fraction(0)) / params
+        if compute > compute_budget:
+            raise TuneError(f"average compute {float(compute):.6g} exceeds the compute budget "
+                            f"{float(compute_budget):.6g} (BF16 = 1, uniform FP4 = 0.25)")
     try:
         raw_sum = at.predict(table, layers, methods, spec["grid"])[0]
         corrected = at.predict(table, layers, methods, spec["grid"], subtract_floor=True)[0]
@@ -221,8 +242,12 @@ def evaluate(spec: dict[str, Any], table_path: Path, budget: Fraction) -> dict[s
                  "predicted_kl_sum_minus_floor": None if reason or at.floors(table) is None else corrected,
                  "predicted_kv_kl_sum": None if reason else at.predict_kv(table, spec["kv"]),
                  "unpredicted": reason, "floor_rule": at.FLOOR_RULE}
+    spent = {} if compute is None else {"avg_compute": float(compute), "avg_compute_fraction": str(compute),
+                                        "compute_budget": float(compute_budget),
+                                        "compute_budget_fraction": str(compute_budget)}
     return {"avg_bits": float(bits), "avg_bits_fraction": str(bits), "budget_bits": float(budget),
-            "budget_bits_fraction": str(budget), "method_counts": dict(sorted(Counter(chosen).items())),
+            "budget_bits_fraction": str(budget), **spent,
+            "method_counts": dict(sorted(Counter(chosen).items())),
             "predicted": predicted,
             "table": {"path": str(table_path), "sha256": hashlib.sha256(raw).hexdigest()}}
 
@@ -270,10 +295,12 @@ def _session(session: Path, table_path: Path, write: bool) -> dict[str, Any]:
 
 def propose(session: Path, name: str, spec: dict[str, Any], table_path: Path, budget: Fraction,
             rationale: str, cites: Sequence[str], ledger: Path, *, author: str = "claude-code",
-            parent: str | None = None, checks: bool = True) -> dict[str, Any]:
+            parent: str | None = None, checks: bool = True,
+            compute_budget: Fraction | None = None) -> dict[str, Any]:
     """Validate and record one proposal: session/proposals/<name>/{grid.json, recipe.yaml, proposal.json}.
     ``checks=False`` (the no-check ablation) keeps the build and the budget but drops the evidence checks:
-    rationale, cited ids, ids named in the rationale and the supported-numbers guard."""
+    rationale, cited ids, ids named in the rationale and the supported-numbers guard. ``compute_budget``
+    (track C) bounds the average MAC weight too (``evaluate``)."""
     target = _proposal_dir(session, name)
     if target.exists():
         raise TuneError(f"proposal {name!r} exists; proposals are never overwritten")
@@ -293,7 +320,7 @@ def propose(session: Path, name: str, spec: dict[str, Any], table_path: Path, bu
         read_proposal(session, parent)
     _session(session, table_path, write=False)
     recipe = _recipe(name, spec)
-    computed = evaluate(spec, table_path, budget)
+    computed = evaluate(spec, table_path, budget, compute_budget)
     cites = [item for item in cites if item in index]  # unchecked proposals keep only real records
     evidence = [number for item in cites for number in _numbers(index[item]["value"])]
     evidence += [number for item in cites for number in _numbers(index[item].get("stderr"))]
@@ -320,10 +347,14 @@ def propose(session: Path, name: str, spec: dict[str, Any], table_path: Path, bu
     return proposal
 
 
-def neighbors(spec: dict[str, Any], table_path: Path, budget: Fraction, top: int) -> list[dict[str, Any]]:
+def neighbors(spec: dict[str, Any], table_path: Path, budget: Fraction, top: int,
+              compute_budget: Fraction | None = None) -> list[dict[str, Any]]:
     """Grids one move away from ``spec`` that fit the budget, by predicted change (smallest first; ties by
     layer then method order): a layer switched to another tabled method, paid for when needed by switching
-    the other layers with the least predicted loss per freed bit down to cheaper methods."""
+    the other layers with the least predicted loss per freed bit down to cheaper methods. With
+    ``compute_budget`` (track C) the moves fit it too and unrated methods are left out: a compute overrun is
+    paid first by downgrades that free MAC weight without adding bits (least loss per freed MAC weight),
+    then a bit overrun by downgrades that free bits without adding compute."""
     table, _, layers, methods = load_full_table(table_path)
     reason = _unpredicted(spec, table)
     if reason:
@@ -336,21 +367,53 @@ def neighbors(spec: dict[str, Any], table_path: Path, budget: Fraction, top: int
              for layer in layers]
     spent = sum(costs[i][j] for i, j in enumerate(current))
     capacity = budget * sum(layer.params for layer in layers)
+    # MAC weights: 0 without a compute budget (nothing to pay), None for an unrated method under one
+    work: list[list[Fraction | None]] = [
+        [Fraction(0) if compute_budget is None else
+         None if at.compute_class(method) is None else layer.params * method_compute(method)
+         for method in methods] for layer in layers]
+    for i, j in enumerate(current):
+        if work[i][j] is None:
+            method_compute(methods[j])  # refuses the unrated method of the grid
+    worked = sum(work[i][j] for i, j in enumerate(current))
+    compute_capacity = (None if compute_budget is None
+                        else compute_budget * sum(layer.params for layer in layers))
+
+    def usable(k: int, m: int) -> bool:
+        return value[k][m] is not None and work[k][m] is not None
+
     moves = []
     for i, layer in enumerate(layers):
         for j, method in enumerate(methods):
-            if j == current[i] or value[i][j] is None:
+            if j == current[i] or not usable(i, j):
                 continue
             choice = list(current)
             choice[i] = j
             delta = value[i][j] - value[i][current[i]]
             over = spent - costs[i][current[i]] + costs[i][j] - capacity
+            over_work = (Fraction(-1) if compute_capacity is None
+                         else worked - work[i][current[i]] + work[i][j] - compute_capacity)
+            used: set[int] = set()
+            if over_work > 0:  # (loss per freed MAC weight, layer, method), adding no bits
+                for _, k, m in sorted(
+                        ((value[k][m] - value[k][current[k]]) / (work[k][current[k]] - work[k][m]), k, m)
+                        for k in range(len(layers)) if k != i for m in range(len(methods))
+                        if usable(k, m) and work[k][m] < work[k][current[k]]
+                        and costs[k][m] <= costs[k][current[k]]):
+                    if over_work <= 0:
+                        break
+                    if k in used:
+                        continue
+                    used.add(k)
+                    over_work -= work[k][current[k]] - work[k][m]
+                    over -= costs[k][current[k]] - costs[k][m]
+                    delta += value[k][m] - value[k][current[k]]
+                    choice[k] = m
             # fund an overrun from the cheapest downgrades elsewhere: (loss per freed bit, layer, method)
             downgrades = sorted(
                 ((value[k][m] - value[k][current[k]]) / (costs[k][current[k]] - costs[k][m]), k, m)
                 for k in range(len(layers)) if k != i for m in range(len(methods))
-                if value[k][m] is not None and costs[k][m] < costs[k][current[k]])
-            used: set[int] = set()
+                if usable(k, m) and costs[k][m] < costs[k][current[k]] and work[k][m] <= work[k][current[k]])
             for _, k, m in downgrades:
                 if over <= 0:
                     break
@@ -358,9 +421,10 @@ def neighbors(spec: dict[str, Any], table_path: Path, budget: Fraction, top: int
                     continue
                 used.add(k)
                 over -= costs[k][current[k]] - costs[k][m]
+                over_work -= work[k][current[k]] - work[k][m]
                 delta += value[k][m] - value[k][current[k]]
                 choice[k] = m
-            if over > 0:
+            if over > 0 or over_work > 0:
                 continue
             grid = [list(row) for row in spec["grid"]]
             for k, item in enumerate(layers):
@@ -488,6 +552,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         if name in ("propose", "neighbors"):
             item.add_argument("--table", type=Path, required=True)
             item.add_argument("--budget-bits", type=_fraction, required=True)
+            item.add_argument("--compute-budget", type=_fraction,
+                              help="track C: average MAC weight of the B200 GEMMs (BF16 = 1, uniform "
+                                   "FP4 = 1/4)")
     proposer = sub.choices["propose"]
     proposer.add_argument("--name", required=True)
     proposer.add_argument("--grid", type=Path, required=True)
@@ -515,12 +582,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         elif args.command == "propose":
             cites = [item for item in args.cite.split(",") if item]
             output = propose(args.session, args.name, load_grid(args.grid), args.table, args.budget_bits,
-                             args.rationale, cites, args.ledger, author=args.author, parent=args.parent)
+                             args.rationale, cites, args.ledger, author=args.author, parent=args.parent,
+                             compute_budget=args.compute_budget)
         elif args.command == "neighbors":
             source = Path(args.source)
             spec = load_grid(source) if source.suffix == ".json" else \
                 read_proposal(args.session, args.source)["spec"]
-            output = neighbors(spec, args.table, args.budget_bits, args.top)
+            output = neighbors(spec, args.table, args.budget_bits, args.top, args.compute_budget)
             if args.write:
                 args.write.mkdir(parents=True, exist_ok=True)
                 for index, move in enumerate(output):

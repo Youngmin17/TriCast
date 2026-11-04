@@ -478,9 +478,9 @@
  "session": {
   "best": {
    "avg_bits": 3.147953869047619,
-   "kl": 0.43614466651129274,
-   "name": "iso_3.15",
-   "ppl": 27.040339668766947
+   "kl": 0.38644206288408633,
+   "name": "act_damp05_r3",
+   "ppl": null
   },
   "budget_bits": "403/128",
   "missing_records": [],
@@ -509,6 +509,17 @@
     "source": "runs/20261104_lowbit/qz_trackm_qwen/profile2/profile_train_8x512_s42_cpu.json",
     "value": 520.6573486328125
    },
+   "E1d6f622c292e": {
+    "git_sha": "6c4b406521e7d893e077240831fa2fbf4f3aaf20",
+    "gpu": "NVIDIA A100-SXM4-80GB",
+    "kind": "recipe_kl",
+    "layer": null,
+    "method": null,
+    "metric": "kl",
+    "recipe_hash": "5445cc81d19b5df899f01b4deefe41e3a1d8345c65c39c3021ed0299376b4063",
+    "source": "runs/20261104_demo/s3150/rounds/3/kl.json",
+    "value": 0.38644206288408633
+   },
    "E24beed188b6a": {
     "git_sha": "d1a8bbb33b5ba000e992dbf16fa9c13ac066bd94",
     "gpu": null,
@@ -519,6 +530,17 @@
     "recipe_hash": null,
     "source": "runs/20261104_lowbit/qz_trackm_qwen/profile2/profile_train_8x512_s42_cpu.json",
     "value": 1090.0933519197752
+   },
+   "E2809f3b455cc": {
+    "git_sha": "6c4b406521e7d893e077240831fa2fbf4f3aaf20",
+    "gpu": "NVIDIA A100-SXM4-80GB",
+    "kind": "recipe_kl",
+    "layer": null,
+    "method": null,
+    "metric": "kl",
+    "recipe_hash": "429870afbc56a7592ee9e968bd4350f24a18cb55f478e775bef0437b92459809",
+    "source": "runs/20261104_demo/s3150/rounds/3/kl.json",
+    "value": 0.38856218445665336
    },
    "E3c29dce14bae": {
     "git_sha": "d1a8bbb33b5ba000e992dbf16fa9c13ac066bd94",
@@ -564,6 +586,17 @@
     "source": "runs/20261104_lowbit/qz_trackm_qwen/table.json",
     "value": 0.006417701290032187
    },
+   "E71985ad81ef7": {
+    "git_sha": "6c4b406521e7d893e077240831fa2fbf4f3aaf20",
+    "gpu": "NVIDIA A100-SXM4-80GB",
+    "kind": "recipe_kl",
+    "layer": null,
+    "method": null,
+    "metric": "kl",
+    "recipe_hash": "76b6cc338cdbc245c95ad3432c08ad3109ac4bd2a27d602d1acc0d99a26da28b",
+    "source": "runs/20261104_demo/s3150/rounds/2/kl.json",
+    "value": 0.39127873985876804
+   },
    "E779bc065b72e": {
     "git_sha": "9ecd7cb70d2a292a79f675d84bce1f9e81200cf5",
     "gpu": "NVIDIA A100-SXM4-80GB",
@@ -574,6 +607,17 @@
     "recipe_hash": "4f35db3157cd20af771cf42eba5e0a0804a30df5e0202d24197412bd29566d08",
     "source": "runs/20261104_lowbit/qz_trackm_qwen/table.json",
     "value": 0.0022717276056726902
+   },
+   "E7fde79566655": {
+    "git_sha": "6c4b406521e7d893e077240831fa2fbf4f3aaf20",
+    "gpu": "NVIDIA A100-SXM4-80GB",
+    "kind": "recipe_kl",
+    "layer": null,
+    "method": null,
+    "metric": "kl",
+    "recipe_hash": "52240c3aa564df4e12bf1d1b2bd1071384f6c80039cf637ef6d2ef9cf672bfd5",
+    "source": "runs/20261104_demo/s3150/rounds/3/kl.json",
+    "value": 0.3963561076184149
    },
    "E90bd4b2f3645": {
     "git_sha": "9ecd7cb70d2a292a79f675d84bce1f9e81200cf5",
@@ -619,6 +663,28 @@
     "source": "runs/20261104_lowbit/qz_trackm_qwen/table.json",
     "value": 0.0056964417400559315
    },
+   "Eb477fa39ec3f": {
+    "git_sha": "6c4b406521e7d893e077240831fa2fbf4f3aaf20",
+    "gpu": "NVIDIA A100-SXM4-80GB",
+    "kind": "recipe_kl",
+    "layer": null,
+    "method": null,
+    "metric": "kl",
+    "recipe_hash": "55f08236b2a751a51bf16f422e0b86d9099349d385e51a1501f7fe17bb99d68d",
+    "source": "runs/20261104_demo/s3150/rounds/2/kl.json",
+    "value": 0.4368888973192918
+   },
+   "Ec8e99d840909": {
+    "git_sha": "6c4b406521e7d893e077240831fa2fbf4f3aaf20",
+    "gpu": "NVIDIA A100-SXM4-80GB",
+    "kind": "recipe_kl",
+    "layer": null,
+    "method": null,
+    "metric": "kl",
+    "recipe_hash": "6591a24defe092d4d8e5a4e91c51150ffbb518bd3b8e4733a53c8f1033185287",
+    "source": "runs/20261104_demo/s3150/rounds/2/kl.json",
+    "value": 0.42778769408914874
+   },
    "Ecdb1e7f1288f": {
     "git_sha": "d1a8bbb33b5ba000e992dbf16fa9c13ac066bd94",
     "gpu": null,
@@ -629,6 +695,17 @@
     "recipe_hash": null,
     "source": "runs/20261104_lowbit/qz_trackm_qwen/profile2/profile_train_8x512_s42_cpu.json",
     "value": 3.497057423174423
+   },
+   "Ed95f34186eb9": {
+    "git_sha": "6c4b406521e7d893e077240831fa2fbf4f3aaf20",
+    "gpu": "NVIDIA A100-SXM4-80GB",
+    "kind": "recipe_kl",
+    "layer": null,
+    "method": null,
+    "metric": "kl",
+    "recipe_hash": "cee6a6d98aa234f05fb1f68cb177190565ec2a8693dd59f35d332dde2b9460a4",
+    "source": "runs/20261104_demo/s3150/rounds/2/kl.json",
+    "value": 0.48812842598435835
    },
    "Ef04d8aa7bded": {
     "git_sha": "9ecd7cb70d2a292a79f675d84bce1f9e81200cf5",
@@ -673,6 +750,17 @@
     "recipe_hash": "5a2b9bf171b0e40db568a97b4efe9e73b9f9a8e2cd3ce07800d58f3ab87d5f74",
     "source": "runs/20261104_lowbit/qz_trackm_qwen/table.json",
     "value": 0.0023773187128358635
+   },
+   "Ef94d802b1fc3": {
+    "git_sha": "6c4b406521e7d893e077240831fa2fbf4f3aaf20",
+    "gpu": "NVIDIA A100-SXM4-80GB",
+    "kind": "recipe_kl",
+    "layer": null,
+    "method": null,
+    "metric": "kl",
+    "recipe_hash": "bf6c41ab9b9438ff8f1edee7ebe6cde7c6c2c5b5f1d94d316c0f999f09c978f8",
+    "source": "runs/20261104_demo/s3150/rounds/3/kl.json",
+    "value": 0.4045887844604261
    },
    "Efa0bb391da67": {
     "git_sha": "9ecd7cb70d2a292a79f675d84bce1f9e81200cf5",
@@ -741,6 +829,26 @@
         "weight_algo.act_order": true
        }
       },
+      "options_changed": {
+       "gptq_int2": {
+        "weight_algo.act_order": true
+       },
+       "gptq_int3": {
+        "weight_algo.act_order": true
+       },
+       "gptq_int4": {
+        "weight_algo.act_order": true
+       },
+       "rht_gptq_int2": {
+        "weight_algo.act_order": true
+       },
+       "rht_gptq_int3": {
+        "weight_algo.act_order": true
+       },
+       "rht_gptq_int4": {
+        "weight_algo.act_order": true
+       }
+      },
       "rationale": "The base iso_3.15 measured KL 0.436144 [E514ab09c524e], with most cells in the GPTQ family. Layers carrying the most loss have highly uneven input channels: model.layers.27.mlp.up_proj has activation channel_absmax_ratio 65.2425 [E3c29dce14bae] and activation kurtosis 1090.09 [E24beed188b6a]. This grid sets weight_algo.act_order=true on all GPTQ-family methods to process high-activation columns first, with no cell changes.",
       "reason": "rationale numbers not supported by the cited records or the proposal: ['0.436144']",
       "status": "refused"
@@ -775,6 +883,26 @@
         "weight_algo.damp": 0.03
        }
       },
+      "options_changed": {
+       "gptq_int2": {
+        "weight_algo.damp": 0.03
+       },
+       "gptq_int3": {
+        "weight_algo.damp": 0.03
+       },
+       "gptq_int4": {
+        "weight_algo.damp": 0.03
+       },
+       "rht_gptq_int2": {
+        "weight_algo.damp": 0.03
+       },
+       "rht_gptq_int3": {
+        "weight_algo.damp": 0.03
+       },
+       "rht_gptq_int4": {
+        "weight_algo.damp": 0.03
+       }
+      },
       "rationale": "The base iso_3.15 measured validation KL 0.436144 [E514ab09c524e]. Activations at model.layers.27.mlp.up_proj are heavy-tailed, with kurtosis 1090.09 [E24beed188b6a] and absmax 520.657 [E17ce1bbeaa4a] against rms 3.49706 [Ecdb1e7f1288f]. This grid tests whether stronger regularization of the calibration Hessian, damp=0.03, generalizes better to validation windows. Stored bits do not change.",
       "reason": "rationale numbers not supported by the cited records or the proposal: ['0.436144']",
       "status": "refused"
@@ -788,6 +916,26 @@
       ],
       "name": "opt_damp_low",
       "options": {
+       "gptq_int2": {
+        "weight_algo.damp": 0.002
+       },
+       "gptq_int3": {
+        "weight_algo.damp": 0.002
+       },
+       "gptq_int4": {
+        "weight_algo.damp": 0.002
+       },
+       "rht_gptq_int2": {
+        "weight_algo.damp": 0.002
+       },
+       "rht_gptq_int3": {
+        "weight_algo.damp": 0.002
+       },
+       "rht_gptq_int4": {
+        "weight_algo.damp": 0.002
+       }
+      },
+      "options_changed": {
        "gptq_int2": {
         "weight_algo.damp": 0.002
        },
@@ -848,6 +996,11 @@
       ],
       "name": "g256_rht3_mlp_upgrades",
       "options": {
+       "rht_gptq_int3": {
+        "weight.group_size": 256
+       }
+      },
+      "options_changed": {
        "rht_gptq_int3": {
         "weight.group_size": 256
        }
@@ -1135,8 +1288,8 @@
         "rht_gptq_int3"
        ]
       ],
-      "kl": null,
-      "kl_id": null,
+      "kl": 0.39127873985876804,
+      "kl_id": "E71985ad81ef7",
       "name": "opt_act_order_r2",
       "options": {
        "gptq_int2": {
@@ -1180,6 +1333,26 @@
         "weight_algo.act_order": true,
         "weight_algo.block_size": 128,
         "weight_algo.damp": 0.01
+       }
+      },
+      "options_changed": {
+       "gptq_int2": {
+        "weight_algo.act_order": true
+       },
+       "gptq_int3": {
+        "weight_algo.act_order": true
+       },
+       "gptq_int4": {
+        "weight_algo.act_order": true
+       },
+       "rht_gptq_int2": {
+        "weight_algo.act_order": true
+       },
+       "rht_gptq_int3": {
+        "weight_algo.act_order": true
+       },
+       "rht_gptq_int4": {
+        "weight_algo.act_order": true
        }
       },
       "ppl": null,
@@ -1456,8 +1629,8 @@
         "rht_gptq_int3"
        ]
       ],
-      "kl": null,
-      "kl_id": null,
+      "kl": 0.4368888973192918,
+      "kl_id": "Eb477fa39ec3f",
       "name": "opt_damp_low_r2",
       "options": {
        "gptq_int2": {
@@ -1500,6 +1673,26 @@
         "weight.rounding": "rne",
         "weight_algo.act_order": false,
         "weight_algo.block_size": 128,
+        "weight_algo.damp": 0.005
+       }
+      },
+      "options_changed": {
+       "gptq_int2": {
+        "weight_algo.damp": 0.005
+       },
+       "gptq_int3": {
+        "weight_algo.damp": 0.005
+       },
+       "gptq_int4": {
+        "weight_algo.damp": 0.005
+       },
+       "rht_gptq_int2": {
+        "weight_algo.damp": 0.005
+       },
+       "rht_gptq_int3": {
+        "weight_algo.damp": 0.005
+       },
+       "rht_gptq_int4": {
         "weight_algo.damp": 0.005
        }
       },
@@ -1777,8 +1970,8 @@
         "rht_gptq_int3"
        ]
       ],
-      "kl": null,
-      "kl_id": null,
+      "kl": 0.42778769408914874,
+      "kl_id": "Ec8e99d840909",
       "name": "opt_damp_high_r2",
       "options": {
        "gptq_int2": {
@@ -1821,6 +2014,26 @@
         "weight.rounding": "rne",
         "weight_algo.act_order": false,
         "weight_algo.block_size": 128,
+        "weight_algo.damp": 0.05
+       }
+      },
+      "options_changed": {
+       "gptq_int2": {
+        "weight_algo.damp": 0.05
+       },
+       "gptq_int3": {
+        "weight_algo.damp": 0.05
+       },
+       "gptq_int4": {
+        "weight_algo.damp": 0.05
+       },
+       "rht_gptq_int2": {
+        "weight_algo.damp": 0.05
+       },
+       "rht_gptq_int3": {
+        "weight_algo.damp": 0.05
+       },
+       "rht_gptq_int4": {
         "weight_algo.damp": 0.05
        }
       },
@@ -2153,8 +2366,8 @@
         "rht_gptq_int3"
        ]
       ],
-      "kl": null,
-      "kl_id": null,
+      "kl": 0.48812842598435835,
+      "kl_id": "Ed95f34186eb9",
       "name": "g256_mlp_upgrades_r2",
       "options": {
        "gptq_int2": {
@@ -2200,6 +2413,26 @@
         "weight_algo.damp": 0.01
        }
       },
+      "options_changed": {
+       "gptq_int2": {
+        "weight.group_size": 256
+       },
+       "gptq_int3": {
+        "weight.group_size": 256
+       },
+       "gptq_int4": {
+        "weight.group_size": 256
+       },
+       "rht_gptq_int2": {
+        "weight.group_size": 256
+       },
+       "rht_gptq_int3": {
+        "weight.group_size": 256
+       },
+       "rht_gptq_int4": {
+        "weight.group_size": 256
+       }
+      },
       "ppl": null,
       "ppl_id": null,
       "predicted": {
@@ -2215,6 +2448,1422 @@
      }
     ],
     "round": 2,
+    "stop": false
+   },
+   {
+    "analysis": "The best grid is opt_act_order_r2. Switching act_order on gave the largest measured gain so far, with no cell changes. Raising damp without act_order also lowered KL, while lowering it did nothing useful, and the two settings have not been measured together. The budget slack is too small to pay for an MLP upgrade, and the per-layer table does not show enough to pick safe downgrades. A whole-grid group_size=256 made KL worse, so this round tests damp alongside act_order and tries coarser groups on the int4 methods only, to pay for one upgrade. That last grid may be refused as over budget, because the int4 layer sizes are not in the evidence.",
+    "llm": {
+     "aliases": false,
+     "cost_usd": 0.3517714,
+     "duration_s": 82.576,
+     "models": [
+      "claude-haiku-5-5",
+      "claude-opus-5-5"
+     ],
+     "returncode": 0,
+     "started_utc": "2026-11-04T11:34:03+00:00"
+    },
+    "proposals": [
+     {
+      "avg_bits": 3.147953869047619,
+      "base": "opt_act_order_r2",
+      "changes": [],
+      "cites": [
+       "Ec8e99d840909",
+       "E514ab09c524e",
+       "E71985ad81ef7"
+      ],
+      "grid": [
+       [
+        "rht_gptq_int3",
+        "rht_gptq_int4",
+        "rht_gptq_int4",
+        "gptq_int4",
+        "rht_gptq_int3",
+        "gptq_int3",
+        "rht_gptq_int4"
+       ],
+       [
+        "gptq_int2",
+        "rht_gptq_int3",
+        "gptq_int3",
+        "rht_gptq_int3",
+        "gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int4"
+       ],
+       [
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "gptq_int3",
+        "rht_gptq_int4"
+       ],
+       [
+        "rht_gptq_int3",
+        "hqq_int4",
+        "nf4",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int4"
+       ],
+       [
+        "rht_gptq_int3",
+        "gptq_int4",
+        "nf4",
+        "gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int3",
+        "rht_gptq_int4",
+        "rht_gptq_int4",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int3",
+        "nf4",
+        "rht_gptq_int4",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "rht_gptq_int4",
+        "rht_gptq_int4",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int3",
+        "rht_gptq_int4",
+        "rht_gptq_int4",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int3",
+        "rht_gptq_int4",
+        "rht_gptq_int4",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "rht_gptq_int4",
+        "rht_gptq_int4",
+        "rht_gptq_int3",
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "rht_gptq_int4",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int2"
+       ],
+       [
+        "rht_gptq_int2",
+        "rht_gptq_int4",
+        "rht_gptq_int4",
+        "rht_gptq_int3",
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "rht_gptq_int4",
+        "rht_gptq_int4",
+        "rht_gptq_int3",
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int3",
+        "rht_gptq_int4",
+        "rht_gptq_int4",
+        "rht_gptq_int3",
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "rht_gptq_int4",
+        "rht_gptq_int4",
+        "rht_gptq_int2",
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "rht_gptq_int4",
+        "rht_gptq_int4",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "nf4",
+        "rht_gptq_int4",
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int3",
+        "nf4",
+        "nf4",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int3",
+        "rht_gptq_int4",
+        "nf4",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "nf4",
+        "nf4",
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "hqq_int4",
+        "nf4",
+        "rht_gptq_int2",
+        "gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int3",
+        "hqq_int4",
+        "nf4",
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int3",
+        "hqq_int4",
+        "nf4",
+        "gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int3",
+        "rht_gptq_int4",
+        "nf4",
+        "gptq_int3",
+        "rht_gptq_int3",
+        "gptq_int3",
+        "rht_gptq_int3"
+       ]
+      ],
+      "kl": 0.38644206288408633,
+      "kl_id": "E1d6f622c292e",
+      "name": "act_damp05_r3",
+      "options": {
+       "gptq_int2": {
+        "weight.group_size": 128,
+        "weight.rounding": "rne",
+        "weight_algo.act_order": true,
+        "weight_algo.block_size": 128,
+        "weight_algo.damp": 0.05
+       },
+       "gptq_int3": {
+        "weight.group_size": 128,
+        "weight.rounding": "rne",
+        "weight_algo.act_order": true,
+        "weight_algo.block_size": 128,
+        "weight_algo.damp": 0.05
+       },
+       "gptq_int4": {
+        "weight.group_size": 128,
+        "weight.rounding": "rne",
+        "weight_algo.act_order": true,
+        "weight_algo.block_size": 128,
+        "weight_algo.damp": 0.05
+       },
+       "rht_gptq_int2": {
+        "weight.group_size": 128,
+        "weight.rounding": "rne",
+        "weight_algo.act_order": true,
+        "weight_algo.block_size": 128,
+        "weight_algo.damp": 0.05
+       },
+       "rht_gptq_int3": {
+        "weight.group_size": 128,
+        "weight.rounding": "rne",
+        "weight_algo.act_order": true,
+        "weight_algo.block_size": 128,
+        "weight_algo.damp": 0.05
+       },
+       "rht_gptq_int4": {
+        "weight.group_size": 128,
+        "weight.rounding": "rne",
+        "weight_algo.act_order": true,
+        "weight_algo.block_size": 128,
+        "weight_algo.damp": 0.05
+       }
+      },
+      "options_changed": {
+       "gptq_int2": {
+        "weight_algo.act_order": true,
+        "weight_algo.damp": 0.05
+       },
+       "gptq_int3": {
+        "weight_algo.act_order": true,
+        "weight_algo.damp": 0.05
+       },
+       "gptq_int4": {
+        "weight_algo.act_order": true,
+        "weight_algo.damp": 0.05
+       },
+       "rht_gptq_int2": {
+        "weight_algo.act_order": true,
+        "weight_algo.damp": 0.05
+       },
+       "rht_gptq_int3": {
+        "weight_algo.act_order": true,
+        "weight_algo.damp": 0.05
+       },
+       "rht_gptq_int4": {
+        "weight_algo.act_order": true,
+        "weight_algo.damp": 0.05
+       }
+      },
+      "ppl": null,
+      "ppl_id": null,
+      "predicted": {
+       "floor_rule": "max(0, kl - floor) for every non-BF16 method; BF16 is a skip (no patch): 0, no floor",
+       "predicted_kl_sum": null,
+       "predicted_kl_sum_minus_floor": null,
+       "predicted_kv_kl_sum": null,
+       "unpredicted": "method or KV options: the table has entries for the default options only"
+      },
+      "rationale": "Without act_order, damp=0.05 measured KL 0.42778769408914874 [Ec8e99d840909] against 0.43614466651129274 for iso_3.15 [E514ab09c524e]. With act_order=true and damp=0.01, KL measured 0.39127873985876804 [E71985ad81ef7]. This grid measures the two changes together, with no cell changes.",
+      "reason": null,
+      "status": "accepted"
+     },
+     {
+      "avg_bits": 3.147953869047619,
+      "base": "opt_act_order_r2",
+      "changes": [],
+      "cites": [
+       "Eb477fa39ec3f",
+       "Ec8e99d840909",
+       "E71985ad81ef7"
+      ],
+      "grid": [
+       [
+        "rht_gptq_int3",
+        "rht_gptq_int4",
+        "rht_gptq_int4",
+        "gptq_int4",
+        "rht_gptq_int3",
+        "gptq_int3",
+        "rht_gptq_int4"
+       ],
+       [
+        "gptq_int2",
+        "rht_gptq_int3",
+        "gptq_int3",
+        "rht_gptq_int3",
+        "gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int4"
+       ],
+       [
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "gptq_int3",
+        "rht_gptq_int4"
+       ],
+       [
+        "rht_gptq_int3",
+        "hqq_int4",
+        "nf4",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int4"
+       ],
+       [
+        "rht_gptq_int3",
+        "gptq_int4",
+        "nf4",
+        "gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int3",
+        "rht_gptq_int4",
+        "rht_gptq_int4",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int3",
+        "nf4",
+        "rht_gptq_int4",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "rht_gptq_int4",
+        "rht_gptq_int4",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int3",
+        "rht_gptq_int4",
+        "rht_gptq_int4",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int3",
+        "rht_gptq_int4",
+        "rht_gptq_int4",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "rht_gptq_int4",
+        "rht_gptq_int4",
+        "rht_gptq_int3",
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "rht_gptq_int4",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int2"
+       ],
+       [
+        "rht_gptq_int2",
+        "rht_gptq_int4",
+        "rht_gptq_int4",
+        "rht_gptq_int3",
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "rht_gptq_int4",
+        "rht_gptq_int4",
+        "rht_gptq_int3",
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int3",
+        "rht_gptq_int4",
+        "rht_gptq_int4",
+        "rht_gptq_int3",
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "rht_gptq_int4",
+        "rht_gptq_int4",
+        "rht_gptq_int2",
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "rht_gptq_int4",
+        "rht_gptq_int4",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "nf4",
+        "rht_gptq_int4",
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int3",
+        "nf4",
+        "nf4",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int3",
+        "rht_gptq_int4",
+        "nf4",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "nf4",
+        "nf4",
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "hqq_int4",
+        "nf4",
+        "rht_gptq_int2",
+        "gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int3",
+        "hqq_int4",
+        "nf4",
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int3",
+        "hqq_int4",
+        "nf4",
+        "gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int3",
+        "rht_gptq_int4",
+        "nf4",
+        "gptq_int3",
+        "rht_gptq_int3",
+        "gptq_int3",
+        "rht_gptq_int3"
+       ]
+      ],
+      "kl": 0.4045887844604261,
+      "kl_id": "Ef94d802b1fc3",
+      "name": "act_damp10_r3",
+      "options": {
+       "gptq_int2": {
+        "weight.group_size": 128,
+        "weight.rounding": "rne",
+        "weight_algo.act_order": true,
+        "weight_algo.block_size": 128,
+        "weight_algo.damp": 0.1
+       },
+       "gptq_int3": {
+        "weight.group_size": 128,
+        "weight.rounding": "rne",
+        "weight_algo.act_order": true,
+        "weight_algo.block_size": 128,
+        "weight_algo.damp": 0.1
+       },
+       "gptq_int4": {
+        "weight.group_size": 128,
+        "weight.rounding": "rne",
+        "weight_algo.act_order": true,
+        "weight_algo.block_size": 128,
+        "weight_algo.damp": 0.1
+       },
+       "rht_gptq_int2": {
+        "weight.group_size": 128,
+        "weight.rounding": "rne",
+        "weight_algo.act_order": true,
+        "weight_algo.block_size": 128,
+        "weight_algo.damp": 0.1
+       },
+       "rht_gptq_int3": {
+        "weight.group_size": 128,
+        "weight.rounding": "rne",
+        "weight_algo.act_order": true,
+        "weight_algo.block_size": 128,
+        "weight_algo.damp": 0.1
+       },
+       "rht_gptq_int4": {
+        "weight.group_size": 128,
+        "weight.rounding": "rne",
+        "weight_algo.act_order": true,
+        "weight_algo.block_size": 128,
+        "weight_algo.damp": 0.1
+       }
+      },
+      "options_changed": {
+       "gptq_int2": {
+        "weight_algo.act_order": true,
+        "weight_algo.damp": 0.1
+       },
+       "gptq_int3": {
+        "weight_algo.act_order": true,
+        "weight_algo.damp": 0.1
+       },
+       "gptq_int4": {
+        "weight_algo.act_order": true,
+        "weight_algo.damp": 0.1
+       },
+       "rht_gptq_int2": {
+        "weight_algo.act_order": true,
+        "weight_algo.damp": 0.1
+       },
+       "rht_gptq_int3": {
+        "weight_algo.act_order": true,
+        "weight_algo.damp": 0.1
+       },
+       "rht_gptq_int4": {
+        "weight_algo.act_order": true,
+        "weight_algo.damp": 0.1
+       }
+      },
+      "ppl": null,
+      "ppl_id": null,
+      "predicted": {
+       "floor_rule": "max(0, kl - floor) for every non-BF16 method; BF16 is a skip (no patch): 0, no floor",
+       "predicted_kl_sum": null,
+       "predicted_kl_sum_minus_floor": null,
+       "predicted_kv_kl_sum": null,
+       "unpredicted": "method or KV options: the table has entries for the default options only"
+      },
+      "rationale": "KL fell as damp rose without act_order: damp=0.005 measured 0.4368888973192918 [Eb477fa39ec3f] and damp=0.05 measured 0.42778769408914874 [Ec8e99d840909]. This grid tries damp=0.1 with act_order=true to test the upper side of that trend, starting from the best measured KL of 0.39127873985876804 [E71985ad81ef7].",
+      "reason": null,
+      "status": "accepted"
+     },
+     {
+      "avg_bits": 3.147953869047619,
+      "base": "opt_act_order_r2",
+      "changes": [],
+      "cites": [
+       "E71985ad81ef7",
+       "Ec8e99d840909"
+      ],
+      "grid": [
+       [
+        "rht_gptq_int3",
+        "rht_gptq_int4",
+        "rht_gptq_int4",
+        "gptq_int4",
+        "rht_gptq_int3",
+        "gptq_int3",
+        "rht_gptq_int4"
+       ],
+       [
+        "gptq_int2",
+        "rht_gptq_int3",
+        "gptq_int3",
+        "rht_gptq_int3",
+        "gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int4"
+       ],
+       [
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "gptq_int3",
+        "rht_gptq_int4"
+       ],
+       [
+        "rht_gptq_int3",
+        "hqq_int4",
+        "nf4",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int4"
+       ],
+       [
+        "rht_gptq_int3",
+        "gptq_int4",
+        "nf4",
+        "gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int3",
+        "rht_gptq_int4",
+        "rht_gptq_int4",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int3",
+        "nf4",
+        "rht_gptq_int4",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "rht_gptq_int4",
+        "rht_gptq_int4",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int3",
+        "rht_gptq_int4",
+        "rht_gptq_int4",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int3",
+        "rht_gptq_int4",
+        "rht_gptq_int4",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "rht_gptq_int4",
+        "rht_gptq_int4",
+        "rht_gptq_int3",
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "rht_gptq_int4",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int2"
+       ],
+       [
+        "rht_gptq_int2",
+        "rht_gptq_int4",
+        "rht_gptq_int4",
+        "rht_gptq_int3",
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "rht_gptq_int4",
+        "rht_gptq_int4",
+        "rht_gptq_int3",
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int3",
+        "rht_gptq_int4",
+        "rht_gptq_int4",
+        "rht_gptq_int3",
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "rht_gptq_int4",
+        "rht_gptq_int4",
+        "rht_gptq_int2",
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "rht_gptq_int4",
+        "rht_gptq_int4",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "nf4",
+        "rht_gptq_int4",
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int3",
+        "nf4",
+        "nf4",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int3",
+        "rht_gptq_int4",
+        "nf4",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "nf4",
+        "nf4",
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "hqq_int4",
+        "nf4",
+        "rht_gptq_int2",
+        "gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int3",
+        "hqq_int4",
+        "nf4",
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int3",
+        "hqq_int4",
+        "nf4",
+        "gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int3",
+        "rht_gptq_int4",
+        "nf4",
+        "gptq_int3",
+        "rht_gptq_int3",
+        "gptq_int3",
+        "rht_gptq_int3"
+       ]
+      ],
+      "kl": 0.38856218445665336,
+      "kl_id": "E2809f3b455cc",
+      "name": "act_damp025_r3",
+      "options": {
+       "gptq_int2": {
+        "weight.group_size": 128,
+        "weight.rounding": "rne",
+        "weight_algo.act_order": true,
+        "weight_algo.block_size": 128,
+        "weight_algo.damp": 0.025
+       },
+       "gptq_int3": {
+        "weight.group_size": 128,
+        "weight.rounding": "rne",
+        "weight_algo.act_order": true,
+        "weight_algo.block_size": 128,
+        "weight_algo.damp": 0.025
+       },
+       "gptq_int4": {
+        "weight.group_size": 128,
+        "weight.rounding": "rne",
+        "weight_algo.act_order": true,
+        "weight_algo.block_size": 128,
+        "weight_algo.damp": 0.025
+       },
+       "rht_gptq_int2": {
+        "weight.group_size": 128,
+        "weight.rounding": "rne",
+        "weight_algo.act_order": true,
+        "weight_algo.block_size": 128,
+        "weight_algo.damp": 0.025
+       },
+       "rht_gptq_int3": {
+        "weight.group_size": 128,
+        "weight.rounding": "rne",
+        "weight_algo.act_order": true,
+        "weight_algo.block_size": 128,
+        "weight_algo.damp": 0.025
+       },
+       "rht_gptq_int4": {
+        "weight.group_size": 128,
+        "weight.rounding": "rne",
+        "weight_algo.act_order": true,
+        "weight_algo.block_size": 128,
+        "weight_algo.damp": 0.025
+       }
+      },
+      "options_changed": {
+       "gptq_int2": {
+        "weight_algo.act_order": true,
+        "weight_algo.damp": 0.025
+       },
+       "gptq_int3": {
+        "weight_algo.act_order": true,
+        "weight_algo.damp": 0.025
+       },
+       "gptq_int4": {
+        "weight_algo.act_order": true,
+        "weight_algo.damp": 0.025
+       },
+       "rht_gptq_int2": {
+        "weight_algo.act_order": true,
+        "weight_algo.damp": 0.025
+       },
+       "rht_gptq_int3": {
+        "weight_algo.act_order": true,
+        "weight_algo.damp": 0.025
+       },
+       "rht_gptq_int4": {
+        "weight_algo.act_order": true,
+        "weight_algo.damp": 0.025
+       }
+      },
+      "ppl": null,
+      "ppl_id": null,
+      "predicted": {
+       "floor_rule": "max(0, kl - floor) for every non-BF16 method; BF16 is a skip (no patch): 0, no floor",
+       "predicted_kl_sum": null,
+       "predicted_kl_sum_minus_floor": null,
+       "predicted_kv_kl_sum": null,
+       "unpredicted": "method or KV options: the table has entries for the default options only"
+      },
+      "rationale": "With act_order=true, the only measured setting is damp=0.01, at KL 0.39127873985876804 [E71985ad81ef7]. Without act_order, damp=0.05 improved KL to 0.42778769408914874 [Ec8e99d840909]. This grid measures damp=0.025 as an intermediate point between those two settings.",
+      "reason": null,
+      "status": "accepted"
+     },
+     {
+      "avg_bits": 3.1473400297619047,
+      "base": "opt_act_order_r2",
+      "changes": [
+       {
+        "block": 14,
+        "kind": "down_proj",
+        "method": "rht_gptq_int3"
+       }
+      ],
+      "cites": [
+       "E4c3f9b73e065",
+       "E90bd4b2f3645",
+       "Ed95f34186eb9",
+       "E71985ad81ef7"
+      ],
+      "grid": [
+       [
+        "rht_gptq_int3",
+        "rht_gptq_int4",
+        "rht_gptq_int4",
+        "gptq_int4",
+        "rht_gptq_int3",
+        "gptq_int3",
+        "rht_gptq_int4"
+       ],
+       [
+        "gptq_int2",
+        "rht_gptq_int3",
+        "gptq_int3",
+        "rht_gptq_int3",
+        "gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int4"
+       ],
+       [
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "gptq_int3",
+        "rht_gptq_int4"
+       ],
+       [
+        "rht_gptq_int3",
+        "hqq_int4",
+        "nf4",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int4"
+       ],
+       [
+        "rht_gptq_int3",
+        "gptq_int4",
+        "nf4",
+        "gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int3",
+        "rht_gptq_int4",
+        "rht_gptq_int4",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int3",
+        "nf4",
+        "rht_gptq_int4",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "rht_gptq_int4",
+        "rht_gptq_int4",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int3",
+        "rht_gptq_int4",
+        "rht_gptq_int4",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int3",
+        "rht_gptq_int4",
+        "rht_gptq_int4",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "rht_gptq_int4",
+        "rht_gptq_int4",
+        "rht_gptq_int3",
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "rht_gptq_int4",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "rht_gptq_int4",
+        "rht_gptq_int4",
+        "rht_gptq_int3",
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "rht_gptq_int4",
+        "rht_gptq_int4",
+        "rht_gptq_int3",
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int3",
+        "rht_gptq_int4",
+        "rht_gptq_int4",
+        "rht_gptq_int3",
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "rht_gptq_int4",
+        "rht_gptq_int4",
+        "rht_gptq_int2",
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "rht_gptq_int4",
+        "rht_gptq_int4",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "nf4",
+        "rht_gptq_int4",
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int3",
+        "nf4",
+        "nf4",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int3",
+        "rht_gptq_int4",
+        "nf4",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "nf4",
+        "nf4",
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int2",
+        "hqq_int4",
+        "nf4",
+        "rht_gptq_int2",
+        "gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int3",
+        "hqq_int4",
+        "nf4",
+        "rht_gptq_int2",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int3",
+        "hqq_int4",
+        "nf4",
+        "gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3",
+        "rht_gptq_int3"
+       ],
+       [
+        "rht_gptq_int3",
+        "rht_gptq_int4",
+        "nf4",
+        "gptq_int3",
+        "rht_gptq_int3",
+        "gptq_int3",
+        "rht_gptq_int3"
+       ]
+      ],
+      "kl": 0.3963561076184149,
+      "kl_id": "E7fde79566655",
+      "name": "int4_g256_fund_b14down_r3",
+      "options": {
+       "gptq_int2": {
+        "weight.group_size": 128,
+        "weight.rounding": "rne",
+        "weight_algo.act_order": true,
+        "weight_algo.block_size": 128,
+        "weight_algo.damp": 0.01
+       },
+       "gptq_int3": {
+        "weight.group_size": 128,
+        "weight.rounding": "rne",
+        "weight_algo.act_order": true,
+        "weight_algo.block_size": 128,
+        "weight_algo.damp": 0.01
+       },
+       "gptq_int4": {
+        "weight.group_size": 256,
+        "weight.rounding": "rne",
+        "weight_algo.act_order": true,
+        "weight_algo.block_size": 128,
+        "weight_algo.damp": 0.01
+       },
+       "rht_gptq_int2": {
+        "weight.group_size": 128,
+        "weight.rounding": "rne",
+        "weight_algo.act_order": true,
+        "weight_algo.block_size": 128,
+        "weight_algo.damp": 0.01
+       },
+       "rht_gptq_int3": {
+        "weight.group_size": 128,
+        "weight.rounding": "rne",
+        "weight_algo.act_order": true,
+        "weight_algo.block_size": 128,
+        "weight_algo.damp": 0.01
+       },
+       "rht_gptq_int4": {
+        "weight.group_size": 256,
+        "weight.rounding": "rne",
+        "weight_algo.act_order": true,
+        "weight_algo.block_size": 128,
+        "weight_algo.damp": 0.01
+       }
+      },
+      "options_changed": {
+       "gptq_int2": {
+        "weight_algo.act_order": true
+       },
+       "gptq_int3": {
+        "weight_algo.act_order": true
+       },
+       "gptq_int4": {
+        "weight.group_size": 256,
+        "weight_algo.act_order": true
+       },
+       "rht_gptq_int2": {
+        "weight_algo.act_order": true
+       },
+       "rht_gptq_int3": {
+        "weight_algo.act_order": true
+       },
+       "rht_gptq_int4": {
+        "weight.group_size": 256,
+        "weight_algo.act_order": true
+       }
+      },
+      "ppl": null,
+      "ppl_id": null,
+      "predicted": {
+       "floor_rule": "max(0, kl - floor) for every non-BF16 method; BF16 is a skip (no patch): 0, no floor",
+       "predicted_kl_sum": null,
+       "predicted_kl_sum_minus_floor": null,
+       "predicted_kv_kl_sum": null,
+       "unpredicted": "method or KV options: the table has entries for the default options only"
+      },
+      "rationale": "Layer 14 down_proj single-layer KL is 0.00633466 with rht_gptq_int2 [E4c3f9b73e065] and 0.00181478 with rht_gptq_int3 [E90bd4b2f3645]. To pay for this upgrade, group_size=256 is applied only to gptq_int4 and rht_gptq_int4. Applying group_size=256 to all methods, together with cell upgrades, measured KL 0.48812842598435835 [Ed95f34186eb9], so this grid tests whether the int4 methods alone tolerate coarser groups, compared with the base KL of 0.39127873985876804 [E71985ad81ef7].",
+      "reason": null,
+      "status": "accepted"
+     }
+    ],
+    "round": 3,
     "stop": false
    }
   ],

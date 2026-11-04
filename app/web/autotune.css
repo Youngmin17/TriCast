@@ -1,16 +1,17 @@
 /* Auto-tune (autotune.html): styles.css tokens and topbar, one fill per method family on the floorplan. Bit width
-   is never a color: it is the digit in each cell's code (G4 G3 G2 ...). Light fills whose white code would fall
-   below 3:1 (RHT+GPTQ, AWQ+clip, HQQ) carry a near-black code instead. Chart series: uniform = neutral gray dots,
-   heuristic = ink line, AI = amber star, so they differ by shape and lightness as well as hue. */
+   is never a color: it is the digit in each cell's code (G4 G3 G2 ...). Each code color (--f-*-ink) is the one of
+   #ffffff / #0b0b0b / #000000 that reaches 4.5:1 on its fill in that theme (scripts/quantizer/autotune_ui_check.mjs
+   measures it). Chart series: uniform = neutral gray dots, heuristic = ink line, AI = amber star, so they differ by
+   shape and lightness as well as hue. */
 :root {
-  --f-gptq: #2a78d6; --f-gptq-ink: #ffffff;
-  --f-awq: #eb6834; --f-awq-ink: #ffffff;
+  --f-gptq: #2a78d6; --f-gptq-ink: #000000;
+  --f-awq: #eb6834; --f-awq-ink: #0b0b0b;
   --f-rht: #1baf7a; --f-rht-ink: #0b0b0b;
   --f-clip: #eda100; --f-clip-ink: #0b0b0b;
   --f-hqq: #e87ba4; --f-hqq-ink: #0b0b0b;
   --f-nf4: #008300; --f-nf4-ink: #ffffff;
   --f-int8w: #6250d6; --f-int8w-ink: #ffffff;
-  --f-other: #e34948; --f-other-ink: #ffffff;
+  --f-other: #e34948; --f-other-ink: #0b0b0b;
   --at-bad: #c4314b;
   --at-uni: var(--ink-3);
   --at-heur: var(--ink);
@@ -18,26 +19,26 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --f-gptq: #3987e5; --f-gptq-ink: #ffffff;
-    --f-awq: #d95926; --f-awq-ink: #ffffff;
-    --f-rht: #199e70; --f-rht-ink: #ffffff;
+    --f-gptq: #3987e5; --f-gptq-ink: #0b0b0b;
+    --f-awq: #d95926; --f-awq-ink: #0b0b0b;
+    --f-rht: #199e70; --f-rht-ink: #0b0b0b;
     --f-clip: #c98500; --f-clip-ink: #0b0b0b;
-    --f-hqq: #d55181; --f-hqq-ink: #ffffff;
+    --f-hqq: #d55181; --f-hqq-ink: #0b0b0b;
     --f-nf4: #008300; --f-nf4-ink: #ffffff;
-    --f-int8w: #9085e9; --f-int8w-ink: #ffffff;
-    --f-other: #e66767; --f-other-ink: #ffffff;
+    --f-int8w: #9085e9; --f-int8w-ink: #0b0b0b;
+    --f-other: #e66767; --f-other-ink: #0b0b0b;
     --at-bad: #ff8593;
   }
 }
 :root[data-theme="dark"] {
-  --f-gptq: #3987e5; --f-gptq-ink: #ffffff;
-  --f-awq: #d95926; --f-awq-ink: #ffffff;
-  --f-rht: #199e70; --f-rht-ink: #ffffff;
+  --f-gptq: #3987e5; --f-gptq-ink: #0b0b0b;
+  --f-awq: #d95926; --f-awq-ink: #0b0b0b;
+  --f-rht: #199e70; --f-rht-ink: #0b0b0b;
   --f-clip: #c98500; --f-clip-ink: #0b0b0b;
-  --f-hqq: #d55181; --f-hqq-ink: #ffffff;
+  --f-hqq: #d55181; --f-hqq-ink: #0b0b0b;
   --f-nf4: #008300; --f-nf4-ink: #ffffff;
-  --f-int8w: #9085e9; --f-int8w-ink: #ffffff;
-  --f-other: #e66767; --f-other-ink: #ffffff;
+  --f-int8w: #9085e9; --f-int8w-ink: #0b0b0b;
+  --f-other: #e66767; --f-other-ink: #0b0b0b;
   --at-bad: #ff8593;
 }
 
@@ -272,7 +273,7 @@ body { display: block; }
 .at-chart .pt-heur { fill: var(--at-heur); stroke: var(--panel); stroke-width: 2; }
 .at-chart .pt-ai { fill: var(--at-ai); stroke: var(--panel); stroke-width: 2; }
 .at-chart .hit { fill: transparent; cursor: default; }
-.at-chart .hit:focus-visible { outline: none; stroke: var(--focus); stroke-width: 2; }
+.at-chart .hit:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; stroke: var(--focus); stroke-width: 2; }
 .at-chart-wrap { min-width: 0; }
 .at-chart-empty { margin: 0; padding: 26px 12px; text-align: center; font-size: 12.5px; color: var(--ink-3);
   border: 1px dashed var(--rule); border-radius: 8px; }

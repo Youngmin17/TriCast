@@ -9,6 +9,7 @@
 | 정적 분석 | ruff (저장소 전체) | `ruff check .` | 경고 0 (`b489ce5`) |
 | CPU 단위 · 통합 | `tests/` + `app/tests/` (GPU 제외) | `pytest -q --ignore=tests/gpu tests app/tests` (bath 16코어, `d83fc7a`) | **2,930 passed, 3 skipped** — skip: CUDA NF4 대조 · microxcaling 오라클(클론 없음) · GPU 골든 1건 (AGENTS.md 상 정상) |
 | CPU (이후 변경) | 튜닝 루프 재개 · DENY 감지 (`b489ce5`) | `pytest -q app/tests/test_tune_resume.py app/tests/test_tune_loop.py …` | 24 passed, 1 skipped (로컬에 optuna 없음; 클러스터 실행에서는 통과) |
+| CPU 단위 · 통합 (push 전 HEAD) | `tests/` + `app/tests/` (GPU 제외), 리포트 오차 · 재개 · 평가 러너 수정 포함 | 같은 명령 (cpu_cap 16코어, `a74179f`, 18분 19초) | **2,934 passed, 3 skipped** — skip 은 위와 같은 3건. 그 뒤 `5e1ec8b` 는 `app/__init__.py` 버전 검사만 바꿈 (로컬 `test_server.py` 등 55 passed) |
 | evals 러너 | 러너 단위 테스트 + 오답 주입 9행 | `pytest -q tests/test_tune_evals.py tests/test_evals.py` | **82 passed** — 오답 주입 9/9 기대 판정 ([위임 기록](./prompts/delegation_evals.md)) |
 | 브라우저: Quantizer | JS ↔ Python 레시피 바이트 일치 (프리셋 5 · 무작위 격자 300 · 옵션 상태 300), 상호작용, 빈 · 오류 상태 | `node scripts/quantizer/qz_check.mjs …` | **QZ_CHECKS[static] 71/71** |
 | 브라우저: tricast 수용 | 위 300 격자의 YAML 을 tricast 로더가 해석 | `python scripts/quantizer/qz_tricast_accept.py …` | `QZ_TRICAST_ACCEPT_OK` (레시피 100, 층 19,600) |

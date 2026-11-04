@@ -40,6 +40,7 @@
 | 1차원 배낭이 예산 전체를 칸으로 펼침 | 16방법 표에서 브라우저 풀이 4–7초, 6비트 이상 거부 | `ec5fcf1`: 층마다 가장 싼 선택지 위만 다룸 (같은 해, 칸 3–7배 감소) |
 | evals 데이터셋 r_c6 (초안) | 어떤 응답으로도 통과 불가 | 예산 3 → 3.2 (설계서 §2 초안 수정 기록) |
 | 측정이 멈춘 라운드의 재개가 실제 클러스터 경로에서 실패 (`round 2 exists`) | 데모 세션 2라운드를 다시 잴 수 없음. 단위 테스트는 가짜 `measure` 를 써서 라운드 폴더를 만드는 `measure_remote` 를 지나지 않았다 | `951abf3`: 같은 제안 · kl.json 없는 폴더는 같은 두 파일로 다시 씀, 다른 제안이면 거부. 회귀 테스트는 실제 `measure_remote` 를 가짜 ssh 로 (`app/tests/test_tune_resume_remote.py`) |
+| 재개한 2라운드 측정이 geneva 에서 `PackageNotFoundError: hqq` | 라운드 래퍼가 PYTHONPATH 를 트리 경로로 덮어써, 시작점을 잰 환경(`pydeps_qm`)의 hqq 를 못 봄 | `9c34299`: `remote.env` 의 PYTHONPATH 를 트리 경로 뒤에 붙임 (없으면 래퍼 바이트 동일), 세션 설정에 `pydeps_qm` 추가 · RESUME.txt 기록, 띄우기 전 bath 에서 hqq 0.2.8.post1 확인 |
 | macOS 기본 `python3` (3.9.6) 로 README 를 따르면 설치는 되고 서버가 pydantic `TypeError: Unable to evaluate type annotation 'str \| None'` 로 죽음 | 동료가 원인을 모른 채 막힘 | `app/__init__.py` 가 3.10 미만이면 한 줄로 이유 · 해결을 말하고 종료 (3.9 에서 rc=1 확인, 3.11 · 3.14 health 200), README 첫 줄에 `python3 --version` |
 | 툴팁의 "outlier 입력 채널" 이 비율(0.0088)을 개수처럼 표시 | 발표자 · 동료가 채널 수로 오독 | 비율 · 개수로 표시 (`0.88% (27/3072)`), fixture 의 가짜 값을 비율로 바꾸고 문구 검사 추가 (가짜 값이 정수 6 이라 놓쳤다) |
 

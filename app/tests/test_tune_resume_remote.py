@@ -44,3 +44,14 @@ def test_a_round_folder_of_other_proposals_or_with_kl_is_not_taken_back(tmp_path
     (tmp_path / "s" / "rounds" / "1" / "kl.json").write_text("{}")
     with pytest.raises(ta.TuneError, match="round 1 exists"):
         tl.measure_remote(config, tmp_path, 1, ["start"], _sync_fails)
+
+
+def test_a_remote_pythonpath_comes_after_the_tree() -> None:
+    plain = tl.round_wrapper({"remote": {"env": {"PY": "/env/python"}}})
+    assert 'export PYTHONPATH="$T/src:$T"\n' in plain  # unchanged without one
+    wrapper = tl.round_wrapper({"remote": {"env": {"PY": "/env/python", "PYTHONPATH": "/deps/qm"}}})
+    assert 'export PYTHONPATH="$T/src:$T":/deps/qm\n' in wrapper
+    assert wrapper.count("PYTHONPATH=") == 1  # not exported twice
+    found = subprocess.run(["bash", "-c", wrapper.split("echo ")[0] + 'printf %s "$PYTHONPATH"'],
+                           capture_output=True, text=True, env={"T": "/t", "PATH": "/usr/bin:/bin"})
+    assert found.stdout == "/t/src:/t:/deps/qm"

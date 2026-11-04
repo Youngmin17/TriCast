@@ -851,16 +851,18 @@ def _ssh(host: str, command: str, timeout: int, stdin: bytes | None = None) -> s
 
 def round_wrapper(config: dict[str, Any]) -> str:
     """The cluster-side wrapper of a round: the environment of ``remote.env`` (variable -> value), then the
-    round's measure.sh. Written into the session by the loop itself."""
+    round's measure.sh. A ``PYTHONPATH`` there (e.g. the directory holding hqq) comes after the tree's own
+    paths, so the tree's tricast always wins. Written into the session by the loop itself."""
     env = (config["remote"].get("env") or {})
     owned = sorted(set(env) & GPU_CAP_OWNED)
     if owned:
         raise LoopError(f"remote.env sets {owned}: gpu_cap.sh assigns the GPU, the wrapper must not "
                         "override it")
     exports = "".join(f"export {key}={shlex.quote(str(value))}\n" for key, value in env.items()
-                      if re.fullmatch(r"[A-Z_][A-Z0-9_]*", key))
+                      if key != "PYTHONPATH" and re.fullmatch(r"[A-Z_][A-Z0-9_]*", key))
+    extra = f":{shlex.quote(str(env['PYTHONPATH']))}" if env.get("PYTHONPATH") else ""
     return ("# Written by app.tune_loop: S, T, R are set by the launch command.\n" + exports
-            + 'export PYTHONPATH="$T/src:$T"\n'
+            + f'export PYTHONPATH="$T/src:$T"{extra}\n'
             + 'echo "== TUNE_PREFLIGHT host=$(hostname) CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES '
             + 'head=$(cd "$T" && git rev-parse HEAD) '
             + 'dirty=$(cd "$T" && git status --short | wc -l) round=$R"\n'

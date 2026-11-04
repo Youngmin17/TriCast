@@ -747,14 +747,29 @@ function cellTip(b, k) {
     ["비트", j >= 0 ? layerBits(layer, method).toFixed(4) : NONE],
     ["단층 KL", fmtKL(kl)],
     ["floor", fmtKL(layer.floor)],
+    ...reportRows(j >= 0 ? layer.report?.[j] : null),
     ["대안 (BF16 제외 KL 최저)", altText],
     shownNote,
-    ...profileRows(layer.profile),
+    ...profileRows(layer.profile, layer.in_features),
   ]);
 }
 
+// Rows for the layer's errors in the tricast report of the method's uniform recipe: [weight MSE, output SQNR,
+// output cosine], the output compared with the original Linear on the same input. Nothing when not reported.
+function reportRows(report) {
+  if (!Array.isArray(report)) return [];
+  const [mse, sqnr, cos] = report;
+  return [
+    finite(mse) ? ["가중치 MSE (균일 리포트)", mse.toExponential(2)] : null,
+    finite(sqnr) || finite(cos)
+      ? ["층 출력 SQNR · cos", `${finite(sqnr) ? `${sqnr.toFixed(1)} dB` : "—"} · ${finite(cos) ? cos.toFixed(5) : "—"}`]
+      : null,
+  ];
+}
+
 // Rows for a layer's profile (weights, input activations, output error of pruning), only for the fields present.
-function profileRows(profile) {
+// outlier_channels is the fraction of input channels whose activation absmax exceeds 6 × their median.
+function profileRows(profile, inFeatures) {
   if (!profile || typeof profile !== "object") return [];
   const w = profile.weight ?? {};
   const a = profile.activation ?? {};
@@ -765,7 +780,8 @@ function profileRows(profile) {
     finite(w.kurtosis) ? ["가중치 첨도", w.kurtosis.toFixed(1)] : null,
     finite(w.outlier_3sigma) ? ["3σ 밖 가중치", `${(w.outlier_3sigma * 100).toFixed(2)}%`] : null,
     finite(a.channel_absmax_ratio) ? ["입력 채널 absmax 비", `${a.channel_absmax_ratio.toFixed(1)}×`] : null,
-    finite(a.outlier_channels) ? ["outlier 입력 채널", String(a.outlier_channels)] : null,
+    finite(a.outlier_channels) ? ["중앙값 6× 넘는 입력 채널", `${(a.outlier_channels * 100).toFixed(2)}%`
+      + (finite(inFeatures) ? ` (${Math.round(a.outlier_channels * inFeatures)}/${inFeatures})` : "")] : null,
     pair(p.magnitude_50, p.wanda_50) ? ["50% 가지치기 오차", pair(p.magnitude_50, p.wanda_50)] : null,
     pair(p.magnitude_2of4, p.wanda_2of4) ? ["2:4 가지치기 오차", pair(p.magnitude_2of4, p.wanda_2of4)] : null,
   ];

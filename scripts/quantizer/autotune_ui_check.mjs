@@ -120,6 +120,23 @@ try {
     }
   }
 
+  // 1b the layer's report errors in the cell tooltip are the bundle's numbers (bundles exported with reports)
+  if (table.reports) {
+    const grid = (await evaluate(`window.__autotune.setBudget(${JSON.stringify(budgets[0])})`)).grid;
+    const cells = [];
+    grid.forEach((row, b) => row.forEach((m, k) => {
+      const layer = table.layers.find((l) => l.block === b && l.kind === table.kinds[k]);
+      const r = layer?.report?.[table.methods.indexOf(m)];
+      if (r) cells.push({b, k, m, r});
+    }));
+    const pick = cells[Math.floor(cells.length / 2)];
+    const text = pick ? await evaluate(`(() => { const c = document.querySelector('.at-cell[data-b="${pick.b}"][data-k="${pick.k}"]');
+      c.dispatchEvent(new MouseEvent("mouseover", {bubbles: true})); return document.getElementById("tip").innerText; })()`) : "";
+    check(`report errors in the tooltip == bundle (block ${pick?.b} ${pick?.m}; ${cells.length} reported cells at ${budgets[0]})`,
+      !!pick && text.includes(`가중치 MSE (균일 리포트)\t${pick.r[0].toExponential(2)}`)
+      && text.includes(`${pick.r[1].toFixed(1)} dB · ${pick.r[2].toFixed(5)}`), {pick, text});
+  }
+
   // 2 constraints: three requests from the methods the session-budget solve uses most
   await evaluate(`window.__autotune.setBudget(${JSON.stringify(session?.budget_bits ?? "9/2")})`);
   const counts = Object.entries((await state()).counts).filter(([m]) => m !== "bf16").sort((x, y) => y[1] - x[1]).map(([m]) => m);
@@ -367,7 +384,12 @@ print(json.dumps(out))
   const tip = await evaluate(`(() => { const c = document.querySelector('.at-cell[data-b="3"][data-k="1"]'); c.dispatchEvent(new MouseEvent("mouseover", {bubbles: true}));
     return {text: document.getElementById("tip").innerText, bars: document.querySelectorAll("#tip svg.at-spark rect").length}; })()`);
   check("profile in the cell tooltip (fake profile): kurtosis, 3σ, channel ratio, outlier channels, pruning errors, 24-bar sparkline",
-    ["가중치 첨도", "3σ 밖 가중치", "입력 채널 absmax 비", "outlier 입력 채널", "50% 가지치기 오차", "2:4 가지치기 오차"].every((k) => tip.text.includes(k)) && tip.bars === 24, tip);
+    ["가중치 첨도", "3σ 밖 가중치", "입력 채널 absmax 비", "중앙값 6× 넘는 입력 채널", "50% 가지치기 오차", "2:4 가지치기 오차"].every((k) => tip.text.includes(k)) && tip.bars === 24, tip);
+  const inFeatures = fixtureBundle.table.layers.find((l) => l.block === 3 && l.kind === fixtureBundle.table.kinds[1])?.in_features;
+  check(`outlier channels read as a fraction of the ${inFeatures} input channels (fake 0.0078125)`,
+    tip.text.includes(`중앙값 6× 넘는 입력 채널\t0.78% (${Math.round(0.0078125 * inFeatures)}/${inFeatures})`), tip);
+  check("report errors in the cell tooltip (fake report): weight MSE, output SQNR · cosine",
+    tip.text.includes("가중치 MSE (균일 리포트)\t1.25e-5") && tip.text.includes("27.5 dB · 0.99731"), tip);
 
   // ---------- fixture server, /down/: 503 for both live calls ----------
   await open(`${FIXTURE}/down/autotune.html`);

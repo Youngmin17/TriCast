@@ -20,6 +20,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   unquantized weight and input-activation distribution and the output error of magnitude / Wanda pruning
   (50% and 2:4), joined with every method's bits, size, single-layer KL and options; the ledger records the
   profile (`layer_stat`), and the tune loop's analysis retrieves the loss layers' documents (RAG, mask `no-rag`).
+- Per-layer report errors on the Auto-tune page: the cell tooltip shows the weight MSE and layer-output SQNR /
+  cosine from the `tricast report` of the method's uniform recipe, attached only when the report's recipe hash
+  is that uniform KL record's (`export_autotune_demo.layer_reports`).
 - Evidence ledger (`app/ledger.py`, SPEC AC23): every measured number of auto-tune tables, measures, solutions,
   `tricast run` and `tricast report` records becomes one record with its environment and source pointer;
   `tricast.rag.search_evidence` ranks per-layer, per-recipe and per-method documents plus the method catalog.

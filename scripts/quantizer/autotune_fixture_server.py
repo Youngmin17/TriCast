@@ -2,9 +2,9 @@
 
 It serves app/web under three path prefixes and fakes only the Auto-tune bundle and the two live endpoints:
 - /fixture/  demo/autotune/bundle.json = the repo bundle plus FAKE `requests` (one stored reply per outcome)
-             and FAKE layer profiles; POST api/autotune/parse answers a canned live "tune" request (a text
-             containing "422" gets 422 request_refused, "slow" waits 30 s first); POST api/autotune/propose
-             answers a canned live round;
+             and FAKE layer profiles and report errors; POST api/autotune/parse answers a canned live
+             "tune" request (a text containing "422" gets 422 request_refused, "slow" waits 30 s first);
+             POST api/autotune/propose answers a canned live round;
 - /down/     the same bundle; both POSTs answer 503 agent_unavailable;
 - /missing/  the bundle answers 404.
 Every other path under a prefix is the file from app/web. The fake bundle is written to a temporary directory
@@ -89,7 +89,7 @@ def profile(block: int) -> dict[str, Any]:
                    "outlier_6sigma": 0.00002, "row_absmax_ratio": 3.1, "col_absmax_ratio": 4.2,
                    "zero_fraction": 0.0, "mean": 0.0, "histogram": histogram},
         "activation": {"absmax": 41.0, "rms": 1.3, "kurtosis": 27.0, "channel_absmax_ratio": 18.4,
-                       "outlier_channels": 6,
+                       "outlier_channels": 0.0078125,
                        "channel_absmax_quantiles": {"p50": 2.1, "p90": 4.0, "p99": 11.0, "max": 41.0}},
         "sparsity": {"magnitude_50": 0.142, "wanda_50": 0.0871, "magnitude_2of4": 0.231, "wanda_2of4": 0.164},
     }
@@ -129,6 +129,7 @@ def fake_bundle(bundle: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]
     out["requests"] = replies
     for layer in out["table"]["layers"]:
         layer["profile"] = profile(layer["block"])
+        layer["report"] = [[1.25e-5, 27.5, 0.99731] for _ in table["methods"]]
     return out, live
 
 

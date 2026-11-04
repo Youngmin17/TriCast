@@ -13,7 +13,8 @@
 | 브라우저: Quantizer | JS ↔ Python 레시피 바이트 일치 (프리셋 5 · 무작위 격자 300 · 옵션 상태 300), 상호작용, 빈 · 오류 상태 | `node scripts/quantizer/qz_check.mjs …` | **QZ_CHECKS[static] 71/71** |
 | 브라우저: tricast 수용 | 위 300 격자의 YAML 을 tricast 로더가 해석 | `python scripts/quantizer/qz_tricast_accept.py …` | `QZ_TRICAST_ACCEPT_OK` (레시피 100, 층 19,600) |
 | 브라우저: 레이어 지도 | 지표 왕복 · 비유한 값 표시 | `node scripts/quantizer/cdp_check.mjs …` | **CDP_CHECKS 44/44** |
-| 브라우저: Auto-tune | 배낭 · 제약 = Python, 요청 상자 · 라운드(저장 · 실시간 fixture · 오류), Tab 포커스, 감소 모션, 390 px, 대비 ≥ 4.5:1 | `node scripts/quantizer/autotune_ui_check.mjs <out> . <python>` | **39/39** (개발 번들) · **39/39** (track M 번들) |
+| 브라우저: Auto-tune | 배낭 · 제약 = Python, 요청 상자 · 라운드(저장 · 실시간 fixture · 오류), 칸 툴팁의 리포트 오차 = 번들 값, Tab 포커스, 감소 모션, 390 px, 대비 ≥ 4.5:1 | `node scripts/quantizer/autotune_ui_check.mjs <out> . <python>` | **42/42** (track M 번들, 리포트 포함) · 39/39 (개발 번들, 리포트 검사 추가 전) |
+| 리포트 오차 정직성 | 층별 MSE · SQNR · cos 가 그 방법의 균일 레시피와 같은 레시피 해시의 리포트에서만 옴 | `pytest -q app/tests/test_autotune_reports.py` · 번들 재생성 | 1 passed · 균일 15개 모두 해시 일치, 196층 × 15방법 = 2,940칸 채움, 다른 번들 필드는 이전과 동일 |
 | 배낭 정합 | 브라우저 배낭 = `python -m app.autotune solve` (예산별 196층 선택 · 값 · 비트) | `node scripts/quantizer/autotune_check.mjs …` | v2 표 **10/10**, track M 표 **10/10** (불가능 · 너무 큰 예산의 거부 문구 포함) |
 | 정직성 | 화면 번들의 측정값이 정확한 레시피에만 붙음 (레시피 파일 SHA-256 → KL 기록 → PPL 기록) | `python -m app.export_autotune_demo …` | 균일 15 · 배낭 6 모두 대조 통과, 거부 0 |
 | 실제 서버 E2E | `python -m app.server --demo --agent <loop.json>` 위의 화면 · 번들 · 실시간 해석 · 실시간 제안 | curl (로컬 `.venv`) | health 200 · 화면 200 · 번들 200 (720 KB) · **실시간 해석 6.2초 $0.029** → `tune · 403/128 · BF16 유지 [-1]` · **실시간 제안 68초 $0.28** → 1 채택 · 1 거부(같은 레시피가 이미 세션에 있음), 원본 세션 파일 수 33 → 33 |
@@ -36,6 +37,7 @@
 | 검색된 층 문서가 예전 표 줄로 시작 | 2,400자에서 잘려 세션 표 · 프로파일이 빠짐 | `ed83459`: 세션 표 KL → 프로파일 → 리포트 순으로 좁힘 |
 | 1차원 배낭이 예산 전체를 칸으로 펼침 | 16방법 표에서 브라우저 풀이 4–7초, 6비트 이상 거부 | `ec5fcf1`: 층마다 가장 싼 선택지 위만 다룸 (같은 해, 칸 3–7배 감소) |
 | evals 데이터셋 r_c6 (초안) | 어떤 응답으로도 통과 불가 | 예산 3 → 3.2 (설계서 §2 초안 수정 기록) |
+| 툴팁의 "outlier 입력 채널" 이 비율(0.0088)을 개수처럼 표시 | 발표자 · 동료가 채널 수로 오독 | 비율 · 개수로 표시 (`0.88% (27/3072)`), fixture 의 가짜 값을 비율로 바꾸고 문구 검사 추가 (가짜 값이 정수 6 이라 놓쳤다) |
 
 ## 4. 남은 위험 · 미검증
 
@@ -44,3 +46,4 @@
 - 브라우저 검사는 Google Chrome (macOS) 만 돌렸다. Safari · Firefox 는 손으로 확인하지 않았다.
 - README 의 "화면만 보기" 설치(새 가상환경에 fastapi · uvicorn · pillow …)를 깨끗한 환경에서 다시 해 보지 않았다.
 - evals 는 합격선 · 절대 규칙 기대 결과 · judge 라벨이 팀 확정 전이라, 실행해도 결과를 근거로 쓰지 않는다 ([설계서 §7](../evals/EVAL_DESIGN.md)).
+- 제안자가 받는 RAG 문서의 프로파일 줄에는 통계 이름만 있고 정의가 없다 (예: `outlier_channels` 가 비율이라는 사실). 진행 중인 데모 세션의 입력이 라운드 중간에 바뀌지 않도록 이번에는 고치지 않았다 — 다음 세션 전에 문서 머리에 정의를 넣는다.

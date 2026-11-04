@@ -15,7 +15,8 @@ table has floors), with each method's ``WEIGHT_BITS`` so the page's solver (``ap
 layers exactly as ``app.autotune.solve`` does. A measured number is attached to a grid only when the measured
 recipe file is the YAML the generator writes for that grid (its SHA-256 equals the record's ``file_sha256``)
 and a test PPL only when the PPL record's ``recipe_hash`` is that measurement's ``recipe_sha256``; otherwise
-the field stays null with the reason.
+the field stays null with the reason. With ``--measured`` and a ledger, each layer also gets the per-layer
+``tricast report`` errors of every method's measured uniform recipe (``layer_reports``, same recipe hash).
 """
 
 from __future__ import annotations
@@ -166,6 +167,42 @@ def baselines(table: dict[str, Any], kl: Records, ppl: Records,
     return sorted(out, key=lambda row: (row["bits"], row["id"]))
 
 
+REPORT_METRICS = (("weight", "mse"), ("output", "sqnr_db"), ("output", "cosine"))
+
+
+def layer_reports(table: dict[str, Any], rows: list[dict[str, Any]], ledger: Path) -> dict[str, Any]:
+    """Write into every layer of the page's ``table`` a ``report`` list in the method order: the
+    ``REPORT_METRICS`` values of the ``tricast report`` of that method's uniform recipe (one of ``rows``), or
+    null. A report counts only when its ``recipe_hash`` is the uniform KL record's ``recipe_sha256`` (the
+    same recipe) and its model revision is the table's; reports of one recipe from several files take the
+    first path. Returns, per method, the report file, recipe hash, setting and environment."""
+    from app import ledger as lg
+
+    method_of = {row["kl_record"]["recipe_sha256"]: row["method"] for row in rows if row["kl_record"]}
+    wanted = {f"{tensor}.{metric}" for tensor, metric in REPORT_METRICS}
+    sources: dict[str, dict[str, Any]] = {}
+    found: dict[tuple[str, str], dict[str, float]] = {}
+    for record in sorted(lg.read_ledger(ledger), key=lambda record: record["source"]["path"]):
+        method = method_of.get(record.get("recipe_hash"))
+        key = f"{record.get('tensor')}.{record.get('metric')}"
+        if (record["kind"] != "layer_report" or method is None or key not in wanted
+                or record.get("model_sha") != table["meta"].get("model_sha")):
+            continue
+        env = record.get("env") or {}
+        source = sources.setdefault(method, {
+            "path": record["source"]["path"], "sha256": record["source"].get("sha256"),
+            "recipe_hash": record["recipe_hash"], "recipe_name": record.get("recipe_name"),
+            "setting": record.get("setting"), "gpu": (env.get("gpu_names") or [None])[0],
+            "git_sha": env.get("git_sha"), "git_dirty": env.get("git_dirty")})
+        if record["source"]["path"] == source["path"]:
+            found.setdefault((record["layer"], method), {})[key] = record["value"]
+    order = [f"{tensor}.{metric}" for tensor, metric in REPORT_METRICS]
+    for layer in table["layers"]:
+        cells = [found.get((layer["name"], method)) for method in table["methods"]]
+        layer["report"] = [None if cell is None else [cell.get(key) for key in order] for cell in cells]
+    return {"metrics": order, "methods": dict(sorted(sources.items()))}
+
+
 def solutions(root: Path, kl: Records, ppl: Records, table_sha: str) -> list[dict[str, Any]]:
     """The knapsack solutions of the run (``*/solution.json`` + ``grid.json`` solved on this table)."""
     out = []
@@ -281,6 +318,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             _, _, layers, _ = at.load_table(args.table)
             payload.update(native=native, baselines=baselines(table, kl, ppl, layers),
                            solutions=solutions(args.measured, kl, ppl, table["sha256"]))
+            if args.ledger.is_file():
+                table["reports"] = layer_reports(table, payload["baselines"], args.ledger)
         if args.session is not None:
             payload["session"] = session_bundle(args.session, args.ledger)
     except (at.AutotuneError, OSError, KeyError, ValueError) as exc:

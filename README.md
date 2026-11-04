@@ -57,7 +57,8 @@ make check                              # ruff + CPU 테스트
 
 ```bash
 git clone <이 저장소> && cd TriCast
-python -m venv .venv && source .venv/bin/activate        # Python 3.10 이상
+python3 --version                                         # 3.10 이상이어야 한다 (macOS 기본 python3 는 3.9)
+python3 -m venv .venv && source .venv/bin/activate
 pip install fastapi uvicorn pillow numpy jsonschema pyyaml   # 녹화 모드에 필요한 것만
 python -m app.server --demo                               # http://127.0.0.1:8765
 ```

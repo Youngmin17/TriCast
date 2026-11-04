@@ -101,6 +101,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 - C4 calibration (`calibration.dataset: c4`) loads its shard with no config name: under datasets 4.x config
   `en` carries the split sizes of all of C4 and one shard failed split verification (ExpectedMoreSplitsError,
   found on the 2026-11-04 Llama-2-7B GPU run), as the official prune path already did.
+- On Python 3.9 (macOS `/usr/bin/python3`) the app exits with the required version and how to get it, instead
+  of a pydantic TypeError after a successful install; the Auto-tune tooltip reads `outlier_channels` as a fraction.
 
 ### Added
 - `docs/PROBLEM.md` §3-0 lists behaviour, cost and workaround evidence and the unaffected group in the interview

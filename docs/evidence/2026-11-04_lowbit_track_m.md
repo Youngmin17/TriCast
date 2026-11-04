@@ -66,7 +66,7 @@
 - rht_gptq_int3 6.311 은 AWQ 앵커 6.24 보다 1.1% 높고, 우리 awq_int3(스케일만) 6.486 보다 낮다.
 
 - gptq_int4 5.6563 은 AC26 의 공식 GPTQ 어댑터 결과 5.6570 과 0.0007 차이다 (다른 GPU · 다른 GEMM 누산).
-- 두 A100 은 장치 이름이 다르다 (geneva `A100-SXM4-80GB`, turin `A100 80GB PCIe`). 세션 GPU 고정은 이름으로 비교하므로, 트랙 M 표 · 세션은 turin(PCIe) 하나로 고정한다.
+- 두 A100 은 장치 이름이 다르다 (geneva `A100-SXM4-80GB`, turin `A100 80GB PCIe`). 세션 GPU 고정은 이름으로 비교하므로, 트랙 M 표 · 세션은 한 변형에 고정한다 (§1.5 이후 geneva).
 - **F4 원인 분석** (공식 `mit-han-lab/llm-awq` `d6e797a4` 의 `awq/quantize/auto_scale.py` · `auto_clip.py` 와 `src/tricast/transforms.py` `_fit_awq` 를 대조):
   1. **TriCast 에는 `auto_clip` 이 없다.** 공식은 스케일 적용 뒤 q/k 를 뺀 모든 Linear 에서, 출력 행 × 그룹마다 최대값을 1 − i/20 (i < 10) 로 줄여 보정 토큰 512개의 출력 MSE 가 최소인 값으로 가중치를 클리핑한다. 클리핑은 비트가 낮을수록 중요하다. INT4 통과 · INT3 미달과 맞는 유력 원인이다 (아직 검증 전).
   2. α 격자: 공식 {0, 0.05, …, 0.95}, TriCast linspace(0, 1, 20).
@@ -83,9 +83,27 @@
   - **F3′** awq_clip_int4: \|PPL − 5.60\| ≤ 0.056 또는 \|PPL − 5.62\| ≤ 0.056
 - F4′ 가 실패하면 남은 차이(α 격자 · 스케일 하한 · 모듈 출력 목적 · 표본)를 하나씩 격리하는 실험을 계획에 올린다. 실패한 채로도 풀에는 둔다.
 
+결과 (트리 `9ecd7cb`, A100-SXM4, 01:43–02:12 UTC):
+
+| # | 방법 | 레시피 해시 | PPL | 기준 | 판정 |
+|:-:|---|---|---|---|:-:|
+| F3′ | awq_clip_int4 | `fb9826a5c6` | 5.6048 | 5.60 ± 0.056 | ✅ |
+| F4′ | awq_clip_int3 | `29a4a23ac1` | 6.3074 | 6.24 ± 0.0624 | ❌ (Δ = +0.067, +1.08%) |
+
+- 클리핑이 F4 의 차이를 73% 줄였다 (6.4864 → 6.3074, 앵커 6.24). 남은 0.067 이 기준(1%)을 조금 넘는다. 비교표에는 "재현 미달 (Δ=+0.067)" 로 적는다.
+- 남은 차이의 격리 실험(축 하나씩, G6)은 다음 계획에 올린다. 후보는 목적 함수(모듈 출력), Pile 데이터(pile-val-backup vs pile-10k), fp16 모델 dtype, α 격자 · 스케일 하한이다.
+- 3비트에서는 rht_gptq_int3 6.3110 과 awq_clip_int3 6.3074 가 거의 같다 (차이 0.004, 다른 GPU 작업).
+
+### 1.5 Qwen3-0.6B 작업 1차 실패 (turin, 01:55 UTC)
+
+- 두 작업(표 · 균일 PPL)이 같은 시각에 호스트 메모리 할당 실패로 죽었다: `memory allocation of 335544320 bytes failed`(표, SIGABRT 134), `MemoryError`(균일 PPL).
+- turin 은 엄격 overcommit(`vm.overcommit_memory=2`, ratio 95, CommitLimit 407 GB)이다. 다른 사용자의 큰 프로세스(가상 크기 140 GB · 118 GB)가 그 시각 무렵 시작됐다. 정확한 순간의 Committed_AS 는 기록하지 못했다.
+- 처리: 트랙 M 을 **geneva(A100-SXM4-80GB, CommitLimit 517 GB)** 에 고정하고 두 작업을 처음부터 다시 띄웠다 (02:14 UTC). 표는 재개 식별에 GPU 이름이 들어가서 turin 항목(6층분)을 이어 쓸 수 없다. 1차 출력은 `qz_trackm_qwen_try1_turin/`, 로그는 `logs/try1/` 에 있다.
+- 균일 기준선 목록에 awq_clip_int4 · awq_clip_int3 을 더했다 (15개).
+
 ## 2. Qwen3-0.6B 트랙 M 표 (개발 모델, 사전 등록 전)
 
 - 풀: bf16, gptq_int4/3/2, rht_gptq_int4/3/2, awq_int4/3, awq_clip_int4/3, hqq_int4/3/2, nf4, int8_w (16), `--mma fp32_fma`, 보정 WikiText-2 train 128 × 2048 seed 42, KL 창 validation 8 × 512 seed 42.
-- 배낭 2.5 · 3.0 · 3.5 · 4.25 비트, 균일 기준선 13개. 검증 KL (seed 43) 과 test PPL.
-- 실행 스크립트 `runs/20261104_lowbit/qz_trackm_qwen.sh` (`MODE=auto|uniform`). A100 에 고정한다 (트랙 M 세션의 GPU 모델).
+- 배낭 2.5 · 3.0 · 3.5 · 4.25 비트, 균일 기준선 15개. 검증 KL (seed 43) 과 test PPL.
+- 실행 스크립트 `runs/20261104_lowbit/qz_trackm_qwen.sh` (`MODE=auto|uniform`). geneva A100-SXM4 에 고정한다 (트랙 M 세션의 GPU 모델, §1.5).
 - 이 결과는 논문 프로토콜 §8 판정 기준을 정하기 전에 본다. 그래서 §8 의 수치 기준을 이 결과에 맞춰 고르지 않는다는 점을 사전 등록 커밋에 적는다.

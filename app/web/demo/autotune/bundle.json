@@ -480,7 +480,7 @@
    "avg_bits": 3.147953869047619,
    "kl": 0.38644206288408633,
    "name": "act_damp05_r3",
-   "ppl": null
+   "ppl": 26.51390753586826
   },
   "budget_bits": "403/128",
   "missing_records": [],
@@ -608,6 +608,17 @@
     "source": "runs/20261104_lowbit/qz_trackm_qwen/table.json",
     "value": 0.0022717276056726902
    },
+   "E77a13db45a96": {
+    "git_sha": "9ecd7cb70d2a292a79f675d84bce1f9e81200cf5",
+    "gpu": "NVIDIA A100-SXM4-80GB",
+    "kind": "ppl",
+    "layer": null,
+    "method": null,
+    "metric": "ppl",
+    "recipe_hash": "76b6cc338cdbc245c95ad3432c08ad3109ac4bd2a27d602d1acc0d99a26da28b",
+    "source": "runs/20261104_demo/s3150_ppl/ppl_ai/opt_act_order_r2.json",
+    "value": 26.822579752088618
+   },
    "E7fde79566655": {
     "git_sha": "6c4b406521e7d893e077240831fa2fbf4f3aaf20",
     "gpu": "NVIDIA A100-SXM4-80GB",
@@ -673,6 +684,17 @@
     "recipe_hash": "55f08236b2a751a51bf16f422e0b86d9099349d385e51a1501f7fe17bb99d68d",
     "source": "runs/20261104_demo/s3150/rounds/2/kl.json",
     "value": 0.4368888973192918
+   },
+   "Ebd6d186cdb3b": {
+    "git_sha": "9ecd7cb70d2a292a79f675d84bce1f9e81200cf5",
+    "gpu": "NVIDIA A100-SXM4-80GB",
+    "kind": "ppl",
+    "layer": null,
+    "method": null,
+    "metric": "ppl",
+    "recipe_hash": "5445cc81d19b5df899f01b4deefe41e3a1d8345c65c39c3021ed0299376b4063",
+    "source": "runs/20261104_demo/s3150_ppl/ppl_ai/act_damp05_r3.json",
+    "value": 26.51390753586826
    },
    "Ec8e99d840909": {
     "git_sha": "6c4b406521e7d893e077240831fa2fbf4f3aaf20",
@@ -1355,8 +1377,8 @@
         "weight_algo.act_order": true
        }
       },
-      "ppl": null,
-      "ppl_id": null,
+      "ppl": 26.822579752088618,
+      "ppl_id": "E77a13db45a96",
       "predicted": {
        "floor_rule": "max(0, kl - floor) for every non-BF16 method; BF16 is a skip (no patch): 0, no floor",
        "predicted_kl_sum": null,
@@ -2800,8 +2822,8 @@
         "weight_algo.damp": 0.05
        }
       },
-      "ppl": null,
-      "ppl_id": null,
+      "ppl": 26.51390753586826,
+      "ppl_id": "Ebd6d186cdb3b",
       "predicted": {
        "floor_rule": "max(0, kl - floor) for every non-BF16 method; BF16 is a skip (no patch): 0, no floor",
        "predicted_kl_sum": null,

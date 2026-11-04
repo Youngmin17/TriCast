@@ -18,7 +18,9 @@ recognises by shape:
 - ``tricast run`` record (``run_hash`` + ``metrics`` + ``env``): ``ppl`` and ``lmeval`` (one per task and
   metric, with stderr and sample count);
 - ``tricast report`` record (``layers`` + ``model`` + ``recipe_hash``): ``layer_report`` (one per layer,
-  tensor and metric) and ``model_report``.
+  tensor and metric) and ``model_report``;
+- layer profile (``tricast.layer_profile/*``, app/layer_profile.py): ``layer_stat`` — one per layer, part
+  (``weight`` / ``activation`` / ``sparsity``) and statistic of the unquantized model (PROFILE_STATS).
 
 Every record carries the environment it was measured in (git SHA, dirty flag, GPU, versions) and its source:
 the file's sha256 and a JSON pointer (``#L<n>/<key>`` for a jsonl line) to the exact value, so ``verify``
@@ -62,7 +64,12 @@ from typing import Any
 
 SCHEMA = "tricast.ledger/1"
 DOCS_SCHEMA = "tricast.ledger.docs/1"
-KINDS = ("layer_kl", "recipe_kl", "solution", "ppl", "lmeval", "layer_report", "model_report")
+KINDS = ("layer_kl", "recipe_kl", "solution", "ppl", "lmeval", "layer_report", "model_report", "layer_stat")
+# the statistics of a layer profile that become records, per part, in document order
+PROFILE_STATS = {"weight": ("absmax", "std", "kurtosis", "outlier_3sigma", "outlier_6sigma",
+                            "row_absmax_ratio", "col_absmax_ratio", "zero_fraction"),
+                 "activation": ("absmax", "rms", "kurtosis", "channel_absmax_ratio", "outlier_channels"),
+                 "sparsity": ("magnitude_50", "wanda_50", "magnitude_2of4", "wanda_2of4")}
 LAYER_METRICS = ("sqnr_db", "mse", "cosine", "relative_frobenius")  # per tensor of a tricast report layer
 LAYER_TENSORS = ("weight", "activation", "output")
 MODEL_METRICS = ("logits_kl", "top1_agreement", "ppl_reference", "ppl_emulated")
@@ -247,6 +254,22 @@ def _from_report(data: dict[str, Any], source: dict[str, Any]) -> Iterator[dict[
                           **model, **recipe, metric=metric, setting=setting)
 
 
+def _from_profile(data: dict[str, Any], source: dict[str, Any]) -> Iterator[dict[str, Any]]:
+    meta = data.get("meta") or {}
+    env = _env(meta.get("env"), meta)
+    setting = _window_setting(meta)
+    for index, layer in enumerate(data.get("layers") or []):
+        fields = {"model_id": meta.get("model_id"), "model_sha": meta.get("model_sha"),
+                  **_layer_fields(layer["name"]), "setting": setting}
+        for part, stats in PROFILE_STATS.items():
+            values = layer.get(part) or {}
+            for stat in stats:
+                if _is_number(values.get(stat)):
+                    pointer = _pointer("layers", index, part, stat)
+                    yield _record("layer_stat", values[stat], {**source, "pointer": pointer}, env,
+                                  tensor=part, metric=stat, **fields)
+
+
 def _relative(path: Path, root: Path) -> str:
     try:
         return str(path.resolve().relative_to(root.resolve()))
@@ -276,6 +299,8 @@ def records_of(path: Path, root: Path) -> tuple[list[dict[str, Any]], str | None
         return list(_from_measure(data, source)), None
     if schema.startswith("tricast.autotune.solution/"):
         return list(_from_solution(data, source)), None
+    if schema.startswith("tricast.layer_profile/"):
+        return list(_from_profile(data, source)), None
     if {"run_hash", "metrics", "env"} <= set(data):
         return list(_from_run(data, source)), None
     if {"layers", "model", "recipe_hash", "env"} <= set(data):
@@ -490,6 +515,13 @@ def _layer_doc(name: str, records: list[dict[str, Any]]) -> dict[str, Any]:
             parts = [f"{record['method']} {_g(record['value'])} [{record['id']}]" for record in ordered]
             lines.append(f"single-layer KL, table {path} ({_setting(group[0])}, {_where(group[0])}): "
                          + "; ".join(parts))
+        elif kind == "layer_stat":
+            order = [(part, stat) for part, stats in PROFILE_STATS.items() for stat in stats]
+            ordered = sorted(group, key=lambda item: order.index((item["tensor"], item["metric"])))
+            parts = [f"{record['tensor']} {record['metric']} {_g(record['value'])} [{record['id']}]"
+                     for record in ordered]
+            lines.append(f"layer profile (unquantized, distribution and sparsity), {path} "
+                         f"({_setting(group[0])}, {_where(group[0])}): " + "; ".join(parts))
         else:
             ordered = sorted(group, key=lambda item: (LAYER_TENSORS.index(item["tensor"]), item["metric"]))
             parts = [f"{record['tensor']} {record['metric']} {_g(record['value'])} [{record['id']}]"
@@ -553,7 +585,7 @@ def documents(records: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
     for record in records:
         if "superseded_by" in record:  # the same number is in the finished table's record
             continue
-        if record["kind"] in ("layer_kl", "layer_report"):
+        if record["kind"] in ("layer_kl", "layer_report", "layer_stat"):
             layers[(record.get("model_sha"), record["layer"])].append(record)
         if record["kind"] == "layer_kl" and record["method"] != "floor":
             methods[(record["source"]["path"], record["method"])].append(record)

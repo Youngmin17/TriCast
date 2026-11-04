@@ -5,6 +5,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 ## [Unreleased]
 
 ### Added
+- Layer profiles and layer cards (`app/layer_profile.py`, `app/layer_cards.py`): per decoder Linear, the
+  unquantized weight and input-activation distribution and the output error of magnitude / Wanda pruning
+  (50% and 2:4), joined with every method's bits, size, single-layer KL and options; the ledger records the
+  profile (`layer_stat`), and the tune loop's analysis retrieves the loss layers' documents (RAG, mask `no-rag`).
 - Evidence ledger (`app/ledger.py`, SPEC AC23): every measured number of auto-tune tables, measures, solutions,
   `tricast run` and `tricast report` records becomes one record with its environment and source pointer;
   `tricast.rag.search_evidence` ranks per-layer, per-recipe and per-method documents plus the method catalog.

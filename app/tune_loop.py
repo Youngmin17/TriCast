@@ -64,6 +64,9 @@ from app import tune_agent as ta
 LOOP_SCHEMA = "tricast.tune.loop/1"
 TOP_LAYERS = 12  # layers with the largest single-layer loss shown to the proposer
 TOP_MOVES = 12  # tabled one-move neighbours shown to the proposer
+RAG_LAYERS = 6  # loss-concentration layers whose evidence the analysis retrieves from the ledger documents
+RAG_K = 2  # documents retrieved per such layer
+RAG_CHARS = 2400  # of each retrieved document's text
 # black-box controls (mutation_search): cell switches per offspring (drawn uniformly), the chance that an
 # offspring also changes one option of a method in its grid, and the factors a numeric option is multiplied by
 MUTATION_CELLS = (1, 2, 3)
@@ -75,7 +78,8 @@ GUIDED_MOVES = 50  # evolution-table draws from this many tabled moves of a pare
 # the proposer sees option spaces and measurements but not method names; its catalog cards would name them.
 MASKS = {"no-history": ("history", "predicted_vs_measured"), "no-evidence": ("catalog",),
          "no-table": ("loss_concentration", "tabled_moves", "predicted_vs_measured"),
-         "no-options": ("option_space",), "anonymous": ("catalog",)}
+         "no-options": ("option_space",), "no-rag": ("retrieved",),
+         "anonymous": ("catalog", "retrieved")}  # retrieved documents name the methods in their text
 # set by gpu_cap.sh for the job it admits; a round wrapper must never change them
 GPU_CAP_OWNED = frozenset({"CUDA_VISIBLE_DEVICES", "NVIDIA_VISIBLE_DEVICES", "HIP_VISIBLE_DEVICES",
                            "ROCR_VISIBLE_DEVICES", "GPU_DEVICE_ORDINAL"})
@@ -101,7 +105,9 @@ PROPOSAL_SCHEMA = {"type": "object",
 REPLY_SCHEMA = PROPOSAL_SCHEMA
 SYSTEM = """You are the proposer of an automatic quantization tuning loop for one LLM. Each round you receive
 an evidence analysis built from measured records (a per-layer KL table, whole-recipe KL measured on validation
-windows, the methods' option spaces and catalog cards). Propose grids that should lower the measured
+windows, the methods' option spaces, catalog cards and the ledger documents retrieved for the layers where the
+loss concentrates: their KL for every method, layer reports and unquantized weight / activation distribution
+and sparsity statistics, each number with its record id). Propose grids that should lower the measured
 whole-recipe validation KL within the size budget. Rules:
 - A proposal starts from an already measured proposal ("base"), lists per-layer method changes, and gives the
   full method options of the new grid (null keeps the base's options). The budget counts stored weight bits; a
@@ -249,6 +255,16 @@ def analyze(config: dict[str, Any], root: Path, refused: Sequence[dict[str, Any]
     used = sorted(set(cells.values()))
     cards = [{"method": method, "card": hit["section"], "text": hit["text"][:600]} for method in used
              for hit in search_evidence(method.replace("_", " "), 1, ledgers=[])]
+    # RAG: the ledger documents of the layers where the loss concentrates (single-layer KL of every method,
+    # layer reports, the layer profile's distribution and sparsity), each line with its record ids
+    retrieved = []
+    for item in loss[:RAG_LAYERS]:
+        query = " ".join(part for part in ("layer", item["layer"], item["method"], item["best_alternative"])
+                         if part)
+        hits = search_evidence(query, RAG_K, ledgers=[str(lg.docs_path(ledger))], catalogs=[])
+        retrieved.append({"query": query, "documents": [
+            {"source": hit["source"], "section": hit["section"], "text": hit["text"][:RAG_CHARS]}
+            for hit in hits]})
     counts = {method: list(cells.values()).count(method) for method in used}
     spending = {} if compute is None else {"compute": {
         "budget": str(compute), "best": ta.evaluate(spec, table_path, budget, compute)["avg_compute"],
@@ -268,7 +284,8 @@ def analyze(config: dict[str, Any], root: Path, refused: Sequence[dict[str, Any]
                 for row in measured],
             "option_space": {method: {option: qr.OPTIONS[option] for option in qr.METHOD_OPTIONS[method]}
                              for method in used},
-            "catalog": cards, "grid": {"blocks": len(spec["grid"]), "kinds": list(qr.KINDS)}}
+            "catalog": cards, "retrieved": retrieved,
+            "grid": {"blocks": len(spec["grid"]), "kinds": list(qr.KINDS)}}
 
 
 # ---------- proposers ----------

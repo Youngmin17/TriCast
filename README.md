@@ -131,6 +131,7 @@ python evals/run_tune_evals.py --mode stored ...                  # 튜닝 evals
 | RAG 설정 · evals | [`config/rag.yaml`](config/rag.yaml) · [`evals/`](evals/README.md) |
 | 웹 앱 (TriCast Studio · Quantizer · 레이어 지도 · Auto-tune) | [`app/README.md`](app/README.md) · [`app/web/autotune.html`](app/web/autotune.html) |
 | 아키텍처 — 모듈 경계 · 데이터 흐름 · 불변식 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) |
+| 중간평가 2 시연 시나리오 · QA 기록 | [`docs/DEMO.md`](docs/DEMO.md) · [`docs/QA.md`](docs/QA.md) |
 | 튜닝 evals — 지표 · 데이터셋 · judge · 러너 위임 | [`evals/EVAL_DESIGN.md`](evals/EVAL_DESIGN.md) · [`evals/tune_evalset.jsonl`](evals/tune_evalset.jsonl) · [`evals/tune_judge_prompt.md`](evals/tune_judge_prompt.md) · [`docs/prompts/delegation_evals.md`](docs/prompts/delegation_evals.md) |
 | 구현 · 검증 상태의 원천 | [`support_matrix.yaml`](support_matrix.yaml) |
 

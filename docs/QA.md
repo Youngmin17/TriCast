@@ -1,0 +1,46 @@
+# QA 기록 — Auto-tune 시연 범위 (2026-11-04)
+
+중간평가 2 시연 범위(Auto-tune 화면 · 요청 해석 · 근거 인용 제안 · 레이어 카드 RAG · 휴리스틱 배낭)를 바꾼 커밋 `6c4b406`…`b489ce5` 에 대해 돌린 검사다. 결정 층(골든 · 단위 테스트, 브라우저 검사)과 통계 층(evals) 을 나눠 적는다. 미실행 항목은 이유와 함께 적는다.
+
+## 1. 결과 요약
+
+| 영역 | 검사 | 명령 | 결과 |
+|---|---|---|---|
+| 정적 분석 | ruff (저장소 전체) | `ruff check .` | 경고 0 (`b489ce5`) |
+| CPU 단위 · 통합 | `tests/` + `app/tests/` (GPU 제외) | `pytest -q --ignore=tests/gpu tests app/tests` (bath 16코어, `d83fc7a`) | **2,930 passed, 3 skipped** — skip: CUDA NF4 대조 · microxcaling 오라클(클론 없음) · GPU 골든 1건 (AGENTS.md 상 정상) |
+| CPU (이후 변경) | 튜닝 루프 재개 · DENY 감지 (`b489ce5`) | `pytest -q app/tests/test_tune_resume.py app/tests/test_tune_loop.py …` | 24 passed, 1 skipped (로컬에 optuna 없음; 클러스터 실행에서는 통과) |
+| evals 러너 | 러너 단위 테스트 + 오답 주입 9행 | `pytest -q tests/test_tune_evals.py tests/test_evals.py` | **82 passed** — 오답 주입 9/9 기대 판정 ([위임 기록](./prompts/delegation_evals.md)) |
+| 브라우저: Quantizer | JS ↔ Python 레시피 바이트 일치 (프리셋 5 · 무작위 격자 300 · 옵션 상태 300), 상호작용, 빈 · 오류 상태 | `node scripts/quantizer/qz_check.mjs …` | **QZ_CHECKS[static] 71/71** |
+| 브라우저: tricast 수용 | 위 300 격자의 YAML 을 tricast 로더가 해석 | `python scripts/quantizer/qz_tricast_accept.py …` | `QZ_TRICAST_ACCEPT_OK` (레시피 100, 층 19,600) |
+| 브라우저: 레이어 지도 | 지표 왕복 · 비유한 값 표시 | `node scripts/quantizer/cdp_check.mjs …` | **CDP_CHECKS 44/44** |
+| 브라우저: Auto-tune | 배낭 · 제약 = Python, 요청 상자 · 라운드(저장 · 실시간 fixture · 오류), Tab 포커스, 감소 모션, 390 px, 대비 ≥ 4.5:1 | `node scripts/quantizer/autotune_ui_check.mjs <out> . <python>` | **39/39** (개발 번들) · **39/39** (track M 번들) |
+| 배낭 정합 | 브라우저 배낭 = `python -m app.autotune solve` (예산별 196층 선택 · 값 · 비트) | `node scripts/quantizer/autotune_check.mjs …` | v2 표 **10/10**, track M 표 **10/10** (불가능 · 너무 큰 예산의 거부 문구 포함) |
+| 정직성 | 화면 번들의 측정값이 정확한 레시피에만 붙음 (레시피 파일 SHA-256 → KL 기록 → PPL 기록) | `python -m app.export_autotune_demo …` | 균일 15 · 배낭 6 모두 대조 통과, 거부 0 |
+| 실제 서버 E2E | `python -m app.server --demo --agent <loop.json>` 위의 화면 · 번들 · 실시간 해석 · 실시간 제안 | curl (로컬 `.venv`) | health 200 · 화면 200 · 번들 200 (720 KB) · **실시간 해석 6.2초 $0.029** → `tune · 403/128 · BF16 유지 [-1]` · **실시간 제안 68초 $0.28** → 1 채택 · 1 거부(같은 레시피가 이미 세션에 있음), 원본 세션 파일 수 33 → 33 |
+| GPU | `tests/gpu` | — | **미실행**: 이번 범위는 커널 · GPU 경로를 바꾸지 않았다. 마지막 결과는 H200 896 passed ([SPEC](./SPEC.md#6-수용-기준) AC1). |
+
+## 2. 접근성 · 화면 (Auto-tune, `autotune_ui_check.mjs`)
+
+- 키보드: Tab 으로 닿는 요소 60/60, 모두 포커스 링 표시. 슬라이더 · 격자 칸 방향키 동작.
+- 색: 방법 계열 7색 + BF16 중립. dataviz 검증기로 밝은 · 어두운 배경에서 인접쌍 CVD ΔE ≥ 8.4 확인. 칸 글자는 두 테마 모두 대비 4.5:1 이상 (최저 4.76). 색만으로 구분하지 않도록 칸마다 방법 약어를 적는다.
+- 움직임: 예산을 바꾸면 바뀐 칸만 다시 칠한다 (마지막 지연 240 ms + 전환 140 ms). `prefers-reduced-motion` 에서는 0 초.
+- 폭: 1440 · 390 px 모두 페이지 가로 스크롤 없음 (격자만 자기 영역 안에서 스크롤).
+
+## 3. 이번 QA 에서 찾아 고친 것
+
+| 찾은 것 | 영향 | 조치 |
+|---|---|---|
+| 튜닝 루프가 gpu_cap 의 실제 거부 줄(`DENY host=…`)을 못 봄 | 거부된 라운드를 최대 `wait_s`(90분) 기다림 | `b489ce5`: 거부 줄도 grep, 회귀 테스트 `test_the_launch_sees_the_real_deny_line` |
+| 측정이 멈춘 라운드의 요약이 사라짐 | 재실행이 그 라운드를 거부하고 분석 · 거부 사유를 잃음 | `b489ce5`: 측정 전에 `measuring` 으로 기록, 재실행이 다시 측정 |
+| 레이어 프로파일의 모델 revision 누락 | 프로파일이 표의 층 문서와 갈라져 RAG 에서 따로 나옴 | `d1a8bbb`: 불러온 config 의 커밋 해시 기록, 재실행 결과 통계 동일 |
+| 검색된 층 문서가 예전 표 줄로 시작 | 2,400자에서 잘려 세션 표 · 프로파일이 빠짐 | `ed83459`: 세션 표 KL → 프로파일 → 리포트 순으로 좁힘 |
+| 1차원 배낭이 예산 전체를 칸으로 펼침 | 16방법 표에서 브라우저 풀이 4–7초, 6비트 이상 거부 | `ec5fcf1`: 층마다 가장 싼 선택지 위만 다룸 (같은 해, 칸 3–7배 감소) |
+| evals 데이터셋 r_c6 (초안) | 어떤 응답으로도 통과 불가 | 예산 3 → 3.2 (설계서 §2 초안 수정 기록) |
+
+## 4. 남은 위험 · 미검증
+
+- 데모 세션(`runs/20261104_demo/s3150`) 2라운드 측정은 geneva GPU 자리를 기다리는 중이다 (다른 작업이 2자리 사용). 측정 전에는 화면의 AI 제안 측정 칸이 "측정하지 않음"으로 나온다.
+- 브라우저 배낭은 메인 스레드에서 돈다. track M 표에서 2.5–4.25 비트 풀이가 0.5–2.9초 걸려 그동안 화면이 멈춘다 (Web Worker 이전은 다음 작업).
+- 브라우저 검사는 Google Chrome (macOS) 만 돌렸다. Safari · Firefox 는 손으로 확인하지 않았다.
+- README 의 "화면만 보기" 설치(새 가상환경에 fastapi · uvicorn · pillow …)를 깨끗한 환경에서 다시 해 보지 않았다.
+- evals 는 합격선 · 절대 규칙 기대 결과 · judge 라벨이 팀 확정 전이라, 실행해도 결과를 근거로 쓰지 않는다 ([설계서 §7](../evals/EVAL_DESIGN.md)).

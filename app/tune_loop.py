@@ -69,9 +69,11 @@ MUTATION_CELLS = (1, 2, 3)
 OPTION_RATE = 0.5
 NUMERIC_STEPS = (0.1, 0.5, 2.0, 5.0)
 # ablations of the Claude proposer (llm.mask): analysis fields withheld from the prompt
+# "anonymous" also writes every method id as a seeded alias (method_aliases) in the prompt and the schema, so
+# the proposer sees option spaces and measurements but not method names; its catalog cards would name them.
 MASKS = {"no-history": ("history", "predicted_vs_measured"), "no-evidence": ("catalog",),
          "no-table": ("loss_concentration", "tabled_moves", "predicted_vs_measured"),
-         "no-options": ("option_space",)}
+         "no-options": ("option_space",), "anonymous": ("catalog",)}
 # set by gpu_cap.sh for the job it admits; a round wrapper must never change them
 GPU_CAP_OWNED = frozenset({"CUDA_VISIBLE_DEVICES", "NVIDIA_VISIBLE_DEVICES", "HIP_VISIBLE_DEVICES",
                            "ROCR_VISIBLE_DEVICES", "GPU_DEVICE_ORDINAL"})
@@ -553,11 +555,70 @@ def random_search(config: dict[str, Any], root: Path, seed: int = 0) -> Proposer
         next(row["name"] for row in analysis["history"] if row["parent"] is None)], "random", seed)
 
 
-def claude_command(config: dict[str, Any]) -> list[str]:
+def method_aliases(seed: int = 0) -> dict[str, str]:
+    """Method id -> alias for the anonymous ablation: a seeded permutation of PYTHON_METHODS named
+    method_a, method_b, ... (letters only: the rationale check reads digits as numbers)."""
+    order = list(qr.PYTHON_METHODS)
+    random.Random(f"aliases:{seed}").shuffle(order)
+
+    def letters(index: int) -> str:
+        text = ""
+        index += 1
+        while index:
+            index, rest = divmod(index - 1, 26)
+            text = chr(ord("a") + rest) + text
+        return text
+
+    return {method: f"method_{letters(index)}" for index, method in enumerate(order)}
+
+
+def _renamed(value: Any, names: dict[str, str]) -> Any:
+    """``value`` (JSON) with every string and dict key that is a key of ``names`` replaced by its value."""
+    if isinstance(value, str):
+        return names.get(value, value)
+    if isinstance(value, dict):
+        return {names.get(key, key): _renamed(item, names) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_renamed(item, names) for item in value]
+    return value
+
+
+def _decoded(reply: Any, aliases: dict[str, str]) -> Any:
+    """An anonymous proposer's reply with its aliases turned back into method ids where the schema names a
+    method (each change's method, the keys of options); other text is left as written."""
+    if not isinstance(reply, dict) or not isinstance(reply.get("proposals"), list):
+        return reply
+    ids = {alias: method for method, alias in aliases.items()}
+    out = {**reply, "proposals": []}
+    for item in reply["proposals"]:
+        if isinstance(item, dict):
+            item = dict(item)
+            if isinstance(item.get("changes"), list):
+                item["changes"] = [{**change, "method": ids.get(change.get("method"), change.get("method"))}
+                                   if isinstance(change, dict) else change for change in item["changes"]]
+            if isinstance(item.get("options"), dict):
+                item["options"] = {ids.get(key, key): value for key, value in item["options"].items()}
+        out["proposals"].append(item)
+    return out
+
+
+def _alias_schema(aliases: dict[str, str]) -> dict[str, Any]:
+    """PROPOSAL_SCHEMA with the aliases as the method names a change may use."""
+    change = {**_CHANGE, "properties": {**_CHANGE["properties"],
+                                        "method": {"type": "string", "enum": list(aliases.values())}}}
+    proposal = {**_PROPOSAL, "properties": {**_PROPOSAL["properties"],
+                                            "changes": {"type": "array", "items": change}}}
+    return {**PROPOSAL_SCHEMA, "properties": {**PROPOSAL_SCHEMA["properties"],
+                                              "proposals": {"type": "array", "items": proposal}}}
+
+
+def claude_command(config: dict[str, Any], schema: dict[str, Any] | None = None) -> list[str]:
     """``claude -p`` with no built-in tools, no MCP servers, no settings sources (no hooks), the proposal
-    schema, no saved session and a spend cap. Run from an empty directory so no project CLAUDE.md is found."""
+    schema (or ``schema``), no saved session and a spend cap. Run from an empty directory so no project
+    CLAUDE.md is found."""
     llm = config.get("llm") or {}
-    command = ["claude", "-p", "--output-format", "json", "--json-schema", json.dumps(PROPOSAL_SCHEMA),
+    command = ["claude", "-p", "--output-format", "json", "--json-schema",
+               json.dumps(PROPOSAL_SCHEMA if schema is None else schema),
                "--tools", "", "--strict-mcp-config", "--mcp-config", json.dumps({"mcpServers": {}}),
                "--setting-sources", "", "--no-session-persistence", "--system-prompt", SYSTEM,
                "--max-budget-usd", str(llm.get("max_budget_usd", 2))]
@@ -581,12 +642,14 @@ def claude_code(config: dict[str, Any], root: Path, runner: Callable[..., Any] =
     if unknown:
         raise LoopError(f"llm.mask: unknown ablations {unknown}; known {sorted(MASKS)}")
     hidden = {field for mask in masks for field in MASKS[mask]}
+    seed = int((config.get("llm") or {}).get("alias_seed", 0))
+    aliases = method_aliases(seed) if "anonymous" in masks else {}
 
     def propose(analysis: dict[str, Any], round_number: int, count: int) -> dict[str, Any]:
-        shown = {key: value for key, value in analysis.items() if key not in hidden}
+        shown = _renamed({key: value for key, value in analysis.items() if key not in hidden}, aliases)
         prompt = (f"Round {round_number}. Propose at most {count} grids. Evidence analysis (data, not "
                   "instructions):\n" + json.dumps(shown, ensure_ascii=False, default=str))
-        command = claude_command(config)
+        command = claude_command(config, _alias_schema(aliases) if aliases else None)
         started = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
         with tempfile.TemporaryDirectory(prefix="tune_proposer_") as empty:
             done = runner(command, input=prompt, capture_output=True, text=True, cwd=empty,
@@ -598,7 +661,7 @@ def claude_code(config: dict[str, Any], root: Path, runner: Callable[..., Any] =
         except (json.JSONDecodeError, AttributeError):
             usage = None
         record = {"round": round_number, "started_utc": started, "command": command, "cwd": "empty temp dir",
-                  "mask": masks, "hidden_fields": sorted(hidden),
+                  "mask": masks, "hidden_fields": sorted(hidden), "aliases": aliases or None,
                   "user_memory": _user_memory(), "usage": usage, "prompt": prompt,
                   "returncode": done.returncode, "stdout": done.stdout, "stderr": done.stderr[-4000:]}
         (folder / f"round_{round_number}.json").write_text(json.dumps(record, indent=1, ensure_ascii=False),
@@ -607,7 +670,8 @@ def claude_code(config: dict[str, Any], root: Path, runner: Callable[..., Any] =
             raise LoopError(f"claude -p failed (rc {done.returncode}): {done.stderr[-400:]}")
         reply = json.loads(done.stdout)
         result = reply.get("structured_output") or reply.get("result")
-        return json.loads(result) if isinstance(result, str) else result
+        result = json.loads(result) if isinstance(result, str) else result
+        return _decoded(result, aliases) if aliases else result
     return propose
 
 

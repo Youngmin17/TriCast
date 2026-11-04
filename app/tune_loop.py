@@ -920,7 +920,8 @@ def measure_remote(config: dict[str, Any], root: Path, round_number: int, names:
     job = (f"S={target_dir} T={shlex.quote(remote['tree'])} R={round_number} nohup bash "
            f"{shlex.quote(remote.get('gpu_cap', '/scratch/uceeeee/bin/gpu_cap.sh'))} run {label} -- "
            f"timeout -k 60 {wait_s} bash {target_dir}/run_round.sh > {log} 2>&1 < /dev/null &")
-    launch = f"setsid bash -c {shlex.quote(job)}; sleep 5; grep -m1 gpu_cap {log} || true"
+    # gpu_cap prints "[gpu_cap] <host> ..." when it admits the job and "DENY host=..." when it refuses it
+    launch = f"setsid bash -c {shlex.quote(job)}; sleep 5; grep -m1 -E 'gpu_cap|DENY' {log} || true"
     done = ssh(remote["host"], launch, 300)
     if b"DENY" in done.stdout:
         raise LoopError(f"gpu_cap refused {remote['host']}: {done.stdout[-300:]!r}")
@@ -938,15 +939,43 @@ def measure_remote(config: dict[str, Any], root: Path, round_number: int, names:
 
 
 # ---------- the loop ----------
+def _write_summary(path: Path, summary: list[dict[str, Any]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    partial = path.with_suffix(".json.partial")
+    partial.write_text(json.dumps(summary, indent=1, ensure_ascii=False), encoding="utf-8")
+    partial.replace(path)  # atomic: a reader never sees a half-written summary
+
+
+def _measure_entry(entry: dict[str, Any], measure: Callable[[int, Sequence[str]], Path], ledger: Path,
+                   root: Path, session: Path, log: Callable[[str], None]) -> None:
+    """Measure a summary entry's accepted proposals, ingest them and record the round's best (in place)."""
+    kl_path = measure(entry["round"], entry["accepted"])
+    lg.ingest_and_document([kl_path], ledger, root)  # one lock: no older documents than the ledger
+    best = _measured(session, ledger)[0]
+    entry.pop("status", None)
+    entry.update(best=best["name"], best_kl=best["kl"], improved=best["kl"] < entry.pop("before_kl"))
+    log(f"TUNE_LOOP round={entry['round']} best={best['name']} kl={best['kl']:.6g} "
+        f"improved={entry['improved']}")
+
+
 def run(config: dict[str, Any], root: Path, rounds: int, per_round: int, proposer: Proposer, author: str,
         measure: Callable[[int, Sequence[str]], Path], log: Callable[[str], None] = print,
         stale_rounds: int = 2, measurements: int | None = None) -> dict[str, Any]:
     """Rounds of analyze -> propose -> check -> measure -> ingest, until the stop rule of the module
-    docstring. A rerun continues the session: it refuses a round folder without kl.json (an unfinished
-    round), and appends to loop/summary.json, starting from its stale count and last refusals."""
+    docstring. A rerun continues the session: a round whose summary entry is still ``measuring`` (its
+    measurement stopped: a DENY, a timeout, a lost connection) is measured again first; any other round
+    folder without kl.json is refused; then it appends to loop/summary.json, starting from its stale count
+    and last refusals."""
     session, ledger = root / config["session"], root / config.get("ledger", "runs/ledger.jsonl")
     if config.get("gpu"):  # one GPU model per session: other GPU models' measurements are not used or taken
         ta.pin_gpu(session, config["gpu"])
+    summary_path = session / "loop" / "summary.json"
+    summary = json.loads(summary_path.read_text(encoding="utf-8")) if summary_path.is_file() else []
+    for entry in summary:
+        if entry.get("status") == "measuring":
+            log(f"TUNE_LOOP round={entry['round']} measuring again (its measurement stopped)")
+            _measure_entry(entry, measure, ledger, root, session, log)
+            _write_summary(summary_path, summary)
     started = sorted(int(path.parent.name) for path in (session / "rounds").glob("*/round.json"))
     unfinished = [number for number in started
                   if not (session / "rounds" / str(number) / "kl.json").is_file()]
@@ -956,8 +985,6 @@ def run(config: dict[str, Any], root: Path, rounds: int, per_round: int, propose
     measured = [path for path in sorted((session / "rounds").glob("*/kl.json"))]
     if measured:  # a kl.json saved by a run that stopped before its ingest is ingested now (idempotent)
         lg.ingest_and_document(measured, ledger, root)
-    summary_path = session / "loop" / "summary.json"
-    summary = json.loads(summary_path.read_text(encoding="utf-8")) if summary_path.is_file() else []
     refused: list[dict[str, Any]] = summary[-1]["refused"] if summary else []
     stale = 0
     for entry in summary:
@@ -992,19 +1019,13 @@ def run(config: dict[str, Any], root: Path, rounds: int, per_round: int, propose
                                  "stop": bool(reply["stop"]), "analysis": reply["analysis"],
                                  "improved": False}
         done += len(accepted)
-        if accepted:
-            kl_path = measure(round_number, accepted)
-            lg.ingest_and_document([kl_path], ledger, root)  # one lock: no older documents than the ledger
-            best = _measured(session, ledger)[0]
-            entry.update(best=best["name"], best_kl=best["kl"], improved=best["kl"] < before)
-            log(f"TUNE_LOOP round={round_number} best={best['name']} kl={best['kl']:.6g} "
-                f"improved={entry['improved']}")
-        stale = 0 if entry["improved"] else stale + 1  # a round with nothing measured did not improve either
         summary.append(entry)
-        summary_path.parent.mkdir(parents=True, exist_ok=True)
-        partial = summary_path.with_suffix(".json.partial")
-        partial.write_text(json.dumps(summary, indent=1, ensure_ascii=False), encoding="utf-8")
-        partial.replace(summary_path)  # atomic: a reader never sees a half-written summary
+        if accepted:  # written before measuring, so a measurement that stops can be resumed (``measuring``)
+            entry.update(status="measuring", before_kl=before)
+            _write_summary(summary_path, summary)
+            _measure_entry(entry, measure, ledger, root, session, log)
+        stale = 0 if entry["improved"] else stale + 1  # a round with nothing measured did not improve either
+        _write_summary(summary_path, summary)
         if entry["stop"] or (measurements is None and stale_rounds and stale >= stale_rounds):
             break
     best = _measured(session, ledger)[0]

@@ -903,6 +903,16 @@ def measure_remote(config: dict[str, Any], root: Path, round_number: int, names:
     under a time limit, wait on the cluster for the log marker, fetch and check kl.json; returns its path."""
     remote = config["remote"]
     session = root / config["session"]
+    folder = session / "rounds" / str(round_number)
+    if (folder / "round.json").is_file() and not (folder / "kl.json").exists():
+        # a stopped round measured again (run's resume): the same names get the same two files back; anything
+        # else in the folder makes rmdir fail
+        started = json.loads((folder / "round.json").read_text(encoding="utf-8"))["names"]
+        if started != list(names):
+            raise LoopError(f"round {round_number} was started for {started}, not {list(names)}")
+        for part in ("measure.sh", "round.json"):
+            (folder / part).unlink()
+        folder.rmdir()
     ta.round_script(session, list(names), round_number)
     (session / "run_round.sh").write_text(round_wrapper(config), encoding="utf-8")
     buffer = io.BytesIO()

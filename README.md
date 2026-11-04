@@ -24,9 +24,13 @@
 
 **v2.0 — Quantizer.** 레이어마다 양자화 방법(GPTQ · AWQ · SmoothQuant · MXFP4/8 · NVFP4 · NVINT4 · INT8 · BFP)을
 웹 격자에서 클릭하거나 YAML 로 적으면, TriCast 가 레시피 한 장으로 모델에 적용하고 레이어별 오차(MSE · SQNR · 코사인)와
-모델 품질(PPL · lm-eval 과제별)을 실행 환경 기록(git SHA · 모델 revision · 레시피 해시)과 함께 돌려준다. **Auto-tune v1**
-은 크기 예산(가중치 평균 비트)을 주면 층마다 방법을 골라 같은 레시피를 만든다 (Qwen3-0.6B, 보정 없는 방법 7가지 —
-[스파이크](docs/spikes/2026-10-13_autotune_mckp.md)).
+모델 품질(PPL · lm-eval 과제별)을 실행 환경 기록(git SHA · 모델 revision · 레시피 해시)과 함께 돌려준다.
+
+**Auto-tune — 휴리스틱과 AI 를 함께 쓴다.** 크기 예산(가중치 평균 비트)을 주면 ① 층 하나만 양자화한 KL 표 위에서 정확
+배낭(휴리스틱)이 층마다 방법을 즉시 고르고, ② Claude 에이전트가 ledger 에서 RAG 로 불러온 레이어 카드(방법별 KL · 레이어
+오차 · 가중치/활성 분포 · 희소화 민감도, 숫자마다 레코드 id)를 인용해 그 배정을 고칠 제안을 내며, ③ 코드 검사(예산 · 인용
+실존 · 수치 근거)를 통과한 제안만 GPU 로 측정한다. 요청은 문장으로도 받는다 ("Qwen3-0.6B 를 3.2비트 안에서, 첫 블록은
+BF16 으로"). 저비트 방법 16종(GPTQ · RHT+GPTQ · AWQ(+clip) · HQQ 2–4비트 · NF4 · INT8)을 층마다 섞는다.
 
 칩(NPU·GPU 세대)의 수 형식 · 반올림 · MMA 누산 규칙은 같은 레시피의 선택 축이다 — TriCast 가 그 산술을 GPU 의 CUDA
 core 에서 **비트 단위로 똑같이** 에뮬레이트한다. 누산 모델(CoFDA · GDFS)은 NADPE 논문(MICRO'26)의 정의를 따르고,
@@ -47,12 +51,74 @@ python -m app.autotune solve --table table.json --budget-bits 9/2 --name auto_4.
 make check                              # ruff + CPU 테스트
 ```
 
+## 사용 방법 (처음 실행하는 분께)
+
+### 1. 화면만 보기 — GPU · API 키 없이 5분
+
+```bash
+git clone <이 저장소> && cd TriCast
+python -m venv .venv && source .venv/bin/activate        # Python 3.10 이상
+pip install fastapi uvicorn pillow numpy jsonschema pyyaml   # 녹화 모드에 필요한 것만
+python -m app.server --demo                               # http://127.0.0.1:8765
+```
+
+브라우저에서 **http://127.0.0.1:8765/autotune.html** 을 연다 (`file://` 로 직접 열면 동작하지 않는다).
+
+| 단계 | 해 볼 것 | 보이는 것 |
+|---|---|---|
+| 1 크기 예산 | 슬라이더를 움직이거나 `3.15`, `403/128` 을 입력 | 브라우저가 정확 배낭을 다시 풀고 걸린 시간을 표시 |
+| 1 요청 문장 | 저장된 예시 칩을 누름 | 해석 결과(모델 · 예산 · 제약 · 가정 · 코드 판정)와 제약이 걸린 배정 |
+| 2 휴리스틱 배정 | 격자 칸에 마우스 · 방향키 | 칸마다 방법, 단층 KL, 분포 · 희소화 정보, 같은 크기 균일 레시피와 비교 |
+| 3 AI 에이전트 | 제안 카드에 마우스 | 바뀌는 칸이 격자에 점선으로 표시, 인용 레코드, 검사 결과, 측정 KL |
+| 4 측정 결과 | 차트 · "표로 보기" | 균일 · 휴리스틱 · AI 의 비트 대비 검증 KL / test PPL (GPU 기록값, GPU · 트리 SHA 표시) |
+
+화면의 AI 응답과 측정값은 **저장된 기록**이다. 배지("저장된 응답 · 날짜", "GPU 기록값")가 그 사실을 표시한다.
+Quantizer 격자(`/quantizer.html`), 레이어 지도(`/layers.html`), Studio(`/`)도 같은 서버에서 열린다.
+
+### 2. AI 를 실시간으로 부르기 (선택)
+
+[Claude Code](https://docs.claude.com/claude-code) CLI 에 로그인한 PC 에서, 전체 설치 뒤 세션 설정 파일을 주고 띄운다.
+
+```bash
+pip install -e ".[eval,dev,app]"
+python -m app.server --demo --agent runs/<세션>/loop.json
+```
+
+요청 상자의 "요청 해석"과 "Claude 에게 새 제안 받기"가 실제로 호출된다 (도구 없음 · JSON 스키마 강제 · 비용 상한).
+실시간 제안은 검사까지만 하고 측정하지 않는다. `--agent` 없이 띄우면 두 버튼은 이유와 띄우는 방법을 알려 주고 저장된
+기록을 계속 보여 준다.
+
+### 3. 명령줄로 같은 흐름 재현 (GPU 노드)
+
+```bash
+python -m app.autotune table --model Qwen/Qwen3-0.6B --revision <sha> --device cuda --split validation \
+    --calibrate --methods bf16,gptq_int3,rht_gptq_int3,awq_clip_int3,hqq_int3,nf4,int8_w --mma fp32_fma --out t/table.json
+python -m app.autotune solve --table t/table.json --budget-bits 403/128 --out t/auto      # 휴리스틱 (CPU, 초 단위)
+python -m app.layer_profile --model Qwen/Qwen3-0.6B --device cuda --out t/profile.json   # 분포 · 희소화
+python -m app.ledger ingest t --ledger runs/ledger.jsonl                                  # 수치 → 레코드 + RAG 문서
+python -m app.layer_cards --table t/table.json --profile t/profile.json --out t/cards.json  # 레이어 카드 JSON
+python -m app.tune_loop run --config loop.json --rounds 2 --per-round 4 --proposer claude-code   # AI 라운드
+python -m app.export_autotune_demo --table t/table.json --measured t --profile t/profile.json \
+    --session runs/<세션> --out app/web/demo/autotune                                        # 화면 데이터
+```
+
+### 4. 검사
+
+```bash
+make check                                                        # ruff + CPU 테스트
+make test-app                                                     # 웹 앱 · Auto-tune · 튜닝 루프 테스트
+node scripts/quantizer/autotune_check.mjs out python <table.json>  # 브라우저 배낭 = Python 배낭 (예산별)
+python evals/run_tune_evals.py --mode stored ...                  # 튜닝 evals (evals/EVAL_DESIGN.md)
+```
+
+피드백은 GitHub 이슈로 남겨 주면 된다 (무엇을 하려 했는지 · 본 화면 · 기대한 것).
+
 ## 문서 지도
 
 | 무엇 | 경로 |
 |---|---|
 | 왜 만드는가 — 문제 정의서 | [`docs/PROBLEM.md`](docs/PROBLEM.md) |
-| 무엇을 만드는가 — 제품 스펙과 수용 기준 (AC1–AC21) | [`docs/SPEC.md`](docs/SPEC.md) |
+| 무엇을 만드는가 — 제품 스펙과 수용 기준 (AC1–AC28) | [`docs/SPEC.md`](docs/SPEC.md) |
 | 기술 타당성 스파이크 — 비트 정확 에뮬레이션과 속도 · 레이어 국소 지표 · Auto-tune | [`cuda_core_bit_exact_emulation.md`](docs/spikes/cuda_core_bit_exact_emulation.md) · [`2026-10-13_layer_sqnr_proxy.md`](docs/spikes/2026-10-13_layer_sqnr_proxy.md) · [`2026-10-13_autotune_mckp.md`](docs/spikes/2026-10-13_autotune_mckp.md) |
 | Quantizer 측정 기록 (실행 · 해시) | [`docs/evidence/2026-10-13_quantizer_runs.md`](docs/evidence/2026-10-13_quantizer_runs.md) |
 | 인터뷰 · 관찰 · Job Story | [`docs/research/interviews.md`](docs/research/interviews.md) |
@@ -63,7 +129,9 @@ make check                              # ruff + CPU 테스트
 | 위임 프롬프트 원본 · 검증 루프 기록 | [`docs/prompts/delegation_compare.md`](docs/prompts/delegation_compare.md) (AC13, 지침 순서 한 사이클) · [`docs/prompts/delegation_examples.md`](docs/prompts/delegation_examples.md) · [`docs/prompts/wave1/`](docs/prompts/wave1/) |
 | 골든 하니스 결함 주입 검사 · 용어집 작동 확인 | [`docs/prompts/delegation_golden_harness.md`](docs/prompts/delegation_golden_harness.md) · [`docs/prompts/glossary_check.md`](docs/prompts/glossary_check.md) |
 | RAG 설정 · evals | [`config/rag.yaml`](config/rag.yaml) · [`evals/`](evals/README.md) |
-| 웹 앱 (TriCast Studio · Quantizer · 레이어 지도) | [`app/README.md`](app/README.md) |
+| 웹 앱 (TriCast Studio · Quantizer · 레이어 지도 · Auto-tune) | [`app/README.md`](app/README.md) · [`app/web/autotune.html`](app/web/autotune.html) |
+| 아키텍처 — 모듈 경계 · 데이터 흐름 · 불변식 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) |
+| 튜닝 evals — 지표 · 데이터셋 · judge · 러너 위임 | [`evals/EVAL_DESIGN.md`](evals/EVAL_DESIGN.md) · [`evals/tune_evalset.jsonl`](evals/tune_evalset.jsonl) · [`evals/tune_judge_prompt.md`](evals/tune_judge_prompt.md) · [`docs/prompts/delegation_evals.md`](docs/prompts/delegation_evals.md) |
 | 구현 · 검증 상태의 원천 | [`support_matrix.yaml`](support_matrix.yaml) |
 
 ## 검증 상태 (`support_matrix.yaml` 기록)

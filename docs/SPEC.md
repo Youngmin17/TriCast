@@ -57,9 +57,9 @@
 | 평가 — 레이어별 MSE · SQNR · 코사인 · logits KL, PPL, lm-eval 과제별 점수 · 표본 수, 검출 + 실행 환경 기록 | 칩 컴파일러·배포 |
 | 인터페이스 — 웹 (Quantizer · 레이어 지도 · Studio), CLI, Python API, lm-eval 어댑터, 자연어 레시피 에이전트 | 모델 학습 파이프라인 (QAT는 STE 수준만) |
 
-> **Auto-tune v1** 은 구현됐다 (보정 없는 방법 7가지 · Qwen3-0.6B · 가중치 비트 예산, [스파이크](./spikes/2026-10-13_autotune_mckp.md) 채택). 보정 방법 · KV 를 넣는 v2 는 예정.
+> **Auto-tune** 은 v2 까지 구현됐다 (v1: 보정 없는 방법 7가지 · 가중치 비트 예산, [스파이크](./spikes/2026-10-13_autotune_mckp.md) 채택; v2: 보정 방법 · KV 항 · 패치 바닥, [스파이크](./spikes/2026-11-03_autotune_v2.md) 채택). 2026-11-04 에 트랙 M 저비트 방법 16종 표, 트랙 C 연산 예산, 레이어 프로파일과 레이어 카드 검색, 자연어 요청 해석(AC28), Auto-tune 화면(`app/web/autotune.html`)이 더해졌다.
 >
-> ⬜ **포함하되 아직 없는 것** (§8): Auto-tune v2 (보정 방법 · KV 항), Wanda · SparseGPT, AdaRound, TurboQuant, OMMX. 문서에서 결과가 아니라 **예정**으로만 표시합니다 (화면에는 아직 언급이 없습니다). TurboQuant · OMMX 는 사용자가 요청한 후보로, 정의 · 참고 문헌은 아직 정하지 않았습니다.
+> ⬜ **포함하되 아직 없는 것** (§8): AdaRound, TurboQuant, OMMX (Wanda · SparseGPT 는 공식 가지치기 어댑터로 있다, AC25). 문서에서 결과가 아니라 **예정**으로만 표시합니다 (화면에는 아직 언급이 없습니다). TurboQuant · OMMX 는 사용자가 요청한 후보로, 정의 · 참고 문헌은 아직 정하지 않았습니다.
 
 ---
 
@@ -142,7 +142,7 @@ sequenceDiagram
 | 레시피 내보내기 | — | YAML 미리보기 · 복사 · 내려받기 + 실행 명령 | 🟡 |
 | 기록된 결과 | 프리셋 5종 (`qd_mxfp4` · `qd_mxfp4_ends_bf16` · `qd_nvfp4` · `qd_nvint4` · `qd_mixed`) | PPL · lm-eval 5과제 · 레이어 요약 — **같은 해시일 때만** (AC17) | 🟡 |
 | 모델 | Qwen3-0.6B (블록 28 × 레이어 종류 7) 전용 — 격자 크기 · 기록된 결과 · 서버 실행 모두 이 모델 | — | 다른 모델은 ⬜ 예정 (§10 R12) |
-| 서버 GPU 실행 | `POST /api/quantizer/jobs` `{name, yaml, tasks, limit, calibration}` | 작업 id → `GET /api/quantizer/jobs/{id}` 로 PPL · 레이어 리포트 · lm-eval | 🟠 (CPU 테스트만, GPU 실행 미검증 — §10 R7) |
+| 서버 GPU 실행 | `POST /api/quantizer/jobs` `{name, yaml, tasks, limit, calibration}` | 작업 id → `GET /api/quantizer/jobs/{id}` 로 PPL · 레이어 리포트 · lm-eval | ✅ (2026-11-03 V100: 작업 PPL = 같은 GPU 의 `tricast run` PPL, 비트 단위 — AC20) |
 
 **Web · 레이어 지도** (`app/web/layers.html`)
 
@@ -331,7 +331,7 @@ calibration: {seed: 42}
 | 희소성 · 이상치 | `n:m` · `unstructured` / 큰 가중치 비율·형식 따로 보존 | 02 | ✅ |
 | KV 캐시 | `kivi2` · `kivi4` · `kv_fp8`, 모드 `cache` · `fakequant`, `layers` | 13 | 🟡 |
 | 양자화 방식 이름 | MX 7 · NVFP4 2 · MSFP 2 · FP8 6 · INT 4 · KIVI 2 · 직접 캐스트 4 = **27종** + `bfp<m>_b<n>` | — | ✅ |
-| 예정 방법 | Wanda · SparseGPT (희소), AdaRound (가중치 반올림), TurboQuant · OMMX (KV · 서빙) | — | ⬜ |
+| 예정 방법 | AdaRound (가중치 반올림), TurboQuant · OMMX (KV · 서빙) | — | ⬜ |
 
 #### 행렬곱 경로 — 품질 실험용 · 칩 산술용
 
@@ -420,7 +420,7 @@ calibration: {seed: 42}
 
 ## 6. 수용 기준
 
-각 기준은 EARS 문형 "[조건]일 때, TriCast는 [동작]한다"로 쓰고, 조건 유형을 [ ]에 표시했습니다. **모든 기준은 테스트나 측정으로 판정합니다.** AC1–AC14 는 v1.0 그대로이고, AC15–AC27 이 Quantizer 개편의 기준입니다 (판정 테스트는 `app/tests/` 와 `scripts/quantizer/`).
+각 기준은 EARS 문형 "[조건]일 때, TriCast는 [동작]한다"로 쓰고, 조건 유형을 [ ]에 표시했습니다. **모든 기준은 테스트나 측정으로 판정합니다.** AC1–AC14 는 v1.0 그대로이고, AC15–AC28 이 Quantizer 개편의 기준입니다 (판정 테스트는 `app/tests/` 와 `scripts/quantizer/`).
 
 | AC | 유형 | 수용 기준 (EARS) | 판정 방법 (테스트 · 측정) | 현재 결과 | 인터뷰 |
 |:-:|:-:|---|---|---|:-:|
@@ -446,16 +446,18 @@ calibration: {seed: 42}
 | **AC20** | 예외 대응 | 서버 GPU 실행 요청이 데모 모드나 CPU 라이브 서버로 오거나, 요청 필드 · YAML 크기가 한도를 어기거나 보정이 필요한 레시피의 보정 설정(samples ≤ 512, seqlen ≤ 4096)이 한도를 어기면, 서버는 작업을 만들지 않고 고칠 내용을 담아 거부한다. | `app/tests/test_quantizer_server.py::test_demo_mode_refuses_with_how_to_start_a_gpu_server` · `test_live_cpu_server_refuses` · `test_bad_requests_say_what_to_fix` · `test_oversized_yaml_is_refused` · `test_bad_calibration_settings_say_what_to_fix` · `test_a_recipe_calibration_beyond_the_server_limits_is_refused` | ✅ CPU 통과 (거부 경로) · 서버 GPU 경로 확인 (2026-11-03: `qd_nvfp4` 작업 PPL = 같은 GPU 의 `tricast run` PPL, 비트 단위 · docs/evidence/2026-11-03_v2_agent_runs.md) | 11 |
 | **AC21** | 선택 기능 | 방법별 옵션(그룹 크기 · 반올림 · 스케일 방법 · 변환 값 · GPTQ 값 · observer · KV 잔여 창 · 보정)이 지정된 경우, TriCast는 그 값을 해석된 레이어 명세(`patch_model` 이 쓰는 `spec_for`)까지 그대로 전달하고 보정 설정은 실행(보정 창)까지 전달하며, 그 방법에 해당하지 않거나 범위 밖인 옵션은 무시하지 않고 거부한다. | `app/tests/test_quantizer_recipe.py::test_every_option_field_reaches_the_resolved_spec` · `test_options_that_do_not_apply_or_are_out_of_range_are_refused` · `app/tests/test_quantizer_runner.py::test_a_static_observer_calibrates_with_the_requested_windows` | ✅ CPU 통과 (옵션 필드 18개) | 11 12 |
 | **AC22** | 이벤트 기반 | 크기 예산(Linear 가중치 평균 비트)이 주어지면, Auto-tune 은 층 × 방법 KL 표에서 예산을 넘지 않으면서 KL 합이 최소인 배정을 정확히 찾고 (작은 문제에서 완전 탐색과 같음, 예산이 불가능하면 거부), 그 배정을 Quantizer 격자 · 레시피로 내며 모든 층이 고른 방법의 단독 명세를 받는다. | `app/tests/test_autotune.py::test_solver_equals_brute_force_on_random_instances` · `test_infeasible_budgets_are_refused` · `test_solved_grid_resolves_to_each_chosen_methods_own_spec` · `test_tiny_table_is_complete_deterministic_and_resumable` · `test_tiny_solve_predict_and_measure` · v2 (패치 바닥 · 보정 방법 · KV 항목): `app/tests/test_autotune_v2.py::test_floor_subtracting_solver_equals_brute_force_and_no_subtract_is_v1` · `test_calibrated_entries_fire_and_shared_input_kinds_are_null` · `test_measure_calibrates_recipes_that_need_it` · `test_tiny_llama_table_solve_predict_measure` | ✅ CPU 통과 · v1 GPU 스파이크 채택 (C2 ρ 0.973, 4.50 비트 PPL 25.53 < 균일 NVFP4 26.16) · v2 GPU 스파이크 채택 (C1~C4 · C3′ 통과: 4.50 비트 PPL 21.88, 1831/320 + KIVI-2 23.95 ≤ 사람 레시피 25.98, Llama-3.2-1B 10.23 < 11.63) | 07 09 10 13 |
-| **AC23** | 상태 기반 | 측정 기록이 ledger 에 있는 동안, TriCast는 모든 수치를 원본 파일 해시 · 위치와 환경 기록이 붙은 레코드 하나로 두고 (환경 없는 수치는 거부, 원본이 바뀌면 대조 실패), 층 · 레시피 · 방법 단위 검색 문서와 방법 카탈로그를 근거 레코드 id 와 함께 검색하며, 계약 검색(`tricast.rag.search`)의 결과는 ledger 와 무관하게 같다. | `app/tests/test_ledger.py::test_every_number_becomes_one_record_that_reads_back_from_its_source` · `test_a_changed_source_no_longer_verifies` · `test_a_number_without_an_environment_is_refused` · `test_documents_cite_their_records_and_are_found_by_layer_and_method` · `test_contract_search_ignores_the_ledgers_and_bad_ledger_lines_are_refused` · `test_method_cards_of_the_catalog_are_searchable_beside_the_evidence` · `test_a_resumed_log_keeps_its_ids_a_rewritten_value_is_refused_and_the_table_replaces_its_log` | ✅ CPU 통과 · 2026-10-13~14 실행 기록 32,931개 원본 대조 일치 (불일치 0) | 07 09 10 13 |
+| **AC23** | 상태 기반 | 측정 기록이 ledger 에 있는 동안, TriCast는 모든 수치를 원본 파일 해시 · 위치와 환경 기록이 붙은 레코드 하나로 두고 (환경 없는 수치는 거부, 원본이 바뀌면 대조 실패), 층 · 레시피 · 방법 단위 검색 문서와 방법 카탈로그를 근거 레코드 id 와 함께 검색하며, 계약 검색(`tricast.rag.search`)의 결과는 ledger 와 무관하게 같다. | `app/tests/test_ledger.py::test_every_number_becomes_one_record_that_reads_back_from_its_source` · `test_a_changed_source_no_longer_verifies` · `test_a_number_without_an_environment_is_refused` · `test_documents_cite_their_records_and_are_found_by_layer_and_method` · `test_contract_search_ignores_the_ledgers_and_bad_ledger_lines_are_refused` · `test_method_cards_of_the_catalog_are_searchable_beside_the_evidence` · `test_a_resumed_log_keeps_its_ids_a_rewritten_value_is_refused_and_the_table_replaces_its_log` · 레이어 프로파일 (분포 · 희소화) 레코드와 레이어 카드: `app/tests/test_layer_cards.py` | ✅ CPU 통과 · 2026-10-13~14 실행 기록 32,931개 원본 대조 일치 (불일치 0) | 07 09 10 13 |
 | **AC24** | 이벤트 기반 | 에이전트가 격자를 제안하면, TriCast는 생성기로 만들 수 없거나 · 크기 예산을 넘거나 · 표에 없는 방법을 쓰거나 · ledger 에 없는 근거를 인용하거나 · 인용한 레코드가 뒷받침하지 않는 측정값을 적은 제안을 기록하지 않고 거부하며, 측정 라운드는 세션에 고정한 검증 창(WikiText-2 validation, seed 43 — 보정 · 표 · test 와 다른 창)과 같은 모델의 기록만 결과로 묶는다. | `app/tests/test_tune_agent.py::test_bad_proposals_are_refused` · `test_a_valid_proposal_is_recorded_with_its_recipe_and_prediction` · `test_numbers_are_supported_at_their_written_precision` · `test_neighbours_fit_the_budget_and_come_sorted` · `test_round_measures_on_validation_windows_and_state_joins_by_recipe_hash` · `test_v2_tables_rank_neighbours_on_the_floor_subtracted_kl_and_add_the_kv_entries` · `test_option_sizes_count_and_option_variants_are_not_predicted` · `test_a_table_of_part_of_the_model_is_refused` · `test_shell_metacharacters_in_the_model_id_stay_one_argument` | ✅ CPU 통과 · 스파이크 채택 (같은 측정 예산에서 에이전트 PPL 21.63 < 자동 21.86 < 출발점 21.88, docs/spikes/2026-11-03_tune_agent.md) | 07 09 10 13 |
 | **AC25** | 선택 기능 | 레시피에 `prune` (Wanda · SparseGPT · magnitude) 이 지정된 경우, TriCast는 고정 커밋의 공식 저장소 함수를 소스 수정 없이 호출하고 (다른 커밋 · 수정된 트리는 거부), 모델 API 차이를 메운 조정과 파라미터 매핑을 리포트에 남기며, 양자화 패치 전에 가지치기를 적용하고 `sparsity` 와 함께 쓰면 거부한다. | `tests/test_official_prune.py::test_ensure_refuses_other_commit_and_edited_tree` · `test_load_module_is_isolated` · `test_compat_official_layer_call_is_bit_identical` · `test_wanda_unstructured_prunes_half_of_every_row` · `test_wanda_2_4_zeros_two_of_every_four` · `test_sparsegpt_unstructured_half_density` · `test_wanda_mask_differs_from_magnitude_mask` · `test_seqlen_maps_the_official_default_to_shorter_windows` · `test_recipe_prune_block` · `test_runner_prunes_before_patching_and_reloads` | ✅ CPU 통과 (tiny Llama · Qwen3) · GPU 게이트 4/5 (Llama-2-7B: dense · Wanda 50% · SparseGPT 50% · 2:4 가 README ±1% 안, Wanda 2:4 는 README +2.9% 이나 구 환경 공식 실행과 −0.25%) | 10 |
 | **AC26** | 선택 기능 | 레시피에 `official_gptq` 가 지정된 경우, TriCast는 고정 커밋의 공식 GPTQ (`llama_sequential`) 를 소스 수정 없이 호출해 모든 디코더 Linear 를 한 번씩 양자화하고 (그룹 크기 준수), 가지치기 뒤 · 양자화 패치 전에 적용하며, TriCast 의 `weight_algo: gptq` 나 가중치 명세와 함께 쓰면 거부하고, `tricast run` 의 `hessian_max_bytes` 는 실행 식별자를 바꾸지 않고 보정까지 전달한다. | `tests/test_official_gptq.py::test_official_gptq_quantizes_every_decoder_linear_once` · `test_groupsize_gives_each_group_its_own_grid` · `test_default_data_is_official_get_loaders` · `test_official_gptq_recipe_block` · `test_runner_prunes_then_quantizes_then_patches_and_reloads` · `tests/test_runner_hessian_budget.py::test_the_budget_reaches_calibrate_and_not_the_run_identity` · `test_the_budget_is_enforced_by_calibrate` · `test_a_bad_budget_is_refused` | ✅ CPU 통과 (tiny Llama · Qwen3) · ✅ GPU 게이트 (Llama-2-7B W4 g128, H200: 어댑터 5.6570 vs 구 환경 공식 5.6712, 공식 llama_eval 5.6714 vs 앵커 5.69 — `docs/evidence/2026-11-03_v2_agent_runs.md`) | 07 10 |
-| **AC27** | 이벤트 기반 | 자율 튜닝 루프를 실행하면, TriCast는 라운드마다 ledger 와 표에서 층별 근거 분석(현재 최선 · 측정 이력과 부모 대비 효과 · 손실이 몰린 층과 대안 · 예측 대 실측 · 옵션 공간 · 방법 카드, 근거 레코드 id 포함)을 만들어 제안 엔진(Claude Code headless: 도구 없음 · 스키마 강제 · 비용 상한, 또는 자동 탐색)에 넘기고, 모든 제안을 AC24 검사로 거르고 거부 사유를 다음 라운드에 되먹이며, 통과한 제안만 GPU 에서 측정 · 수집하고, 2라운드 연속 개선이 없거나 제안 엔진이 멈추면 정지하며, 제안 엔진의 입력과 응답을 라운드마다 남긴다. | `app/tests/test_tune_loop.py::test_the_analysis_cites_the_records_behind_its_numbers` · `test_the_loop_measures_accepted_proposals_feeds_back_refusals_and_stops` · `test_claude_code_runs_without_tools_under_the_schema_and_is_logged` · `test_the_remote_measurement_syncs_launches_waits_and_fetches` · `test_auto_greedy_proposes_unmeasured_neighbours_of_the_best` | ✅ CPU 통과 · 스파이크 채택 (사람 개입 없이 2라운드, 검증 KL 0.05967 → 0.05538, docs/spikes/2026-11-03_tune_loop.md) | 07 09 10 13 |
+| **AC27** | 이벤트 기반 | 자율 튜닝 루프를 실행하면, TriCast는 라운드마다 ledger 와 표에서 층별 근거 분석(현재 최선 · 측정 이력과 부모 대비 효과 · 손실이 몰린 층과 대안 · 예측 대 실측 · 옵션 공간 · 방법 카드 · 손실이 몰린 층의 ledger 문서 검색(RAG: 방법별 KL · 레이어 리포트 · 분포 · 희소화), 근거 레코드 id 포함)을 만들어 제안 엔진(Claude Code headless: 도구 없음 · 스키마 강제 · 비용 상한, 또는 자동 탐색)에 넘기고, 모든 제안을 AC24 검사로 거르고 거부 사유를 다음 라운드에 되먹이며, 통과한 제안만 GPU 에서 측정 · 수집하고, 2라운드 연속 개선이 없거나 제안 엔진이 멈추면 정지하며, 제안 엔진의 입력과 응답을 라운드마다 남긴다. | `app/tests/test_tune_loop.py::test_the_analysis_cites_the_records_behind_its_numbers` · `test_the_loop_measures_accepted_proposals_feeds_back_refusals_and_stops` · `test_claude_code_runs_without_tools_under_the_schema_and_is_logged` · `test_the_remote_measurement_syncs_launches_waits_and_fetches` · `test_auto_greedy_proposes_unmeasured_neighbours_of_the_best` · RAG: `app/tests/test_layer_cards.py::test_the_analysis_retrieves_the_loss_layers_documents_unless_masked` | ✅ CPU 통과 · 스파이크 채택 (사람 개입 없이 2라운드, 검증 KL 0.05967 → 0.05538, docs/spikes/2026-11-03_tune_loop.md) | 07 09 10 13 |
+| **AC28** | 이벤트 기반 | 자연어 튜닝 요청이 오면, TriCast는 그 문장을 모델 · 크기 예산 · 연산 예산 · BF16 유지 블록 · 제외 · 허용 방법으로 구조화하고, 요청에 없는 모델 · 예산은 지어내지 않고 되묻으며(`needs_clarification`), 범위 밖 요청(속도 · 전력 · 면적 예측, 학습, 커널 작성)은 실행하지 않고 안내하고(`out_of_scope`), 제약 아래 가장 싼 배정보다 작은 예산은 코드가 계산해 충돌로 알리며(`conflict`), 표에 없는 방법 · 모델 · 블록을 담은 해석은 쓰지 않고 거부한다. 해석이 `tune` 이면 그 제약 안에서 배낭(AC22)을 푼다. | `app/tests/test_tune_request.py::test_the_code_checks_what_it_can_and_the_constraints_hold` · `test_the_parser_is_asked_headless_with_the_catalog_and_the_request_as_data` · `app/tests/test_autotune_demo.py` (서버 경로) · 통계 층: `evals/` (튜닝 평가 세트) | 🟡 CPU 통과 · evals 베이스라인 예정 | 07 09 10 13 |
 
 ```mermaid
 pie showData
-    title 수용 기준 27개의 현재 판정
+    title 수용 기준 28개의 현재 판정
     "✅ 통과" : 26
+    "🟡 구현 (CPU 테스트)" : 1
     "⬜ 예정" : 1
 ```
 
@@ -487,7 +489,7 @@ pie showData
 |---|---|:-:|---|
 | 인터페이스 | Web · Quantizer (격자 · 방법별 옵션 · KV · 보정 · 기록된 결과) | 🟡 | `app/tests/test_quantizer_*.py` · 브라우저 검사 71/71 |
 | | Web · 레이어 지도 | 🟡 | `app/tests/test_layers_export.py` · 브라우저 검사 44/44 |
-| | 서버 GPU 실행 (`/api/quantizer/jobs`) | 🟠 | CPU 테스트 (거부 · 큐 · 결과 형태)만, GPU 실행 미검증 |
+| | 서버 GPU 실행 (`/api/quantizer/jobs`) | ✅ | CPU 테스트 (거부 · 큐 · 결과 형태) + 2026-11-03 V100 실행 (작업 PPL = CLI PPL, 비트 단위) |
 | | TriCast Studio (v1 화면) | 🟡 | `app/` · `app/tests/test_server.py` |
 | | 브라우저 WebGPU 실험실 | 🟡 | FP8 행렬곱 1개 비트 대조 |
 | | Python API `quantize` · `gemm` | ✅ | Triton = 레퍼런스 |
@@ -505,7 +507,7 @@ pie showData
 | | 전처리 (SmoothQuant · AWQ · Hadamard) · GPTQ | 🟡 | GPTQ 오차 < RTN |
 | | 희소성 · 이상치 | ✅ | A100 · V100 |
 | | KV 캐시 | 🟡 | CPU (작은 모델) · Qwen3-0.6B `fakequant` PPL 기록 |
-| | Wanda · SparseGPT · AdaRound · TurboQuant · OMMX | ⬜ | 예정 — 코드 없음 |
+| | AdaRound · TurboQuant · OMMX | ⬜ | 예정 — 코드 없음 (Wanda · SparseGPT 는 공식 가지치기 어댑터, AC25) |
 | MMA (칩 산술 축) | CoFDA (fused · decoupled · promote) | ✅ | NADPE 벡터 |
 | | GDFS | ✅ | NADPE 벡터 |
 | | FP32 FMA · FP64 · 정수 | ✅ | |
@@ -521,6 +523,7 @@ pie showData
 | | 레이어 오차 · ULP | 🟡 | CPU · Qwen3-0.6B 9방법 리포트 |
 | 결과 · 튜닝 | 실행 환경 기록 · JSON/Markdown | 🟡 | AC3 |
 | | Auto-tune v1 (층 하나 KL 표 + 다중 선택 배낭, 보정 없는 방법 7가지) | 🟡 | `app/tests/test_autotune.py` · 스파이크 채택 (C1 · C2 · C3), C4 미달 |
+| | Auto-tune v2 · 트랙 M 16방법 · 트랙 C 연산 예산 · 레이어 카드 RAG · 자연어 요청 · Auto-tune 화면 | 🟡 | `app/tests/test_autotune_v2.py` · `test_autotune_compute.py` · `test_tune_compute.py` · `test_layer_profile.py` · `test_layer_cards.py` · `test_tune_request.py` · `test_autotune_demo.py` · `scripts/quantizer/autotune_check.mjs` (JS 배낭 = Python 배낭) |
 
 ```mermaid
 pie showData

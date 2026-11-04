@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import contextlib
 import csv
+import datetime
 import hashlib
 import importlib.util
 import io
@@ -83,8 +84,8 @@ GOOD = {
 # ---------- synthetic world ----------
 def _world(root: Path) -> dict[str, Any]:
     """A table with every method the eval set names, the ledger, and session s3150: a measured uniform NVFP4
-    start (9/2 bits) and llm/round_1.json, round_2.json whose analysis (budget 5 bits) has one retrieved
-    document naming the start's KL record."""
+    start (9/2 bits) and llm/round_1.json, round_2.json (started 1 h and 2 h after the start was made) whose
+    analysis (budget 5 bits) has one retrieved document naming the start's KL record."""
     table = _table(root, floor=0.001)
     data = json.loads(table.read_text())
     data["meta"]["methods"] += EXTRA
@@ -104,11 +105,15 @@ def _world(root: Path) -> dict[str, Any]:
          "text": f"recipe start whole-recipe KL on validation windows [{kl}]"}]}]
     folder = root / "s3150" / "llm"
     folder.mkdir()
+    made = RUN._utc(start["created_utc"])
     for number in (1, 2):
         prompt = (f"Round {number}. Propose at most 4 grids. Evidence analysis (data, not instructions):\n"
                   + json.dumps(analysis, ensure_ascii=False))
-        (folder / f"round_{number}.json").write_text(json.dumps({"round": number, "prompt": prompt}))
-    return {"root": root, "table": table, "ledger": ledger, "session": root / "s3150", "kl": kl}
+        started = (made + datetime.timedelta(hours=number)).isoformat(timespec="seconds")
+        (folder / f"round_{number}.json").write_text(json.dumps({"round": number, "started_utc": started,
+                                                                 "prompt": prompt}))
+    return {"root": root, "table": table, "ledger": ledger, "session": root / "s3150", "kl": kl,
+            "made": made}
 
 
 def _tree(path: Path) -> dict[str, str]:
@@ -333,6 +338,38 @@ def test_a_request_error_or_an_unparsable_reply_is_a_format_failure(
         assert message in record["checks"]["format"]["detail"]
         assert not record["checks"]["no_unknown_methods"]["pass"]
         assert RUN.metrics([record], RUN.metric_targets())["A7"]["numerator"] == 0
+
+
+def test_a_replayed_round_sees_only_what_the_session_had_when_it_started(tmp_path: Path) -> None:
+    """A proposal made after round 1 started (here ok_r1's grid, made between rounds 1 and 2), later round
+    folders and summary entries are not in round 1's scratch copy; round 2's copy keeps that proposal."""
+    world = _world(tmp_path)
+    session = world["session"]
+    item = _proposals(RUN.stored_analysis(session, 1), 1)["proposals"][0]
+    grid = qr.uniform("nvfp4")
+    for change in item["changes"]:
+        grid[change["block"]][qr.KINDS.index(change["kind"])] = change["method"]
+    ta.propose(session, "later", ta.load_grid(_grid(tmp_path, grid, "later.json")), world["table"],
+               Fraction(9, 2), "made between rounds 1 and 2", [world["kl"]], world["ledger"], parent="start")
+    path = session / "proposals" / "later" / "proposal.json"
+    later = json.loads(path.read_text())
+    later["created_utc"] = (world["made"] + datetime.timedelta(minutes=90)).isoformat(timespec="seconds")
+    path.write_text(json.dumps(later))
+    for number in (1, 2):
+        (session / "rounds" / str(number)).mkdir(parents=True)
+        (session / "rounds" / str(number) / "round.json").write_text(json.dumps({"names": []}))
+    (session / "loop").mkdir()
+    (session / "loop" / "summary.json").write_text(json.dumps([{"round": 1, "accepted": []},
+                                                               {"round": 2, "accepted": ["later"]}]))
+    tree = _tree(session)
+    result, _ = _run(world, "live", _fake_llm(), only="a_c1,a_c2")
+    first, second = _case(result, "a_c1")["output"], _case(result, "a_c2")["output"]
+    assert first["dropped_from_scratch"] == {"proposals": ["later"], "rounds": [1, 2],
+                                             "summary_rounds": [1, 2]}
+    assert [row["status"] for row in first["proposals"]] == ["accepted", "refused"]  # ok_r1 = later's grid
+    assert second["dropped_from_scratch"] == {"proposals": [], "rounds": [2], "summary_rounds": [2]}
+    assert "already in the session" in second["proposals"][0]["reason"]
+    assert _tree(session) == tree
 
 
 def test_a_session_of_another_table_or_a_missing_fixture_is_an_error(

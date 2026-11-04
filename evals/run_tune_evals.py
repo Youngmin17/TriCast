@@ -21,7 +21,10 @@ Per case:
   method card's text; budget: the session budget set to the plant's text — goes to the
   ``tune_loop.claude_code`` proposer (at most 4 proposals) in a scratch copy of the session; the reply goes
   through ``tune_loop.check_reply`` and every proposal through ``tune_loop.materialize`` (the AC24 checks) in
-  that copy. As in ``app.autotune_live``, neither the session nor the ledger is written.
+  that copy. As in ``app.autotune_live``, neither the session nor the ledger is written. The copy holds the
+  session as round n's proposer saw it: proposals created before ``started_utc`` of round_<n>.json only, no
+  ``rounds/<m>/`` with m >= n and no ``loop/summary.json`` entry of round >= n (a later round's proposal would
+  otherwise refuse the same grid as "already in the session").
   Fixture ``s_min`` (the agent conflict case): unless --fixture names it, it is the ``s3150`` session with the
   budget set to its start proposal's exact ``avg_bits_fraction``, so no layer can be raised for free.
 - common checks on every case whatever its graders (request: format, no invented model or budget; agent: reply
@@ -429,6 +432,39 @@ def stored_analysis(session: Path, number: int) -> dict[str, Any]:
     return json.loads(prompt.split("\n", 1)[1])
 
 
+def _utc(text: str) -> datetime.datetime:
+    moment = datetime.datetime.fromisoformat(text.replace("Z", "+00:00"))
+    return moment if moment.tzinfo else moment.replace(tzinfo=datetime.timezone.utc)
+
+
+def as_of_round(copy: Path, number: int) -> dict[str, list[Any]]:
+    """Cut the scratch ``copy`` back to the session round ``number``'s proposer saw (module docstring);
+    returns what was dropped."""
+    try:
+        started = _utc(json.loads((copy / "llm" / f"round_{number}.json").read_text(
+            encoding="utf-8"))["started_utc"])
+        made = {path.parent: _utc(json.loads(path.read_text(encoding="utf-8"))["created_utc"])
+                for path in sorted((copy / "proposals").glob("*/proposal.json"))}
+    except (KeyError, ValueError, AttributeError, TypeError) as exc:
+        raise CaseError(f"round {number}: no comparable started_utc / created_utc ({exc})") from exc
+    dropped: dict[str, list[Any]] = {"proposals": [], "rounds": [], "summary_rounds": []}
+    for folder, moment in made.items():
+        if moment >= started:
+            shutil.rmtree(folder)
+            dropped["proposals"].append(folder.name)
+    for folder in sorted((copy / "rounds").glob("*")):
+        if folder.is_dir() and folder.name.isdigit() and int(folder.name) >= number:
+            shutil.rmtree(folder)
+            dropped["rounds"].append(int(folder.name))
+    summary = copy / "loop" / "summary.json"
+    if summary.is_file():
+        entries = json.loads(summary.read_text(encoding="utf-8"))
+        dropped["summary_rounds"] = [entry["round"] for entry in entries if entry["round"] >= number]
+        summary.write_text(json.dumps([entry for entry in entries if entry["round"] < number], indent=1,
+                                      ensure_ascii=False), encoding="utf-8")
+    return dropped
+
+
 def apply_plant(analysis: dict[str, Any], plant: dict[str, Any]) -> None:
     where, text = plant.get("where"), plant.get("text")
     if where == "retrieved":
@@ -492,6 +528,7 @@ def _agent(case: dict[str, Any], ctx: Context, replies: Replies, record: dict[st
     with tempfile.TemporaryDirectory(prefix="tune_evals_") as scratch:
         copy = Path(scratch) / session.name
         shutil.copytree(session, copy)
+        dropped = as_of_round(copy, query["round"])
         config = {"session": str(copy), "table": str(ctx.table_path), "budget_bits": str(budget),
                   "ledger": str(ctx.ledger_path), **({} if compute is None else {"compute_budget": compute})}
         try:
@@ -536,7 +573,8 @@ def _agent(case: dict[str, Any], ctx: Context, replies: Replies, record: dict[st
         row["measured_kl"] = measured[0]["kl"] if measured else None
     record["output"] = {"session": str(session), "budget_bits": str(budget), "compute_budget": compute,
                         "plant": query.get("plant"), "reply": reply, "reply_error": error,
-                        "proposals": proposals, "start": start, "retrieved_ids": sorted(retrieved)}
+                        "proposals": proposals, "start": start, "retrieved_ids": sorted(retrieved),
+                        "dropped_from_scratch": dropped}
     accepted = _accepted(proposals)
     record["checks"] = {
         "format": _ok(error is None, error or "the reply follows the proposal schema"),

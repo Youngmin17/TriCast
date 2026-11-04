@@ -1,0 +1,1207 @@
+{
+ "run_id": "2026-11-04T0949",
+ "case_id": "a_c2",
+ "calls": [
+  {
+   "role": "proposer",
+   "key": "round_2",
+   "returncode": 0,
+   "stdout": {
+    "duration_api_ms": 74658,
+    "stop_reason": "tool_use",
+    "session_id": "9aadcaef-75d8-42b4-90d1-279267ea96ee",
+    "total_cost_usd": 0.16310490000000002,
+    "usage": {
+     "input_tokens": 2,
+     "cache_creation_input_tokens": 646,
+     "cache_read_input_tokens": 18127,
+     "output_tokens": 7627,
+     "output_tokens_details": {
+      "thinking_tokens": 5809
+     },
+     "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+     },
+     "service_tier": "standard",
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 646,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "inference_geo": "global",
+     "iterations": [
+      {
+       "input_tokens": 2,
+       "output_tokens": 7627,
+       "cache_read_input_tokens": 18127,
+       "cache_creation_input_tokens": 646,
+       "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 646
+       },
+       "type": "message"
+      }
+     ],
+     "speed": "standard",
+     "fallback_credit": null
+    },
+    "modelUsage": {
+     "claude-haiku-5-5": {
+      "inputTokens": 17490,
+      "outputTokens": 29,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.0017634999999999999,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 0,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 0,
+      "canonicalModel": "claude-haiku-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     },
+     "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 7627,
+      "cacheReadInputTokens": 18127,
+      "cacheCreationInputTokens": 646,
+      "webSearchRequests": 0,
+      "costUSD": 0.16134140000000002,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 5809,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 646,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "extra_usage_disabled",
+    "subagent_stats": {
+     "spawned": 0,
+     "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+     },
+     "started_in_background": 0,
+     "max_depth": 0,
+     "spawned_by_subagents": 0,
+     "completed": 0,
+     "failed": 0,
+     "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+     },
+     "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+     },
+     "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 2,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "{\"analysis\":\"All four proposals last round were refused only because the rationale gave a truncated KL value, so these resubmit the same directions with exact record values. Only iso_3.15 has been measured, and its bits are close to the budget, so a same-size upgrade needs a downgrade to fund it. No option setting has been measured, and the measured KL is above the single-layer-sum prediction, so interactions matter. Three proposals test GPTQ solver options at unchanged size. The fourth funds upgrades by coarsening rht_gptq_int3 groups. Its budget fit is an estimate, because the analysis does not list per-layer methods or sizes for all layers. Its upgrade KLs were measured with default options, so they may not carry over to the whole recipe.\",\"stop\":false,\"proposals\":[{\"name\":\"opt_act_order\",\"base\":\"iso_3.15\",\"changes\":[],\"options\":{\"gptq_int2\":{\"weight_algo.act_order\":true},\"gptq_int3\":{\"weight_algo.act_order\":true},\"gptq_int4\":{\"weight_algo.act_order\":true},\"rht_gptq_int2\":{\"weight_algo.act_order\":true},\"rht_gptq_int3\":{\"weight_algo.act_order\":true},\"rht_gptq_int4\":{\"weight_algo.act_order\":true}},\"rationale\":\"The base iso_3.15 measured KL 0.43614466651129274 [E514ab09c524e] and has no measured option variant. This grid keeps every layer method and sets act_order=true for all GPTQ-family methods, so stored bits do not change. It tests whether solver ordering lowers whole-recipe KL.\",\"cites\":[\"E514ab09c524e\"]},{\"name\":\"opt_damp_high\",\"base\":\"iso_3.15\",\"changes\":[],\"options\":{\"gptq_int2\":{\"weight_algo.damp\":0.1},\"gptq_int3\":{\"weight_algo.damp\":0.1},\"gptq_int4\":{\"weight_algo.damp\":0.1},\"rht_gptq_int2\":{\"weight_algo.damp\":0.1},\"rht_gptq_int3\":{\"weight_algo.damp\":0.1},\"rht_gptq_int4\":{\"weight_algo.damp\":0.1}},\"rationale\":\"The base iso_3.15 measured KL 0.43614466651129274 [E514ab09c524e] and has no measured damping variant. This grid keeps every layer method and sets damp=0.1 for all GPTQ-family methods, so stored bits do not change. It tests stronger regularization of the solver on the same calibration data.\",\"cites\":[\"E514ab09c524e\"]},{\"name\":\"opt_damp_low\",\"base\":\"iso_3.15\",\"changes\":[],\"options\":{\"gptq_int2\":{\"weight_algo.damp\":0.001},\"gptq_int3\":{\"weight_algo.damp\":0.001},\"gptq_int4\":{\"weight_algo.damp\":0.001},\"rht_gptq_int2\":{\"weight_algo.damp\":0.001},\"rht_gptq_int3\":{\"weight_algo.damp\":0.001},\"rht_gptq_int4\":{\"weight_algo.damp\":0.001}},\"rationale\":\"The base iso_3.15 measured KL 0.43614466651129274 [E514ab09c524e] and has no measured damping variant. This grid keeps every layer method and sets damp=0.001 for all GPTQ-family methods, so stored bits do not change. It tests the opposite damping direction from the higher-damping proposal.\",\"cites\":[\"E514ab09c524e\"]},{\"name\":\"g256_rht3_mlp_upgrades\",\"base\":\"iso_3.15\",\"changes\":[{\"block\":14,\"kind\":\"down_proj\",\"method\":\"rht_gptq_int3\"},{\"block\":2,\"kind\":\"up_proj\",\"method\":\"gptq_int4\"},{\"block\":3,\"kind\":\"up_proj\",\"method\":\"gptq_int4\"}],\"options\":{\"rht_gptq_int3\":{\"weight.group_size\":256}},\"rationale\":\"Setting group_size=256 on rht_gptq_int3 reduces its stored bits to pay for upgrades on layers where loss concentrates. Measured single-layer KL: model.layers.14.mlp.down_proj moves from rht_gptq_int2 0.00633466 [E4c3f9b73e065] to rht_gptq_int3 0.00181478 [E90bd4b2f3645]; model.layers.2.mlp.up_proj moves from gptq_int3 0.00641875 [E9baa10763ebe] to gptq_int4 0.00237045 [Ef3d9c7b4502c]; model.layers.3.mlp.up_proj moves from rht_gptq_int3 0.0064177 [E6f4f7ea296d5] to gptq_int4 0.00237732 [Ef4ee8cb4969e]. The KL cost of coarser groups has not been measured; this grid measures it against the base KL 0.43614466651129274 [E514ab09c524e].\",\"cites\":[\"E514ab09c524e\",\"E4c3f9b73e065\",\"E90bd4b2f3645\",\"E9baa10763ebe\",\"Ef3d9c7b4502c\",\"E6f4f7ea296d5\",\"Ef4ee8cb4969e\"]}]}",
+    "structured_output": {
+     "analysis": "All four proposals last round were refused only because the rationale gave a truncated KL value, so these resubmit the same directions with exact record values. Only iso_3.15 has been measured, and its bits are close to the budget, so a same-size upgrade needs a downgrade to fund it. No option setting has been measured, and the measured KL is above the single-layer-sum prediction, so interactions matter. Three proposals test GPTQ solver options at unchanged size. The fourth funds upgrades by coarsening rht_gptq_int3 groups. Its budget fit is an estimate, because the analysis does not list per-layer methods or sizes for all layers. Its upgrade KLs were measured with default options, so they may not carry over to the whole recipe.",
+     "stop": false,
+     "proposals": [
+      {
+       "name": "opt_act_order",
+       "base": "iso_3.15",
+       "changes": [],
+       "options": {
+        "gptq_int2": {
+         "weight_algo.act_order": true
+        },
+        "gptq_int3": {
+         "weight_algo.act_order": true
+        },
+        "gptq_int4": {
+         "weight_algo.act_order": true
+        },
+        "rht_gptq_int2": {
+         "weight_algo.act_order": true
+        },
+        "rht_gptq_int3": {
+         "weight_algo.act_order": true
+        },
+        "rht_gptq_int4": {
+         "weight_algo.act_order": true
+        }
+       },
+       "rationale": "The base iso_3.15 measured KL 0.43614466651129274 [E514ab09c524e] and has no measured option variant. This grid keeps every layer method and sets act_order=true for all GPTQ-family methods, so stored bits do not change. It tests whether solver ordering lowers whole-recipe KL.",
+       "cites": [
+        "E514ab09c524e"
+       ]
+      },
+      {
+       "name": "opt_damp_high",
+       "base": "iso_3.15",
+       "changes": [],
+       "options": {
+        "gptq_int2": {
+         "weight_algo.damp": 0.1
+        },
+        "gptq_int3": {
+         "weight_algo.damp": 0.1
+        },
+        "gptq_int4": {
+         "weight_algo.damp": 0.1
+        },
+        "rht_gptq_int2": {
+         "weight_algo.damp": 0.1
+        },
+        "rht_gptq_int3": {
+         "weight_algo.damp": 0.1
+        },
+        "rht_gptq_int4": {
+         "weight_algo.damp": 0.1
+        }
+       },
+       "rationale": "The base iso_3.15 measured KL 0.43614466651129274 [E514ab09c524e] and has no measured damping variant. This grid keeps every layer method and sets damp=0.1 for all GPTQ-family methods, so stored bits do not change. It tests stronger regularization of the solver on the same calibration data.",
+       "cites": [
+        "E514ab09c524e"
+       ]
+      },
+      {
+       "name": "opt_damp_low",
+       "base": "iso_3.15",
+       "changes": [],
+       "options": {
+        "gptq_int2": {
+         "weight_algo.damp": 0.001
+        },
+        "gptq_int3": {
+         "weight_algo.damp": 0.001
+        },
+        "gptq_int4": {
+         "weight_algo.damp": 0.001
+        },
+        "rht_gptq_int2": {
+         "weight_algo.damp": 0.001
+        },
+        "rht_gptq_int3": {
+         "weight_algo.damp": 0.001
+        },
+        "rht_gptq_int4": {
+         "weight_algo.damp": 0.001
+        }
+       },
+       "rationale": "The base iso_3.15 measured KL 0.43614466651129274 [E514ab09c524e] and has no measured damping variant. This grid keeps every layer method and sets damp=0.001 for all GPTQ-family methods, so stored bits do not change. It tests the opposite damping direction from the higher-damping proposal.",
+       "cites": [
+        "E514ab09c524e"
+       ]
+      },
+      {
+       "name": "g256_rht3_mlp_upgrades",
+       "base": "iso_3.15",
+       "changes": [
+        {
+         "block": 14,
+         "kind": "down_proj",
+         "method": "rht_gptq_int3"
+        },
+        {
+         "block": 2,
+         "kind": "up_proj",
+         "method": "gptq_int4"
+        },
+        {
+         "block": 3,
+         "kind": "up_proj",
+         "method": "gptq_int4"
+        }
+       ],
+       "options": {
+        "rht_gptq_int3": {
+         "weight.group_size": 256
+        }
+       },
+       "rationale": "Setting group_size=256 on rht_gptq_int3 reduces its stored bits to pay for upgrades on layers where loss concentrates. Measured single-layer KL: model.layers.14.mlp.down_proj moves from rht_gptq_int2 0.00633466 [E4c3f9b73e065] to rht_gptq_int3 0.00181478 [E90bd4b2f3645]; model.layers.2.mlp.up_proj moves from gptq_int3 0.00641875 [E9baa10763ebe] to gptq_int4 0.00237045 [Ef3d9c7b4502c]; model.layers.3.mlp.up_proj moves from rht_gptq_int3 0.0064177 [E6f4f7ea296d5] to gptq_int4 0.00237732 [Ef4ee8cb4969e]. The KL cost of coarser groups has not been measured; this grid measures it against the base KL 0.43614466651129274 [E514ab09c524e].",
+       "cites": [
+        "E514ab09c524e",
+        "E4c3f9b73e065",
+        "E90bd4b2f3645",
+        "E9baa10763ebe",
+        "Ef3d9c7b4502c",
+        "E6f4f7ea296d5",
+        "Ef4ee8cb4969e"
+       ]
+      }
+     ]
+    },
+    "ttft_ms": 60936,
+    "type": "result",
+    "duration_ms": 74036,
+    "uuid": "e7befc9b-e256-4ba9-ab81-c148a8e231e1",
+    "ttft_stream_ms": 1277,
+    "time_to_request_ms": 414,
+    "time_to_request_phases_ms": {
+     "other": 1,
+     "system_prompt": 0,
+     "resume_other": 0,
+     "process_user_input": 2,
+     "input_attachments": 16,
+     "input_hooks": 1,
+     "conversation_append": 0,
+     "tool_pool_refresh": 1,
+     "init_message": 3,
+     "init_frame_send": 2,
+     "engine_pickup": 1,
+     "loop_entry": 2,
+     "message_prep": 0,
+     "model_config_wait": 1,
+     "autocompact": 1,
+     "request_announcements": 2,
+     "query_setup": 0,
+     "model_gates": 373,
+     "tool_schema_build": 4,
+     "message_normalization": 1,
+     "client_creation": 1,
+     "request_build": 2
+    },
+    "turn_start_resume_kind": "none",
+    "process_turn_index": 0,
+    "time_to_request_loop_lag_ms": 9,
+    "time_to_request_cpu_ms": 131,
+    "time_to_request_major_faults": 0,
+    "input_attachments_detail": {
+     "slowest_producer": "session_settings",
+     "slowest_producer_ms": 13,
+     "cpu_ms": 26,
+     "major_faults": 0,
+     "setup_ms": 0,
+     "prompt_producers_ms": 0,
+     "ambient_start_ms": 1,
+     "ambient_wait_ms": 12,
+     "render_ms": 0,
+     "producers": 43,
+     "token_counts": 0
+    },
+    "tool_schema_build_detail": {
+     "betas_ms": 0,
+     "waits_ms": 1,
+     "placement_ms": 2,
+     "render_ms": 1,
+     "after_ms": 0,
+     "other_ms": 0,
+     "tools": 1,
+     "new_schemas": 1
+    },
+    "message_normalization_detail": {
+     "before_ms": 0,
+     "normalize_ms": 0,
+     "images_ms": 0,
+     "post_process_ms": 0,
+     "after_ms": 0,
+     "other_ms": 1,
+     "messages": 8,
+     "wire_messages": 2
+    },
+    "request_build_detail": {
+     "records_ms": 0,
+     "system_ms": 0,
+     "headers_ms": 0,
+     "cache_break_record_ms": 1,
+     "plans_ms": 0,
+     "retry_setup_ms": 0,
+     "sent_build_ms": 0,
+     "record_attempt_ms": 0,
+     "other_ms": 1,
+     "sent_build_safety_context_ms": 0,
+     "sent_build_cache_breakpoints_ms": 0,
+     "sent_build_surrogate_scan_ms": 0
+    },
+    "first_content_frame_ms": 1277,
+    "queued_turn_count": 0,
+    "result_index": 0,
+    "credential_expires_at": "2026-11-26T06:54:29.041Z"
+   },
+   "stderr": ""
+  },
+  {
+   "role": "judge",
+   "key": "opt_act_order",
+   "returncode": 0,
+   "stdout": {
+    "duration_api_ms": 9730,
+    "stop_reason": "tool_use",
+    "session_id": "22318d3f-d670-470e-a452-3d65cddf085c",
+    "total_cost_usd": 0.1042166,
+    "usage": {
+     "input_tokens": 2,
+     "cache_creation_input_tokens": 10628,
+     "cache_read_input_tokens": 1426,
+     "output_tokens": 890,
+     "output_tokens_details": {
+      "thinking_tokens": 437
+     },
+     "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+     },
+     "service_tier": "standard",
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 10628,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "inference_geo": "global",
+     "iterations": [
+      {
+       "input_tokens": 2,
+       "output_tokens": 890,
+       "cache_read_input_tokens": 1426,
+       "cache_creation_input_tokens": 10628,
+       "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 10628
+       },
+       "type": "message"
+      }
+     ],
+     "speed": "standard",
+     "fallback_credit": null
+    },
+    "modelUsage": {
+     "claude-haiku-5-5": {
+      "inputTokens": 10854,
+      "outputTokens": 28,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.0010994,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 0,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 0,
+      "canonicalModel": "claude-haiku-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     },
+     "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 890,
+      "cacheReadInputTokens": 1426,
+      "cacheCreationInputTokens": 10628,
+      "webSearchRequests": 0,
+      "costUSD": 0.1031172,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 437,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 10628,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "extra_usage_disabled",
+    "subagent_stats": {
+     "spawned": 0,
+     "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+     },
+     "started_in_background": 0,
+     "max_depth": 0,
+     "spawned_by_subagents": 0,
+     "completed": 0,
+     "failed": 0,
+     "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+     },
+     "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+     },
+     "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 2,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "{\"q1\":null,\"q2\":null,\"c1\":{\"reason\":\"The rationale cites \\\"measured KL 0.43614466651129274 [E514ab09c524e]\\\" for the base recipe, and the record is kind recipe_kl with metric kl and the same value, so it covers the quantity it is used for.\",\"pass\":true},\"c2\":{\"reason\":\"The rationale asserts no measured comparison; \\\"tests whether solver ordering lowers whole-recipe KL\\\" is an open question, and the quoted KL matches the record, so nothing contradicts the cited value.\",\"pass\":true},\"c3\":{\"reason\":\"The KL effect is framed as untested: \\\"It tests whether solver ordering lowers whole-recipe KL\\\". \\\"stored bits do not change\\\" is not a measured effect but follows from the proposal itself, which \\\"keeps every layer method\\\" with empty changes.\",\"pass\":true},\"c4\":null,\"needs_human_review\":false}",
+    "structured_output": {
+     "q1": null,
+     "q2": null,
+     "c1": {
+      "reason": "The rationale cites \"measured KL 0.43614466651129274 [E514ab09c524e]\" for the base recipe, and the record is kind recipe_kl with metric kl and the same value, so it covers the quantity it is used for.",
+      "pass": true
+     },
+     "c2": {
+      "reason": "The rationale asserts no measured comparison; \"tests whether solver ordering lowers whole-recipe KL\" is an open question, and the quoted KL matches the record, so nothing contradicts the cited value.",
+      "pass": true
+     },
+     "c3": {
+      "reason": "The KL effect is framed as untested: \"It tests whether solver ordering lowers whole-recipe KL\". \"stored bits do not change\" is not a measured effect but follows from the proposal itself, which \"keeps every layer method\" with empty changes.",
+      "pass": true
+     },
+     "c4": null,
+     "needs_human_review": false
+    },
+    "ttft_ms": 5432,
+    "type": "result",
+    "duration_ms": 8974,
+    "uuid": "b65382c8-01cb-4530-b8cf-242a771972c7",
+    "ttft_stream_ms": 1034,
+    "time_to_request_ms": 138,
+    "time_to_request_phases_ms": {
+     "other": 4,
+     "system_prompt": 1,
+     "resume_other": 1,
+     "process_user_input": 2,
+     "input_attachments": 77,
+     "input_hooks": 2,
+     "conversation_append": 1,
+     "tool_pool_refresh": 2,
+     "init_message": 7,
+     "init_frame_send": 6,
+     "engine_pickup": 0,
+     "loop_entry": 2,
+     "message_prep": 1,
+     "model_config_wait": 2,
+     "autocompact": 3,
+     "request_announcements": 4,
+     "query_setup": 1,
+     "model_gates": 0,
+     "tool_schema_build": 6,
+     "message_normalization": 2,
+     "client_creation": 8,
+     "request_build": 6
+    },
+    "turn_start_resume_kind": "none",
+    "process_turn_index": 0,
+    "time_to_request_loop_lag_ms": 88,
+    "time_to_request_cpu_ms": 164,
+    "time_to_request_major_faults": 269,
+    "input_attachments_detail": {
+     "slowest_producer": "session_settings",
+     "slowest_producer_ms": 64,
+     "cpu_ms": 86,
+     "major_faults": 157,
+     "setup_ms": 1,
+     "prompt_producers_ms": 1,
+     "ambient_start_ms": 8,
+     "ambient_wait_ms": 63,
+     "render_ms": 1,
+     "producers": 43,
+     "token_counts": 0
+    },
+    "tool_schema_build_detail": {
+     "betas_ms": 0,
+     "waits_ms": 1,
+     "placement_ms": 2,
+     "render_ms": 2,
+     "after_ms": 1,
+     "other_ms": 0,
+     "tools": 1,
+     "new_schemas": 1
+    },
+    "message_normalization_detail": {
+     "before_ms": 0,
+     "normalize_ms": 1,
+     "images_ms": 0,
+     "post_process_ms": 0,
+     "after_ms": 1,
+     "other_ms": 0,
+     "messages": 8,
+     "wire_messages": 2
+    },
+    "request_build_detail": {
+     "records_ms": 1,
+     "system_ms": 0,
+     "headers_ms": 1,
+     "cache_break_record_ms": 0,
+     "plans_ms": 2,
+     "retry_setup_ms": 0,
+     "sent_build_ms": 1,
+     "record_attempt_ms": 1,
+     "other_ms": 0,
+     "sent_build_safety_context_ms": 0,
+     "sent_build_cache_breakpoints_ms": 0,
+     "sent_build_surrogate_scan_ms": 0
+    },
+    "first_content_frame_ms": 1035,
+    "queued_turn_count": 0,
+    "result_index": 0,
+    "credential_expires_at": "2026-11-26T06:54:29.041Z"
+   },
+   "stderr": ""
+  },
+  {
+   "role": "judge",
+   "key": "opt_damp_high",
+   "returncode": 0,
+   "stdout": {
+    "duration_api_ms": 10231,
+    "stop_reason": "tool_use",
+    "session_id": "d3f503ee-953f-4b67-a218-b25c00903d44",
+    "total_cost_usd": 0.1056405,
+    "usage": {
+     "input_tokens": 2,
+     "cache_creation_input_tokens": 10641,
+     "cache_read_input_tokens": 1426,
+     "output_tokens": 956,
+     "output_tokens_details": {
+      "thinking_tokens": 504
+     },
+     "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+     },
+     "service_tier": "standard",
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 10641,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "inference_geo": "global",
+     "iterations": [
+      {
+       "input_tokens": 2,
+       "output_tokens": 956,
+       "cache_read_input_tokens": 1426,
+       "cache_creation_input_tokens": 10641,
+       "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 10641
+       },
+       "type": "message"
+      }
+     ],
+     "speed": "standard",
+     "fallback_credit": null
+    },
+    "modelUsage": {
+     "claude-haiku-5-5": {
+      "inputTokens": 10868,
+      "outputTokens": 25,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.0010992999999999999,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 0,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 0,
+      "canonicalModel": "claude-haiku-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     },
+     "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 956,
+      "cacheReadInputTokens": 1426,
+      "cacheCreationInputTokens": 10641,
+      "webSearchRequests": 0,
+      "costUSD": 0.1045412,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 504,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 10641,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "extra_usage_disabled",
+    "subagent_stats": {
+     "spawned": 0,
+     "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+     },
+     "started_in_background": 0,
+     "max_depth": 0,
+     "spawned_by_subagents": 0,
+     "completed": 0,
+     "failed": 0,
+     "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+     },
+     "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+     },
+     "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 2,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "{\"q1\":null,\"q2\":null,\"c1\":{\"reason\":\"The only citation is used for \\\"measured KL 0.43614466651129274 [E514ab09c524e]\\\", and the record is a recipe-level entry (kind \\\"recipe_kl\\\", metric \\\"kl\\\", layer null) with the same value, so it is about the quantity it is cited for.\",\"pass\":true},\"c2\":{\"reason\":\"The rationale makes no comparison between cited values; the base KL is only stated, and \\\"stronger regularization\\\" describes the setting rather than a cited record, so nothing contradicts the record's 0.436.\",\"pass\":true},\"c3\":{\"reason\":\"The rationale claims no measured outcome for damping: \\\"It tests stronger regularization\\\" is framed as a test, and \\\"stored bits do not change\\\" follows from the proposal itself (\\\"changes\\\": [] and only damp options).\",\"pass\":true},\"c4\":null,\"needs_human_review\":false}",
+    "structured_output": {
+     "q1": null,
+     "q2": null,
+     "c1": {
+      "reason": "The only citation is used for \"measured KL 0.43614466651129274 [E514ab09c524e]\", and the record is a recipe-level entry (kind \"recipe_kl\", metric \"kl\", layer null) with the same value, so it is about the quantity it is cited for.",
+      "pass": true
+     },
+     "c2": {
+      "reason": "The rationale makes no comparison between cited values; the base KL is only stated, and \"stronger regularization\" describes the setting rather than a cited record, so nothing contradicts the record's 0.436.",
+      "pass": true
+     },
+     "c3": {
+      "reason": "The rationale claims no measured outcome for damping: \"It tests stronger regularization\" is framed as a test, and \"stored bits do not change\" follows from the proposal itself (\"changes\": [] and only damp options).",
+      "pass": true
+     },
+     "c4": null,
+     "needs_human_review": false
+    },
+    "ttft_ms": 6132,
+    "type": "result",
+    "duration_ms": 9653,
+    "uuid": "c8d44166-06a1-466a-a664-9c727ef670bf",
+    "ttft_stream_ms": 1150,
+    "time_to_request_ms": 186,
+    "time_to_request_phases_ms": {
+     "other": 1,
+     "system_prompt": 0,
+     "resume_other": 0,
+     "process_user_input": 2,
+     "input_attachments": 13,
+     "input_hooks": 1,
+     "conversation_append": 0,
+     "tool_pool_refresh": 1,
+     "init_message": 2,
+     "init_frame_send": 1,
+     "engine_pickup": 1,
+     "loop_entry": 1,
+     "message_prep": 0,
+     "model_config_wait": 1,
+     "autocompact": 1,
+     "request_announcements": 2,
+     "query_setup": 0,
+     "model_gates": 147,
+     "tool_schema_build": 6,
+     "message_normalization": 1,
+     "client_creation": 3,
+     "request_build": 2
+    },
+    "turn_start_resume_kind": "none",
+    "process_turn_index": 0,
+    "time_to_request_loop_lag_ms": 1,
+    "time_to_request_cpu_ms": 120,
+    "time_to_request_major_faults": 4,
+    "input_attachments_detail": {
+     "slowest_producer": "session_settings",
+     "slowest_producer_ms": 10,
+     "cpu_ms": 23,
+     "major_faults": 0,
+     "setup_ms": 0,
+     "prompt_producers_ms": 0,
+     "ambient_start_ms": 1,
+     "ambient_wait_ms": 10,
+     "render_ms": 0,
+     "producers": 43,
+     "token_counts": 0
+    },
+    "tool_schema_build_detail": {
+     "betas_ms": 0,
+     "waits_ms": 1,
+     "placement_ms": 3,
+     "render_ms": 2,
+     "after_ms": 0,
+     "other_ms": 0,
+     "tools": 1,
+     "new_schemas": 1
+    },
+    "message_normalization_detail": {
+     "before_ms": 0,
+     "normalize_ms": 1,
+     "images_ms": 0,
+     "post_process_ms": 0,
+     "after_ms": 0,
+     "other_ms": 0,
+     "messages": 8,
+     "wire_messages": 2
+    },
+    "request_build_detail": {
+     "records_ms": 0,
+     "system_ms": 0,
+     "headers_ms": 1,
+     "cache_break_record_ms": 0,
+     "plans_ms": 1,
+     "retry_setup_ms": 0,
+     "sent_build_ms": 0,
+     "record_attempt_ms": 0,
+     "other_ms": 0,
+     "sent_build_safety_context_ms": 0,
+     "sent_build_cache_breakpoints_ms": 0,
+     "sent_build_surrogate_scan_ms": 0
+    },
+    "first_content_frame_ms": 1150,
+    "queued_turn_count": 0,
+    "result_index": 0,
+    "credential_expires_at": "2026-11-26T06:54:29.041Z"
+   },
+   "stderr": ""
+  },
+  {
+   "role": "judge",
+   "key": "opt_damp_low",
+   "returncode": 0,
+   "stdout": {
+    "duration_api_ms": 10063,
+    "stop_reason": "tool_use",
+    "session_id": "1362b91d-9d2a-4dd6-8781-151e63acd5a0",
+    "total_cost_usd": 0.10523210000000001,
+    "usage": {
+     "input_tokens": 2,
+     "cache_creation_input_tokens": 10645,
+     "cache_read_input_tokens": 1426,
+     "output_tokens": 934,
+     "output_tokens_details": {
+      "thinking_tokens": 456
+     },
+     "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+     },
+     "service_tier": "standard",
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 10645,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "inference_geo": "global",
+     "iterations": [
+      {
+       "input_tokens": 2,
+       "output_tokens": 934,
+       "cache_read_input_tokens": 1426,
+       "cache_creation_input_tokens": 10645,
+       "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 10645
+       },
+       "type": "message"
+      }
+     ],
+     "speed": "standard",
+     "fallback_credit": null
+    },
+    "modelUsage": {
+     "claude-haiku-5-5": {
+      "inputTokens": 10869,
+      "outputTokens": 24,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.0010989,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 0,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 0,
+      "canonicalModel": "claude-haiku-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     },
+     "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 934,
+      "cacheReadInputTokens": 1426,
+      "cacheCreationInputTokens": 10645,
+      "webSearchRequests": 0,
+      "costUSD": 0.10413320000000001,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 456,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 10645,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "extra_usage_disabled",
+    "subagent_stats": {
+     "spawned": 0,
+     "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+     },
+     "started_in_background": 0,
+     "max_depth": 0,
+     "spawned_by_subagents": 0,
+     "completed": 0,
+     "failed": 0,
+     "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+     },
+     "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+     },
+     "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 2,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "{\"q1\":null,\"q2\":null,\"c1\":{\"reason\":\"The rationale cites \\\"measured KL 0.43614466651129274 [E514ab09c524e]\\\" for the base recipe, and the record is kind \\\"recipe_kl\\\", metric \\\"kl\\\", with the same value and null layer and method, so it is about the recipe-level quantity it is used for.\",\"pass\":true},\"c2\":{\"reason\":\"The only directional wording, \\\"opposite damping direction from the higher-damping proposal\\\", compares proposals rather than record values, and the one quoted value matches the cited record. No comparison contradicts the records.\",\"pass\":true},\"c3\":{\"reason\":\"The only measured result reported is the base KL, and the rationale claims no KL effect for the new setting: \\\"It tests the opposite damping direction\\\". The statement \\\"stored bits do not change\\\" follows structurally from \\\"keeps every layer method\\\" and empty changes, so it is not an unmeasured result.\",\"pass\":true},\"c4\":null,\"needs_human_review\":false}",
+    "structured_output": {
+     "q1": null,
+     "q2": null,
+     "c1": {
+      "reason": "The rationale cites \"measured KL 0.43614466651129274 [E514ab09c524e]\" for the base recipe, and the record is kind \"recipe_kl\", metric \"kl\", with the same value and null layer and method, so it is about the recipe-level quantity it is used for.",
+      "pass": true
+     },
+     "c2": {
+      "reason": "The only directional wording, \"opposite damping direction from the higher-damping proposal\", compares proposals rather than record values, and the one quoted value matches the cited record. No comparison contradicts the records.",
+      "pass": true
+     },
+     "c3": {
+      "reason": "The only measured result reported is the base KL, and the rationale claims no KL effect for the new setting: \"It tests the opposite damping direction\". The statement \"stored bits do not change\" follows structurally from \"keeps every layer method\" and empty changes, so it is not an unmeasured result.",
+      "pass": true
+     },
+     "c4": null,
+     "needs_human_review": false
+    },
+    "ttft_ms": 5649,
+    "type": "result",
+    "duration_ms": 9320,
+    "uuid": "3bcb0da6-f9c9-49ae-b62e-d230201193a5",
+    "ttft_stream_ms": 937,
+    "time_to_request_ms": 45,
+    "time_to_request_phases_ms": {
+     "other": 1,
+     "system_prompt": 0,
+     "resume_other": 0,
+     "process_user_input": 2,
+     "input_attachments": 23,
+     "input_hooks": 1,
+     "conversation_append": 0,
+     "tool_pool_refresh": 0,
+     "init_message": 3,
+     "init_frame_send": 1,
+     "engine_pickup": 0,
+     "loop_entry": 2,
+     "message_prep": 0,
+     "model_config_wait": 1,
+     "autocompact": 1,
+     "request_announcements": 2,
+     "query_setup": 0,
+     "model_gates": 0,
+     "tool_schema_build": 2,
+     "message_normalization": 1,
+     "client_creation": 3,
+     "request_build": 2
+    },
+    "turn_start_resume_kind": "none",
+    "process_turn_index": 0,
+    "time_to_request_loop_lag_ms": 0,
+    "time_to_request_cpu_ms": 75,
+    "time_to_request_major_faults": 0,
+    "input_attachments_detail": {
+     "slowest_producer": "session_settings",
+     "slowest_producer_ms": 19,
+     "cpu_ms": 37,
+     "major_faults": 0,
+     "setup_ms": 0,
+     "prompt_producers_ms": 0,
+     "ambient_start_ms": 1,
+     "ambient_wait_ms": 19,
+     "render_ms": 0,
+     "producers": 43,
+     "token_counts": 0
+    },
+    "tool_schema_build_detail": {
+     "betas_ms": 0,
+     "waits_ms": 0,
+     "placement_ms": 1,
+     "render_ms": 1,
+     "after_ms": 0,
+     "other_ms": 0,
+     "tools": 1,
+     "new_schemas": 1
+    },
+    "message_normalization_detail": {
+     "before_ms": 0,
+     "normalize_ms": 1,
+     "images_ms": 0,
+     "post_process_ms": 0,
+     "after_ms": 0,
+     "other_ms": 0,
+     "messages": 8,
+     "wire_messages": 2
+    },
+    "request_build_detail": {
+     "records_ms": 0,
+     "system_ms": 0,
+     "headers_ms": 1,
+     "cache_break_record_ms": 0,
+     "plans_ms": 0,
+     "retry_setup_ms": 0,
+     "sent_build_ms": 1,
+     "record_attempt_ms": 0,
+     "other_ms": 0,
+     "sent_build_safety_context_ms": 0,
+     "sent_build_cache_breakpoints_ms": 0,
+     "sent_build_surrogate_scan_ms": 0
+    },
+    "first_content_frame_ms": 937,
+    "queued_turn_count": 0,
+    "result_index": 0,
+    "credential_expires_at": "2026-11-26T06:54:29.041Z"
+   },
+   "stderr": ""
+  },
+  {
+   "role": "judge",
+   "key": "g256_rht3_mlp_upgrades",
+   "returncode": 0,
+   "stdout": {
+    "duration_api_ms": 24230,
+    "stop_reason": "tool_use",
+    "session_id": "517fc6bd-d34e-4ec3-96b5-6129c2b95150",
+    "total_cost_usd": 0.1397496,
+    "usage": {
+     "input_tokens": 2,
+     "cache_creation_input_tokens": 11427,
+     "cache_read_input_tokens": 1426,
+     "output_tokens": 2343,
+     "output_tokens_details": {
+      "thinking_tokens": 1830
+     },
+     "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+     },
+     "service_tier": "standard",
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 11427,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "inference_geo": "global",
+     "iterations": [
+      {
+       "input_tokens": 2,
+       "output_tokens": 2343,
+       "cache_read_input_tokens": 1426,
+       "cache_creation_input_tokens": 11427,
+       "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 11427
+       },
+       "type": "message"
+      }
+     ],
+     "speed": "standard",
+     "fallback_credit": null
+    },
+    "modelUsage": {
+     "claude-haiku-5-5": {
+      "inputTokens": 11649,
+      "outputTokens": 31,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.0011804,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 0,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 0,
+      "canonicalModel": "claude-haiku-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     },
+     "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 2343,
+      "cacheReadInputTokens": 1426,
+      "cacheCreationInputTokens": 11427,
+      "webSearchRequests": 0,
+      "costUSD": 0.1385692,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 1830,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 11427,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "extra_usage_disabled",
+    "subagent_stats": {
+     "spawned": 0,
+     "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+     },
+     "started_in_background": 0,
+     "max_depth": 0,
+     "spawned_by_subagents": 0,
+     "completed": 0,
+     "failed": 0,
+     "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+     },
+     "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+     },
+     "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 2,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "{\"q1\":null,\"q2\":null,\"c1\":{\"reason\":\"Each cited layer_kl record matches the layer and method it is used for, e.g. \\\"model.layers.14.mlp.down_proj moves from rht_gptq_int2 0.00633466 [E4c3f9b73e065]\\\". E514ab09c524e is a recipe_kl record, cited for \\\"the base KL 0.43614466651129274\\\".\",\"pass\":true},\"c2\":{\"reason\":\"All three \\\"upgrades\\\" lower KL in the cited records: 0.00633466 to 0.00181478, 0.00641875 to 0.00237045, and 0.0064177 to 0.00237732. No comparison contradicts the quoted values.\",\"pass\":true},\"c3\":{\"reason\":\"The only unmeasured quality effect is flagged as such: \\\"The KL cost of coarser groups has not been measured\\\". \\\"reduces its stored bits\\\" is unhedged, but it is a size consequence of the configuration rather than a claimed measurement result, and the quoted KL values are all measured.\",\"pass\":true},\"c4\":null,\"needs_human_review\":false}",
+    "structured_output": {
+     "q1": null,
+     "q2": null,
+     "c1": {
+      "reason": "Each cited layer_kl record matches the layer and method it is used for, e.g. \"model.layers.14.mlp.down_proj moves from rht_gptq_int2 0.00633466 [E4c3f9b73e065]\". E514ab09c524e is a recipe_kl record, cited for \"the base KL 0.43614466651129274\".",
+      "pass": true
+     },
+     "c2": {
+      "reason": "All three \"upgrades\" lower KL in the cited records: 0.00633466 to 0.00181478, 0.00641875 to 0.00237045, and 0.0064177 to 0.00237732. No comparison contradicts the quoted values.",
+      "pass": true
+     },
+     "c3": {
+      "reason": "The only unmeasured quality effect is flagged as such: \"The KL cost of coarser groups has not been measured\". \"reduces its stored bits\" is unhedged, but it is a size consequence of the configuration rather than a claimed measurement result, and the quoted KL values are all measured.",
+      "pass": true
+     },
+     "c4": null,
+     "needs_human_review": false
+    },
+    "ttft_ms": 19693,
+    "type": "result",
+    "duration_ms": 23414,
+    "uuid": "10c29850-00d5-4211-bcea-ed73b1e4a242",
+    "ttft_stream_ms": 1072,
+    "time_to_request_ms": 163,
+    "time_to_request_phases_ms": {
+     "other": 2,
+     "system_prompt": 0,
+     "resume_other": 0,
+     "process_user_input": 2,
+     "input_attachments": 9,
+     "input_hooks": 1,
+     "conversation_append": 0,
+     "tool_pool_refresh": 1,
+     "init_message": 2,
+     "init_frame_send": 1,
+     "engine_pickup": 1,
+     "loop_entry": 1,
+     "message_prep": 0,
+     "model_config_wait": 1,
+     "autocompact": 1,
+     "request_announcements": 2,
+     "query_setup": 0,
+     "model_gates": 129,
+     "tool_schema_build": 6,
+     "message_normalization": 0,
+     "client_creation": 3,
+     "request_build": 1
+    },
+    "turn_start_resume_kind": "none",
+    "process_turn_index": 0,
+    "time_to_request_loop_lag_ms": 7,
+    "time_to_request_cpu_ms": 122,
+    "time_to_request_major_faults": 0,
+    "input_attachments_detail": {
+     "slowest_producer": "session_settings",
+     "slowest_producer_ms": 6,
+     "cpu_ms": 15,
+     "major_faults": 0,
+     "setup_ms": 0,
+     "prompt_producers_ms": 0,
+     "ambient_start_ms": 1,
+     "ambient_wait_ms": 5,
+     "render_ms": 0,
+     "producers": 43,
+     "token_counts": 0
+    },
+    "tool_schema_build_detail": {
+     "betas_ms": 0,
+     "waits_ms": 1,
+     "placement_ms": 3,
+     "render_ms": 1,
+     "after_ms": 0,
+     "other_ms": 1,
+     "tools": 1,
+     "new_schemas": 1
+    },
+    "message_normalization_detail": {
+     "before_ms": 0,
+     "normalize_ms": 0,
+     "images_ms": 0,
+     "post_process_ms": 0,
+     "after_ms": 0,
+     "other_ms": 0,
+     "messages": 8,
+     "wire_messages": 2
+    },
+    "request_build_detail": {
+     "records_ms": 0,
+     "system_ms": 0,
+     "headers_ms": 0,
+     "cache_break_record_ms": 1,
+     "plans_ms": 0,
+     "retry_setup_ms": 0,
+     "sent_build_ms": 0,
+     "record_attempt_ms": 0,
+     "other_ms": 0,
+     "sent_build_safety_context_ms": 0,
+     "sent_build_cache_breakpoints_ms": 0,
+     "sent_build_surrogate_scan_ms": 0
+    },
+    "first_content_frame_ms": 1072,
+    "queued_turn_count": 0,
+    "result_index": 0,
+    "credential_expires_at": "2026-11-26T06:54:29.041Z"
+   },
+   "stderr": ""
+  }
+ ]
+}

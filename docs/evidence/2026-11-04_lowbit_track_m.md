@@ -228,9 +228,10 @@
   - 방향은 H4(저비트일수록 측정 피드백의 이득이 커질 여지)와 맞는다. 프로토콜 P4 의 검정은 예산마다 후보 여럿이 필요하다.
 - 이 결과는 개발 모델 · 사전 등록 전 데이터다. §8 의 수치 기준을 이 결과에 맞춰 정하지 않는다.
 
-### 2.5 레이어 프로파일 (bath CPU float32, 트리 `6c4b406`, 08:18–08:25 UTC)
+### 2.5 레이어 프로파일 (bath CPU float32, 트리 `d1a8bbb`, 08:30–08:36 UTC)
 
-- 출력 `qz_trackm_qwen/profile/profile_train_8x512_s42_cpu.json` (`app/layer_profile.py`, WikiText-2 train 8 × 512 seed 42, 196층, 410초).
+- 첫 실행(트리 `6c4b406`)은 `model_sha` 를 비워 기록해 표의 층과 이어지지 않았다. `d1a8bbb` 에서 고쳐 다시 돌렸고, 통계는 196층 모두 첫 실행과 같다 (CPU 결정적).
+- 출력 `qz_trackm_qwen/profile2/profile_train_8x512_s42_cpu.json` (`app/layer_profile.py`, WikiText-2 train 8 × 512 seed 42, 196층, 410초).
 - 종류별 중앙값 (최댓값):
 
   | 종류 | 가중치 첨도 | 입력 채널 absmax 비 | 50% 가지치기 출력 오차 (Wanda / 크기) | 2:4 (Wanda) |

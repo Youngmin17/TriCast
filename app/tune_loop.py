@@ -65,7 +65,7 @@ LOOP_SCHEMA = "tricast.tune.loop/1"
 TOP_LAYERS = 12  # layers with the largest single-layer loss shown to the proposer
 TOP_MOVES = 12  # tabled one-move neighbours shown to the proposer
 RAG_LAYERS = 6  # loss-concentration layers whose evidence the analysis retrieves from the ledger documents
-RAG_K = 2  # documents retrieved per such layer
+RAG_K = 3  # documents ranked per such layer; the layer's own document is kept
 RAG_CHARS = 2400  # of each retrieved document's text
 # black-box controls (mutation_search): cell switches per offspring (drawn uniformly), the chance that an
 # offspring also changes one option of a method in its grid, and the factors a numeric option is multiplied by
@@ -263,8 +263,9 @@ def analyze(config: dict[str, Any], root: Path, refused: Sequence[dict[str, Any]
                          if part)
         hits = search_evidence(query, RAG_K, ledgers=[str(lg.docs_path(ledger))], catalogs=[])
         retrieved.append({"query": query, "documents": [
-            {"source": hit["source"], "section": hit["section"], "text": hit["text"][:RAG_CHARS]}
-            for hit in hits]})
+            {"source": hit["source"], "section": hit["section"],
+             "text": _focus(hit["text"], str(Path(config["table"])))[:RAG_CHARS]}
+            for hit in hits if hit["section"] == f"layer {item['layer']}"]})
     counts = {method: list(cells.values()).count(method) for method in used}
     spending = {} if compute is None else {"compute": {
         "budget": str(compute), "best": ta.evaluate(spec, table_path, budget, compute)["avg_compute"],
@@ -286,6 +287,17 @@ def analyze(config: dict[str, Any], root: Path, refused: Sequence[dict[str, Any]
                              for method in used},
             "catalog": cards, "retrieved": retrieved,
             "grid": {"blocks": len(spec["grid"]), "kinds": list(qr.KINDS)}}
+
+
+def _focus(text: str, table: str) -> str:
+    """A retrieved layer document narrowed to this session, most relevant first: the header, the single-layer
+    KL of the session's table (other tables were measured with other settings), the layer profile, then the
+    layer reports."""
+    lines = text.split("\n")
+    table_kl = [line for line in lines[1:] if line.startswith(f"single-layer KL, table {table} ")]
+    profile = [line for line in lines[1:] if line.startswith("layer profile")]
+    reports = [line for line in lines[1:] if line.startswith("layer report")]
+    return "\n".join(lines[:1] + table_kl + profile + reports)
 
 
 # ---------- proposers ----------

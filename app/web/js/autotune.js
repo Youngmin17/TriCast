@@ -754,6 +754,22 @@ function cellTip(b, k) {
   ]);
 }
 
+// A proposal's options as one line: the options it sets away from their defaults (options_changed, checked by
+// the exporter), methods with the same changes in one group; the options as written when they did not check.
+function optionSummary(p) {
+  const changed = p.options_changed;
+  if (changed && typeof changed === "object") {
+    const groups = new Map();
+    for (const [m, opts] of Object.entries(changed)) {
+      const text = Object.entries(opts ?? {}).map(([k, v]) => `${k} = ${v}`).join(", ");
+      groups.set(text, [...(groups.get(text) ?? []), m]);
+    }
+    return groups.size ? `기본값과 다른 옵션 ${[...groups].map(([text, ms]) => `${ms.join(" · ")}: ${text}`).join(" / ")}` : null;
+  }
+  if (!p.options || typeof p.options !== "object") return null;
+  return `옵션 ${Object.entries(p.options).map(([m, opts]) => `${m}: ${Object.entries(opts ?? {}).map(([k, v]) => `${k} = ${v}`).join(", ")}`).join(" · ")}`;
+}
+
 // Rows for the layer's errors in the tricast report of the method's uniform recipe: [weight MSE, output SQNR,
 // output cosine], the output compared with the original Linear on the same input. Nothing when not reported.
 function reportRows(report) {
@@ -963,9 +979,7 @@ function cardView(p, live) {
         h("span", {class: "at-mono"}, c.method));
     }))
     : h("p", {class: "at-card-sub"}, "칸 변경 없음");
-  const optionText = p.options && typeof p.options === "object"
-    ? Object.entries(p.options).map(([m, opts]) => `${m}: ${Object.entries(opts ?? {}).map(([k, v]) => `${k} = ${v}`).join(", ")}`).join(" · ")
-    : null;
+  const optionText = optionSummary(p);
   const cites = (Array.isArray(p.cites) ? p.cites : []).map((id) => {
     const record = records[id];
     if (!record) return h("span", {class: "at-cite unknown", tabindex: "0", title: "ledger 에 없음"}, `${id} · ledger 에 없음`);
@@ -1000,7 +1014,7 @@ function cardView(p, live) {
       isBest ? h("span", {class: "at-badge best"}, "세션 최선") : null),
     h("p", {class: "at-card-sub"}, "기준 ", h("b", null, p.base ?? NONE), finite(p.avg_bits) ? ` · ${p.avg_bits.toFixed(4)} 비트` : ""),
     changeList,
-    optionText ? h("p", {class: "at-opts"}, `옵션 ${optionText}`) : null,
+    optionText ? h("p", {class: "at-opts"}, optionText) : null,
     rationale, more,
     cites.length ? h("div", {class: "at-cites"}, h("span", {class: "at-muted"}, "인용"), cites) : h("p", {class: "at-none"}, "인용 없음"),
     checks,

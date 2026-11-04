@@ -222,6 +222,19 @@ def solutions(root: Path, kl: Records, ppl: Records, table_sha: str) -> list[dic
     return sorted(out, key=lambda row: (row["bits"], row["id"]))
 
 
+def changed_options(options: Any) -> dict[str, dict[str, Any]] | None:
+    """Per method, the options a proposal sets away from their defaults
+    (``app.quantizer_recipe.method_options``), methods with none left out; null when the options do not check
+    (a refused reply can carry such)."""
+    if not isinstance(options, dict):
+        return None
+    try:
+        changed = {method: qr.method_options(method, values) for method, values in options.items()}
+    except (KeyError, TypeError, ValueError):
+        return None
+    return {method: values for method, values in changed.items() if values}
+
+
 def session_bundle(session: Path, ledger: Path) -> dict[str, Any]:
     """A tune-loop session: per round the proposer's analysis and spend, every proposal it made (accepted with
     its checks' computed values and measurements, or refused with the reason) and the ledger records cited."""
@@ -258,6 +271,7 @@ def session_bundle(session: Path, ledger: Path) -> dict[str, Any]:
             kept = record or {}
             proposal = {"name": name, "base": item.get("base", kept.get("parent")),
                         "changes": item.get("changes", []), "options": item.get("options"),
+                        "options_changed": changed_options(item.get("options")),
                         "rationale": item.get("rationale", kept.get("rationale")),
                         "cites": item.get("cites", kept.get("cites", [])),
                         "status": "refused" if name in refused else "accepted", "reason": refused.get(name)}

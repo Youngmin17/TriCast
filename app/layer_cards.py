@@ -32,7 +32,11 @@ SCHEMA = "tricast.layer_cards/1"
 
 
 def _option_space(method: str) -> dict[str, Any]:
-    return {option: qr.OPTIONS[option].get("default") for option in qr.METHOD_OPTIONS.get(method, ())}
+    try:  # indexing, not .get: a Python-only method's options come from METHOD_OPTIONS.__missing__
+        names = qr.METHOD_OPTIONS[method]
+    except KeyError:
+        names = ()
+    return {option: qr.OPTIONS[option].get("default") for option in names}
 
 
 def cards(table_path: Path, profile_path: Path | None = None, ledger_path: Path | None = None,

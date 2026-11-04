@@ -137,6 +137,17 @@ try {
       && text.includes(`${pick.r[1].toFixed(1)} dB · ${pick.r[2].toFixed(5)}`), {pick, text});
   }
 
+  // 1c a proposal's options line lists only the options away from their defaults (the bundle's options_changed)
+  const optioned = (session?.rounds ?? []).flatMap((r) => r.proposals).find((p) => p.options_changed && Object.keys(p.options_changed).length);
+  if (optioned) {
+    const line = await evaluate(`(() => { const card = [...document.querySelectorAll(".at-card")].find((c) => c.querySelector(".at-card-name")?.textContent === ${JSON.stringify(optioned.name)});
+      return card?.querySelector(".at-opts")?.textContent ?? null; })()`);
+    const pairs = Object.values(optioned.options_changed).flatMap((o) => Object.entries(o).map(([k, v]) => `${k} = ${v}`));
+    check(`options line of ${optioned.name}: only the non-default options (${[...new Set(pairs)].join(", ")}), grouped by method`,
+      !!line && line.startsWith("기본값과 다른 옵션 ") && pairs.every((t) => line.includes(t)) && !line.includes("weight.rounding = rne")
+      && Object.keys(optioned.options_changed).every((m) => line.includes(m)), line);
+  }
+
   // 2 constraints: three requests from the methods the session-budget solve uses most
   await evaluate(`window.__autotune.setBudget(${JSON.stringify(session?.budget_bits ?? "9/2")})`);
   const counts = Object.entries((await state()).counts).filter(([m]) => m !== "bf16").sort((x, y) => y[1] - x[1]).map(([m]) => m);

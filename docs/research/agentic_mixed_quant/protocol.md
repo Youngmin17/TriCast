@@ -39,9 +39,13 @@
 | **M (메모리)** | 가중치 전용(A16): GPTQ int2/3/4 · RHT+GPTQ int2/3/4 · AWQ int3/4 (스케일만 · 스케일+clip) · HQQ 2/3/4 · NF4 · INT8 (W8A16) | 평균 가중치 저장 비트 ≤ B | 혼합 정밀도 PTQ (SliM-LLM 등, 감사로 확정) |
 | **C (칩 연산)** | 칩 형식 W×A: NVFP4 · MXFP4 · MXFP8 · INT8 · SmoothQuant · AWQ+NVFP4 · RaZeR · Four-over-Six (+ 회전 계열은 흡수 후) | 가중치 비트 ≤ B **그리고** 연산 비용 ≤ C | W4A4/FP4 PTQ |
 
-- 트랙 C 의 연산 비용은 MAC 가중 합으로 센다. 가중치는 형식별 텐서코어 처리량의 역수다.
-  - 후보는 FP4 : FP8 : FP16 = 4 : 2 : 1 (B200 dense) 이다. **미검증**: 데이터시트 출처를 확인하기 전에는 쓰지 않는다.
-  - 출처는 HardwarePreset 의 provenance 규칙을 따른다.
+- 트랙 C 의 연산 비용은 MAC 가중 합으로 센다. 가중치는 방법이 B200 에서 돌리는 GEMM 의 dense 텐서코어 처리량의 역수다 (`app/autotune.COMPUTE_WEIGHT` · `compute_class`).
+  - 출처: NVIDIA HGX B200 사양 페이지 (2026-11-04 확인, `COMPUTE_SOURCE`). 8 GPU 기준 FP4 는 sparse 144 · dense 72 PFLOPS 로 둘 다 적혀 있다. FP8/FP6 72 PFLOPS · INT8 72 POPS · FP16/BF16 36 PFLOPS 는 sparse 값이고, 각주가 "Dense is ½ sparse spec shown" 이라고 적는다. 따라서 dense **FP4 : FP8 = INT8 : BF16 = 4 : 2 : 1** 이다.
+  - A16 방법(가중치 전용)은 가중치를 BF16 으로 되돌려 BF16 GEMM 을 쓴다고 정의한다 (가중치 1). 변환 자체의 비용(had_* 의 온라인 Hadamard)은 세지 않는다.
+  - B200 에 텐서코어 경로가 없는 nvint4 (INT4 원소) · razer_nvfp4 (RaZeR 의 재배치 FP4 값) · bfp12 (MSFP12) 는 **미평가**다. 연산 예산을 걸면 거부하고, `--drop-unrated` 를 주면 빼고 그 사실을 기록한다. 이 셋을 트랙 C 에 둘지(가상 칩 가정)는 사람이 정한다.
+  - 연산 예산은 Linear MAC 당 평균으로 준다 (BF16 = 1, 균일 FP4 = 1/4). §5 의 예산점 1.0 · 1.25 · 1.5 배는 `--compute-budget` 1/4 · 5/16 · 3/8 이다.
+  - 풀이: `solve --compute-budget` → `solve_mckp2`, 비트 × 연산 2차원 정확 DP. 층마다 가장 싼 선택지는 어차피 내므로 DP 는 그 위의 남는 예산만 다룬다. 그래서 기본 해상도(정확 GCD)로도 표가 작다. 반올림 상한(bound)은 축마다 기록한다.
+  - 기반 점검 (2026-11-04, v2 Qwen3-0.6B 표 196층, 4.5 비트, CPU): 연산 1/4 · 5/16 · 3/8 모두 bound 0 (정확), 풀이 4–12 s · 0.64 GB. 같은 문제를 비트 해상도 2^20 으로 거칠게 풀면 예측 KL 합이 23–26% 높았다 (예산 0.13–0.28 비트를 반올림으로 버림). 이 표는 트랙 C 의 칩 누산 표가 아니므로 트랙 C 결과가 아니다.
 - 트랙 C 에서 TriCast 의 칩 수치(누산 규칙)를 비트 단위로 같게 에뮬레이트하는 것이 차별점이다. 평가는 `mma_input` 을 명시한다.
 - 풀 확장 (LOWBIT): 트랙 M 은 gptq_int3 · gptq_int2 · hqq_int3 · hqq_int2 · awq_int4 (`dd36b02`), rht_gptq_int4/3/2 · awq_int3 · int8_w (2026-11-04), 트랙 C 는 had_nvfp4 · had_mxfp4 다.
   - rht_gptq: 입력 쪽 RHT(seed 0, 블록 ≤ 128) 뒤 GPTQ. QuIP# 의 비간섭 처리를 흡수했고, E8P 코드북 · 출력 쪽 회전 · 미세조정은 없다 (tricast_native).
@@ -140,8 +144,8 @@
 | Four-over-Six | 불일치 기록 | 공식 fouroversix 와 텐서 스케일 기준이 다름 (amax/(6·256) vs amax/(6·448)) — 정본 레퍼런스라 사람 결정 |
 | 보정 결과 캐시 | `7ed0f5d` · `28396ed` · `84187eb`: 비트 동일 통과, 속도 기준(측정 전체 5×) 실패 3.8× — 가속용으로는 미채택 (증거 문서) | 비트 동일 KL, 전부 적중 시 측정당 ≥ 5× 단축 |
 | 격자 블록 수 = 모델 블록 수 | `7120c41` (CPU 테스트) | 28 블록 레시피 바이트 동일(AC15), 32 · 36 블록 모델 표 · 레시피 생성 |
-| 트랙 M 풀: int2–4 GPTQ · RHT+GPTQ · AWQ int3/4 · HQQ · int8_w, 누산 `--mma` | `dd36b02` + 2026-11-04 (CPU 테스트), Llama-2-7B 균일 충실도 GPU 실행 중 | 공식 수치 대비 충실도 (AWQ v5 Tab 4 · OmniQuant v3 Tab 1 앵커) |
-| 트랙 C 연산 비용 모델 | 계획 | 출처 있는 처리량 비, 배낭 이중 제약 |
+| 트랙 M 풀: int2–4 GPTQ · RHT+GPTQ · AWQ int3/4 · HQQ · int8_w, 누산 `--mma` | `dd36b02` + 2026-11-04 (CPU 테스트). Llama-2-7B 균일 충실도: GPTQ int4/3 · AWQ int4 (스케일만 · +clip) · RHT+GPTQ int3/2 · int8_w 통과, AWQ int3 은 clip 을 넣어도 +0.067 미달 (원인 격리 대기, 증거 문서 2026-11-04 §1.3–1.4) | 공식 수치 대비 충실도 (AWQ v5 Tab 4 · OmniQuant v3 Tab 1 앵커) |
+| 트랙 C 연산 비용 모델 | 처리량 비 출처 확인 (NVIDIA HGX B200 사양) · `solve --compute-budget` 2차원 정확 DP (CPU 테스트, v2 표에서 bound 0). 튜닝 루프 · 제안 검사의 연산 예산은 미구현 | 출처 있는 처리량 비, 배낭 이중 제약 |
 | TPE · LLM-seeded TPE · 옵션 탐색 · 절제 마스킹 · 무검사 | 구현 (CPU 테스트) | 같은 루프, 같은 측정 수, 같은 검사 |
 | 정보 맞춤 arm · 이름 익명화 · 28 블록 초과 격자 | 격자 `7120c41`, 익명화 · 정보 맞춤 arm 2026-11-04 (CPU 테스트) | 같은 루프, 같은 측정 수 |
 | 외부 공식 비교군: ModelOpt AutoQuantize · EvoPress · AMQ | 재현 가능성 정적 조사 완료 ([lane_baselines.md](./lane_baselines.md)): EvoPress 높음 · ModelOpt 0.43.0 중간(측정 수 고정) · AMQ 중간. 실행 전 | quant-eval 재현 게이트 (EvoPress Tab 7 앵커, 공식 env) |

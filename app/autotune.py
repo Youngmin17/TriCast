@@ -56,6 +56,11 @@ solve: minimise sum value(layer, method) subject to sum params x bits(layer, met
 table has floors (v2) and --no-subtract-floor is not given, max(0, kl - floor) for every non-BF16 method
 (BF16 stays 0). Exact DP on costs rounded up to multiples of the resolution (default: the exact GCD of all
 costs, so nothing is rounded). KV is not chosen: --kv fixes it and its bits are not in the weight budget.
+--compute-budget C (track C) also bounds the compute: Linear MACs weighted by the inverse dense B200 Tensor
+Core throughput of each method's GEMM (COMPUTE_WEIGHT from COMPUTE_SOURCE; A16 methods run a BF16 GEMM),
+averaged per MAC (BF16 = 1, uniform FP4 = 1/4), by an exact DP over both rounded costs (solve_mckp2; the
+bits resolution must then be coarse enough for the DP). Methods with no sourced rate (W_A_CLASS None) are
+refused unless --drop-unrated leaves them out (recorded in solution.json ``compute``).
 Writes the Quantizer's --from-json grid (grid.json, with the table's calibration settings when it tabled
 calibrated methods), the YAML that ``--from-json grid.json`` prints (recipe.yaml) and solution.json. The
 grid default is the most frequent non-BF16 choice (``default_method``); grid rows of blocks the table does
@@ -144,11 +149,14 @@ def run_env() -> dict[str, Any]:
     return {**capture_env(None), **provenance()}
 
 
-def default_name(bits: Fraction, kv: str) -> str:
-    """auto_<numerator>[-<denominator>][_<kv>]: the exact budget in bits (9/2 -> auto_9-2) and the KV preset,
-    so different budgets or KV presets never share a name."""
-    budget = str(bits.numerator) if bits.denominator == 1 else f"{bits.numerator}-{bits.denominator}"
-    return f"auto_{budget}" + ("" if kv == "none" else f"_{kv}")
+def default_name(bits: Fraction, kv: str, compute: Fraction | None = None) -> str:
+    """auto_<numerator>[-<denominator>][_c<compute>][_<kv>]: the exact budget in bits (9/2 -> auto_9-2), the
+    compute budget if any and the KV preset, so different budgets or KV presets never share a name."""
+    def exact(value: Fraction) -> str:
+        return str(value.numerator) if value.denominator == 1 else f"{value.numerator}-{value.denominator}"
+
+    return (f"auto_{exact(bits)}" + ("" if compute is None else f"_c{exact(compute)}")
+            + ("" if kv == "none" else f"_{kv}"))
 
 
 @dataclass(frozen=True)
@@ -179,6 +187,38 @@ def avg_bits(layers: Sequence[Layer], methods: Sequence[str]) -> Fraction:
     return total / sum(layer.params for layer in layers)
 
 
+# ---------- compute (track C, docs/research/agentic_mixed_quant/protocol.md §3) ----------
+COMPUTE_SOURCE = ("NVIDIA HGX B200 specifications, https://www.nvidia.com/en-us/data-center/hgx/ "
+                  "(read 2026-11-04), 8 GPUs: FP4 Tensor Core 144 | 72 PFLOPS (sparse | dense); FP8/FP6 72 "
+                  "PFLOPS, INT8 72 POPS, FP16/BF16 36 PFLOPS, footnote 'Specification in Sparse. Dense is "
+                  "1/2 sparse spec shown.' -> dense FP4 : FP8 = INT8 : BF16 = 4 : 2 : 1")
+COMPUTE_WEIGHT = {"fp4": Fraction(1, 4), "fp8": Fraction(1, 2), "int8": Fraction(1, 2), "bf16": Fraction(1)}
+# The B200 GEMM of each method that quantizes activations; every A16 method dequantizes its weight for a BF16
+# GEMM. A transform's own work (the online Hadamard of had_*) is not counted. None: B200 has no Tensor Core
+# path for the operands (INT4 elements, RaZeR's remapped FP4 value, MSFP12), so the method is unrated.
+W_A_CLASS: dict[str, str | None] = {
+    "nvfp4": "fp4", "mxfp4": "fp4", "awq_nvfp4": "fp4", "smoothquant_nvfp4": "fp4", "had_nvfp4": "fp4",
+    "had_mxfp4": "fp4", "mxfp8": "fp8", "int8": "int8", "nvint4": None, "bfp12": None, "razer_nvfp4": None}
+
+
+def compute_class(method: str) -> str | None:
+    """The COMPUTE_WEIGHT class of the GEMM ``method`` runs on B200; None = unrated."""
+    spec = qr.PYTHON_METHODS[method]
+    if spec is None or spec["activation"] is None:
+        return "bf16"
+    if method not in W_A_CLASS:
+        raise AutotuneError(f"{method} quantizes activations but has no B200 GEMM class in W_A_CLASS")
+    return W_A_CLASS[method]
+
+
+def compute_cost(layer: Layer, method: str) -> Fraction:
+    """Linear MACs per token (= params) x the inverse dense throughput of the method's GEMM, BF16 = 1."""
+    rate = compute_class(method)
+    if rate is None:
+        raise AutotuneError(f"{method} has no sourced B200 Tensor Core rate (unrated)")
+    return layer.params * COMPUTE_WEIGHT[rate]
+
+
 # ---------- multiple-choice knapsack ----------
 @dataclass(frozen=True)
 class Solution:
@@ -190,9 +230,54 @@ class Solution:
     bound: Fraction  # sum over rows of the largest rounding: the DP is optimal for (budget - bound)
 
 
+@dataclass(frozen=True)
+class Solution2(Solution):
+    """A Solution under a second constraint (solve_mckp2), with that constraint's own rounding."""
+    compute: Fraction  # sum of the chosen exact compute costs
+    compute_resolution: Fraction
+    compute_capacity: int
+    compute_bound: Fraction
+
+
 def _gcd(values: Sequence[Fraction]) -> Fraction:
     common = math.lcm(*(value.denominator for value in values))
     return Fraction(math.gcd(*(int(value * common) for value in values)), common)
+
+
+def _rows(costs: Sequence[Sequence[Fraction | int | float]],
+          values: Sequence[Sequence[float]]) -> list[list[Fraction]]:
+    rows = [[Fraction(c) for c in row] for row in costs]
+    if not rows or len(rows) != len(values) or any(len(row) != len(v) or not row for row, v in
+                                                   zip(rows, values, strict=True)):
+        raise AutotuneError("costs and values need the same non-empty rows")
+    if any(len(row) > 127 for row in rows) or any(c < 0 for row in rows for c in row):
+        raise AutotuneError("each row needs at most 127 options with non-negative costs")
+    return rows
+
+
+def _rounded(rows: list[list[Fraction]], budget: Fraction, resolution: Fraction | int | float | None,
+             what: str = "budget") -> tuple[Fraction, list[list[int]], int, Fraction]:
+    """One constraint on integer units: (step, the costs rounded up to multiples of it, capacity, bound)."""
+    cheapest = sum((min(row) for row in rows), Fraction(0))
+    if cheapest > budget:
+        raise AutotuneError(f"infeasible {what} {float(budget):.10g}: the cheapest choice costs "
+                            f"{float(cheapest):.10g}")
+    if resolution is None:
+        nonzero = [c for row in rows for c in row if c]
+        step = _gcd(nonzero) if nonzero else Fraction(1)
+    else:
+        step = Fraction(resolution)
+    if step <= 0:
+        raise AutotuneError(f"resolution must be positive, got {resolution}")
+    units = [[math.ceil(c / step) for c in row] for row in rows]
+    capacity = math.floor(budget / step)
+    if sum(min(row) for row in units) > capacity:
+        raise AutotuneError(f"the {what} fits only before rounding costs up to multiples of {float(step):g}; "
+                            "use a finer resolution")
+    capacity = min(capacity, sum(max(row) for row in units))  # budget beyond the dearest choice adds nothing
+    bound = sum((max(u * step - c for u, c in zip(urow, row, strict=True)) for urow, row in
+                 zip(units, rows, strict=True)), Fraction(0))
+    return step, units, capacity, bound
 
 
 def solve_mckp(costs: Sequence[Sequence[Fraction | int | float]], values: Sequence[Sequence[float]],
@@ -206,35 +291,11 @@ def solve_mckp(costs: Sequence[Sequence[Fraction | int | float]], values: Sequen
     then, deciding rows from the last one, the earliest option of the row."""
     import numpy as np
 
-    rows = [[Fraction(c) for c in row] for row in costs]
-    if not rows or len(rows) != len(values) or any(len(row) != len(v) or not row for row, v in
-                                                   zip(rows, values, strict=True)):
-        raise AutotuneError("costs and values need the same non-empty rows")
-    if any(len(row) > 127 for row in rows) or any(c < 0 for row in rows for c in row):
-        raise AutotuneError("each row needs at most 127 options with non-negative costs")
-    budget = Fraction(budget)
-    cheapest = sum((min(row) for row in rows), Fraction(0))
-    if cheapest > budget:
-        raise AutotuneError(f"infeasible budget {float(budget):.10g}: the cheapest choice costs "
-                            f"{float(cheapest):.10g}")
-    if resolution is None:
-        nonzero = [c for row in rows for c in row if c]
-        step = _gcd(nonzero) if nonzero else Fraction(1)
-    else:
-        step = Fraction(resolution)
-    if step <= 0:
-        raise AutotuneError(f"resolution must be positive, got {resolution}")
-    units = [[math.ceil(c / step) for c in row] for row in rows]
-    capacity = math.floor(budget / step)
-    if sum(min(row) for row in units) > capacity:
-        raise AutotuneError(f"the budget fits only before rounding costs up to multiples of {float(step):g}; "
-                            "use a finer resolution")
-    capacity = min(capacity, sum(max(row) for row in units))  # budget beyond the dearest choice adds nothing
+    rows = _rows(costs, values)
+    step, units, capacity, bound = _rounded(rows, Fraction(budget), resolution)
     if len(rows) * (capacity + 1) > MAX_DP_CELLS:
         raise AutotuneError(f"{len(rows)} rows x {capacity + 1} budget units is too large; use a coarser "
                             "resolution")
-    bound = sum((max(u * step - c for u, c in zip(urow, row, strict=True)) for urow, row in
-                 zip(units, rows, strict=True)), Fraction(0))
     dp = np.full(capacity + 1, np.inf)
     dp[0] = 0.0
     picks = np.full((len(rows), capacity + 1), -1, dtype=np.int8)
@@ -260,6 +321,67 @@ def solve_mckp(costs: Sequence[Sequence[Fraction | int | float]], values: Sequen
         value += float(values[i][j])
     total = sum((rows[i][j] for i, j in enumerate(choice)), Fraction(0))
     return Solution(choice, value, total, step, capacity, bound)
+
+
+def solve_mckp2(costs: Sequence[Sequence[Fraction | int | float]],
+                compute: Sequence[Sequence[Fraction | int | float]],
+                values: Sequence[Sequence[float]], budget: Fraction | int | float,
+                compute_budget: Fraction | int | float, resolution: Fraction | int | float | None = None,
+                compute_resolution: Fraction | int | float | None = None) -> Solution2:
+    """solve_mckp with a second constraint, the sum of ``compute`` <= ``compute_budget``. Every row pays its
+    cheapest option of each constraint anyway, so the DP spans only what the budgets leave above those
+    (exact, and it keeps the two-dimensional table small); each constraint's costs above the row's cheapest
+    are rounded as in solve_mckp, with its own resolution and bound. The choice therefore exceeds neither
+    budget and its value is at most the true optimum for (budget - bound, compute_budget - compute_bound).
+    Ties: the smallest rounded total cost, then the smallest rounded total compute, then, deciding rows from
+    the last one, the earliest option of the row."""
+    import numpy as np
+
+    rows, crows = _rows(costs, values), _rows(compute, values)
+    excess = []
+    for what, cost_rows, limit in (("budget", rows, Fraction(budget)),
+                                   ("compute budget", crows, Fraction(compute_budget))):
+        base = sum((min(row) for row in cost_rows), Fraction(0))
+        if base > limit:
+            raise AutotuneError(f"infeasible {what} {float(limit):.10g}: the cheapest choice costs "
+                                f"{float(base):.10g}")
+        excess.append(([[c - min(row) for c in row] for row in cost_rows], limit - base))
+    step, units, capacity, bound = _rounded(*excess[0], resolution)
+    cstep, cunits, ccapacity, cbound = _rounded(*excess[1], compute_resolution, "compute budget")
+    if len(rows) * (capacity + 1) * (ccapacity + 1) > MAX_DP_CELLS:
+        fits = MAX_DP_CELLS // (len(rows) * (ccapacity + 1)) - 1
+        hint = (f"a resolution of at least {float(step * Fraction(capacity, fits)):.6g}" if fits > 0
+                else "a coarser compute resolution")
+        raise AutotuneError(f"{len(rows)} rows x {capacity + 1} budget units x {ccapacity + 1} compute units "
+                            f"is too large; use {hint}")
+    dp = np.full((capacity + 1, ccapacity + 1), np.inf)
+    dp[0, 0] = 0.0
+    picks = np.full((len(rows), capacity + 1, ccapacity + 1), -1, dtype=np.int8)
+    for i, (urow, crow, vrow) in enumerate(zip(units, cunits, values, strict=True)):
+        new = np.full((capacity + 1, ccapacity + 1), np.inf)
+        for j, (u, w, v) in enumerate(zip(urow, crow, vrow, strict=True)):
+            if u > capacity or w > ccapacity:
+                continue
+            candidate = dp[:capacity + 1 - u, :ccapacity + 1 - w] + float(v)
+            better = candidate < new[u:, w:]
+            new[u:, w:][better] = candidate[better]
+            picks[i, u:, w:][better] = j
+        dp = new
+    # the first minimum in row-major order: the smallest rounded total cost, then compute
+    left, cleft = divmod(int(np.argmin(dp)), ccapacity + 1)
+    if not math.isfinite(dp[left, cleft]):
+        raise AutotuneError("no choice fits both budgets")
+    choice = [0] * len(rows)
+    for i in range(len(rows) - 1, -1, -1):
+        choice[i] = int(picks[i, left, cleft])
+        left -= units[i][choice[i]]
+        cleft -= cunits[i][choice[i]]
+    value = 0.0
+    for i, j in enumerate(choice):
+        value += float(values[i][j])
+    total = sum((rows[i][j] for i, j in enumerate(choice)), Fraction(0))
+    ctotal = sum((crows[i][j] for i, j in enumerate(choice)), Fraction(0))
+    return Solution2(choice, value, total, step, capacity, bound, ctotal, cstep, ccapacity, cbound)
 
 
 # ---------- grids ----------
@@ -985,6 +1107,15 @@ def cmd_solve(args: argparse.Namespace) -> int:
     budget = bits * params
     kl = objective(table, False)
     options = [[method for method in methods if kl[layer.name][method] is not None] for layer in layers]
+    unrated: list[str] = []
+    if args.compute_budget is not None:
+        if args.compute_budget <= 0:
+            raise AutotuneError("the compute budget must be positive")
+        unrated = [method for method in methods if compute_class(method) is None]
+        if unrated and not args.drop_unrated:
+            raise AutotuneError(f"{unrated} have no sourced B200 Tensor Core rate (W_A_CLASS); a compute "
+                                "budget needs --drop-unrated, which leaves them out and records it")
+        options = [[method for method in row if method not in unrated] for row in options]
     rows = list(zip(layers, options, strict=True))
     cheapest = sum((min(cost(layer, method) for method in row) for layer, row in rows), Fraction(0))
     if cheapest > budget:
@@ -993,16 +1124,21 @@ def cmd_solve(args: argparse.Namespace) -> int:
     floor = floors(table)
     subtract = floor is not None and not args.no_subtract_floor
     values = objective(table, subtract)
-    solution = solve_mckp([[cost(layer, method) for method in row] for layer, row in rows],
-                          [[values[layer.name][method] for method in row] for layer, row in rows], budget,
-                          args.resolution)
+    costs = [[cost(layer, method) for method in row] for layer, row in rows]
+    row_values = [[values[layer.name][method] for method in row] for layer, row in rows]
+    if args.compute_budget is None:
+        solution = solve_mckp(costs, row_values, budget, args.resolution)
+    else:
+        compute = [[compute_cost(layer, method) for method in row] for layer, row in rows]
+        solution = solve_mckp2(costs, compute, row_values, budget, args.compute_budget * params,
+                               args.resolution, args.compute_resolution)
     chosen = [row[j] for row, j in zip(options, solution.choice, strict=True)]
     default = default_method(chosen, methods)
     # the page's BLOCKS rows (byte-identical solutions for models up to that size), or one row per block
     grid = qr.uniform(default, max(qr.BLOCKS, meta_blocks(table), 1 + max(layer.block for layer in layers)))
     for layer, method in zip(layers, chosen, strict=True):
         grid[layer.block][qr.KINDS.index(layer.kind)] = method
-    name = args.name or default_name(bits, args.kv)
+    name = args.name or default_name(bits, args.kv, args.compute_budget)
     out = Path(args.out)
     meta = table["meta"]
     calibration = meta.get("calibration") if any(method in qr.CALIBRATED_ALL for method in methods) else None
@@ -1042,9 +1178,25 @@ def cmd_solve(args: argparse.Namespace) -> int:
                        "bound_avg_bits": float(solution.bound / params),
                        "meaning": "the choice never exceeds the budget, and its kl sum is at most the "
                                   "optimum for a budget smaller by the bound (0 = exact)"},
+        "compute": None if args.compute_budget is None else {
+            "unit": "Linear MACs x the inverse dense B200 Tensor Core throughput of the method's GEMM, "
+                    "averaged per MAC (BF16 = 1, uniform FP4 = 1/4)",
+            "budget": float(args.compute_budget), "budget_fraction": str(args.compute_budget),
+            "achieved": float(solution.compute / params),
+            "achieved_x_uniform_fp4": float(solution.compute / params / COMPUTE_WEIGHT["fp4"]),
+            "weights": {rate: str(weight) for rate, weight in COMPUTE_WEIGHT.items()},
+            "classes": {method: compute_class(method) for method in methods}, "dropped_unrated": unrated,
+            "source": COMPUTE_SOURCE,
+            "resolution": {"compute_params": float(solution.compute_resolution),
+                           "capacity_units": solution.compute_capacity,
+                           "bound_compute_params": float(solution.compute_bound),
+                           "bound_avg": float(solution.compute_bound / params)}},
         "method_counts": {method: counts[method] for method in methods if counts[method]},
-        "tie_rules": {"solver": "smallest rounded total cost, then the earliest method (METHODS order) of "
-                                "each layer, deciding layers from the last",
+        "tie_rules": {"solver": "smallest rounded total cost, "
+                                + ("" if args.compute_budget is None else
+                                   "then the smallest rounded compute, ")
+                                + "then the earliest method (METHODS order) of each layer, deciding layers "
+                                  "from the last",
                       "default": "most frequent non-BF16 choice, ties to the earlier method in METHODS"},
         "table": {"path": str(table_path), "sha256": hashlib.sha256(raw).hexdigest(),
                   "schema": table["schema"], "methods": methods,
@@ -1068,8 +1220,10 @@ def cmd_solve(args: argparse.Namespace) -> int:
               f"default {default} without being counted", flush=True)
     counted = " ".join(f"{method}={count}" for method, count in result["method_counts"].items())
     print(f"SOLVE {name}: {counted} default={default}")
+    spent = "" if args.compute_budget is None else (f"compute={result['compute']['achieved']:.6f} "
+                                                    f"compute_budget={float(args.compute_budget):.6f} ")
     print(f"AUTOTUNE_SOLVE_DONE name={name} avg_bits={float(achieved):.6f} budget_bits={float(bits):.6f} "
-          f"objective={result['objective']} value={solution.value:.6g} kl_sum={raw_sum:.6g} out={out}",
+          f"{spent}objective={result['objective']} value={solution.value:.6g} kl_sum={raw_sum:.6g} out={out}",
           flush=True)
     return 0
 
@@ -1206,6 +1360,13 @@ def main(argv: Sequence[str] | None = None, model_factory: ModelFactory | None =
     budget.add_argument("--budget-bits", type=Fraction, help="Linear-weighted average bits")
     budget.add_argument("--budget-fraction", type=Fraction, help="fraction of the BF16 Linear size")
     solve.add_argument("--resolution", type=Fraction, help="cost unit in bits x params (default: exact GCD)")
+    solve.add_argument("--compute-budget", type=Fraction,
+                       help="track C: also bound the compute, Linear MACs weighted by the inverse dense B200 "
+                            "Tensor Core throughput, averaged per MAC (BF16 = 1, uniform FP4 = 1/4)")
+    solve.add_argument("--compute-resolution", type=Fraction,
+                       help="compute cost unit in weighted MACs (default: exact GCD)")
+    solve.add_argument("--drop-unrated", action="store_true",
+                       help="with --compute-budget, leave out the methods with no sourced rate (recorded)")
     solve.add_argument("--kv", choices=sorted(qr.KV), default="none")
     solve.add_argument("--no-subtract-floor", action="store_true",
                        help="minimise the raw kl even when the table has patch floors (v1 behaviour)")

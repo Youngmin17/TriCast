@@ -86,6 +86,10 @@ ALL_METHODS: dict[str, dict[str, Any] | None] = {**METHODS, **EXTENDED}
 # official HQQ 3 / 2-bit (weight_algo hqq3 / hqq2); awq_int4: AWQ scales searched with the int4_g128_zp weight
 # error, RTN, BF16 activations; had_nvfp4 / had_mxfp4: block Hadamard along K (block 0 = the largest power of
 # two <= 128 dividing K: 128 on every Qwen3-0.6B Linear) then NVFP4 / MXFP4 weights and activations.
+# 2026-11-04 (track M, lower budgets): rht_gptq_int4 / int3 / int2: QuIP#'s incoherence processing on the
+# input side (random_hadamard T = D H, seed 0, the same block rule) then GPTQ on W T with the Hessian of the
+# rotated inputs, BF16 activations rotated online (weight-only; tricast_native, no codebook); awq_int3:
+# awq_int4 on uint3; int8_w: W8A16, int8's per-row weight with BF16 activations.
 LOWBIT: dict[str, dict[str, Any]] = {
     "gptq_int3": {"weight": {"scheme": "int4_g128_zp", "format": "uint3"}, "activation": None,
                   "transform": "none", "weight_algo": "gptq"},
@@ -99,11 +103,21 @@ LOWBIT: dict[str, dict[str, Any]] = {
                   "weight_algo": "rtn"},
     "had_mxfp4": {"weight": _q("mxfp4"), "activation": _q("mxfp4"), "transform": {"kind": "hadamard"},
                   "weight_algo": "rtn"},
+    "rht_gptq_int4": {"weight": "int4_g128_zp", "activation": None, "transform": {"kind": "random_hadamard"},
+                      "weight_algo": "gptq"},
+    "rht_gptq_int3": {"weight": {"scheme": "int4_g128_zp", "format": "uint3"}, "activation": None,
+                      "transform": {"kind": "random_hadamard"}, "weight_algo": "gptq"},
+    "rht_gptq_int2": {"weight": {"scheme": "int4_g128_zp", "format": "uint2"}, "activation": None,
+                      "transform": {"kind": "random_hadamard"}, "weight_algo": "gptq"},
+    "awq_int3": {"weight": {"scheme": "int4_g128_zp", "format": "uint3"}, "activation": None,
+                 "transform": {"kind": "awq", "share_inputs": True}, "weight_algo": "rtn"},
+    "int8_w": {"weight": _q("int8_row"), "activation": None, "transform": "none", "weight_algo": "rtn"},
 }
 PYTHON_METHODS: dict[str, dict[str, Any] | None] = {**ALL_METHODS, **LOWBIT}  # what build / resolve accept
 # page data (the page catalog's calibration flags); Python-side checks use CALIBRATED_ALL
 CALIBRATED = {"gptq_int4", "awq_nvfp4", "smoothquant_nvfp4"}
-CALIBRATED_ALL = CALIBRATED | {"gptq_int3", "gptq_int2", "awq_int4"}
+CALIBRATED_ALL = CALIBRATED | {"gptq_int3", "gptq_int2", "awq_int4", "rht_gptq_int4", "rht_gptq_int3",
+                               "rht_gptq_int2", "awq_int3"}
 KV = {"none": None, "kivi2": {"preset": "kivi2", "mode": "fakequant"},
       "kivi4": {"preset": "kivi4", "mode": "fakequant"}, "kv_fp8": {"preset": "kv_fp8", "mode": "fakequant"}}
 DESCRIPTION = "Built with the Tri-Cast Quantizer demo (one method per Linear layer)."
@@ -181,11 +195,15 @@ METHOD_OPTIONS: dict[str, tuple[str, ...]] = _MethodOptions({
 })
 # LOWBIT options: low-bit GPTQ as gptq_int4; awq_int4 as awq_nvfp4 without the operand scale options (its
 # zero-point weight takes its range from [min, max], as GPTQ's) and with the int group size; the Hadamard
-# methods as their formats' plain methods. HQQ has none (its group of 64 is the adapter's).
+# methods as their formats' plain methods; the RHT GPTQ methods as GPTQ, awq_int3 as awq_int4, int8_w as
+# int8's weight. HQQ has none (its group of 64 is the adapter's).
+_AWQ_INT = ("weight.group_size", "weight.rounding", "transform.grid", "transform.share_inputs")
 LOWBIT_OPTIONS: dict[str, tuple[str, ...]] = {
-    "gptq_int3": METHOD_OPTIONS["gptq_int4"], "gptq_int2": METHOD_OPTIONS["gptq_int4"],
-    "awq_int4": ("weight.group_size", "weight.rounding", "transform.grid", "transform.share_inputs"),
+    "gptq_int3": METHOD_OPTIONS["gptq_int4"], "gptq_int2": METHOD_OPTIONS["gptq_int4"], "awq_int4": _AWQ_INT,
     "had_nvfp4": METHOD_OPTIONS["nvfp4"], "had_mxfp4": METHOD_OPTIONS["mxfp4"],
+    "rht_gptq_int4": METHOD_OPTIONS["gptq_int4"], "rht_gptq_int3": METHOD_OPTIONS["gptq_int4"],
+    "rht_gptq_int2": METHOD_OPTIONS["gptq_int4"], "awq_int3": _AWQ_INT,
+    "int8_w": ("weight.scale.method", "weight.scale.percentile", "weight.rounding"),
 }
 CALIBRATING_OBSERVERS = ("minmax", "ema", "percentile")  # tricast: all observers but history calibrate
 # A transform / weight_algo that carries options is written as a complete mapping (every field, in dataclass
@@ -456,11 +474,25 @@ def resolve(default: str, rules: list[dict[str, Any]], blocks: int = BLOCKS,
     return grid
 
 
+def check_mma(mma: str | None) -> str | None:
+    """A recipe-wide GEMM accumulation: a tricast.mma.spec.PRESETS name (e.g. fp32_fma), or None for the
+    recipe default (cofda F=23)."""
+    if mma is None:
+        return None
+    from tricast.mma.spec import PRESETS
+
+    if mma not in PRESETS:
+        raise ValueError(f"mma: expected one of {sorted(PRESETS)}, got {mma!r}")
+    return mma
+
+
 def build(name: str, default: str, grid: Grid, kv: str = "none", description: str = DESCRIPTION, *,
           options: Options | None = None, calibration: dict[str, Any] | None = None,
-          kv_options: dict[str, Any] | None = None) -> dict[str, Any]:
+          kv_options: dict[str, Any] | None = None, mma: str | None = None) -> dict[str, Any]:
     """The recipe mapping for one grid (default method, per-layer methods, KV preset), with per-method
-    ``options`` ({method: {option id: value}}), ``calibration`` settings and ``kv_options``."""
+    ``options`` ({method: {option id: value}}), ``calibration`` settings, ``kv_options`` and ``mma`` (one GEMM
+    accumulation for every layer: ``defaults.mma``, which no method fragment sets, so every quantized cell
+    inherits it; None writes nothing, so the recipe is the one built without it)."""
     if default not in PYTHON_METHODS or default == "bf16":
         raise ValueError(f"default method must be a quantization method, got {default!r}")
     if len(grid) < BLOCKS or any(len(row) != len(KINDS) for row in grid):
@@ -470,6 +502,7 @@ def build(name: str, default: str, grid: Grid, kv: str = "none", description: st
     if unknown:
         raise ValueError(f"unknown methods {unknown}")
     kv_fields = _kv_fields(kv, kv_options)
+    mma = check_mma(mma)
     checked = _check_options(options)
     settings = check_calibration(calibration)
     table = fragments(default, checked)
@@ -479,6 +512,8 @@ def build(name: str, default: str, grid: Grid, kv: str = "none", description: st
     used = {default, *(m for row in grid for m in row)}
     recipe: dict[str, Any] = {"name": name, "description": description,
                               "defaults": dict(table[default] or {})}
+    if mma is not None:
+        recipe["defaults"]["mma"] = mma
     if rules:
         recipe["overrides"] = rules
     if kv_fields is not None:
@@ -561,7 +596,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     group.add_argument("--preset", choices=sorted(PRESETS))
     group.add_argument("--write-presets", type=Path, metavar="DIR")
     group.add_argument("--from-json", type=Path, metavar="FILE",
-                       help='{"name", "default", "grid", "kv", "options", "calibration", "kv_options"} '
+                       help='{"name", "default", "grid", "kv", "options", "calibration", "kv_options", '
+                            '"mma"} '
                             'or a list of them -> one YAML document each')
     args = parser.parse_args(argv)
     if args.preset:
@@ -573,7 +609,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             print("---")
             print(to_yaml(build(spec["name"], spec["default"], spec["grid"], spec.get("kv", "none"),
                                 options=spec.get("options"), calibration=spec.get("calibration"),
-                                kv_options=spec.get("kv_options"))))
+                                kv_options=spec.get("kv_options"), mma=spec.get("mma"))))
         return 0
     args.write_presets.mkdir(parents=True, exist_ok=True)
     for preset_id in PRESETS:

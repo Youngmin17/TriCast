@@ -130,8 +130,8 @@ def _numbers(value: Any) -> list[float]:
 
 # ---------- grids ----------
 def load_grid(path: Path) -> dict[str, Any]:
-    """A Quantizer ``--from-json`` spec ({name, default, grid, kv, options, calibration, kv_options}) or a
-    bare grid (list of rows); returns the spec with defaults filled in."""
+    """A Quantizer ``--from-json`` spec ({name, default, grid, kv, options, calibration, kv_options, mma})
+    or a bare grid (list of rows); returns the spec with defaults filled in."""
     spec = json.loads(path.read_text(encoding="utf-8"))
     if isinstance(spec, list):
         spec = {"grid": spec}
@@ -143,13 +143,14 @@ def load_grid(path: Path) -> dict[str, Any]:
     used = [method for row in grid for method in row if method != "bf16"]
     default = spec.get("default") or (at.default_method(used, list(qr.METHODS)) if used else "nvfp4")
     return {"default": default, "grid": grid, "kv": spec.get("kv", "none"), "options": spec.get("options"),
-            "calibration": spec.get("calibration"), "kv_options": spec.get("kv_options")}
+            "calibration": spec.get("calibration"), "kv_options": spec.get("kv_options"),
+            "mma": spec.get("mma")}
 
 
 def _recipe(name: str, spec: dict[str, Any]) -> dict[str, Any]:
     try:
         return qr.build(name, spec["default"], spec["grid"], spec["kv"], options=spec["options"],
-                        calibration=spec["calibration"], kv_options=spec["kv_options"])
+                        calibration=spec["calibration"], kv_options=spec["kv_options"], mma=spec.get("mma"))
     except (ValueError, AssertionError) as exc:
         raise TuneError(f"the grid does not build: {exc}") from exc
 
@@ -201,6 +202,9 @@ def evaluate(spec: dict[str, Any], table_path: Path, budget: Fraction) -> dict[s
     """Average bits (options included) and, when the table can predict it, the table's prediction for
     ``spec``; refuses an over-budget grid, a partial table, or a method the table has no entry for."""
     table, raw, layers, methods = load_full_table(table_path)
+    if spec.get("mma") != table["meta"].get("mma"):
+        # a session measures with one accumulation: the table's (cofda F=23 and fp32_fma move KL 0.7-1.9%)
+        raise TuneError(f"the grid's mma {spec.get('mma')!r} is not the table's {table['meta'].get('mma')!r}")
     chosen = [spec["grid"][layer.block][qr.KINDS.index(layer.kind)] for layer in layers]
     total = sum((layer.params * method_bits(method, layer.in_features, spec.get("options"))
                  for layer, method in zip(layers, chosen, strict=True)), Fraction(0))

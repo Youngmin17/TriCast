@@ -24,18 +24,22 @@ quantization method, only that layer with that method: the method's recipe from
 one any Quantizer grid gives that layer. The value is KL(native || quantized) of the next-token
 distributions (OBJECTIVE). BF16 is 0 by definition and not run. After the method entries come
 - the patch floor of every layer (row field ``floor``): only that layer patched with no quantization on the
-  default MMA path (FLOOR_FIELDS, include = the layer, exclude lm_head), i.e. what the emulated GEMM alone
+  table's MMA path (FLOOR_FIELDS, include = the layer, exclude lm_head), i.e. what the emulated GEMM alone
   costs. BF16 is a skip (no patch), so it has no floor.
+--mma NAME (a tricast.mma.spec.PRESETS name, e.g. fp32_fma; meta ``mma``) sets one GEMM accumulation for the
+method recipes and the floors (``defaults.mma``); without it they use the recipe default (cofda F=23). solve
+writes the table's ``mma`` into grid.json and recipe.yaml, so the tune loop measures with it.
 - with --kv-presets, one KV entry per decoder block and preset (top-level ``kv``): only that block's KV cache
   quantized (``kv: {preset, mode: fakequant, layers: "<block>"}``), no Linear patched.
 Calibrated methods (app.quantizer_recipe.CALIBRATED_ALL; only with --calibrate) patch the one layer, run
 ``tricast.calibration.calibrate`` on that model state with the recipe's own calibration block (the --calib-*
 settings, as ``tricast run`` calibrates the solved recipe), then measure. Input sharing: AWQ and SmoothQuant
 fit one scale for all Linears that read the same input (q/k/v; gate/up) in a full recipe, so a one-layer
-calibration of those kinds is not the spec the full recipe gives them. awq_nvfp4, smoothquant_nvfp4 and
-awq_int4 are therefore tabled only for the kinds with a unique input (UNIQUE_INPUT: o_proj, down_proj); on
-q/k/v/gate/up their value is null and solve never chooses them there. gptq_int4 (and gptq_int3 / gptq_int2) is
-tabled for all seven kinds (GPTQ shares only the Hessian, which is the same for every reader of an input).
+calibration of those kinds is not the spec the full recipe gives them. awq_nvfp4, smoothquant_nvfp4,
+awq_int4 and awq_int3 are therefore tabled only for the kinds with a unique input (UNIQUE_INPUT: o_proj,
+down_proj); on q/k/v/gate/up their value is null and solve never chooses them there. gptq_int4 (and
+gptq_int3 / gptq_int2, the rht_gptq methods) is tabled for all seven kinds (GPTQ shares only the Hessian,
+which is the same for every reader of an input; the random Hadamard is fixed by its seed, not fitted).
 Calibration and KL windows: --split validation draws the KL windows (table and measure) from WikiText-2
 validation instead of train. Whenever something is calibrated, ``calibration_overlap`` (table meta, measure
 result) records the tokens the KL windows share with the calibration windows: from one dataset split, both
@@ -90,7 +94,7 @@ FREE = tuple(m for m in qr.METHODS if m not in qr.CALIBRATED_ALL)  # bf16 nvfp4 
 # The Python-only methods (app.quantizer_recipe.EXTENDED: nf4 hqq_int4 razer_nvfp4; LOWBIT, whose GPTQ and AWQ
 # methods are calibrated) are tabled when --methods names them (the default stays FREE, the page's alphabet).
 # one scale per input in a full recipe (module docstring)
-SHARED_INPUT = ("awq_nvfp4", "smoothquant_nvfp4", "awq_int4")
+SHARED_INPUT = ("awq_nvfp4", "smoothquant_nvfp4", "awq_int4", "awq_int3")
 UNIQUE_INPUT = ("o_proj", "down_proj")  # the kinds no other Linear of the block reads the input of
 # The patch floor: the layer patched with no quantization on the default MMA path (the control
 # runs/20261014_autotune/*/floor/ctrl_f23_b13_o.yaml of the v1 spike).
@@ -270,12 +274,16 @@ def default_method(used: Sequence[str], allowed: Sequence[str]) -> str:
 
 
 def write_grid(out_dir: Path, name: str, default: str, grid: qr.Grid, kv: str,
-               calibration: dict[str, Any] | None = None) -> dict[str, Any]:
+               calibration: dict[str, Any] | None = None, mma: str | None = None) -> dict[str, Any]:
     """grid.json (the Quantizer's --from-json spec) and recipe.yaml (what ``--from-json grid.json``
-    prints); ``calibration`` (app.quantizer_recipe.check_calibration settings) goes into both."""
-    recipe = qr.build(name, default, grid, kv, calibration=calibration)
-    spec = {"name": name, "default": default, "grid": grid, "kv": kv}
-    _dump(out_dir / "grid.json", spec if calibration is None else {**spec, "calibration": calibration})
+    prints); ``calibration`` (app.quantizer_recipe.check_calibration settings) and ``mma`` go into both."""
+    recipe = qr.build(name, default, grid, kv, calibration=calibration, mma=mma)
+    spec: dict[str, Any] = {"name": name, "default": default, "grid": grid, "kv": kv}
+    if calibration is not None:
+        spec["calibration"] = calibration
+    if mma is not None:
+        spec["mma"] = mma
+    _dump(out_dir / "grid.json", spec)
     _write_atomic(out_dir / "recipe.yaml", f"---\n{qr.to_yaml(recipe)}\n")
     return recipe
 
@@ -591,20 +599,25 @@ def meta_blocks(table: dict[str, Any]) -> int:
     return int(table["meta"].get("model_blocks") or 0)
 
 
-def method_recipe(method: str, calibration: dict[str, Any] | None = None) -> Any:
+def method_recipe(method: str, calibration: dict[str, Any] | None = None, mma: str | None = None) -> Any:
     """The tricast Recipe of the Quantizer grid with every layer on ``method`` (and ``calibration``
-    settings, for the calibrated methods)."""
+    settings, for the calibrated methods; ``mma``, the table's accumulation)."""
     from tricast.recipe import load_recipe
 
-    return load_recipe(qr.build(f"autotune_{method}", method, qr.uniform(method), calibration=calibration))
+    return load_recipe(qr.build(f"autotune_{method}", method, qr.uniform(method), calibration=calibration,
+                                mma=mma))
 
 
-def floor_recipe() -> Any:
-    """FLOOR_FIELDS on every Linear but lm_head; an entry narrows ``include`` to one layer."""
+def floor_recipe(mma: str | None = None) -> Any:
+    """FLOOR_FIELDS (with ``mma``, the table's accumulation) on every Linear but lm_head; an entry narrows
+    ``include`` to one layer."""
     from tricast.recipe import load_recipe
 
-    return load_recipe({"name": "autotune_floor", "description": "no quantization, default MMA (patch floor)",
-                        "defaults": dict(FLOOR_FIELDS), "exclude": ["lm_head"]})
+    defaults = {**FLOOR_FIELDS, "mma": qr.check_mma(mma)} if mma is not None else dict(FLOOR_FIELDS)
+    return load_recipe({"name": "autotune_floor",
+                        "description": "no quantization, the table's MMA (patch floor)" if mma is not None
+                        else "no quantization, default MMA (patch floor)",
+                        "defaults": defaults, "exclude": ["lm_head"]})
 
 
 def kv_recipe(preset: str) -> Any:
@@ -733,7 +746,8 @@ def cmd_table(args: argparse.Namespace, model_factory: ModelFactory | None = Non
     kl = kl_windows(args)
     calibrated = [method for method in methods if method in qr.CALIBRATED_ALL]
     if calibrated:
-        refuse_identical_windows(kl, calibration_windows(method_recipe(calibrated[0], calibration)), "table")
+        refuse_identical_windows(kl, calibration_windows(method_recipe(calibrated[0], calibration, args.mma)),
+                                 "table")
     out = Path(args.out)
     with _locked(out.with_name(out.stem + ".lock")):
         return _table(args, model_factory, methods, kv_presets, calibration, out)
@@ -746,10 +760,10 @@ def _table(args: argparse.Namespace, model_factory: ModelFactory | None, methods
     session.meta["calibration"] = calibration
     layers, model_blocks = model_layers(session.model, args.blocks)
     blocks = sorted({layer.block for layer in layers})
-    recipes = {method: method_recipe(method, calibration if method in qr.CALIBRATED_ALL else None)
+    recipes = {method: method_recipe(method, calibration if method in qr.CALIBRATED_ALL else None, args.mma)
                for method in methods if method != "bf16"}
     shas = {method: recipe.sha256 for method, recipe in recipes.items()}
-    floor = floor_recipe()
+    floor = floor_recipe(args.mma)
     kv = {preset: kv_recipe(preset) for preset in kv_presets}
     kv_shas = {preset: recipe.sha256 for preset, recipe in kv.items()}
     entries_path = out.with_name(out.stem + ".entries.jsonl")
@@ -851,7 +865,7 @@ def _table(args: argparse.Namespace, model_factory: ModelFactory | None, methods
     summaries = [done[(layer.name, method)]["calibration"] for layer, method in todo
                  if method in qr.CALIBRATED_ALL]
     meta = {**session.meta, "methods": methods, "blocks": len(layers) // len(qr.KINDS),
-            "model_blocks": model_blocks, "method_recipe_sha256": shas, "entries": len(todo),
+            "model_blocks": model_blocks, "mma": args.mma, "method_recipe_sha256": shas, "entries": len(todo),
             "entries_computed_this_run": computed["methods"],
             "entries_wall_s": sum(done[(layer.name, method)]["wall_s"] for layer, method in todo),
             "shared_input_rule": SHARED_INPUT_RULE,
@@ -992,7 +1006,7 @@ def cmd_solve(args: argparse.Namespace) -> int:
     out = Path(args.out)
     meta = table["meta"]
     calibration = meta.get("calibration") if any(method in qr.CALIBRATED_ALL for method in methods) else None
-    write_grid(out, name, default, grid, args.kv, calibration)
+    write_grid(out, name, default, grid, args.kv, calibration, meta.get("mma"))
     achieved = solution.cost / params
     tabled = sorted({layer.block for layer in layers})
     counts = Counter(chosen)
@@ -1170,6 +1184,9 @@ def main(argv: Sequence[str] | None = None, model_factory: ModelFactory | None =
         table.add_argument(f"--calib-{key}", default=spec["default"], choices=spec.get("choices"),
                            type=str if spec["type"] == "choice" else int,
                            help=f"calibration {key} (default {spec['default']}), also in the solved recipe")
+    table.add_argument("--mma", metavar="NAME",
+                       help="one GEMM accumulation (tricast.mma.spec.PRESETS name, e.g. fp32_fma) for the "
+                            "method recipes and floors, also in the solved recipe (default: cofda F=23)")
     table.add_argument("--kv-presets", default="", metavar="PRESETS",
                        help=f"comma-separated KV presets {list(KV_PRESETS)}: one entry per block and preset")
     measure.add_argument("--calibrate", action="store_true",

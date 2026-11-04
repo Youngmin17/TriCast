@@ -77,7 +77,7 @@ GPU_CAP_OWNED = frozenset({"CUDA_VISIBLE_DEVICES", "NVIDIA_VISIBLE_DEVICES", "HI
                            "ROCR_VISIBLE_DEVICES", "GPU_DEVICE_ORDINAL"})
 _CHANGE = {"type": "object",
            "properties": {"block": {"type": "integer"}, "kind": {"type": "string", "enum": list(qr.KINDS)},
-                          "method": {"type": "string", "enum": list(qr.ALL_METHODS)}},
+                          "method": {"type": "string", "enum": list(qr.PYTHON_METHODS)}},
            "required": ["block", "kind", "method"], "additionalProperties": False}
 _PROPOSAL = {"type": "object",
              "properties": {"name": {"type": "string", "pattern": "^[A-Za-z0-9_.-]+$"},
@@ -92,19 +92,9 @@ PROPOSAL_SCHEMA = {"type": "object",
                    "required": ["analysis", "stop", "proposals"], "additionalProperties": False}
 
 
-def _reply_schema(methods: Sequence[str]) -> dict[str, Any]:
-    """PROPOSAL_SCHEMA with ``methods`` as the method names a change may use."""
-    change = {**_CHANGE, "properties": {**_CHANGE["properties"],
-                                        "method": {"type": "string", "enum": list(methods)}}}
-    proposal = {**_PROPOSAL, "properties": {**_PROPOSAL["properties"],
-                                            "changes": {"type": "array", "items": change}}}
-    return {**PROPOSAL_SCHEMA, "properties": {**PROPOSAL_SCHEMA["properties"],
-                                              "proposals": {"type": "array", "items": proposal}}}
-
-
-# Every reply is checked against every Python-side method (the LOWBIT ones included), so the black-box arms
-# may use them; the schema sent to Claude Code (PROPOSAL_SCHEMA) names ALL_METHODS until that is decided.
-REPLY_SCHEMA = _reply_schema(list(qr.PYTHON_METHODS))
+# Every proposer, Claude Code and the black-box arms alike, chooses among every Python-side method (LOWBIT
+# included; user decision 2026-11-04): the schema sent to Claude is the one replies are checked against.
+REPLY_SCHEMA = PROPOSAL_SCHEMA
 SYSTEM = """You are the proposer of an automatic quantization tuning loop for one LLM. Each round you receive
 an evidence analysis built from measured records (a per-layer KL table, whole-recipe KL measured on validation
 windows, the methods' option spaces and catalog cards). Propose grids that should lower the measured

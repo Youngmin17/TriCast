@@ -104,9 +104,9 @@ def test_with_stale_rounds_zero_every_round_is_measured(tmp_path: Path) -> None:
 
 
 def test_the_proposal_schema_names_every_selectable_method() -> None:
-    """The Claude proposer can choose the Python-only methods (nf4, hqq_int4, razer_nvfp4) by name."""
-    assert tl._CHANGE["properties"]["method"]["enum"] == list(qr.ALL_METHODS)
-    assert set(qr.EXTENDED) <= set(tl._CHANGE["properties"]["method"]["enum"])
+    """The Claude proposer can choose every Python-only method (EXTENDED and LOWBIT) by name."""
+    assert tl._CHANGE["properties"]["method"]["enum"] == list(qr.PYTHON_METHODS)
+    assert set(qr.EXTENDED) | set(qr.LOWBIT) <= set(tl._CHANGE["properties"]["method"]["enum"])
 
 
 def test_a_recipe_already_measured_is_refused_however_its_options_are_written(tmp_path: Path) -> None:

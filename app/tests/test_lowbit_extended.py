@@ -28,7 +28,8 @@ from tricast.recipe import load_recipe
 
 DECODER = ("model.layers", qr.BLOCKS)
 LOW = list(qr.LOWBIT)
-CALIBRATED_LOW = {"gptq_int3", "gptq_int2", "awq_int4"}
+CALIBRATED_LOW = {"gptq_int3", "gptq_int2", "awq_int4", "rht_gptq_int4", "rht_gptq_int3", "rht_gptq_int2",
+                  "awq_int3"}
 # method-alone recipe hashes of METHODS + EXTENDED as recorded at 7120c41, before LOWBIT existed
 RECORDED = {
     "awq_nvfp4": "ebce2981f974928be1e7087a9133cdffbe24b0f2a1020914436737b9afaa483c",
@@ -57,9 +58,10 @@ def alone(method: str, options: dict | None = None):
 
 
 def test_lowbit_is_apart_from_the_page_and_the_pinned_extended_set() -> None:
-    assert LOW == ["gptq_int3", "gptq_int2", "hqq_int3", "hqq_int2", "awq_int4", "had_nvfp4", "had_mxfp4"]
+    assert LOW == ["gptq_int3", "gptq_int2", "hqq_int3", "hqq_int2", "awq_int4", "had_nvfp4", "had_mxfp4",
+                   "rht_gptq_int4", "rht_gptq_int3", "rht_gptq_int2", "awq_int3", "int8_w"]
     assert not set(LOW) & (set(qr.METHODS) | set(qr.EXTENDED))
-    assert list(qr.ALL_METHODS) == [*qr.METHODS, *qr.EXTENDED]  # unchanged: the tune loop's alphabet
+    assert list(qr.ALL_METHODS) == [*qr.METHODS, *qr.EXTENDED]  # unchanged: the page + EXTENDED set
     assert list(qr.PYTHON_METHODS) == [*qr.ALL_METHODS, *LOW]
     assert qr.CALIBRATED == {"gptq_int4", "awq_nvfp4", "smoothquant_nvfp4"}  # the page's flags, unchanged
     assert qr.CALIBRATED_ALL == qr.CALIBRATED | CALIBRATED_LOW
@@ -70,7 +72,11 @@ def test_lowbit_is_apart_from_the_page_and_the_pinned_extended_set() -> None:
         "gptq_int3": qr.METHOD_OPTIONS["gptq_int4"], "gptq_int2": qr.METHOD_OPTIONS["gptq_int4"],
         "hqq_int3": (), "hqq_int2": (),
         "awq_int4": ("weight.group_size", "weight.rounding", "transform.grid", "transform.share_inputs"),
-        "had_nvfp4": qr.METHOD_OPTIONS["nvfp4"], "had_mxfp4": qr.METHOD_OPTIONS["mxfp4"]}
+        "had_nvfp4": qr.METHOD_OPTIONS["nvfp4"], "had_mxfp4": qr.METHOD_OPTIONS["mxfp4"],
+        "rht_gptq_int4": qr.METHOD_OPTIONS["gptq_int4"], "rht_gptq_int3": qr.METHOD_OPTIONS["gptq_int4"],
+        "rht_gptq_int2": qr.METHOD_OPTIONS["gptq_int4"],
+        "awq_int3": ("weight.group_size", "weight.rounding", "transform.grid", "transform.share_inputs"),
+        "int8_w": ("weight.scale.method", "weight.scale.percentile", "weight.rounding")}
     with pytest.raises(ValueError, match="unknown options"):
         qr.build("t", "hqq_int3", qr.uniform("hqq_int3"), options={"hqq_int3": {"weight.rounding": "rtz"}})
     # the page data: the committed bundle is what the exporter writes now, and names no LOWBIT method
@@ -107,16 +113,29 @@ def test_lowbit_specs() -> None:
         had, plain = specs[f"had_{fmt}"], alone(fmt)
         assert (had.weight, had.activation, had.transform.kind, had.transform.block) == (
             plain.weight, plain.activation, "hadamard", 0)
+    for bits in (4, 3, 2):  # GPTQ's spec on the RHT-rotated weight, BF16 activations, signs from seed 0
+        rht, gptq = specs[f"rht_gptq_int{bits}"], alone(f"gptq_int{bits}")
+        assert (rht.weight, rht.activation, rht.weight_algo, rht.transform.kind, rht.transform.seed,
+                rht.transform.block) == (gptq.weight, None, gptq.weight_algo, "random_hadamard", 0, 0)
+    awq3 = specs["awq_int3"]
+    assert (awq3.weight, awq3.activation, awq3.transform, awq3.weight_algo) == (
+        specs["gptq_int3"].weight, None, awq.transform, awq.weight_algo)
+    int8_w, int8 = specs["int8_w"], alone("int8")
+    assert (int8_w.weight, int8_w.activation, int8_w.transform.kind, int8_w.weight_algo.kind) == (
+        int8.weight, None, "none", "rtn")
 
 
 def test_stored_bits_of_the_lowbit_methods() -> None:
     assert {m: ex.WEIGHT_BITS[m] for m in LOW} == {
-        "gptq_int3": (3, 19, 128), "gptq_int2": (2, 18, 128), "hqq_int3": (3, 32, 64),
-        "hqq_int2": (2, 32, 64), "awq_int4": (4, 20, 128), "had_nvfp4": (4, 8, 16), "had_mxfp4": (4, 8, 32)}
+        "gptq_int3": (3, 19, 128), "gptq_int2": (2, 18, 128), "hqq_int3": (3, 224, 320),
+        "hqq_int2": (2, 32, 64), "awq_int4": (4, 20, 128), "had_nvfp4": (4, 8, 16), "had_mxfp4": (4, 8, 32),
+        "rht_gptq_int4": (4, 20, 128), "rht_gptq_int3": (3, 19, 128), "rht_gptq_int2": (2, 18, 128),
+        "awq_int3": (3, 19, 128), "int8_w": (8, 32, None)}
     assert {m: at.weight_bits(m, 1024) for m in LOW} == {
-        "gptq_int3": Fraction(403, 128), "gptq_int2": Fraction(137, 64), "hqq_int3": Fraction(7, 2),
+        "gptq_int3": Fraction(403, 128), "gptq_int2": Fraction(137, 64), "hqq_int3": Fraction(37, 10),
         "hqq_int2": Fraction(5, 2), "awq_int4": Fraction(133, 32), "had_nvfp4": Fraction(9, 2),
-        "had_mxfp4": Fraction(17, 4)}
+        "had_mxfp4": Fraction(17, 4), "rht_gptq_int4": Fraction(133, 32), "rht_gptq_int3": Fraction(403, 128),
+        "rht_gptq_int2": Fraction(137, 64), "awq_int3": Fraction(403, 128), "int8_w": Fraction(257, 32)}
     assert ta.method_bits("gptq_int3", 1024, {"gptq_int3": {"weight.group_size": 64}}) == 3 + Fraction(19, 64)
 
 
@@ -179,8 +198,8 @@ def lowbit_table(tmp_path_factory: pytest.TempPathFactory) -> tuple[Path, dict]:
     root = make_root(tmp_path_factory.mktemp("lowbit"))
     rc, stdout, stderr, spy = table_run(root, root / "table.json", *CALIB_ARGS)
     assert rc == 0, stderr
-    # 7 layers x 8 methods, less awq_int4 on the five shared-input kinds
-    assert stdout.splitlines()[0].startswith("AUTOTUNE_TABLE_START layers=7 methods=9 entries=51 done=0 "
+    # 7 layers x 13 methods, less awq_int4 and awq_int3 on the five shared-input kinds
+    assert stdout.splitlines()[0].startswith("AUTOTUNE_TABLE_START layers=7 methods=14 entries=81 done=0 "
                                              "floors=7")
     return root, spy
 
@@ -194,18 +213,21 @@ def test_the_table_measures_every_lowbit_method_and_they_fire(lowbit_table: tupl
     for row in table["layers"]:
         unique = row["kind"] in at.UNIQUE_INPUT
         kl = row["kl"]
-        assert kl["bf16"] == 0.0 and (kl["awq_int4"] is None) == (not unique), row["name"]
+        assert kl["bf16"] == 0.0 and (kl["awq_int4"] is None) == (kl["awq_int3"] is None) == (not unique), (
+            row["name"])
         measured = [m for m in TABLE_METHODS[1:] if kl[m] is not None]
         assert all(math.isfinite(kl[m]) and kl[m] > 0 for m in measured), row["name"]
         assert len({kl[m] for m in measured}) == len(measured), row["name"]  # every method a different weight
     entries = [json.loads(line) for line in (root / "table.entries.jsonl").read_text().splitlines()[2:]]
     calibrated = [e for e in entries if e["method"] in qr.CALIBRATED_ALL]
-    assert len(calibrated) == 7 + 7 + 2 and spy["datasets"] == [("wikitext2", "train")] * 16
+    # gptq_int3 / int2 and the three rht_gptq on all 7 layers; awq_int4 / awq_int3 on o_proj and down_proj
+    assert len(calibrated) == 7 * 5 + 2 * 2 and spy["datasets"] == [("wikitext2", "train")] * 39
     for entry in calibrated:  # each one calibrated exactly its layer
         assert entry["calibration"]["layers"] == [entry["layer"]]
     assert all("calibration" not in e for e in entries if e["method"] not in qr.CALIBRATED_ALL)
     order = [(e["layer"], e["method"]) for e in entries]
-    levels = {"gptq_int3": (8, 128), "gptq_int2": (4, 128), "hqq_int3": (8, 64), "hqq_int2": (4, 64)}
+    levels = {"gptq_int3": (8, 128), "gptq_int2": (4, 128), "hqq_int3": (8, 64), "hqq_int2": (4, 64),
+              "rht_gptq_int3": (8, 128), "rht_gptq_int2": (4, 128), "awq_int3": (8, 128)}
     for method, (most, group) in levels.items():  # the measured weight is on the n-bit grid of its groups
         state = spy["states"][order.index(("model.layers.0.self_attn.o_proj", method))]
         ((spec, weight),) = state["linears"].values()

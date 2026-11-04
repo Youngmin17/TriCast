@@ -76,10 +76,16 @@ WEIGHT_BITS: dict[str, tuple[int, int, int | None]] = {
     # Python-only track methods (app.quantizer_recipe.LOWBIT):
     "gptq_int3": (3, 19, 128),   # uint3, per 128: fp16 scale + 3-bit zero point
     "gptq_int2": (2, 18, 128),   # uint2, per 128: fp16 scale + 2-bit zero point
-    "hqq_int3": (3, 32, 64),     # 3-bit code + BF16 scale + BF16 zero per 64 (packing overhead not counted)
-    "hqq_int2": (2, 32, 64),     # 2-bit code + BF16 scale + BF16 zero per 64
+    # 3-bit codes packed 10 per int32 (official pack_3bit_32: 3.2 bits a code) + BF16 scale and zero per 64;
+    # per 320 weights (32 words, 5 groups): 64 padding bits + 5 x 32 scale/zero bits = 3.7
+    "hqq_int3": (3, 224, 320),
+    "hqq_int2": (2, 32, 64),     # 2-bit code (4 per byte) + BF16 scale + BF16 zero per 64
     "awq_int4": (4, 20, 128),    # as gptq_int4 (the AWQ scale folds into the preceding op)
     "had_nvfp4": (4, 8, 16), "had_mxfp4": (4, 8, 32),  # as nvfp4 / mxfp4 (the Hadamard is not stored)
+    # as gptq_int4 / int3 / int2: the RHT's signs come from its seed, so they are not stored
+    "rht_gptq_int4": (4, 20, 128), "rht_gptq_int3": (3, 19, 128), "rht_gptq_int2": (2, 18, 128),
+    "awq_int3": (3, 19, 128),    # as gptq_int3
+    "int8_w": (8, 32, None),     # as int8: fp32 scale per output row
 }
 
 # Page order (families together): id, label, code, family, W/A bits, one-line description.

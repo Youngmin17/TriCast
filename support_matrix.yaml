@@ -113,10 +113,9 @@ weight_methods:
           zero per 64, the solver changed the weights; another hqq release is refused"}
   hqq3: {status: implemented, kind: official_adapter,
          source: "the hqq adapter with BaseQuantizeConfig(nbits=3, group_size=64) (round_zero false below 4 bits)",
-         note: "Quantizer method hqq_int3 (app.quantizer_recipe.LOWBIT). WEIGHT_BITS (3, 32, 64) = 3.5 bits
-           undercounts the storage: HQQ packs ten 3-bit codes per int32 (3.2 bits per code + padding), about
-           3.7 bits per weight in all (review 2026-11-04); excluded from paper experiments until its bits are
-           fixed (the pinned value in app/tests/test_lowbit_extended.py needs a human-approved change)",
+         note: "Quantizer method hqq_int3 (app.quantizer_recipe.LOWBIT). WEIGHT_BITS (3, 224, 320) = 3.7 bits:
+           the official pack_3bit_32 packs ten 3-bit codes per int32 (3.2 bits a code) + BF16 scale and zero per
+           64 (fixed 2026-11-04 with human approval; it was 3.5, which left out the packing)",
          evidence: "tests/test_lowbit_methods.py (CPU): == the official call bit for bit on normal / Student-t /
            BF16 weights, at most 8 levels per group, the solver changed the weights"}
   hqq2: {status: implemented, kind: official_adapter,
@@ -447,18 +446,26 @@ agent:
                 evidence: "app/tests/test_autotune_v2.py (CPU); GPU spike adopted, C1-C4 and C3' pass
                   (docs/spikes/2026-11-03_autotune_v2.md)"}
   lowbit_methods: {status: implemented, methods: [gptq_int3, gptq_int2, hqq_int3, hqq_int2, awq_int4, had_nvfp4,
-                     had_mxfp4],
-                   note: "app.quantizer_recipe.LOWBIT (Python-only, off the page): track M (2-4 bit weight-only)
-                     and track C (Hadamard + NVFP4 / MXFP4 W4A4); calibrated gptq_int3 / gptq_int2 (all kinds) and
-                     awq_int4 (o_proj / down_proj only, like awq_nvfp4) are in CALIBRATED_ALL, the page's
-                     CALIBRATED is unchanged; not in ALL_METHODS: the shared reply check accepts them
-                     (REPLY_SCHEMA, black-box arms), the schema sent to Claude Code does not yet (pending a
-                     human decision). WEIGHT_BITS are nominal deployed bits: hqq_int3 undercounts (see hqq3);
-                     had_* leave out the per-tensor fp32 scale (32 bits per tensor); awq_int4 assumes its
-                     channel scales are folded at deployment. No GPU table or measurement yet",
+                     had_mxfp4, rht_gptq_int4, rht_gptq_int3, rht_gptq_int2, awq_int3, int8_w],
+                   note: "app.quantizer_recipe.LOWBIT (Python-only, off the page): track M (2-8 bit weight-only)
+                     and track C (Hadamard + NVFP4 / MXFP4 W4A4). rht_gptq_*: QuIP#'s input-side incoherence
+                     (random_hadamard, seed 0, block <= 128) then GPTQ on the rotated weight with the rotated
+                     inputs' Hessian (tricast_native; no E8P codebook, no output-side rotation); awq_int3: AWQ on
+                     uint3 g128; int8_w: W8A16 per-row RTN. Calibrated gptq_int3 / gptq_int2 / rht_gptq_* (all
+                     kinds) and awq_int4 / awq_int3 (o_proj / down_proj only, like awq_nvfp4) are in
+                     CALIBRATED_ALL, the page's CALIBRATED is unchanged; not in ALL_METHODS. Every proposer,
+                     Claude Code included, chooses among PYTHON_METHODS (user decision 2026-11-04). WEIGHT_BITS
+                     are nominal deployed bits: had_* leave out the per-tensor fp32 scale (32 bits per tensor);
+                     awq_* assume their channel scales are folded at deployment; the RHT signs come from the
+                     seed. Llama-2-7B uniform fidelity runs: docs/evidence/2026-11-04_lowbit_track_m.md",
                    evidence: "app/tests/test_lowbit_extended.py (CPU: grids, --from-json, calibrated tiny table and
                      solve, bits, recorded hashes, page bundle unchanged); tests/test_lowbit_methods.py (CPU
                      fidelity)"}
+  track_mma: {status: implemented, note: "one GEMM accumulation per recipe (quantizer_recipe.build mma ->
+                defaults.mma, every quantized cell inherits it); autotune table --mma (method recipes, floors,
+                meta mma), solve writes it into grid.json / recipe.yaml, the tune loop keeps it through every
+                proposal and refuses a grid whose mma is not the table's",
+              evidence: "app/tests/test_track_mma.py (CPU)"}
   structured_parse: {status: implemented, note: "Claude API (claude-opus-5-5, json_schema output) or offline
                      parser; live API path untested here (no ANTHROPIC_API_KEY)",
                      evidence: "tests/test_agent_parser.py, tests/test_agent_request.py (mocked client)"}

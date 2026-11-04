@@ -156,7 +156,7 @@ methods:
   kb_key: null
   arxiv: "2307.13304"
   note: "Incoherence processing (random orthogonal / butterfly in method.py) + LDLQ; per-layer state machine. Venue: prior knowledge."
-  tricast: none
+  tricast: tricast_partial  # Quantizer methods rht_gptq_int4 / int3 / int2 (2026-11-04): incoherence on the input side only (seeded random Hadamard, block <= 128, QuIP#'s RHT rather than QuIP's Kronecker orthogonal) then GPTQ (QuIP states LDLQ is equivalent to OPTQ; section not re-checked) with the rotated inputs' Hessian; no output-side rotation, no codebook; uniform Llama-2-7B runs in docs/evidence/2026-11-04_lowbit_track_m.md
 - id: quip-sharp
   name: "QuIP#"
   venue: ICML

@@ -22,6 +22,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   `quantizer_recipe.build`, auto-tune tables, `solve` and the tune loop; 28-block grids are unchanged.
 - One GPU model per tune session (loop.json `gpu`, `tune_agent.pin_gpu`): KL measured on another GPU model is
   neither ranked nor accepted, since A100 and H200 differ by up to 5.5% on the same recipe.
+- Lower-bit track M methods (LOWBIT): `rht_gptq_int4|3|2` (seeded random Hadamard on the input side, then
+  GPTQ with the rotated inputs' Hessian: QuIP#'s incoherence without its codebook), `awq_int3` and `int8_w`
+  (W8A16). Every proposer, Claude Code included, now chooses among all Python-side methods. `hqq_int3` counts
+  3.7 bits (ten 3-bit codes per int32), not 3.5.
+- One GEMM accumulation per recipe (`quantizer_recipe.build(mma=...)`, `autotune table --mma fp32_fma`): the
+  table's method recipes and floors use it, solve writes it, and the tune loop refuses a grid with another.
 - Comparison arms for the tune loop: Optuna TPE (`--proposer tpe`, study rebuilt from the session each round),
   option-only coordinate search (`option-greedy`), LLM-seeded TPE (`claude-then-tpe`), analysis masks for the
   Claude proposer (`llm.mask`) and the no-check ablation (`checks: false`, budget still enforced).

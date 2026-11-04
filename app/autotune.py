@@ -54,8 +54,9 @@ there, and ``<out stem>.lock`` keeps a second run off the same --out. load_table
 solve: minimise sum value(layer, method) subject to sum params x bits(layer, method) <= budget, bits from
 ``app.export_quantizer_demo.WEIGHT_BITS`` (the deck's Linear-weighted average bits). value = kl, or, when the
 table has floors (v2) and --no-subtract-floor is not given, max(0, kl - floor) for every non-BF16 method
-(BF16 stays 0). Exact DP on costs rounded up to multiples of the resolution (default: the exact GCD of all
-costs, so nothing is rounded). KV is not chosen: --kv fixes it and its bits are not in the weight budget.
+(BF16 stays 0). Exact DP on each layer's costs above its cheapest option (every layer pays that anyway),
+rounded up to multiples of the resolution (default: the exact GCD of those costs, so nothing is rounded).
+KV is not chosen: --kv fixes it and its bits are not in the weight budget.
 --compute-budget C (track C) also bounds the compute: Linear MACs weighted by the inverse dense B200 Tensor
 Core throughput of each method's GEMM (COMPUTE_WEIGHT from COMPUTE_SOURCE; A16 methods run a BF16 GEMM),
 averaged per MAC (BF16 = 1, uniform FP4 = 1/4), by an exact DP over both rounded costs (solve_mckp2; the
@@ -1127,7 +1128,12 @@ def cmd_solve(args: argparse.Namespace) -> int:
     costs = [[cost(layer, method) for method in row] for layer, row in rows]
     row_values = [[values[layer.name][method] for method in row] for layer, row in rows]
     if args.compute_budget is None:
-        solution = solve_mckp(costs, row_values, budget, args.resolution)
+        # every layer pays its cheapest option anyway: the DP spans only the budget left above those (the same
+        # choice, a far smaller table, so budgets up to BF16 stay exact)
+        base = sum((min(row) for row in costs), Fraction(0))
+        solution = solve_mckp([[c - min(row) for c in row] for row in costs], row_values, budget - base,
+                              args.resolution)
+        solution = replace(solution, cost=solution.cost + base)
     else:
         compute = [[compute_cost(layer, method) for method in row] for layer, row in rows]
         solution = solve_mckp2(costs, compute, row_values, budget, args.compute_budget * params,

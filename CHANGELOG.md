@@ -5,6 +5,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 ## [Unreleased]
 
 ### Added
+- Auto-tune page (`app/web/autotune.html`): a budget slider or a request sentence, the exact knapsack solved
+  in the browser (`app/web/js/mckp.js`, equal to `app.autotune solve` per budget in
+  `scripts/quantizer/autotune_check.mjs`), the tune agent's evidence-cited proposals with their checks, and
+  the measured results; the bundle (`app/export_autotune_demo.py`) attaches a number only to its exact recipe.
+  With `python -m app.server --agent <loop.json>`, `/api/autotune/parse` reads one tune request sentence
+  (`app/tune_request.py`, SPEC AC28) and `/api/autotune/propose` asks for a checked round, both live.
 - Layer profiles and layer cards (`app/layer_profile.py`, `app/layer_cards.py`): per decoder Linear, the
   unquantized weight and input-activation distribution and the output error of magnitude / Wanda pruning
   (50% and 2:4), joined with every method's bits, size, single-layer KL and options; the ledger records the

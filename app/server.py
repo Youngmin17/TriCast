@@ -10,6 +10,12 @@ The API contract is app/README.md. Two modes answer it:
 ``/api/quantizer/jobs`` runs one Quantizer recipe (app/web/quantizer.html) through the same queue
 (app/runners/quantizer.py); it needs live mode on CUDA, and demo mode answers it with how to start one.
 
+``/api/autotune/parse`` turns one tune request sentence into a checked request (app/tune_request.py) and
+``/api/autotune/propose`` asks the tune agent (Claude Code headless) for one round of proposals on the
+recorded session ``--agent <loop.json>`` names and checks them (app/autotune_live.py; nothing is measured).
+It is served only with ``--agent`` (it needs the full install and a logged-in ``claude`` CLI), in either
+mode, and answers otherwise with how to enable it; the Auto-tune page then keeps showing the stored rounds.
+
 Local tool: there is no authentication and no CORS. The server binds 127.0.0.1 by default; anyone who
 can reach the port can queue GPU work and read every run, so do not expose it on a shared network.
 """
@@ -37,6 +43,7 @@ from functools import partial
 from importlib import metadata
 from importlib.util import find_spec
 from pathlib import Path
+from typing import Any
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -71,6 +78,9 @@ MAX_RECIPE_BYTES = 64 * 1024
 _RECIPE_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}")
 _LIVE_GPU_ONLY = ("서버 GPU 실행은 라이브 모드의 CUDA 서버에서만 됩니다. GPU 노드에서 "
                   "python -m app.server --device cuda 로 서버를 띄우고 그 주소에서 Quantizer 를 여세요.")
+_AGENT_OFF = ("실시간 AI 제안은 --agent 로 띄운 서버에서만 됩니다: 전체 설치(pip install -e \".[app]\")와 "
+              "로그인된 claude CLI 가 있는 PC 에서 python -m app.server --demo --agent <세션의 loop.json> "
+              "으로 띄우세요. 지금 화면의 AI 제안은 저장된 응답입니다.")
 
 
 class RunInput(BaseModel):
@@ -103,6 +113,14 @@ class RunArgs:
     max_new_tokens: int | None = None
     image_path: Path | None = None
     checkpoint: Path | None = None
+
+
+class ProposeRequest(BaseModel):
+    count: int = Field(4, description="at most this many proposals (1-8)")
+
+
+class ParseRequest(BaseModel):
+    text: str = Field(..., description="one tune request sentence (app/tune_request.py)")
 
 
 class QuantizerJobRequest(BaseModel):
@@ -601,10 +619,12 @@ def _add_run_routes(app: FastAPI, live: LiveBackend) -> None:
 
 def create_app(mode: str, device: str, demo_dir: Path, runner: Runner | None = None, *,
                runs_dir: Path = DEFAULT_RUNS_DIR, checkpoints: dict[str, Path] | None = None,
-               identity: dict | None = None, quantizer_runner: QuantizerRunner | None = None) -> FastAPI:
+               identity: dict | None = None, quantizer_runner: QuantizerRunner | None = None,
+               agent: Path | None = None, agent_runner: Callable[..., Any] | None = None) -> FastAPI:
     """Build the app; ``mode`` is "demo" or "live", ``runner`` replaces :func:`run_live` and
     ``quantizer_runner`` :func:`run_quantizer_live` (tests), ``checkpoints`` maps vision model ids to
-    checkpoint files and ``identity`` (device and code hashes) joins the run cache key (live)."""
+    checkpoint files and ``identity`` (device and code hashes) joins the run cache key (live). ``agent``
+    (a loop.json) serves ``/api/autotune/propose``; ``agent_runner`` replaces ``subprocess.run`` there."""
     if mode == "demo":
         backend: DemoBackend | LiveBackend = DemoBackend(demo_dir)
     else:
@@ -640,6 +660,30 @@ def create_app(mode: str, device: str, demo_dir: Path, runner: Runner | None = N
             raise ApiError(409, "live_mode_required", _LIVE_GPU_ONLY)
         return backend.get_quantizer_job(_safe_name(job_id))
 
+    @app.post("/api/autotune/propose")
+    def propose(body: ProposeRequest) -> dict:
+        if agent is None:
+            raise ApiError(503, "agent_unavailable", _AGENT_OFF)
+        from .autotune_live import LiveError, load_config, propose_round  # the full install, only here
+
+        try:
+            return propose_round(load_config(agent), APP_DIR.parent, body.count,
+                                 **({} if agent_runner is None else {"runner": agent_runner}))
+        except LiveError as exc:
+            raise ApiError(exc.status, exc.code, exc.message) from exc
+
+    @app.post("/api/autotune/parse")
+    def parse(body: ParseRequest) -> dict:
+        if agent is None:
+            raise ApiError(503, "agent_unavailable", _AGENT_OFF)
+        from .autotune_live import LiveError, load_config, parse_request
+
+        try:
+            return parse_request(load_config(agent), APP_DIR.parent, body.text,
+                                 **({} if agent_runner is None else {"runner": agent_runner}))
+        except LiveError as exc:
+            raise ApiError(exc.status, exc.code, exc.message) from exc
+
     @app.api_route("/api/{path:path}", methods=["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE"])
     def unknown_api(path: str) -> None:
         raise ApiError(404, "not_found", f"없는 API 경로입니다: /api/{path}")
@@ -658,6 +702,8 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--demo-dir", type=Path, default=DEFAULT_DEMO_DIR, help="recorded bundle directory")
     parser.add_argument("--yolo-checkpoint", type=Path, help="YOLO11n checkpoint, vision.detect (live)")
     parser.add_argument("--resnet-checkpoint", type=Path, help="ResNet18 checkpoint, vision.classify (live)")
+    parser.add_argument("--agent", type=Path, metavar="LOOP_JSON",
+                        help="serve live tune-agent proposals for this session (needs the claude CLI)")
     args = parser.parse_args(argv)
     if args.demo and not (args.demo_dir / "catalog.json").is_file():
         parser.error(f"no recorded bundle in {args.demo_dir} (make one with python -m app.demo)")
@@ -677,8 +723,10 @@ def main(argv: list[str] | None = None) -> None:
         source = source_identity()
         identity = {"device": args.device, "app_sha256": app_sha256(), "git_sha": source["git_sha"],
                     "src_sha256": source["src_sha256"]}
+    if args.agent is not None and not args.agent.is_file():
+        parser.error(f"--agent {args.agent}: no such loop.json")
     app = create_app(mode, "none" if args.demo else args.device, args.demo_dir, checkpoints=checkpoints,
-                     identity=identity)
+                     identity=identity, agent=args.agent)
     uvicorn.run(app, host=args.host, port=args.port)
 
 

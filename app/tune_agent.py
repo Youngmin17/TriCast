@@ -21,7 +21,7 @@ support a measured number. Integers (block numbers, counts) are not checked. Pre
 ``app.autotune.predict`` — the table's single-layer KL sum, raw and with ``app.autotune.FLOOR_RULE`` when
 the table has floors (neighbours are ranked on the latter), plus the table's KV entries for the grid's KV
 preset; they rank candidates, they are never reported as measurements. Selection measures whole-recipe KL on
-validation windows (WikiText-2 train, seed 43 by default) — never on the test set the final PPL uses.
+validation windows (WikiText-2 validation, seed 43 by default) — never on the test set the final PPL uses.
 """
 
 from __future__ import annotations

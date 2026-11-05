@@ -397,11 +397,17 @@ def default_method(used: Sequence[str], allowed: Sequence[str]) -> str:
 
 
 def write_grid(out_dir: Path, name: str, default: str, grid: qr.Grid, kv: str,
-               calibration: dict[str, Any] | None = None, mma: str | None = None) -> dict[str, Any]:
+               calibration: dict[str, Any] | None = None, mma: str | None = None,
+               options: dict[str, dict[str, Any]] | None = None) -> dict[str, Any]:
     """grid.json (the Quantizer's --from-json spec) and recipe.yaml (what ``--from-json grid.json``
-    prints); ``calibration`` (app.quantizer_recipe.check_calibration settings) and ``mma`` go into both."""
-    recipe = qr.build(name, default, grid, kv, calibration=calibration, mma=mma)
+    prints); ``calibration`` (app.quantizer_recipe.check_calibration settings), ``mma`` and the per-method
+    ``options`` of the methods the grid uses go into both."""
+    used = {default, *(method for row in grid for method in row)}
+    options = {method: values for method, values in (options or {}).items() if method in used and values}
+    recipe = qr.build(name, default, grid, kv, calibration=calibration, mma=mma, options=options or None)
     spec: dict[str, Any] = {"name": name, "default": default, "grid": grid, "kv": kv}
+    if options:
+        spec["options"] = options
     if calibration is not None:
         spec["calibration"] = calibration
     if mma is not None:
@@ -722,13 +728,15 @@ def meta_blocks(table: dict[str, Any]) -> int:
     return int(table["meta"].get("model_blocks") or 0)
 
 
-def method_recipe(method: str, calibration: dict[str, Any] | None = None, mma: str | None = None) -> Any:
+def method_recipe(method: str, calibration: dict[str, Any] | None = None, mma: str | None = None,
+                  options: dict[str, Any] | None = None) -> Any:
     """The tricast Recipe of the Quantizer grid with every layer on ``method`` (and ``calibration``
-    settings, for the calibrated methods; ``mma``, the table's accumulation)."""
+    settings, for the calibrated methods; ``mma``, the table's accumulation; ``options``, the method's
+    options away from their defaults, table --options)."""
     from tricast.recipe import load_recipe
 
     return load_recipe(qr.build(f"autotune_{method}", method, qr.uniform(method), calibration=calibration,
-                                mma=mma))
+                                mma=mma, options={method: options} if options else None))
 
 
 def floor_recipe(mma: str | None = None) -> Any:
@@ -871,19 +879,43 @@ def cmd_table(args: argparse.Namespace, model_factory: ModelFactory | None = Non
     if calibrated:
         refuse_identical_windows(kl, calibration_windows(method_recipe(calibrated[0], calibration, args.mma)),
                                  "table")
+    options = load_options(args.options, methods)
     out = Path(args.out)
     with _locked(out.with_name(out.stem + ".lock")):
-        return _table(args, model_factory, methods, kv_presets, calibration, out)
+        return _table(args, model_factory, methods, kv_presets, calibration, out, options)
+
+
+def load_options(path: str | None, methods: Sequence[str]) -> dict[str, dict[str, Any]]:
+    """table --options FILE: {method: {option id: value}} for some of the table's methods, checked by
+    app.quantizer_recipe.method_options and kept where away from the defaults."""
+    if not path:
+        return {}
+    data = json.loads(Path(path).read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        raise AutotuneError(f"{path}: options must map methods to {{option id: value}}")
+    unknown = sorted(set(data) - set(methods))
+    if unknown:
+        raise AutotuneError(f"{path}: options for methods the table does not measure: {unknown}")
+    try:
+        checked = {method: qr.method_options(method, values) for method, values in data.items()}
+    except (KeyError, TypeError, ValueError) as exc:
+        raise AutotuneError(f"{path}: {exc}") from exc
+    return {method: values for method, values in checked.items() if values}
 
 
 def _table(args: argparse.Namespace, model_factory: ModelFactory | None, methods: list[str],
-           kv_presets: list[str], calibration: dict[str, Any], out: Path) -> int:
+           kv_presets: list[str], calibration: dict[str, Any], out: Path,
+           options: dict[str, dict[str, Any]] | None = None) -> int:
     started = time.perf_counter()
+    options = options or {}
     session = open_session(args, model_factory)
     session.meta["calibration"] = calibration
+    if options:  # the recipe sha256s below differ too, so a resume cannot mix option settings
+        session.meta["options"] = options
     layers, model_blocks = model_layers(session.model, args.blocks)
     blocks = sorted({layer.block for layer in layers})
-    recipes = {method: method_recipe(method, calibration if method in qr.CALIBRATED_ALL else None, args.mma)
+    recipes = {method: method_recipe(method, calibration if method in qr.CALIBRATED_ALL else None, args.mma,
+                                     options.get(method))
                for method in methods if method != "bf16"}
     shas = {method: recipe.sha256 for method, recipe in recipes.items()}
     floor = floor_recipe(args.mma)
@@ -1148,7 +1180,8 @@ def cmd_solve(args: argparse.Namespace) -> int:
     out = Path(args.out)
     meta = table["meta"]
     calibration = meta.get("calibration") if any(method in qr.CALIBRATED_ALL for method in methods) else None
-    write_grid(out, name, default, grid, args.kv, calibration, meta.get("mma"))
+    # a table measured with options (table --options, merge) solves to recipes with those options
+    write_grid(out, name, default, grid, args.kv, calibration, meta.get("mma"), meta.get("options"))
     achieved = solution.cost / params
     tabled = sorted({layer.block for layer in layers})
     counts = Counter(chosen)
@@ -1240,6 +1273,66 @@ def _grid_specs(item: str) -> list[dict[str, Any]]:
         return [{"name": item, "default": default, "grid": grid, "kv": kv}]
     specs = json.loads(Path(item).read_text(encoding="utf-8"))
     return specs if isinstance(specs, list) else [specs]
+
+
+# What two tables must share for their columns to be one table: the model, KL windows, calibration, GEMM
+# accumulation and GPU model (A100 and H200 KL differ, docs/evidence/2026-11-04_lowbit_track_m.md).
+MERGE_SAME = ("model_id", "revision", "model_sha", "dtype", "windows", "seqlen", "seed", "source",
+              "dataset_fingerprint", "calibration", "mma", "gpu_names")
+
+
+def merge_tables(base_path: Path, column_paths: Sequence[Path]) -> dict[str, Any]:
+    """``base`` with each column table's methods (bf16 aside) put in place of its own: tables of the same
+    layers and MERGE_SAME settings whose patch floors equal the base's on every layer (the same
+    measurement path); a method in two column tables, or not in the base, is refused. meta.options becomes
+    the options each column was measured with (solve writes them into the recipe), meta.merged_from the
+    sources with their sha256."""
+    base, raw, layers, methods = load_table(base_path)
+    merged = json.loads(raw)
+    options = dict(base["meta"].get("options") or {})
+    sources = [{"path": str(base_path), "sha256": hashlib.sha256(raw).hexdigest(), "methods": methods,
+                "git_sha": base["meta"].get("git_sha")}]
+    taken: set[str] = set()
+    for path in column_paths:
+        table, column_raw, column_layers, column_methods = load_table(path)
+        differ = [key for key in MERGE_SAME if table["meta"].get(key) != base["meta"].get(key)]
+        if differ:
+            raise AutotuneError(f"{path}: {differ} differ from {base_path}'s")
+        if [layer.name for layer in column_layers] != [layer.name for layer in layers]:
+            raise AutotuneError(f"{path}: other layers than {base_path}")
+        if floors(table) is None or floors(table) != floors(base):
+            raise AutotuneError(f"{path}: patch floors differ from {base_path}'s (not the same measurement)")
+        columns = [method for method in column_methods if method != "bf16"]
+        foreign = sorted(set(columns) - set(methods))
+        twice = sorted(set(columns) & taken)
+        if foreign or twice:
+            raise AutotuneError(f"{path}: methods not in the base {foreign} or in two column tables {twice}")
+        taken |= set(columns)
+        for row, column_row in zip(merged["layers"], table["layers"], strict=True):
+            for method in columns:
+                row["kl"][method] = column_row["kl"][method]
+        measured = table["meta"].get("options") or {}
+        for method in columns:
+            if measured.get(method):
+                options[method] = measured[method]
+            else:
+                options.pop(method, None)
+        sources.append({"path": str(path), "sha256": hashlib.sha256(column_raw).hexdigest(),
+                        "methods": columns, "git_sha": table["meta"].get("git_sha")})
+    merged["meta"].pop("options", None)
+    if options:
+        merged["meta"]["options"] = dict(sorted(options.items()))
+    merged["meta"]["merged_from"] = sources
+    return merged
+
+
+def cmd_merge(args: argparse.Namespace) -> int:
+    merged = merge_tables(Path(args.base), [Path(path) for path in args.columns])
+    _dump(Path(args.out), merged)
+    columns = [source["methods"] for source in merged["meta"]["merged_from"][1:]]
+    print(f"AUTOTUNE_MERGE_DONE out={args.out} columns={columns} "
+          f"options={sorted(merged['meta'].get('options', {}))}")
+    return 0
 
 
 def cmd_predict(args: argparse.Namespace) -> int:
@@ -1347,6 +1440,9 @@ def main(argv: Sequence[str] | None = None, model_factory: ModelFactory | None =
     table.add_argument("--mma", metavar="NAME",
                        help="one GEMM accumulation (tricast.mma.spec.PRESETS name, e.g. fp32_fma) for the "
                             "method recipes and floors, also in the solved recipe (default: cofda F=23)")
+    table.add_argument("--options", metavar="FILE",
+                       help="JSON {method: {option id: value}}: measure those methods with these options "
+                            "(meta.options; solve writes them into the recipe)")
     table.add_argument("--kv-presets", default="", metavar="PRESETS",
                        help=f"comma-separated KV presets {list(KV_PRESETS)}: one entry per block and preset")
     measure.add_argument("--calibrate", action="store_true",
@@ -1378,6 +1474,11 @@ def main(argv: Sequence[str] | None = None, model_factory: ModelFactory | None =
                        help="minimise the raw kl even when the table has patch floors (v1 behaviour)")
     solve.add_argument("--name")
     solve.add_argument("--out", required=True)
+    merge = commands.add_parser("merge", help="a table with other tables' method columns in place of its own")
+    merge.add_argument("--base", required=True)
+    merge.add_argument("--columns", nargs="+", required=True, metavar="TABLE",
+                       help="tables of the same model, windows, calibration, MMA, GPU and floors")
+    merge.add_argument("--out", required=True)
     pred = commands.add_parser("predict", help="sum of the table's kl for grids or Quantizer presets")
     pred.add_argument("--table", required=True)
     pred.add_argument("grids", nargs="+", metavar="GRID",
@@ -1394,7 +1495,8 @@ def main(argv: Sequence[str] | None = None, model_factory: ModelFactory | None =
             return cmd_table(args, model_factory)
         if args.command == "measure":
             return cmd_measure(args, model_factory)
-        return {"solve": cmd_solve, "predict": cmd_predict, "random": cmd_random}[args.command](args)
+        return {"solve": cmd_solve, "merge": cmd_merge, "predict": cmd_predict,
+                "random": cmd_random}[args.command](args)
     except AutotuneError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2

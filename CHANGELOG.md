@@ -23,6 +23,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 - Per-layer report errors on the Auto-tune page: the cell tooltip shows the weight MSE and layer-output SQNR /
   cosine from the `tricast report` of the method's uniform recipe, attached only when the report's recipe hash
   is that uniform KL record's (`export_autotune_demo.layer_reports`).
+- `app.autotune table --options FILE` measures methods with options (meta.options, other recipe sha256s), `merge`
+  puts one table's method columns into another of the same measurement (equal patch floors), and `solve` writes
+  a table's options into the recipe: the knapsack can be solved again under options the tune agent found.
 - Proposal cards on the Auto-tune page list only the options set away from their defaults, methods with the same
   changes grouped (`export_autotune_demo.changed_options`); layer cards now carry the option space of the
   Python-only low-bit methods, which `METHOD_OPTIONS.get` had skipped.

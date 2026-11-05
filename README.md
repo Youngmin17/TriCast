@@ -99,8 +99,10 @@ python -m app.layer_profile --model Qwen/Qwen3-0.6B --device cuda --out t/profil
 python -m app.ledger ingest t --ledger runs/ledger.jsonl                                  # 수치 → 레코드 + RAG 문서
 python -m app.layer_cards --table t/table.json --profile t/profile.json --out t/cards.json  # 레이어 카드 JSON
 python -m app.tune_loop run --config loop.json --rounds 2 --per-round 4 --proposer claude-code   # AI 라운드
+python scripts/quantizer/autotune_xfer.py --solutions t --ids auto_2.50 auto_3.00 \
+    --options-from runs/<세션>/proposals/<최선> --out t/xfer                                 # AI 옵션 → 다른 예산 (측정은 GPU)
 python -m app.export_autotune_demo --table t/table.json --measured t --profile t/profile.json \
-    --session runs/<세션> --out app/web/demo/autotune                                        # 화면 데이터
+    --session runs/<세션> [--transfer t/xfer] --out app/web/demo/autotune                    # 화면 데이터
 ```
 
 ### 4. 검사

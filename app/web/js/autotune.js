@@ -1125,14 +1125,17 @@ function chartPoints() {
     ai.push({series: "ai", id: session.best.name, bits: session.best.avg_bits, kl: session.best.kl, ppl: session.best.ppl,
       klRecord: p?.kl_id ? records[p.kl_id] : null, klId: p?.kl_id, pplRecord: p?.ppl_id ? records[p.ppl_id] : null, pplId: p?.ppl_id});
   }
-  return {uni, heur, ai};
+  // the session's options on knapsack solutions at other budgets, cells unchanged (export --transfer)
+  const xfer = (bundle.transfer ?? []).map((row) => ({series: "xfer", id: row.id, base: row.base, optionsFrom: row.options_from,
+    bits: row.bits, kl: row.kl, ppl: row.ppl, klRecord: row.kl_record, pplRecord: row.ppl_record}));
+  return {uni, heur, ai, xfer};
 }
 
-const SERIES_NAME = {uni: "균일", heur: "휴리스틱", ai: "AI 최선"};
+const SERIES_NAME = {uni: "균일", heur: "휴리스틱", ai: "AI 최선", xfer: "AI 옵션 적용"};
 
 function chartStep() {
-  const {uni, heur, ai} = chartPoints();
-  const anyPPL = [...uni, ...heur, ...ai].some((pt) => finite(pt.ppl));
+  const {uni, heur, ai, xfer} = chartPoints();
+  const anyPPL = [...uni, ...heur, ...ai, ...xfer].some((pt) => finite(pt.ppl));
   state.metric = anyPPL ? "ppl" : "kl";
   ui.metric = h("div", {class: "seg compact", role: "radiogroup", "aria-label": "지표"});
   for (const [id, label] of [["ppl", "test PPL"], ["kl", "검증 KL"]]) {
@@ -1167,7 +1170,9 @@ function chartStep() {
     h("p", {class: "at-lead"}, "같은 크기에서 어느 쪽이 나은지 GPU 측정값으로 봅니다. 가로축은 평균 비트, 세로축은 고른 지표(로그 축)입니다."),
     h("div", {class: "at-chart-tools"}, ui.metric, ui.tableToggle),
     ui.legend, ui.chart,
-    h("p", {class: "at-note"}, "모든 점은 GPU 기록값입니다. 점에 마우스를 올리거나 표로 보면 기록마다 GPU 와 git sha 가 나옵니다."));
+    h("p", {class: "at-note"}, "모든 점은 GPU 기록값입니다. 점에 마우스를 올리거나 표로 보면 기록마다 GPU 와 git sha 가 나옵니다."),
+    xfer.length ? h("p", {class: "at-note"}, "AI 옵션 적용: AI 세션이 찾은 옵션을 다른 예산의 휴리스틱 해에 칸은 그대로 두고 적용해 잰 값입니다. "
+      + "같은 비트이고, 이 점들은 고르는 데 쓰지 않았습니다.") : null);
 }
 
 const legendMark = (kind) => {
@@ -1177,6 +1182,10 @@ const legendMark = (kind) => {
       s("circle", {cx: 11, cy: 6, r: 4, fill: "var(--at-heur)"}));
   }
   if (kind === "ai") return s("svg", {width: 14, height: 14}, s("path", {d: starPath(7, 7, 6.5), fill: "var(--at-ai)"}));
+  if (kind === "xfer") {
+    return s("svg", {width: 22, height: 14}, s("line", {x1: 1, y1: 7, x2: 21, y2: 7, stroke: "var(--at-ai)", "stroke-width": 1.75,
+      "stroke-dasharray": "5 3"}), s("path", {d: starPath(11, 7, 5), fill: "var(--panel)", stroke: "var(--at-ai)", "stroke-width": 1.5}));
+  }
   return s("svg", {width: 22, height: 12}, s("line", {x1: 1, y1: 6, x2: 21, y2: 6, stroke: "var(--ink-2)", "stroke-width": 1.5,
     "stroke-dasharray": "5 4"}));
 };
@@ -1217,7 +1226,8 @@ function logTicks(lo, hi) {
 function pointTip(pt) {
   const kl = [fmtKL(pt.kl), finite(pt.kl) ? recordNote(pt.klRecord, pt.klId) : null].filter(Boolean).join(" · ");
   const ppl = [fmtPPL(pt.ppl), finite(pt.ppl) ? recordNote(pt.pplRecord, pt.pplId) : null].filter(Boolean).join(" · ");
-  return tipRows(`${pt.id} (${SERIES_NAME[pt.series]})`, [["비트", fmtBits(pt.bits)], ["검증 KL", kl], ["test PPL", ppl],
+  const xfer = pt.series === "xfer" ? [["기준 해", `${pt.base} (휴리스틱, 칸 그대로)`], ["옵션", `${pt.optionsFrom} 의 옵션`]] : [];
+  return tipRows(`${pt.id} (${SERIES_NAME[pt.series]})`, [["비트", fmtBits(pt.bits)], ...xfer, ["검증 KL", kl], ["test PPL", ppl],
     ["", "GPU 기록값"]]);
 }
 
@@ -1230,7 +1240,7 @@ function drawChart() {
   ui.tableToggle.setAttribute("aria-pressed", String(state.tableView));
   ui.tableToggle.textContent = state.tableView ? "차트로 보기" : "표로 보기";
   const metric = state.metric;
-  const {uni, heur, ai} = chartPoints();
+  const {uni, heur, ai, xfer} = chartPoints();
   const native = bundle.native;
   const counts = (list) => list.filter((pt) => finite(pt[metric]) && pt[metric] > 0 && finite(pt.bits)).length;
   const nativeLabel = metric === "ppl" ? (finite(native?.ppl) ? `BF16 원본 PPL ${fmtPPL(native.ppl)}` : "BF16 원본 · 기록 없음")
@@ -1239,13 +1249,14 @@ function drawChart() {
     h("span", null, legendMark("uni"), `균일 (한 방법을 모든 층에)${counts(uni) ? "" : " · 기록 없음"}`),
     h("span", null, legendMark("heur"), `휴리스틱 (정확 배낭)${counts(heur) ? "" : " · 기록 없음"}`),
     h("span", null, legendMark("ai"), `AI 에이전트 최선${counts(ai) ? "" : " · 기록 없음"}`),
+    ...(xfer.length ? [h("span", null, legendMark("xfer"), `AI 옵션 적용 (세션 옵션 → 다른 예산의 휴리스틱 해)${counts(xfer) ? "" : " · 기록 없음"}`)] : []),
     h("span", null, legendMark("native"), nativeLabel));
   if (state.tableView) {
-    drawTable([...uni, ...heur, ...ai]);
+    drawTable([...uni, ...heur, ...ai, ...xfer]);
     return;
   }
   const valid = (pt) => finite(pt[metric]) && pt[metric] > 0 && finite(pt.bits);
-  const all = [...uni, ...heur, ...ai].filter(valid);
+  const all = [...uni, ...heur, ...ai, ...xfer].filter(valid);
   if (!all.length) {
     ui.chart.replaceChildren(h("p", {class: "at-chart-empty"},
       `${metric === "ppl" ? "test PPL" : "검증 KL"} 측정 기록이 없습니다. 다른 지표를 고르거나 GPU 측정 뒤 번들을 다시 내보내세요.`));
@@ -1255,7 +1266,12 @@ function drawChart() {
   const height = width < 520 ? 250 : 300;
   const m = {l: 50, r: 16, t: 22, b: 38};
   const showNative = metric === "ppl" && finite(native?.ppl) && native.ppl > 0;
-  const values = all.map((pt) => pt[metric]).concat(showNative ? [native.ppl] : []);
+  // the axis covers the mixed-precision series with headroom; a uniform recipe far above (a collapsed 2-bit one)
+  // sits on the top edge as an off-scale mark, its value in the tooltip and the table
+  const mixed = [...heur, ...ai, ...xfer].filter(valid).map((pt) => pt[metric]);
+  const cap = mixed.length ? Math.max(...mixed) * 4 : Infinity;
+  const off = (pt) => pt.series === "uni" && pt[metric] > cap;
+  const values = all.filter((pt) => !off(pt)).map((pt) => pt[metric]).concat(showNative ? [native.ppl] : []);
   let lo = Math.min(...values) / 1.08;
   let hi = Math.max(...values) * 1.08;
   if (hi / lo < 1.3) [lo, hi] = [Math.sqrt(lo * hi) / 1.18, Math.sqrt(lo * hi) * 1.18];
@@ -1307,13 +1323,28 @@ function drawChart() {
   }
   if (line.length > 1) svg.append(s("polyline", {class: "heur-line", points: line.map((pt) => `${X(pt.bits)},${Y(pt[metric])}`).join(" ")}));
   const marks = [];
-  for (const pt of uni.filter(valid)) marks.push([pt, s("circle", {class: "pt-uni", cx: X(pt.bits), cy: Y(pt[metric]), r: 4.5})]);
+  const at = (pt) => [X(pt.bits), off(pt) ? m.t + 5 : Y(pt[metric])];
+  for (const pt of uni.filter(valid)) {
+    const [x, y] = at(pt);
+    marks.push([pt, off(pt) ? s("path", {class: "pt-uni", d: `M${x},${y - 5}L${x + 5},${y + 4}L${x - 5},${y + 4}Z`})
+      : s("circle", {class: "pt-uni", cx: x, cy: y, r: 4.5})]);
+  }
   for (const pt of heurPts) marks.push([pt, s("circle", {class: "pt-heur", cx: X(pt.bits), cy: Y(pt[metric]), r: 4.5})]);
+  // the transfer line runs through the session best when the transferred options are its own
+  const xferPts = xfer.filter(valid);
+  const xferLine = [...xferPts, ...ai.filter((pt) => valid(pt) && xferPts.some((x) => x.optionsFrom === pt.id))]
+    .sort((a, b) => a.bits - b.bits);
+  if (xferLine.length > 1) svg.append(s("polyline", {class: "xfer-line", points: xferLine.map((pt) => `${X(pt.bits)},${Y(pt[metric])}`).join(" ")}));
+  for (const pt of xferPts) marks.push([pt, s("path", {class: "pt-xfer", d: starPath(X(pt.bits), Y(pt[metric]), 6.5)})]);
   for (const pt of ai.filter(valid)) marks.push([pt, s("path", {class: "pt-ai", d: starPath(X(pt.bits), Y(pt[metric]), 8)})]);
   for (const [, mark] of marks) svg.append(mark);
   // direct labels: the series first, then up to 6 uniform recipes on their own frontier (no smaller and better one)
   const aiPt = ai.find(valid);
   if (aiPt) label("AI 최선", X(aiPt.bits) + 11, Y(aiPt[metric]) + 14, "series-lbl");
+  if (xferPts.length) {
+    const first = xferLine[0];
+    label("AI 옵션 적용", X(first.bits) + 10, Y(first[metric]) - 8, "series-lbl");
+  }
   if (line.length) {
     const end = line[line.length - 1];
     label("휴리스틱", X(end.bits) + 9, Y(end[metric]) + 4, "series-lbl");
@@ -1322,10 +1353,12 @@ function drawChart() {
   for (const pt of heurPts.filter((pt) => !line.includes(pt))) label(pt.id, X(pt.bits) + 8, Y(pt[metric]) + 4, "lbl");
   const frontier = uni.filter(valid).sort((a, b) => a.bits - b.bits)
     .filter((pt, i, list) => !list.some((other, j) => j !== i && other.bits <= pt.bits && other[metric] < pt[metric]));
-  for (const pt of frontier.slice(0, 6)) label(pt.method ?? pt.id, X(pt.bits) + 8, Y(pt[metric]) + 4, "lbl");
+  for (const pt of frontier.filter((pt) => !off(pt)).slice(0, 6)) label(pt.method ?? pt.id, X(pt.bits) + 8, Y(pt[metric]) + 4, "lbl");
+  const offCount = uni.filter((pt) => valid(pt) && off(pt)).length;
+  if (offCount) label(`▲ 축 위 균일 ${offCount}개 (붕괴, 값은 표로)`, width - m.r - 2, m.t + 8, "lbl", "end");
   // hit targets larger than the marks, focusable for the keyboard
   for (const [pt] of marks) {
-    const hit = s("circle", {class: "hit", cx: X(pt.bits), cy: Y(pt[metric]), r: 11, tabindex: "0",
+    const hit = s("circle", {class: "hit", cx: at(pt)[0], cy: at(pt)[1], r: 11, tabindex: "0",
       "aria-label": `${SERIES_NAME[pt.series]} ${pt.id}: ${fmtBits(pt.bits)} 비트, 검증 KL ${fmtKL(pt.kl)}, test PPL ${fmtPPL(pt.ppl)}`});
     tipOn(hit, () => pointTip(pt));
     svg.append(hit);

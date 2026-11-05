@@ -36,6 +36,9 @@ const python = pythonArg.includes("/") ? resolve(pythonArg) : pythonArg;
 mkdirSync(outDir, {recursive: true});
 const results = {label, checks: [], shots: []};
 const check = (name, pass, detail) => results.checks.push({label: name, pass: Boolean(pass), detail});
+// a stored round's badge, from the bundle: no LLM reply and knapsack-replan proposals = the replan round
+const storedBadge = (round) => (!round.llm && round.proposals.length && round.proposals.every((p) => p.author === "knapsack-replan")
+  ? "휴리스틱 재배정 · LLM 없음" : "저장된 응답");
 const env = {...process.env, PYTHONIOENCODING: "utf-8", PYTHONUNBUFFERED: "1", PYTHONPATH: repo};
 const {parseBits} = await import(pathToFileURL(`${repo}/app/web/js/mckp.js`).href);
 const READY = `!!document.querySelector(".at-cell[data-f]") || !!document.querySelector(".state")`;
@@ -148,6 +151,29 @@ try {
       && Object.keys(optioned.options_changed).every((m) => line.includes(m)), line);
   }
 
+  // 1d the option-transfer series (bundles exported with --transfer): one hollow star per transfer row with a
+  // PPL, a dashed line through them, the base solution and the options' source in the tooltip, every row in the table
+  const transfer = bundle.transfer ?? [];
+  if (transfer.length) {
+    const withPPL = transfer.filter((r) => Number.isFinite(r.ppl) && r.ppl > 0);
+    const drawn = await evaluate(`(() => { const s = document.querySelector(".at-chart"); const p = s?.querySelector(".pt-xfer");
+      const hits = [...(s?.querySelectorAll(".hit") ?? [])].filter((h) => h.getAttribute("aria-label").startsWith("AI 옵션 적용 "));
+      if (hits[0]) hits[0].dispatchEvent(new MouseEvent("mouseenter"));
+      return {stars: s?.querySelectorAll(".pt-xfer").length ?? 0, line: !!s?.querySelector(".xfer-line"), hits: hits.length,
+        tip: hits[0] ? document.getElementById("tip").innerText : "", legend: document.querySelector(".at-legend").innerText}; })()`);
+    const first = [...withPPL].sort((a, b) => a.bits - b.bits)[0];
+    check(`transfer series: ${withPPL.length} hollow stars on a dashed line, tooltip names ${first?.base} and ${first?.options_from}`,
+      drawn.stars === withPPL.length && drawn.hits === withPPL.length && drawn.line === (withPPL.length > 1)
+      && drawn.tip.includes(`${first.base} (휴리스틱, 칸 그대로)`) && drawn.tip.includes(`${first.options_from} 의 옵션`)
+      && drawn.legend.includes("AI 옵션 적용"), drawn);
+    await evaluate(`document.querySelector(".at-chart-tools .at-btn").click()`);
+    const rows = await evaluate(`[...document.querySelectorAll(".at-table tbody tr")].filter((r) => r.cells[0].textContent === "AI 옵션 적용").map((r) => r.cells[1].textContent)`);
+    await evaluate(`document.querySelector(".at-chart-tools .at-btn").click()`);
+    await evaluate(`document.querySelector(".at-chart").scrollIntoView({block: "center"})`);
+    await shot(`autotune_${label}_chart_1440`);
+    check(`transfer rows in the table view: ${transfer.length}`, JSON.stringify([...rows].sort()) === JSON.stringify(transfer.map((r) => r.id).sort()), rows);
+  }
+
   // 2 constraints: three requests from the methods the session-budget solve uses most
   await evaluate(`window.__autotune.setBudget(${JSON.stringify(session?.budget_bits ?? "9/2")})`);
   const counts = Object.entries((await state()).counts).filter(([m]) => m !== "bf16").sort((x, y) => y[1] - x[1]).map(([m]) => m);
@@ -222,8 +248,8 @@ print(json.dumps(out))
     await evaluate(`window.__autotune.setBudget(${JSON.stringify(session.budget_bits)})`);
     const badges = await roundBadges();
     const date = (session.rounds.find((r) => r.llm?.started_utc)?.llm.started_utc ?? "").slice(0, 10);
-    check("stored rounds render, each with the 저장된 응답 badge, and the session header names its date", badges.length === session.rounds.length
-      && badges.every((t) => t === "저장된 응답")
+    check("stored rounds render, LLM rounds with the 저장된 응답 badge and knapsack-replan rounds with theirs, and the session header names its date",
+      badges.length === session.rounds.length && badges.every((t, i) => t === storedBadge(session.rounds[i]))
       && (await evaluate(`document.querySelector(".at-agent-head .at-badge").textContent`)) === `저장된 응답 · ${date} 세션`, {badges, date});
     const withChanges = session.rounds.flatMap((r) => r.proposals).filter((p) => (p.changes ?? []).length);
     const hovers = [];
@@ -390,7 +416,7 @@ print(json.dumps(out))
     await waitFor(`document.querySelectorAll(".at-round").length === ${storedCount + 1}`, 8000);
     const badges = await roundBadges();
     check("live propose appends a round with the 실시간 Claude 응답 badge; stored rounds keep theirs", badges.length === storedCount + 1
-      && badges.at(-1) === "실시간 Claude 응답" && badges.slice(0, -1).every((t) => t === "저장된 응답"), badges);
+      && badges.at(-1) === "실시간 Claude 응답" && badges.slice(0, -1).every((t, i) => t === storedBadge(session.rounds[i])), badges);
   }
   const tip = await evaluate(`(() => { const c = document.querySelector('.at-cell[data-b="3"][data-k="1"]'); c.dispatchEvent(new MouseEvent("mouseover", {bubbles: true}));
     return {text: document.getElementById("tip").innerText, bars: document.querySelectorAll("#tip svg.at-spark rect").length}; })()`);

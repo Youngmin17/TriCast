@@ -233,7 +233,7 @@ flowchart LR
     B --> CH["측정 결과 차트 · 표<br/>GPU 기록값만"]
 ```
 
-- 번들(`app/export_autotune_demo.py`)은 측정값을 격자에 붙이기 전에, 생성기가 그 격자로 쓰는 레시피 파일의 SHA-256 이 측정 기록의 `file_sha256` 과 같은지, PPL 기록의 `recipe_hash` 가 그 측정의 `recipe_sha256` 과 같은지 확인한다. 다르면 "기록 없음"과 사유를 남긴다 (`app/tests/test_autotune_demo.py`). 칸 툴팁의 층별 리포트 오차(가중치 MSE · 층 출력 SQNR · 코사인)는 그 방법의 균일 레시피 `tricast report` 에서만 오고, 리포트의 `recipe_hash` 가 그 균일 KL 기록의 `recipe_sha256` 과 같을 때만 붙는다 (`layer_reports`, `app/tests/test_autotune_reports.py`). 레이어 카드 전체(`app.layer_cards`, Qwen3-0.6B 에서 6 MB)는 화면에 싣지 않고 실행 디렉터리에 만든다.
+- 번들(`app/export_autotune_demo.py`)은 측정값을 격자에 붙이기 전에, 생성기가 그 격자로 쓰는 레시피 파일의 SHA-256 이 측정 기록의 `file_sha256` 과 같은지, PPL 기록의 `recipe_hash` 가 그 측정의 `recipe_sha256` 과 같은지 확인한다. 다르면 "기록 없음"과 사유를 남긴다 (`app/tests/test_autotune_demo.py`). 옵션 전이 행(`--transfer`, `scripts/quantizer/autotune_xfer.py`)은 튜닝 루프가 쓰는 제안 레시피 파일의 SHA-256 으로 같은 사슬을 거치고, 칸이 기준 배낭 해와 다르면 같은 크기가 아니므로 거부된다. LLM 응답 파일이 없는 라운드(`replan`)의 칸 변경은 기록된 격자와 부모 격자의 차이로 계산한다 (`app/tests/test_autotune_replan_bundle.py`). 칸 툴팁의 층별 리포트 오차(가중치 MSE · 층 출력 SQNR · 코사인)는 그 방법의 균일 레시피 `tricast report` 에서만 오고, 리포트의 `recipe_hash` 가 그 균일 KL 기록의 `recipe_sha256` 과 같을 때만 붙는다 (`layer_reports`, `app/tests/test_autotune_reports.py`). 레이어 카드 전체(`app.layer_cards`, Qwen3-0.6B 에서 6 MB)는 화면에 싣지 않고 실행 디렉터리에 만든다.
 - 녹화 모드(`--demo`)는 compute 모듈을 import 하지 않는다. 실시간 AI 경로는 `--agent <loop.json>` 을 줄 때만 열리고, 없으면 두 API 가 503 과 띄우는 방법을 돌려준다. 화면은 응답마다 "실시간 Claude 응답" 또는 "저장된 응답 · 날짜" 배지를 단다.
 
 ## 4. 실행 모드

@@ -26,6 +26,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 - Tune loop proposer `replan` (`--replan-columns`): the session table with columns measured under the best
   grid's options merged in, solved again at the session budget, one proposal with those options; the Auto-tune
   page marks such a round as a knapsack replan with no LLM call.
+- Option transfer (`scripts/quantizer/autotune_xfer.py`, `export_autotune_demo --transfer`): knapsack solutions
+  with a session's options and their cells unchanged; the Auto-tune chart draws them as "AI 옵션 적용", joined to
+  the session best when the options are its own. The chart axis now fits the mixed series; collapsed uniform
+  recipes sit on the top edge, their values in the tooltip and the table.
 - `app.autotune table --options FILE` measures methods with options (meta.options, other recipe sha256s), `merge`
   puts one table's method columns into another of the same measurement (equal patch floors), and `solve` writes
   a table's options into the recipe: the knapsack can be solved again under options the tune agent found.
@@ -107,6 +111,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   animated), rendered from the v3 deck PDF, followed by a short Korean text section.
 
 ### Fixed
+- A tune-loop round with no LLM reply on file (`replan`) listed no cell changes in the Auto-tune bundle; the
+  changes now come from the recorded grid against its parent's (`export_autotune_demo.grid_changes`).
 - C4 calibration (`calibration.dataset: c4`) loads its shard with no config name: under datasets 4.x config
   `en` carries the split sizes of all of C4 and one shard failed split verification (ExpectedMoreSplitsError,
   found on the 2026-11-04 Llama-2-7B GPU run), as the official prune path already did.

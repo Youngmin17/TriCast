@@ -6,7 +6,7 @@ Pure stdlib plus ``app.autotune`` / ``app.quantizer_recipe`` / ``app.export_quan
 ``app.tune_agent`` / ``app.ledger`` for a session): no torch, no tricast.
 
     python -m app.export_autotune_demo --table <run>/table.json --out app/web/demo/autotune \\
-        [--measured <run>] [--session <session> --ledger runs/ledger.jsonl]
+        [--measured <run> [--transfer <dir>]] [--session <session> --ledger runs/ledger.jsonl]
 
 Writes ``<out>/bundle.json`` (indent=1, sorted keys, UTF-8; byte-identical for the same inputs).
 
@@ -125,9 +125,11 @@ def measurements(root: Path) -> tuple[Records, Records, dict[str, Any] | None]:
     return kl, ppl, native
 
 
-def attach(row: dict[str, Any], spec: dict[str, Any], kl: Records, ppl: Records) -> dict[str, Any]:
-    """``row`` with the measured KL of the grid's exact recipe file and that recipe's PPL, or null + why."""
-    digest = recipe_file_sha256(spec)
+def attach(row: dict[str, Any], spec: dict[str, Any], kl: Records, ppl: Records,
+           digest: str | None = None) -> dict[str, Any]:
+    """``row`` with the measured KL of the grid's exact recipe file (``digest``, by default the file
+    ``recipe_file_sha256`` names) and that recipe's PPL, or null + why."""
+    digest = digest or recipe_file_sha256(spec)
     measured = kl.get(digest)
     row["recipe_file_sha256"] = digest
     row["kl"] = None if measured is None else measured["kl"]
@@ -222,6 +224,41 @@ def solutions(root: Path, kl: Records, ppl: Records, table_sha: str) -> list[dic
     return sorted(out, key=lambda row: (row["bits"], row["id"]))
 
 
+def transfers(root: Path, solved: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Knapsack solutions with a session's method options applied and their cells unchanged
+    (``scripts/quantizer/autotune_xfer.py``: ``<root>/<name>/grid.json`` with ``base`` and ``options_from``),
+    each with the measured KL of its exact recipe file — the tune loop's proposal file — and that recipe's PPL
+    (``kl_seed*.json`` / ``ppl*/`` in ``root`` or a directory under it). A grid whose cells are not its base
+    solution's is rejected: it would not be the same size."""
+    from app import tune_agent as ta
+
+    kl: Records = {}
+    ppl: Records = {}
+    for part in [root, *sorted(path for path in root.iterdir() if path.is_dir())]:
+        found_kl, found_ppl, _ = measurements(part)
+        for key, value in found_kl.items():
+            kl.setdefault(key, value)
+        for key, value in found_ppl.items():
+            ppl.setdefault(key, value)
+    by_id = {row["id"]: row for row in solved}
+    out = []
+    for path in sorted(root.glob("*/grid.json")):
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        if "base" not in raw:
+            continue
+        spec, base = ta.load_grid(path), by_id.get(raw["base"])
+        text = qr.to_yaml(ta._recipe(raw["name"], spec)) + "\n"  # as tune_agent.propose writes recipe.yaml
+        row = {"id": raw["name"], "base": raw["base"], "options_from": raw.get("options_from"),
+               "dir": _rel(path.parent, root), "options_changed": changed_options(spec["options"]),
+               "bits": None if base is None else base["bits"], "grid": spec["grid"]}
+        attach(row, spec, kl, ppl, _sha256(text.encode()))
+        if base is None or base["grid"] != spec["grid"]:
+            row["rejected"].insert(0, f"기준 해 {raw['base']} 와 칸이 다릅니다: 같은 크기의 옵션 적용이 아님")
+            row.update(kl=None, ppl=None)
+        out.append(row)
+    return sorted(out, key=lambda row: (row["bits"] is None, row["bits"], row["id"]))
+
+
 def changed_options(options: Any) -> dict[str, dict[str, Any]] | None:
     """Per method, the options a proposal sets away from their defaults
     (``app.quantizer_recipe.method_options``), methods with none left out; null when the options do not check
@@ -233,6 +270,19 @@ def changed_options(options: Any) -> dict[str, dict[str, Any]] | None:
     except (KeyError, TypeError, ValueError):
         return None
     return {method: values for method, values in changed.items() if values}
+
+
+def grid_changes(session: Path, record: dict[str, Any]) -> list[dict[str, Any]]:
+    """The cells a recorded proposal sets away from its parent's grid, in block then kind order: the changes
+    of a proposer with no LLM reply on file (``tune_loop.replan``)."""
+    from app import tune_agent as ta
+
+    if record.get("parent") is None:
+        return []
+    base = ta.read_proposal(session, record["parent"])["spec"]["grid"]
+    return [{"block": block, "kind": kind, "method": record["spec"]["grid"][block][k]}
+            for block, row in enumerate(base) for k, kind in enumerate(qr.KINDS)
+            if record["spec"]["grid"][block][k] != row[k]]
 
 
 def session_bundle(session: Path, ledger: Path) -> dict[str, Any]:
@@ -269,8 +319,9 @@ def session_bundle(session: Path, ledger: Path) -> dict[str, Any]:
             row = rows.get(name)
             record = ta.read_proposal(session, name) if row is not None else None
             kept = record or {}
+            changes = item.get("changes", grid_changes(session, record) if record and not item else [])
             proposal = {"name": name, "base": item.get("base", kept.get("parent")),
-                        "changes": item.get("changes", []), "options": item.get("options"),
+                        "changes": changes, "options": item.get("options"),
                         "options_changed": changed_options(item.get("options")),
                         "rationale": item.get("rationale", kept.get("rationale")),
                         "cites": item.get("cites", kept.get("cites", [])),
@@ -322,12 +373,17 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--session", type=Path, help="a tune-loop session directory (with loop/summary.json)")
     parser.add_argument("--ledger", type=Path, default=Path("runs/ledger.jsonl"))
     parser.add_argument("--profile", type=Path, help="an app.layer_profile file of the table's model")
+    parser.add_argument("--transfer", type=Path,
+                        help="option-transfer grids and their measurements "
+                             "(scripts/quantizer/autotune_xfer.py); needs --measured")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args(argv)
     try:
         table = table_bundle(args.table, args.profile)
         payload: dict[str, Any] = {"schema": SCHEMA, "table": table, "native": None, "baselines": [],
-                                   "solutions": [], "session": None}
+                                   "solutions": [], "transfer": [], "session": None}
+        if args.transfer is not None and args.measured is None:
+            raise ValueError("--transfer needs --measured (the solutions it applies options to)")
         if args.measured is not None:
             kl, ppl, native = measurements(args.measured)
             _, _, layers, _ = at.load_table(args.table)
@@ -335,6 +391,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                            solutions=solutions(args.measured, kl, ppl, table["sha256"]))
             if args.ledger.is_file():
                 table["reports"] = layer_reports(table, payload["baselines"], args.ledger)
+            if args.transfer is not None:
+                payload["transfer"] = transfers(args.transfer, payload["solutions"])
         if args.session is not None:
             payload["session"] = session_bundle(args.session, args.ledger)
     except (at.AutotuneError, OSError, KeyError, ValueError) as exc:
@@ -342,11 +400,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 2
     args.out.mkdir(parents=True, exist_ok=True)
     (args.out / "bundle.json").write_text(dump(payload), encoding="utf-8")
-    for row in [*payload["baselines"], *payload["solutions"]]:
+    for row in [*payload["baselines"], *payload["solutions"], *payload["transfer"]]:
         for reason in row["rejected"]:
             print(f"{row['id']}: {reason}")
     print(f"AUTOTUNE_DEMO_EXPORT_DONE out={args.out / 'bundle.json'} layers={len(table['layers'])} "
           f"baselines={len(payload['baselines'])} solutions={len(payload['solutions'])} "
+          f"transfer={len(payload['transfer'])} "
           f"session_rounds={0 if payload['session'] is None else len(payload['session']['rounds'])}")
     return 0
 

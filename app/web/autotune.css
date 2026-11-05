@@ -272,6 +272,8 @@ body { display: block; }
 .at-chart .pt-uni { fill: var(--at-uni); stroke: var(--panel); stroke-width: 2; }
 .at-chart .pt-heur { fill: var(--at-heur); stroke: var(--panel); stroke-width: 2; }
 .at-chart .pt-ai { fill: var(--at-ai); stroke: var(--panel); stroke-width: 2; }
+.at-chart .xfer-line { fill: none; stroke: var(--at-ai); stroke-width: 1.75; stroke-dasharray: 5 3; stroke-linejoin: round; }
+.at-chart .pt-xfer { fill: var(--panel); stroke: var(--at-ai); stroke-width: 1.75; }
 .at-chart .hit { fill: transparent; cursor: default; }
 .at-chart .hit:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; stroke: var(--focus); stroke-width: 2; }
 .at-chart-wrap { min-width: 0; }

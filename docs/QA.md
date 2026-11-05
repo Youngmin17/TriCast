@@ -48,7 +48,7 @@
 
 ## 4. 남은 위험 · 미검증
 
-- 데모 세션(`runs/20261104_demo/s3150`)은 3라운드 · 측정 8건까지 끝났다 ([증거 §2.6](./evidence/2026-11-04_lowbit_track_m.md)). AI 최선 둘의 test PPL 은 출발점과 같은 트리 · GPU 로 쟀다 (26.82 · 26.51 vs 27.04). PPL 의 보정 seed 잡음은 재지 않았다.
+- 데모 세션(`runs/20261104_demo/s3150`)은 3라운드 · 측정 8건까지 끝났다 ([증거 §2.6](./evidence/2026-11-04_lowbit_track_m.md)). AI 최선 둘의 test PPL 은 출발점과 같은 트리 · GPU 로 쟀다 (26.82 · 26.51 vs 27.04). 보정 seed 42–45 로도 쟀다: 4/4 seed 에서 AI 가 낮고 평균 −3.25% ([증거 §2.7](./evidence/2026-11-04_lowbit_track_m.md)). turin(PCIe) 의 seed 42 값이 geneva(SXM4) 와 float 단위로 같다.
 - 브라우저 배낭은 메인 스레드에서 돈다. track M 표에서 2.5–4.25 비트 풀이가 0.5–2.9초 걸려 그동안 화면이 멈춘다 (Web Worker 이전은 다음 작업).
 - 브라우저 검사는 Google Chrome (macOS) 만 돌렸다. Safari · Firefox 는 손으로 확인하지 않았다.
 - README 의 "화면만 보기" 설치는 Python 3.14 · 3.11 에서 확인했다 (3.10 · 3.12 · 3.13 · Windows 는 미확인).

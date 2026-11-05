@@ -823,6 +823,7 @@
     },
     "proposals": [
      {
+      "author": null,
       "base": "iso_3.15",
       "changes": [],
       "cites": [
@@ -876,6 +877,7 @@
       "status": "refused"
      },
      {
+      "author": null,
       "base": "iso_3.15",
       "changes": [],
       "cites": [
@@ -930,6 +932,7 @@
       "status": "refused"
      },
      {
+      "author": null,
       "base": "iso_3.15",
       "changes": [],
       "cites": [
@@ -982,6 +985,7 @@
       "status": "refused"
      },
      {
+      "author": null,
       "base": "iso_3.15",
       "changes": [
        {
@@ -1050,6 +1054,7 @@
     },
     "proposals": [
      {
+      "author": "claude-code-loop",
       "avg_bits": 3.147953869047619,
       "base": "iso_3.15",
       "changes": [],
@@ -1391,6 +1396,7 @@
       "status": "accepted"
      },
      {
+      "author": "claude-code-loop",
       "avg_bits": 3.147953869047619,
       "base": "iso_3.15",
       "changes": [],
@@ -1732,6 +1738,7 @@
       "status": "accepted"
      },
      {
+      "author": "claude-code-loop",
       "avg_bits": 3.147953869047619,
       "base": "iso_3.15",
       "changes": [],
@@ -2073,6 +2080,7 @@
       "status": "accepted"
      },
      {
+      "author": "claude-code-loop",
       "avg_bits": 3.1343191964285713,
       "base": "iso_3.15",
       "changes": [
@@ -2487,6 +2495,7 @@
     },
     "proposals": [
      {
+      "author": "claude-code-loop",
       "avg_bits": 3.147953869047619,
       "base": "opt_act_order_r2",
       "changes": [],
@@ -2836,6 +2845,7 @@
       "status": "accepted"
      },
      {
+      "author": "claude-code-loop",
       "avg_bits": 3.147953869047619,
       "base": "opt_act_order_r2",
       "changes": [],
@@ -3185,6 +3195,7 @@
       "status": "accepted"
      },
      {
+      "author": "claude-code-loop",
       "avg_bits": 3.147953869047619,
       "base": "opt_act_order_r2",
       "changes": [],
@@ -3533,6 +3544,7 @@
       "status": "accepted"
      },
      {
+      "author": "claude-code-loop",
       "avg_bits": 3.1473400297619047,
       "base": "opt_act_order_r2",
       "changes": [

@@ -274,7 +274,8 @@ def session_bundle(session: Path, ledger: Path) -> dict[str, Any]:
                         "options_changed": changed_options(item.get("options")),
                         "rationale": item.get("rationale", kept.get("rationale")),
                         "cites": item.get("cites", kept.get("cites", [])),
-                        "status": "refused" if name in refused else "accepted", "reason": refused.get(name)}
+                        "status": "refused" if name in refused else "accepted", "reason": refused.get(name),
+                        "author": kept.get("author")}
             if row is not None:
                 proposal.update({"avg_bits": row["avg_bits"], "predicted": row["predicted"],
                                  "kl": row["measured_kl"][0]["kl"] if row["measured_kl"] else None,

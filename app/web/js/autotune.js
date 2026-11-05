@@ -914,9 +914,10 @@ function agentStep() {
     h("p", {class: "at-lead"}, "휴리스틱 배정을 시작점으로, Claude 가 ledger 기록 id 를 근거로 붙여 바꿀 칸과 옵션을 제안합니다. 예산·인용·수치 검사를 통과한 제안만 GPU 로 검증 KL 을 잽니다. 카드에 마우스를 올리면 바뀌는 칸이 격자에 점선으로 표시됩니다."),
     best ? h("p", {class: "at-line"}, "세션 최선 ", h("span", {class: "at-mono"}, best.name), " · 검증 KL ", val(fmtKL(best.kl)),
       delta, " · test PPL ", val(fmtPPL(best.ppl)), ` · ${fmtBits(best.avg_bits)} 비트`) : h("p", {class: "at-none"}, "측정된 제안 없음"),
-    h("ul", {class: "at-spend", "aria-label": "라운드별 Claude 비용"}, rounds.map((round) => h("li", null,
-      `라운드 ${round.round} · `, h("b", null, fmtUsd(round.llm?.cost_usd)), " · ", h("b", null, fmtSec(round.llm?.duration_s)),
-      " · ", (round.llm?.models ?? []).join(", ") || "모델 기록 없음"))),
+    h("ul", {class: "at-spend", "aria-label": "라운드별 Claude 비용"}, rounds.map((round) => (isReplan(round)
+      ? h("li", null, `라운드 ${round.round} · LLM 호출 없음 (휴리스틱 재배정)`)
+      : h("li", null, `라운드 ${round.round} · `, h("b", null, fmtUsd(round.llm?.cost_usd)), " · ",
+        h("b", null, fmtSec(round.llm?.duration_s)), " · ", (round.llm?.models ?? []).join(", ") || "모델 기록 없음")))),
     ui.agentNote,
     h("div", {class: "at-askrow"}, ui.ask, ui.cancel, ui.wait),
     ui.liveError, ui.rounds, ui.liveRounds);
@@ -931,11 +932,16 @@ function updateAgentNote() {
   ui.agentNote.hidden = !differs;
 }
 
+// A round with no LLM call whose proposal the knapsack made again under the best grid's options (tune_loop replan).
+const REPLAN = "knapsack-replan";
+const isReplan = (round) => !round.llm && (round.proposals ?? []).some((p) => p.author === REPLAN);
+
 function roundView(round, live) {
   const llm = round.llm;
   const head = h("div", {class: "at-round-head"}, h("h3", null, `라운드 ${round.round ?? "?"}`),
     live ? h("span", {class: "at-badge live"}, "실시간 Claude 응답")
-      : h("span", {class: "at-badge stored"}, "저장된 응답"),
+      : isReplan(round) ? h("span", {class: "at-badge stored"}, "휴리스틱 재배정 · LLM 없음")
+        : h("span", {class: "at-badge stored"}, "저장된 응답"),
     llm ? h("span", {class: "at-muted"}, `${fmtUsd(llm.cost_usd)} · ${fmtSec(llm.duration_s)}`) : null,
     round.stop ? h("span", {class: "at-badge"}, "에이전트가 멈춤을 제안") : null);
   const analysis = round.analysis ? clamped(round.analysis, 3) : [h("p", {class: "at-none"}, "분석 기록 없음")];
@@ -972,12 +978,14 @@ function cardView(p, live) {
 
   const status = accepted ? h("span", {class: "at-badge ok"}, "채택")
     : p.status === "refused" ? h("span", {class: "at-badge bad"}, "거부") : h("span", {class: "at-badge"}, "상태 기록 없음");
+  const shownChanges = changes.length > 8 ? changes.slice(0, 6) : changes;  // a replan moves dozens of cells
   const changeList = changes.length
-    ? h("ul", {class: "at-changes", "aria-label": "바꾸는 칸"}, changes.map((c) => {
+    ? h("ul", {class: "at-changes", "aria-label": "바꾸는 칸"}, shownChanges.map((c) => {
       const from = base?.[c.block]?.[kinds.indexOf(c.kind)];
       return h("li", null, `블록 ${c.block} ${c.kind}`, from ? code(from) : null, h("span", {class: "arrow"}, "→"), code(c.method),
         h("span", {class: "at-mono"}, c.method));
-    }))
+    }), shownChanges.length < changes.length
+      ? h("li", {class: "at-muted"}, `… 외 ${changes.length - shownChanges.length}칸 · 카드에 올리면 격자에 점선`) : null)
     : h("p", {class: "at-card-sub"}, "칸 변경 없음");
   const optionText = optionSummary(p);
   const cites = (Array.isArray(p.cites) ? p.cites : []).map((id) => {
@@ -1013,6 +1021,7 @@ function cardView(p, live) {
     h("div", {class: "at-card-head"}, h("span", {class: "at-card-name"}, p.name ?? "이름 없음"), status,
       isBest ? h("span", {class: "at-badge best"}, "세션 최선") : null),
     h("p", {class: "at-card-sub"}, "기준 ", h("b", null, p.base ?? NONE), finite(p.avg_bits) ? ` · ${p.avg_bits.toFixed(4)} 비트` : ""),
+    p.author === REPLAN ? h("p", {class: "at-card-sub"}, "휴리스틱 재배정: 기준의 옵션으로 다시 잰 단층 표에서 같은 예산의 배낭을 다시 풂") : null,
     changeList,
     optionText ? h("p", {class: "at-opts"}, optionText) : null,
     rationale, more,

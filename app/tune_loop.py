@@ -598,6 +598,48 @@ def tpe_search(config: dict[str, Any], root: Path, seed: int = 0, startup: int =
     return propose
 
 
+def replan(config: dict[str, Any], root: Path, columns: Sequence[Path]) -> Proposer:
+    """The agent's options, then the knapsack again: the session table with the method columns of
+    ``columns`` in place (``app.autotune.merge_tables``: ``table --options`` tables of the same measurement),
+    solved again at the session budget; one proposal on the best measured grid, its options kept, with the
+    cells that solve moves. Refused when a column was measured with other options than that grid's for its
+    method, or in a compute-budget session (solve here bounds the bits only)."""
+    def propose(analysis: dict[str, Any], round_number: int, count: int) -> dict[str, Any]:
+        if _compute_budget(config) is not None:
+            raise LoopError("replan solves the bits budget only; this session has a compute budget")
+        session = root / config["session"]
+        best = analysis["best"]
+        spec = ta.read_proposal(session, best["name"])["spec"]
+        merged = at.merge_tables(root / config["table"], columns)
+        given = {method: qr.method_options(method, values)
+                 for method, values in (spec.get("options") or {}).items()}
+        measured = merged["meta"].get("options") or {}
+        methods = sorted({method for source in merged["meta"]["merged_from"][1:]
+                          for method in source["methods"]})
+        wrong = [method for method in methods if measured.get(method, {}) != given.get(method, {})]
+        if wrong:
+            raise LoopError(f"columns {wrong} were measured with other options than {best['name']}'s")
+        folder = session / "loop" / "replan" / f"round_{round_number}"
+        folder.mkdir(parents=True, exist_ok=True)
+        at._dump(folder / "table.json", merged)
+        name = f"replan_r{round_number}"
+        solve = ["solve", "--table", str(folder / "table.json"), "--budget-bits", str(config["budget_bits"]),
+                 "--name", name, "--out", str(folder / "solve")]
+        if at.main(solve) != 0:
+            raise LoopError("solve on the merged table failed")
+        grid = json.loads((folder / "solve" / "grid.json").read_text(encoding="utf-8"))["grid"]
+        changes = [{"block": block, "kind": kind, "method": grid[block][k]}
+                   for block, row in enumerate(spec["grid"]) for k, kind in enumerate(qr.KINDS)
+                   if grid[block][k] != row[k]]
+        rationale = (f"Keeps the options of {best['name']} [{best['kl_record']}]. The {', '.join(methods)} "
+                     "columns of the session table were measured again with those options, and the knapsack "
+                     "was solved again at the session budget on that table; these are the cells it moves.")
+        return {"analysis": f"Knapsack solved again under the options of {best['name']}.", "stop": False,
+                "proposals": [{"name": name, "base": best["name"], "changes": changes, "options": None,
+                               "rationale": rationale, "cites": [best["kl_record"]]}]}  # None: the base's
+    return propose
+
+
 def option_greedy(config: dict[str, Any], root: Path) -> Proposer:
     """Coordinate search over method options only (no cell changes): unmeasured single-option changes of the
     current best, in METHOD_OPTIONS order of the methods it uses (by cell count) and ``_option_values``
@@ -1059,7 +1101,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     runner.add_argument("--per-round", type=int, default=4)
     runner.add_argument("--proposer", choices=("claude-code", "auto-greedy", "evolution", "random", "tpe",
                                                "option-greedy", "claude-then-tpe", "evolution-table",
-                                               "claude-table-select"), default="claude-code")
+                                               "claude-table-select", "replan"), default="claude-code")
+    runner.add_argument("--replan-columns", nargs="+", type=Path, default=[], metavar="TABLE",
+                        help="replan: app.autotune table --options tables, measured with the best grid's "
+                             "options")
     runner.add_argument("--seed-rounds", type=int, default=2, help="claude-then-tpe: rounds of Claude first")
     runner.add_argument("--stale-rounds", type=int, default=2, help="0: never stop for lack of improvement")
     runner.add_argument("--seed", type=int, default=0, help="evolution / random: the random stream")
@@ -1073,6 +1118,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                                  ("--measurements", args.measurements, 1)):
             if value is not None and value < low:
                 parser.error(f"{flag} must be >= {low}")
+        if args.proposer == "replan" and not args.replan_columns:
+            parser.error("--proposer replan needs --replan-columns")
         if args.rounds is None:
             needed = None if args.measurements is None else math.ceil(args.measurements / args.per_round)
             args.rounds = 2 if needed is None else 3 * needed
@@ -1095,6 +1142,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                                         "evolution-table"),
             "claude-table-select": lambda: (table_select(claude_code(config, root), config, root),
                                             "claude-table-select"),
+            "replan": lambda: (replan(config, root, args.replan_columns), "knapsack-replan"),
         }[args.proposer]()
         result = run(config, root, args.rounds, args.per_round, proposer, author,
                      lambda number, names: measure_remote(config, root, number, names),

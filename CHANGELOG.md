@@ -23,6 +23,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 - Per-layer report errors on the Auto-tune page: the cell tooltip shows the weight MSE and layer-output SQNR /
   cosine from the `tricast report` of the method's uniform recipe, attached only when the report's recipe hash
   is that uniform KL record's (`export_autotune_demo.layer_reports`).
+- Tune loop proposer `replan` (`--replan-columns`): the session table with columns measured under the best
+  grid's options merged in, solved again at the session budget, one proposal with those options; the Auto-tune
+  page marks such a round as a knapsack replan with no LLM call.
 - `app.autotune table --options FILE` measures methods with options (meta.options, other recipe sha256s), `merge`
   puts one table's method columns into another of the same measurement (equal patch floors), and `solve` writes
   a table's options into the recipe: the knapsack can be solved again under options the tune agent found.

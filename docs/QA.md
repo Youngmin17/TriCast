@@ -8,17 +8,20 @@
 |---|---|---|---|
 | 정적 분석 | ruff (저장소 전체) | `ruff check .` | 경고 0 (`b489ce5`) |
 | CPU 단위 · 통합 | `tests/` + `app/tests/` (GPU 제외) | `pytest -q --ignore=tests/gpu tests app/tests` (bath 16코어, `d83fc7a`) | **2,930 passed, 3 skipped** — skip: CUDA NF4 대조 · microxcaling 오라클(클론 없음) · GPU 골든 1건 (AGENTS.md 상 정상) |
+| CPU 단위 · 통합 (2026-11-05 HEAD) | `tests/` + `app/tests/` (GPU 제외), 옵션 전이 · 재배정 라운드 번들 포함 | 같은 명령 (cpu_cap 16코어 — monaco 배정, `150b9d3` 새 클론, 27분 15초) | **2,948 passed, 3 skipped** — skip 은 위와 같은 3건 |
+| CPU (이후 변경, 2026-11-05) | `app/tests` 전체 — 재배정 라운드의 칸 변경 · 옵션 전이 번들 포함 | `pytest -q app/tests` (로컬 `.venv`) | **472 passed** (새 테스트 `test_autotune_replan_bundle.py` 는 수정 전 내보내기에서 실패, 수정 후 통과) |
 | CPU (이후 변경) | 튜닝 루프 재개 · DENY 감지 (`b489ce5`) | `pytest -q app/tests/test_tune_resume.py app/tests/test_tune_loop.py …` | 24 passed, 1 skipped (로컬에 optuna 없음; 클러스터 실행에서는 통과) |
 | CPU 단위 · 통합 (push 전 HEAD) | `tests/` + `app/tests/` (GPU 제외), 리포트 오차 · 재개 · 평가 러너 수정 포함 | 같은 명령 (cpu_cap 16코어, `a74179f`, 18분 19초) | **2,934 passed, 3 skipped** — skip 은 위와 같은 3건. 그 뒤 `5e1ec8b` 는 `app/__init__.py` 버전 검사만 바꿈 (로컬 `test_server.py` 등 55 passed) |
 | evals 러너 | 러너 단위 테스트 + 오답 주입 9행 | `pytest -q tests/test_tune_evals.py tests/test_evals.py` | **82 passed** — 오답 주입 9/9 기대 판정 ([위임 기록](./prompts/delegation_evals.md)) |
 | 브라우저: Quantizer | JS ↔ Python 레시피 바이트 일치 (프리셋 5 · 무작위 격자 300 · 옵션 상태 300), 상호작용, 빈 · 오류 상태 | `node scripts/quantizer/qz_check.mjs …` | **QZ_CHECKS[static] 71/71** |
 | 브라우저: tricast 수용 | 위 300 격자의 YAML 을 tricast 로더가 해석 | `python scripts/quantizer/qz_tricast_accept.py …` | `QZ_TRICAST_ACCEPT_OK` (레시피 100, 층 19,600) |
 | 브라우저: 레이어 지도 | 지표 왕복 · 비유한 값 표시 | `node scripts/quantizer/cdp_check.mjs …` | **CDP_CHECKS 44/44** |
-| 브라우저: Auto-tune | 배낭 · 제약 = Python, 요청 상자 · 라운드(저장 · 실시간 fixture · 오류), 칸 툴팁의 리포트 오차 = 번들 값, Tab 포커스, 감소 모션, 390 px, 대비 ≥ 4.5:1 | `node scripts/quantizer/autotune_ui_check.mjs <out> . <python>` | **43/43** (track M 번들, 리포트 · 측정된 세션 3라운드 포함; 제안 카드의 옵션 줄 = 기본값과 다른 것만) · 39/39 (개발 번들, 리포트 검사 추가 전) |
+| 브라우저: Auto-tune | 배낭 · 제약 = Python, 요청 상자 · 라운드(저장 · 실시간 fixture · 오류), 칸 툴팁의 리포트 오차 = 번들 값, Tab 포커스, 감소 모션, 390 px, 대비 ≥ 4.5:1 | `node scripts/quantizer/autotune_ui_check.mjs <out> . <python>` | **45/45** (track M 번들, 리포트 · 세션 4라운드 · 옵션 전이 5행 포함: LLM 라운드는 '저장된 응답', 재배정 라운드는 '휴리스틱 재배정 · LLM 없음' 배지, 전이 계열의 별 · 점선 · 툴팁 · 표 행 = 번들) · 43/43 (전이 · 재배정 라운드 추가 전) |
 | 리포트 오차 정직성 | 층별 MSE · SQNR · cos 가 그 방법의 균일 레시피와 같은 레시피 해시의 리포트에서만 옴 | `pytest -q app/tests/test_autotune_reports.py` · 번들 재생성 | 1 passed · 균일 15개 모두 해시 일치, 196층 × 15방법 = 2,940칸 채움, 다른 번들 필드는 이전과 동일 |
 | 배낭 정합 | 브라우저 배낭 = `python -m app.autotune solve` (예산별 196층 선택 · 값 · 비트) | `node scripts/quantizer/autotune_check.mjs …` | v2 표 **10/10**, track M 표 **10/10** (불가능 · 너무 큰 예산의 거부 문구 포함; `a74179f` 에서 2.5 · 3 · 403/128 · 3.5 · 4 · 4.16 · 4.25 · 5 · 8 · 1 비트로 다시 10/10) |
 | README "화면만 보기" | 저장소를 새로 clone (`a74179f`) → 새 가상환경 (Python 3.14.5 · 3.11) 에 README 의 6개 패키지만 설치 → `python -m app.server --demo` | curl · 위 브라우저 검사를 clone 과 그 가상환경으로 | 화면 6개 · 번들 · health 모두 200 (3.11 은 health), `--agent` 없이 해석 API 503 (의도), **AUTOTUNE_UI 42/42** (3.14). 이 설치로는 `app.autotune solve` 가 torch 를 못 찾는다 — 화면만 보기 범위 밖이며 README 의 전체 설치가 필요 |
-| 정직성 | 화면 번들의 측정값이 정확한 레시피에만 붙음 (레시피 파일 SHA-256 → KL 기록 → PPL 기록) | `python -m app.export_autotune_demo …` | 균일 15 · 배낭 6 모두 대조 통과, 거부 0 |
+| 정직성 | 화면 번들의 측정값이 정확한 레시피에만 붙음 (레시피 파일 SHA-256 → KL 기록 → PPL 기록) | `python -m app.export_autotune_demo …` | 균일 15 · 배낭 6 · 옵션 전이 5 모두 대조 통과, 거부 0. 측정하지 않은 전이 격자(`xfer_iso_3.15`: 세션 최선과 이름만 다름)는 '측정 기록 없음'으로 거부됨을 확인한 뒤 뺐다 |
+| 도입 슬라이드 | 중간평가 2 도입 3장 (대상 · 문제 / 입력 → 결과 / 최종 목표), 수치는 `docs/slides/midterm2/make_data.py` 가 번들 · seed 기록에서 생성 | `python3 docs/slides/midterm2/make_data.py` → `node docs/slides/midterm2/build_deck.js <out.pptx>` → paper-slides `render_qa.sh` | 3/3 페이지 렌더 확인: 넘침 · 겹침 없음, 폰트 AppleSDGothicNeo 만, 빨강 강조 장당 1–2곳. 사용자 덱(v3–v7)은 건드리지 않음 |
 | 실제 서버 E2E | `python -m app.server --demo --agent <loop.json>` 위의 화면 · 번들 · 실시간 해석 · 실시간 제안 | curl (로컬 `.venv`) | health 200 · 화면 200 · 번들 200 (720 KB) · **실시간 해석 6.2초 $0.029** → `tune · 403/128 · BF16 유지 [-1]` · **실시간 제안 68초 $0.28** → 1 채택 · 1 거부(같은 레시피가 이미 세션에 있음), 원본 세션 파일 수 33 → 33 |
 | GPU | `tests/gpu` | — | **미실행**: 이번 범위는 커널 · GPU 경로를 바꾸지 않았다. 마지막 결과는 H200 896 passed ([SPEC](./SPEC.md#6-수용-기준) AC1). |
 
@@ -48,7 +51,7 @@
 
 ## 4. 남은 위험 · 미검증
 
-- 데모 세션(`runs/20261104_demo/s3150`)은 3라운드 · 측정 8건까지 끝났다 ([증거 §2.6](./evidence/2026-11-04_lowbit_track_m.md)). AI 최선 둘의 test PPL 은 출발점과 같은 트리 · GPU 로 쟀다 (26.82 · 26.51 vs 27.04). 보정 seed 42–45 로도 쟀다: 4/4 seed 에서 AI 가 낮고 평균 −3.25% ([증거 §2.7](./evidence/2026-11-04_lowbit_track_m.md)). turin(PCIe) 의 seed 42 값이 geneva(SXM4) 와 float 단위로 같다.
+- 데모 세션(`runs/20261104_demo/s3150`)은 3라운드 · 측정 8건까지 끝났다 ([증거 §2.6](./evidence/2026-11-04_lowbit_track_m.md)). AI 최선 둘의 test PPL 은 출발점과 같은 트리 · GPU 로 쟀다 (26.82 · 26.51 vs 27.04). 보정 seed 42–46 로도 쟀다: 5/5 seed 에서 AI 가 낮고 평균 −3.48%, 부호 뒤집기 p = 1/32 ([증거 §2.7](./evidence/2026-11-04_lowbit_track_m.md)). turin(PCIe) 의 seed 42 값이 geneva(SXM4) 와 float 단위로 같다. 라운드 4 (배낭 재배정, LLM 없음) 는 검증 KL 0.39309 로 채택되지 않았고 ([§2.8](./evidence/2026-11-04_lowbit_track_m.md)), AI 옵션을 다른 예산의 배낭 해 5개에 옮긴 측정은 [§2.9](./evidence/2026-11-04_lowbit_track_m.md) 에 있다 (대조군 KL 이 세션 기록과 비트 단위로 같음).
 - 브라우저 배낭은 메인 스레드에서 돈다. track M 표에서 2.5–4.25 비트 풀이가 0.5–2.9초 걸려 그동안 화면이 멈춘다 (Web Worker 이전은 다음 작업).
 - 브라우저 검사는 Google Chrome (macOS) 만 돌렸다. Safari · Firefox 는 손으로 확인하지 않았다.
 - README 의 "화면만 보기" 설치는 Python 3.14 · 3.11 에서 확인했다 (3.10 · 3.12 · 3.13 · Windows 는 미확인).

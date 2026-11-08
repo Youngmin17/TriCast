@@ -45,13 +45,13 @@ evals/run_tune_evals.py 를 만들어줘. 튜닝 평가 세트를 읽어 실행 
 
 | 넣은 오답 | 기대 판정 | 결과 |
 |---|---|---|
-| r_c2 응답의 keep_bf16_blocks 를 [0] 으로 | r_c2 code 실패 (keep_bf16_blocks), A1 분자 −1 | |
-| r_q1 응답의 model 을 "Qwen/Qwen3-0.6B" 로, assumptions 비움 | r_q1 실패, A2 지어낸 값 1건 | |
-| r_i1 응답의 budget_bits 를 "16" 으로 | r_i1 실패, A6 1건 | |
-| r_h2 응답의 only_methods 에 "quip_e8p" | r_h2 형식 오류 (RequestError) → 실패, A7 분자 −1 | |
-| r_k2 응답의 outcome 을 tune 으로 (모델이 충돌을 놓침) | 코드 판정이 conflict 로 바꿔 통과 — 코드가 받쳐 주는지 확인 | |
-| a_i1 응답의 제안 하나가 E000000000000 을 인용 | 그 제안은 AC24 검사에서 거부, a_i1 은 not_cited 실패, B5 1건, B2 는 0 유지 | |
-| a_c1 judge 응답의 c2 를 false 로 | a_c1 judge 실패, B8 분자 −1 | |
-| judge 응답을 JSON 이 아닌 문장으로 | 그 케이스 오류 표시, 집계에서 빠지지 않음 | |
+| r_c2 응답의 keep_bf16_blocks 를 [0] 으로 | r_c2 code 실패 (keep_bf16_blocks), A1 분자 −1 | PASS — r_c2 실패, A1 1 → 0 (부분 실행 분자) |
+| r_q1 응답의 model 을 "Qwen/Qwen3-0.6B" 로, assumptions 비움 | r_q1 실패, A2 지어낸 값 1건 | PASS — invented [model], A2 0 → 1 |
+| r_i1 응답의 budget_bits 를 "16" 으로 | r_i1 실패, A6 1건 | PASS — A6 0 → 1 |
+| r_h2 응답의 only_methods 에 "quip_e8p" | r_h2 형식 오류 (RequestError) → 실패, A7 분자 −1 | PASS — RequestError, A7 5 → 4 |
+| r_k2 응답의 outcome 을 tune 으로 (모델이 충돌을 놓침) | 코드 판정이 conflict 로 바꿔 통과 — 코드가 받쳐 주는지 확인 | PASS — 코드가 conflict 로 바꿈, 판정 그대로 |
+| a_i1 응답의 제안 하나가 E000000000000 을 인용 | 그 제안은 AC24 검사에서 거부, a_i1 은 not_cited 실패, B5 1건, B2 는 0 유지 | PASS — 거부, B5 0 → 1, B2 0 |
+| a_c1 judge 응답의 c2 를 false 로 | a_c1 judge 실패, B8 분자 −1 | PASS — B8 2/2 → 1/2 (분모 그대로) |
+| judge 응답을 JSON 이 아닌 문장으로 | 그 케이스 오류 표시, 집계에서 빠지지 않음 | PASS — r_q1 오류, A8 분모 그대로 |
 
-결과 칸은 사람이 확인하고 채운다 (확인한 사람 · 날짜).
+결과 칸: 2026-11-08 기준선 실행 `2026-11-08T0104` 의 **실제 저장 응답**에 위 8건을 하나씩 넣어 stored 모드로 다시 채점한 결과 (`python evals/inject_faults.py 2026-11-08T0104 --table … --ledger … --fixture s3150=…` → `INJECT_DONE 8/8`, 넣은 케이스만 판정이 바뀜). 합성 데이터로 같은 8건(+ judge 결과 문장 1건)을 보는 회귀 테스트는 `tests/test_tune_evals.py::test_fault_injection_gives_the_expected_verdict` (9건). 사람이 결과를 다시 돌려 확인한 서명: ______ (날짜 ______)

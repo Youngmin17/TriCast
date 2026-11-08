@@ -89,18 +89,17 @@ s = deck.slide({ title: '최종 목표와 지금', section: '목표', notes: [
   '출처: docs/DEMO.md §3 (수정안 2026-11-05, 팀 확정 필요), docs/evidence/2026-11-04_lowbit_track_m.md §2.6–2.8,',
   `${data.sources.bundle}, ${data.sources.seeds}. 판정은 고르는 데 쓰지 않은 WikiText-2 test PPL (seqlen 2048).`,
 ].join('\n') });
-const head = ['구분', '지표', '목표 (최종 평가까지)', '지금 (Qwen3-0.6B)'];
+const head = ['지표', '목표 (최종 평가까지)', '지금 (Qwen3-0.6B)'];
 const hcell = (x) => ({ text: x, options: { bold: true, color: 'FFFFFF', fill: { color: 'A31F34' } } });
-const rows = [head.map(hcell)].concat(data.goals.map((g) => [g.kind, g.metric, g.target, g.now].map((x, j) => ({
-  text: x, options: j === 3 && g.key ? { color: 'D0021B', bold: true } : {},
-}))));
+const rows = [head.map(hcell)].concat(data.goals.map((g) => [g.kind === '정성' ? `${g.metric} (정성)` : g.metric, g.target, g.now]
+  .map((x, j) => ({ text: x, options: j === 2 && g.key ? { color: 'D0021B', bold: true } : {} }))));
 s.addTable(rows, {
-  x: BODY.x + 0.1, y: 1.35, w: BODY.w - 0.2, colW: [0.8, 2.6, 4.45, 4.4],
-  fontFace: F, fontSize: 13, color: '111111', valign: 'middle', margin: [3, 6, 3, 6],
-  border: { type: 'solid', pt: 0.75, color: 'BFBFBF' }, rowH: 0.5, autoPage: false,
+  x: BODY.x + 0.1, y: 1.3, w: BODY.w - 0.2, colW: [2.35, 4.75, 5.15],
+  fontFace: F, fontSize: 12, color: '111111', valign: 'middle', margin: [2, 5, 2, 5],
+  border: { type: 'solid', pt: 0.75, color: 'BFBFBF' }, rowH: 0.4, autoPage: false,
 });
-s.addText('목표 수치는 수정안 — 팀 확정 필요. 측정값은 모두 A100 기록값 (GPU · 트리 SHA · 레시피 해시 동반).',
-  t({ x: BODY.x + 0.1, y: 6.5, w: BODY.w - 0.2, h: 0.3, fontSize: 12, color: '595959' }));
+s.addText('목표는 2026-11-08 확정 (사용자 승인). 측정값은 모두 A100 기록값 (GPU · 트리 SHA · 레시피 해시 동반), judge 지표는 사람 라벨 검증 전이라 쓰지 않음.',
+  t({ x: BODY.x + 0.1, y: 6.62, w: BODY.w - 0.2, h: 0.28, fontSize: 12, color: '595959' }));
 
 // PowerPoint for Mac 은 lang 이 en-US 인 한글 run 을 단어 중간에서 줄바꿈한다 → 모든 run 을 ko-KR 로
 const out = process.argv[2] || 'tricast_midterm2_intro.pptx';

@@ -26,6 +26,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 - Tune loop proposer `replan` (`--replan-columns`): the session table with columns measured under the best
   grid's options merged in, solved again at the session budget, one proposal with those options; the Auto-tune
   page marks such a round as a knapsack replan with no LLM call.
+- Eval tools that drive the frozen runner: `evals/judge_agreement.py` (a labeling sheet with the judge's whole
+  input and no verdict; agreement per criterion with its direction) and `evals/inject_faults.py` (the
+  delegation §1-2 wrong answers put into a real run's stored replies, re-graded in stored mode).
 - Recipe file on the Auto-tune page (`POST /api/autotune/recipe`, `app/autotune_recipe.py`): the YAML
   `app.autotune solve` writes for the shown grid, its SHA-256 held against the GPU-measured file of a recorded
   solution, and with `--agent` the session's measured proposal file; copy and download, no LLM call.
@@ -96,6 +99,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 - Recorded Quantizer demo data for Qwen3-0.6B (five presets: PPL, layer reports, lm-eval 5 tasks × 300 docs).
 
 ### Changed
+- Midterm-2 demo (`docs/DEMO.md`): one unbroken live chain (sentence → parse → knapsack → recipe file whose
+  SHA-256 is the measured file's → AI rounds → AI best's file), the live Claude round asked early, a blanket
+  disclosure of what is recorded, and the final goals confirmed with S2 and evals rows; the tune evals'
+  thresholds and absolute-rule expectations approved, baseline measured three times on one commit (§9).
 - README slides now show the 10-slide v7 business deck (Quantizer and Auto-tune), slide 6 animated with the
   Quantizer page recording; the v1 chip-arithmetic slide images were removed.
 - Docs v2.0: PROBLEM, SPEC and the ontology are reframed around choosing a quantization method per layer;

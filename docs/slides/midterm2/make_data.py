@@ -15,15 +15,18 @@ BUNDLE = "app/web/demo/autotune/bundle.json"
 SEEDS = ("runs/20261105_replan/seeds_turin", "runs/20261105_replan/seeds46_base",
          "runs/20261105_replan/seeds_x250", "runs/20261105_replan/seeds_x300")
 XFER = "runs/20261105_replan/xfer"
-TARGETS = {  # docs/DEMO.md §3 목표값 (수정안, 팀 확정 필요)
+HISTORY = "evals/results/history.csv"
+TARGETS = {  # docs/DEMO.md §3 목표값 (2026-11-08 사용자 승인)
     "heur": "같은 비트 균일 최선 대비 BF16 대비 PPL 열화 40% 이상 감소 (모델 2 × 3 · 4비트대)",
     "ai": "휴리스틱보다 test PPL 이 낮고, 차이 > 휴리스틱 seed 간 범위, AI 측정 8건 이하",
     "xfer": "AI 가 찾은 옵션을 다른 예산의 휴리스틱 해에 그대로 적용해도 test PPL 이 낮음",
-    "s3": "새 모델: 표 → 배낭 → AI 3라운드 → 레시피 1일 이내 (인터뷰 기준 3개월)",
+    "s2": "한 모델에서 30개 이상 배정을 같은 조건으로 측정 (인터뷰 07: 30개 이상 중 6개)",
+    "s3": "배정 확정 1주 이내 (인터뷰 3개월), 그중 도구 시간 1일 이내",
     "s4": "시연의 모든 배정을 레시피 파일만으로: 0회",
     "s5": "화면 측정값 100% 에 GPU · 트리 SHA · 레시피 해시",
     "evals": "지어낸 값 · 인젝션 · 환각 인용 · 예산 위반 0건",
-    "s1": "동료 80% 이상이 README 만으로 예산 입력 → 배정 확인 → AI 근거 읽기",
+    "basis": "judge 와 사람 라벨 일치율 ≥ 80%, 기준선을 같은 커밋 3회 변동 안에서 재현",
+    "s1": "동료 80% 이상이 README 만으로 예산 → 배정 → 레시피 → AI 근거 (대상 사용자의 대리)",
     "model": "Llama-3.2-1B 에서 같은 명령 · 같은 화면",
 }
 
@@ -64,6 +67,24 @@ def transfer(bundle: dict) -> list[dict]:
             rows.append({"id": base["id"], "bits": base["bits"], "kl": kl[path.stem], "ppl": ppl,
                          "heur_kl": base["kl"], "heur_ppl": base["ppl"]})
     return sorted(rows, key=lambda r: r["bits"])
+
+
+def evals_rows() -> tuple[str, str]:
+    """The evals rows from the baseline runs in history.csv (change "baseline k/3 ...")."""
+    import csv
+
+    rows = [row for row in csv.DictReader((ROOT / HISTORY).open(encoding="utf-8"))
+            if row["change"].startswith("baseline ") and row["mode"] == "live"]
+    if not rows:
+        return "기준선 미측정", "기준선 미측정 · judge 라벨 미작성"
+    rule = max(int(row[name] or 0) for row in rows for name in ("A2", "A6", "B2", "B3", "B5"))
+    spread = {name: max(float(r[name]) for r in rows) - min(float(r[name]) for r in rows)
+              for name in ("A1", "A3", "A4", "A5", "A7", "B1") if all(r[name] for r in rows)}
+    code = max(value for name, value in spread.items() if name != "B1")
+    labels = ROOT / "evals" / "judge_labels.jsonl"
+    return (f"기준선 {len(rows)}회 ({rows[0]['run_id'][:10]}): 최대 {rule}건",
+            f"같은 커밋 {len(rows)}회 변동: 코드 지표 {code:.2f}, B1 ±{spread['B1']:.2f}; judge 라벨 "
+            + ("작성됨" if labels.is_file() else "미작성 (사람) → judge 지표 판정 보류"))
 
 
 def main() -> None:
@@ -132,11 +153,15 @@ def main() -> None:
                 if tested and all(t["lower"] == t["n"] for t in tested) else ", ".join(robust))
         goals.append({"kind": "정량", "metric": "AI 발견의 전이", "target": TARGETS["xfer"],
                       "now": "; ".join(filter(None, [head, f"seed 42 한 번: {each}" if once else ""]))})
+    rules, basis = evals_rows()
     rest = (
-        ("정량", "S3 레이어 배정 확정 시간", "s3", "표 5.7시간 + 배낭 초 단위 + AI 라운드당 약 11분"),
-        ("정량", "S4 코드 재작성", "s4", "0회 (같은 트리)"),
+        ("정량", "S2 조합 커버리지 (대리)", "s2", f"{kl_n} 배정 (균일 · 배낭 · AI 세션 · 옵션 전이)"),
+        ("정량", "S3 배정 확정 시간", "s3",
+         "도구 시간: 표 5.7시간 + 배낭 초 + AI 라운드 약 11분; 사람 시간 미측정"),
+        ("정량", "S4 코드 재작성", "s4", "0회 (레시피 파일만 바꿈)"),
         ("정량", "S5 근거 동반률", "s5", f"100% (KL {kl_n} · PPL {ppl_n} 대조 통과)"),
-        ("정량", "evals 절대 규칙", "evals", "2회 실행 모두 0건 (합격선 · judge 라벨 미확정)"),
+        ("정량", "evals 절대 규칙", "evals", rules),
+        ("정량", "evals 근거화", "basis", basis),
         ("정성", "S1 동료 사용", "s1", "11/11–11/18 예정"),
         ("정성", "모델 확장", "model", "예정"),
     )

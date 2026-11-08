@@ -1,34 +1,11 @@
 {
- "session": "runs/20261104_demo/s3150",
- "table": "runs/20261104_lowbit/qz_trackm_qwen/table.json",
+ "session": "evals/fixtures/tune_inputs/s3150",
+ "table": "evals/fixtures/tune_inputs/table.json",
  "budget_bits": "403/128",
- "ledger": "runs/ledger.jsonl",
+ "ledger": "evals/fixtures/tune_inputs/ledger.jsonl",
  "gpu": "NVIDIA A100-SXM4-80GB",
  "llm": {
   "max_budget_usd": 2,
   "timeout_s": 900
- },
- "remote": {
-  "jump": "ucl-jump",
-  "host": "ucl-geneva-a100",
-  "session": "/scratch/uceeeee/tricast/demo_s3150c",
-  "tree": "/scratch/uceeeee/tricast/qz_6c4b406",
-  "logs": "/scratch/uceeeee/tricast/logs",
-  "label": "tune_demo_c",
-  "wait_s": 5400,
-  "env": {
-   "PY": "/scratch/uceeeee/conda_envs/tricast/bin/python",
-   "PYTHONNOUSERSITE": "1",
-   "HF_HOME": "/scratch/uceeeee/.cache/huggingface",
-   "HF_HUB_OFFLINE": "1",
-   "HF_DATASETS_OFFLINE": "1",
-   "CUBLAS_WORKSPACE_CONFIG": ":4096:8",
-   "MKL_CBWR": "COMPATIBLE",
-   "TOKENIZERS_PARALLELISM": "false",
-   "TRITON_CACHE_DIR": "/scratch/uceeeee/tricast/cache/triton",
-   "CUDA_CACHE_PATH": "/scratch/uceeeee/tricast/cache/cuda",
-   "TORCHINDUCTOR_CACHE_DIR": "/scratch/uceeeee/tricast/cache/inductor",
-   "PYTHONPATH": "/scratch/uceeeee/tricast/pydeps_qm"
-  }
  }
 }

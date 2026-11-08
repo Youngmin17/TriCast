@@ -1,3 +1,5 @@
+> v1 (2026-10, 에뮬레이션 요청 파싱) — 러너가 부르지 않는 참고 루브릭. **지금 제품의 judge 프롬프트는 [`tune_judge_prompt.md`](./tune_judge_prompt.md)** ([evals/README.md](./README.md)).
+
 AI 작성 초안 — 2026-10-01 팀 승인
 
 # Final-answer grounding judge

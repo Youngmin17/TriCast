@@ -83,8 +83,11 @@ Quantizer 격자(`/quantizer.html`), 레이어 지도(`/layers.html`), Studio(`/
 
 ```bash
 pip install -e ".[eval,dev,app]"
-python -m app.server --demo --agent runs/<세션>/loop.json
+python -m app.server --demo --agent evals/fixtures/tune_inputs/s3150/loop.json   # 저장소에 든 데모 세션
 ```
+
+저장소에 든 세션은 ledger 를 그 세션이 닿는 280 레코드로 줄인 것이라, 새 제안의 근거 검색이 데모(전체 ledger)보다 좁다.
+직접 돌린 세션이 있으면 `runs/<세션>/loop.json` 을 준다.
 
 요청 상자의 "요청 해석"과 "Claude 에게 새 제안 받기"가 실제로 호출된다 (도구 없음 · JSON 스키마 강제 · 비용 상한).
 실시간 제안은 검사까지만 하고 측정하지 않는다. `--agent` 없이 띄우면 두 버튼은 이유와 띄우는 방법을 알려 주고 저장된

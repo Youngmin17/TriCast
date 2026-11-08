@@ -2,7 +2,8 @@
 (``--mode stored``) without ``runs/`` (git-ignored; the full ledger is 73 MB):
 
 - ``evals/fixtures/tune_inputs/table.json``: the Auto-tune table the eval set's sessions were run on;
-- ``evals/fixtures/tune_inputs/s3150/``: the demo tune session (its rounds, proposals and analyses);
+- ``evals/fixtures/tune_inputs/s3150/``: the demo tune session (its rounds, proposals and analyses), its
+  ``loop.json`` pointed at these packed files and without the cluster settings;
 - ``evals/fixtures/tune_inputs/ledger.jsonl``: the ledger records any of them can reach — every record id
   written in the session or in the kept replies (``evals/fixtures/tune/``), and the measured-recipe records
   (``recipe_hash``) of the session's proposals — in the ledger's order.
@@ -38,6 +39,15 @@ def main() -> int:
     if target.exists():
         shutil.rmtree(target)
     shutil.copytree(args.session, target)
+    # the session's loop.json points inside the repository (so `app.server --agent` works from a clone) and
+    # carries no cluster settings; the cluster round script is not packed
+    loop = json.loads((target / "loop.json").read_text(encoding="utf-8"))
+    loop.pop("remote", None)
+    base = OUT.relative_to(ROOT)
+    loop.update(session=str(base / target.name), table=str(base / "table.json"),
+                ledger=str(base / "ledger.jsonl"))
+    (target / "loop.json").write_text(json.dumps(loop, indent=1) + "\n", encoding="utf-8")
+    (target / "run_round.sh").unlink(missing_ok=True)
     texts = [path.read_text(encoding="utf-8") for path in target.rglob("*.json")]
     kept_replies = ROOT / "evals" / "fixtures" / "tune"
     texts += [path.read_text(encoding="utf-8") for path in kept_replies.rglob("*.json")]

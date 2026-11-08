@@ -15,6 +15,8 @@ The API contract is app/README.md. Two modes answer it:
 recorded session ``--agent <loop.json>`` names and checks them (app/autotune_live.py; nothing is measured).
 It is served only with ``--agent`` (it needs the full install and a logged-in ``claude`` CLI), in either
 mode, and answers otherwise with how to enable it; the Auto-tune page then keeps showing the stored rounds.
+``/api/autotune/recipe`` hands over the recipe file of a page grid (app/autotune_recipe.py, stdlib only): a
+knapsack grid in either mode, a session proposal's measured file with ``--agent``.
 
 Local tool: there is no authentication and no CORS. The server binds 127.0.0.1 by default; anyone who
 can reach the port can queue GPU work and read every run, so do not expose it on a shared network.
@@ -81,6 +83,10 @@ _LIVE_GPU_ONLY = ("서버 GPU 실행은 라이브 모드의 CUDA 서버에서만
 _AGENT_OFF = ("실시간 AI 제안은 --agent 로 띄운 서버에서만 됩니다: 전체 설치(pip install -e \".[app]\")와 "
               "로그인된 claude CLI 가 있는 PC 에서 python -m app.server --demo --agent <세션의 loop.json> "
               "으로 띄우세요. 지금 화면의 AI 제안은 저장된 응답입니다.")
+_RECIPE_NEEDS_TRICAST = ("레시피 파일을 만들려면 tricast 가 필요합니다: 저장소 루트에서 "
+                         "PYTHONPATH=src python -m app.server --demo 로 띄우거나 pip install -e . 하세요.")
+_PROPOSAL_RECIPE_OFF = ("세션 제안의 레시피 파일은 --agent 로 띄운 서버에서만 받습니다. "
+                        "같은 파일은 세션 폴더 proposals/<이름>/recipe.yaml 에 있습니다.")
 
 
 class RunInput(BaseModel):
@@ -121,6 +127,15 @@ class ProposeRequest(BaseModel):
 
 class ParseRequest(BaseModel):
     text: str = Field(..., description="one tune request sentence (app/tune_request.py)")
+
+
+class RecipeRequest(BaseModel):
+    """``POST /api/autotune/recipe`` body: a knapsack ``grid`` (blocks × kinds of method ids) and the page's
+    ``budget_bits``, or a session ``proposal`` name."""
+
+    grid: list[list[str]] | None = None
+    budget_bits: str | None = None
+    proposal: str | None = None
 
 
 class QuantizerJobRequest(BaseModel):
@@ -683,6 +698,30 @@ def create_app(mode: str, device: str, demo_dir: Path, runner: Runner | None = N
                                  **({} if agent_runner is None else {"runner": agent_runner}))
         except LiveError as exc:
             raise ApiError(exc.status, exc.code, exc.message) from exc
+
+    @app.post("/api/autotune/recipe")
+    def recipe(body: RecipeRequest) -> dict:
+        from .autotune_recipe import RecipeError, grid_recipe, load_bundle, proposal_recipe
+
+        try:
+            bundle = load_bundle(demo_dir / "autotune" / "bundle.json")
+            if body.proposal is not None:
+                if agent is None:
+                    raise ApiError(503, "agent_unavailable", _PROPOSAL_RECIPE_OFF)
+                from .autotune_live import LiveError, load_config
+
+                try:
+                    session = APP_DIR.parent / load_config(agent)["session"]
+                except LiveError as exc:
+                    raise ApiError(exc.status, exc.code, exc.message) from exc
+                return proposal_recipe(bundle, session, body.proposal)
+            if body.grid is None:
+                raise ApiError(400, "invalid_request", "grid 또는 proposal 중 하나가 필요합니다.")
+            return grid_recipe(bundle, body.grid, body.budget_bits)
+        except RecipeError as exc:
+            raise ApiError(exc.status, exc.code, exc.message) from exc
+        except ModuleNotFoundError as exc:  # qr.build checks the MMA preset in tricast (no torch needed)
+            raise ApiError(503, "tricast_missing", _RECIPE_NEEDS_TRICAST) from exc
 
     @app.api_route("/api/{path:path}", methods=["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE"])
     def unknown_api(path: str) -> None:

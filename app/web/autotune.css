@@ -201,6 +201,10 @@ body { display: block; }
 .at-line .at-mono { font-size: 12px; }
 .at-line b { font: 600 14px var(--font-readout); }
 .at-why { margin: 0; font-size: 11.5px; color: var(--ink-3); }
+.at-recipe .at-btn { align-self: flex-start; }
+.at-recipe-tools { display: flex; gap: 6px; margin: 6px 0; }
+.at-recipe-tools a.at-btn { text-decoration: none; color: var(--ink); }
+.at-yaml { max-height: 220px; overflow: auto; font-size: 11px; line-height: 1.45; white-space: pre; }
 
 /* ---------- 3 agent ---------- */
 .at-agent-head { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }

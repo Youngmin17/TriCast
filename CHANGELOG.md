@@ -26,6 +26,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 - Tune loop proposer `replan` (`--replan-columns`): the session table with columns measured under the best
   grid's options merged in, solved again at the session budget, one proposal with those options; the Auto-tune
   page marks such a round as a knapsack replan with no LLM call.
+- Recipe file on the Auto-tune page (`POST /api/autotune/recipe`, `app/autotune_recipe.py`): the YAML
+  `app.autotune solve` writes for the shown grid, its SHA-256 held against the GPU-measured file of a recorded
+  solution, and with `--agent` the session's measured proposal file; copy and download, no LLM call.
 - Option transfer (`scripts/quantizer/autotune_xfer.py`, `export_autotune_demo --transfer`): knapsack solutions
   with a session's options and their cells unchanged; the Auto-tune chart draws them as "AI 옵션 적용", joined to
   the session best when the options are its own. The chart axis now fits the mixed series; collapsed uniform

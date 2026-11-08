@@ -56,11 +56,11 @@ make check                              # ruff + CPU 테스트
 ### 1. 화면만 보기 — GPU · API 키 없이 5분
 
 ```bash
-git clone <이 저장소> && cd TriCast
+git clone https://github.com/Youngmin17/TriCast.git && cd TriCast
 python3 --version                                         # 3.10 이상이어야 한다 (macOS 기본 python3 는 3.9)
 python3 -m venv .venv && source .venv/bin/activate
 pip install fastapi uvicorn pillow numpy jsonschema pyyaml   # 녹화 모드에 필요한 것만
-python -m app.server --demo                               # http://127.0.0.1:8765
+PYTHONPATH=src python -m app.server --demo               # http://127.0.0.1:8765 (src: 레시피 파일 생성용, torch 불필요)
 ```
 
 브라우저에서 **http://127.0.0.1:8765/autotune.html** 을 연다 (`file://` 로 직접 열면 동작하지 않는다).
@@ -71,7 +71,8 @@ python -m app.server --demo                               # http://127.0.0.1:876
 | 1 요청 문장 | 저장된 예시 칩을 누름 | 해석 결과(모델 · 예산 · 제약 · 가정 · 코드 판정)와 제약이 걸린 배정 |
 | 2 휴리스틱 배정 | 격자 칸에 마우스 · 방향키 | 칸마다 방법, 단층 KL, 가중치 MSE · 층 출력 SQNR (그 방법의 균일 리포트), 분포 · 희소화 정보, 같은 크기 균일 레시피와 비교 |
 | 3 AI 에이전트 | 제안 카드에 마우스 | 바뀌는 칸이 격자에 점선으로 표시, 인용 레코드, 검사 결과, 측정 KL |
-| 4 측정 결과 | 차트 · "표로 보기" | 균일 · 휴리스틱 · AI 의 비트 대비 검증 KL / test PPL (GPU 기록값, GPU · 트리 SHA 표시) |
+| 2 레시피 파일 | "이 배정의 레시피" → 레시피 파일 받기 | `app.autotune solve` 가 쓰는 것과 같은 YAML 한 장. 측정된 배정이면 SHA-256 이 GPU 측정 기록의 파일과 같다고 표시, 복사 · 내려받기 |
+| 4 측정 결과 | 차트 · "표로 보기" | 균일 · 휴리스틱 · AI 최선 · AI 옵션 적용의 비트 대비 검증 KL / test PPL (GPU 기록값, GPU · 트리 SHA 표시) |
 
 화면의 AI 응답과 측정값은 **저장된 기록**이다. 배지("저장된 응답 · 날짜", "GPU 기록값")가 그 사실을 표시한다.
 Quantizer 격자(`/quantizer.html`), 레이어 지도(`/layers.html`), Studio(`/`)도 같은 서버에서 열린다.

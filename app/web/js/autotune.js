@@ -15,6 +15,7 @@ const DATA = "demo/autotune/bundle.json";
 const EXPORT = "python -m app.export_autotune_demo --table runs/<실행>/table.json --out app/web/demo/autotune";
 const PROPOSE = "api/autotune/propose";
 const PARSE = "api/autotune/parse";
+const RECIPE = "api/autotune/recipe";
 const AGENT_SERVER = "python -m app.server --demo --agent <loop.json> 으로 띄운 주소에서 다시 시도하세요.";
 const MAX_BITS = 8.5;
 const UNITS = 128;          // slider positions per bit: the slider moves in 1/128 bit
@@ -647,12 +648,16 @@ function planStep() {
   ui.keys = h("ul", {class: "at-keys"});
   ui.uniform = h("div", {class: "at-box"});
   ui.record = h("div", {class: "at-box"});
+  const recipe = recipeBox("이 배정의 레시피", "레시피 파일 받기", () => ({grid: state.grid, budget_bits: state.text}),
+    () => `python -m app.server --demo 로 띄운 주소에서 받으세요 (같은 파일: python -m app.autotune solve --table ${bundle.table.path} `
+      + `--budget-bits ${state.text} --out runs/<이름>, 요청 제약이 없을 때).`);
+  ui.recipeOut = recipe.out;
   ui.live = h("p", {class: "sr-only", "aria-live": "polite"});
   const stats = h("div", {class: "at-stats"},
     h("div", {class: "at-read"}, h("div", {class: "k"}, "달성 비트"), ui.bits, ui.bitsSub),
     h("div", {class: "at-read"}, h("div", {class: "k"}, "예측 KL (단층 KL 합)", h("span", {class: "at-tag"}, "예측")), ui.kl, ui.klSub),
     h("div", {class: "at-mix"}, h("div", {class: "at-read"}, h("div", {class: "k"}, "방법 구성 (층 수)")), ui.bar, ui.keys),
-    ui.uniform, ui.record);
+    ui.uniform, ui.record, recipe.box);
   return step(2, "휴리스틱 배정 (정확 배낭)", null,
     h("p", {class: "at-lead"}, "층 하나만 양자화했을 때의 모델 KL 을 층 × 방법마다 재 둔 표에서, 예산 안에 들면서 KL 합이 가장 작은 조합을 정확한 DP 로 고릅니다. 칸 색은 방법 계열, 글자는 방법과 비트입니다."),
     ui.note,
@@ -881,6 +886,58 @@ function updateStats() {
     ui.record.replaceChildren(h("h3", null, "이 배정의 측정"),
       h("p", {class: "at-why"}, "이 배정은 예측만 있습니다 (측정은 GPU 작업이 필요합니다)"));
   }
+  ui.recipeOut?.replaceChildren();  // the file was this grid's: a new grid asks again
+}
+
+// The recipe file behind a grid (POST /api/autotune/recipe, app/autotune_recipe.py): the YAML app.autotune solve writes
+// for a knapsack grid, or the file a tune session measured for a proposal, with its SHA-256 held against the GPU
+// record, to copy or download. The static server has no such API: the box then says how to make the same file.
+let recipeURL = null;
+
+function recipeBox(title, label, payload, fallback) {
+  const out = h("div", {class: "at-recipe-out", "aria-live": "polite"});
+  const button = h("button", {type: "button", class: "at-btn"}, label);
+  button.addEventListener("click", async () => {
+    button.disabled = true;
+    out.replaceChildren(h("p", {class: "at-why"}, "레시피 파일을 만드는 중"));
+    try {
+      let response;
+      try {
+        response = await fetch(RECIPE, {method: "POST", headers: {"content-type": "application/json", accept: "application/json"},
+          body: JSON.stringify(payload())});
+      } catch (error) {
+        throw new Error(`서버에 닿지 못했습니다 (${error.message}). ${fallback()}`);
+      }
+      const body = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(body?.error?.message ?? `레시피 API 가 HTTP ${response.status} 로 답했습니다 (정적 서버에는 없습니다). ${fallback()}`);
+      }
+      out.replaceChildren(...recipeView(body));
+    } catch (error) {
+      out.replaceChildren(h("p", {class: "at-live-error", role: "alert"}, error.message));
+    } finally {
+      button.disabled = false;
+    }
+  });
+  return {box: h("div", {class: "at-box at-recipe"}, h("h3", null, title), button, out), out};
+}
+
+function recipeView(r) {
+  const m = r.measured;
+  const status = !m ? `아직 측정하지 않은 배정입니다. GPU 에서 재려면: ${r.command}`
+    : m.same_file ? `GPU 가 잰 바로 그 파일입니다 (SHA-256 이 측정 기록과 같음) · 검증 KL ${fmtKL(m.kl)} · test PPL ${fmtPPL(m.ppl)}`
+      + ` · ${[gpuName(m.gpu), short(m.git_sha)].filter(Boolean).join(" · ") || "GPU 기록 없음"}`
+      : `측정 기록의 파일과 SHA-256 이 다릅니다 (기록 ${short(m.recorded_sha256) ?? "없음"}): 이 파일의 측정값이 아닙니다`;
+  if (recipeURL) URL.revokeObjectURL(recipeURL);
+  recipeURL = URL.createObjectURL(new Blob([r.yaml], {type: "application/yaml"}));
+  const copy = h("button", {type: "button", class: "at-btn"}, "복사");
+  copy.addEventListener("click", () => navigator.clipboard?.writeText(r.yaml)
+    .then(() => { copy.textContent = "복사함"; }, () => { copy.textContent = "복사 안 됨 (아래 글을 선택하세요)"; }));
+  return [h("p", {class: "at-line"}, h("span", {class: "at-mono"}, r.file), ` · SHA-256 ${r.sha256.slice(0, 12)}…`),
+    h("p", {class: m?.same_file ? "at-line" : "at-why", "data-same": String(Boolean(m?.same_file))}, status),
+    h("p", {class: "at-why"}, "tricast run · tricast ppl 에 그대로 넣는 레시피 한 장입니다. 코드를 고치지 않고 이 파일만 바꿔 다시 잽니다."),
+    h("div", {class: "at-recipe-tools"}, copy, h("a", {class: "at-btn", href: recipeURL, download: r.file}, "내려받기")),
+    h("pre", {class: "code at-yaml", tabindex: "0", "aria-label": `${r.file} 내용`}, r.yaml)];
 }
 
 // ---------- 3 agent ----------
@@ -914,6 +971,8 @@ function agentStep() {
     h("p", {class: "at-lead"}, "휴리스틱 배정을 시작점으로, Claude 가 ledger 기록 id 를 근거로 붙여 바꿀 칸과 옵션을 제안합니다. 예산·인용·수치 검사를 통과한 제안만 GPU 로 검증 KL 을 잽니다. 카드에 마우스를 올리면 바뀌는 칸이 격자에 점선으로 표시됩니다."),
     best ? h("p", {class: "at-line"}, "세션 최선 ", h("span", {class: "at-mono"}, best.name), " · 검증 KL ", val(fmtKL(best.kl)),
       delta, " · test PPL ", val(fmtPPL(best.ppl)), ` · ${fmtBits(best.avg_bits)} 비트`) : h("p", {class: "at-none"}, "측정된 제안 없음"),
+    best ? recipeBox(`AI 최선 ${best.name} 의 레시피`, "레시피 파일 받기", () => ({proposal: best.name}),
+      () => `같은 파일은 세션 폴더 proposals/${best.name}/recipe.yaml 입니다.`).box : null,
     h("ul", {class: "at-spend", "aria-label": "라운드별 Claude 비용"}, rounds.map((round) => (isReplan(round)
       ? h("li", null, `라운드 ${round.round} · LLM 호출 없음 (휴리스틱 재배정)`)
       : h("li", null, `라운드 ${round.round} · `, h("b", null, fmtUsd(round.llm?.cost_usd)), " · ",

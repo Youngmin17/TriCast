@@ -4,8 +4,11 @@ It serves app/web under three path prefixes and fakes only the Auto-tune bundle 
 - /fixture/  demo/autotune/bundle.json = the repo bundle plus FAKE `requests` (one stored reply per outcome)
              and FAKE layer profiles and report errors; POST api/autotune/parse answers a canned live
              "tune" request (a text containing "422" gets 422 request_refused, "slow" waits 30 s first);
-             POST api/autotune/propose answers a canned live round;
-- /down/     the same bundle; both POSTs answer 503 agent_unavailable;
+             POST api/autotune/propose answers a canned live round; POST api/autotune/recipe answers a
+             grid with the real app.autotune_recipe.grid_recipe on the served bundle, a proposal with a FAKE
+             file;
+- /down/     the same bundle; parse and propose answer 503 agent_unavailable, recipe answers grids (as the
+             server without --agent does) and 503 for a proposal;
 - /missing/  the bundle answers 404.
 Every other path under a prefix is the file from app/web. The fake bundle is written to a temporary directory
 this process creates and removes; no repository file is written. The fake values are derived from the served
@@ -18,6 +21,7 @@ usage: python scripts/quantizer/autotune_fixture_server.py <repo> [port]
 from __future__ import annotations
 
 import functools
+import hashlib
 import http.server
 import json
 import math
@@ -31,6 +35,7 @@ from typing import Any
 
 DELAY_S = 1.5
 PREFIXES = ("fixture", "down", "missing")
+ROUTES = ("api/autotune/parse", "api/autotune/propose", "api/autotune/recipe")
 BUNDLE = "demo/autotune/bundle.json"
 DOWN = "실시간 AI 기능은 --agent 로 띄운 서버에서만 됩니다 (fixture 503)."
 REFUSED = "exclude_methods: ['no_such_method'] are not methods of the table (fixture 422)"
@@ -176,9 +181,12 @@ def handler_class(fake: Path, live: dict[str, Any], quant: list[str]) -> type:
             prefix, rest = self.split()
             length = int(self.headers.get("content-length") or 0)
             body = json.loads(self.rfile.read(length) or b"{}")
-            if prefix is None or rest not in ("api/autotune/parse", "api/autotune/propose"):
+            if prefix is None or rest not in ROUTES:
                 missing = {"code": "not_found", "message": f"없는 API 경로입니다: /{rest}"}
                 self.send_json(404, {"error": missing})
+                return
+            if rest == "api/autotune/recipe":
+                self.recipe(prefix, body)
                 return
             text = str(body.get("text", ""))
             time.sleep(30 if "slow" in text else DELAY_S)
@@ -197,6 +205,28 @@ def handler_class(fake: Path, live: dict[str, Any], quant: list[str]) -> type:
                 self.send_json(200, {"mode": "live", "round": 99, "analysis": "fixture: canned analysis",
                                      "stop": False, "proposals": [proposal], "llm": llm,
                                      "note": "fixture: 검사만 했고 측정하지 않았습니다."})
+
+        def recipe(self, prefix: str, body: dict[str, Any]) -> None:
+            from app import autotune_recipe as ar  # stdlib only; the check runs this with PYTHONPATH=<repo>
+
+            if body.get("proposal") is not None:
+                if prefix != "fixture":
+                    self.send_json(503, {"error": {"code": "agent_unavailable", "message": DOWN}})
+                    return
+                text = f"# FAKE recipe of {body['proposal']} (fixture)\n"
+                sha = hashlib.sha256(text.encode()).hexdigest()
+                measured = {"id": body["proposal"], "same_file": True, "recorded_sha256": sha, "kl": 0.123,
+                            "ppl": 12.5, "gpu": "NVIDIA FIXTURE", "git_sha": "f1x7ure"}
+                name = body["proposal"]
+                self.send_json(200, {"kind": "proposal", "name": name, "file": f"{name}.yaml", "yaml": text,
+                                     "sha256": sha, "default": None, "measured": measured,
+                                     "command": "fixture"})
+                return
+            try:
+                served = json.loads(fake.read_text(encoding="utf-8"))
+                self.send_json(200, ar.grid_recipe(served, body.get("grid"), body.get("budget_bits")))
+            except ar.RecipeError as exc:
+                self.send_json(exc.status, {"error": {"code": exc.code, "message": exc.message}})
 
     return Handler
 

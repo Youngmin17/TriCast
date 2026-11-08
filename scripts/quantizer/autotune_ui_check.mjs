@@ -39,7 +39,7 @@ const check = (name, pass, detail) => results.checks.push({label: name, pass: Bo
 // a stored round's badge, from the bundle: no LLM reply and knapsack-replan proposals = the replan round
 const storedBadge = (round) => (!round.llm && round.proposals.length && round.proposals.every((p) => p.author === "knapsack-replan")
   ? "휴리스틱 재배정 · LLM 없음" : "저장된 응답");
-const env = {...process.env, PYTHONIOENCODING: "utf-8", PYTHONUNBUFFERED: "1", PYTHONPATH: repo};
+const env = {...process.env, PYTHONIOENCODING: "utf-8", PYTHONUNBUFFERED: "1", PYTHONPATH: `${repo}/src:${repo}`};
 const {parseBits} = await import(pathToFileURL(`${repo}/app/web/js/mckp.js`).href);
 const READY = `!!document.querySelector(".at-cell[data-f]") || !!document.querySelector(".state")`;
 const FAMILIES = ["gptq", "awq", "rht", "clip", "hqq", "nf4", "int8w", "other", "bf16"];
@@ -98,6 +98,17 @@ try {
   const requestError = () => evaluate(`(() => { const e = document.querySelector(".at-request .at-live-error"); return e.hidden ? "" : e.innerText; })()`);
   const proposeError = () => evaluate(`(() => { const e = document.querySelector(".at-askrow + .at-live-error"); return e.hidden ? "" : e.innerText; })()`);
   const roundBadges = () => evaluate(`[...document.querySelectorAll(".at-round")].map((r) => r.querySelector(".at-round-head .at-badge").textContent)`);
+  // the recipe box of step 2 (index 0) or step 3 (index 1): click, wait for a file or an error, read it
+  const getRecipe = async (index) => {
+    await evaluate(`document.querySelectorAll(".at-recipe")[${index}].querySelector(".at-btn").click()`);
+    await waitFor(`(() => { const o = document.querySelectorAll(".at-recipe-out")[${index}];
+      return !!o.querySelector(".at-yaml") || !!o.querySelector(".at-live-error"); })()`, 8000);
+    return evaluate(`(() => { const o = document.querySelectorAll(".at-recipe-out")[${index}];
+      const a = o.querySelector("a[download]"); const same = o.querySelector("[data-same]");
+      return {file: a?.getAttribute("download") ?? null, yaml: o.querySelector(".at-yaml")?.textContent ?? "",
+        same: same?.dataset.same ?? null, status: same?.textContent ?? "", head: o.querySelector(".at-line")?.textContent ?? "",
+        error: o.querySelector(".at-live-error")?.textContent ?? ""}; })()`);
+  };
   const clearConstraints = () => evaluate(`(() => { const b = [...document.querySelectorAll(".at-constraints .at-btn")].find((x) => x.textContent === "제약 해제"); if (b) b.click(); })()`);
 
   // ---------- static server, light 1440: the repo bundle as it is ----------
@@ -173,6 +184,11 @@ try {
     await shot(`autotune_${label}_chart_1440`);
     check(`transfer rows in the table view: ${transfer.length}`, JSON.stringify([...rows].sort()) === JSON.stringify(transfer.map((r) => r.id).sort()), rows);
   }
+
+  // 1e the static server has no recipe API: the step-2 box says where the same file comes from
+  const staticRecipe = await getRecipe(0);
+  check("recipe on the static server: no file, the message names python -m app.server --demo",
+    !staticRecipe.file && staticRecipe.error.includes("python -m app.server --demo"), staticRecipe);
 
   // 2 constraints: three requests from the methods the session-budget solve uses most
   await evaluate(`window.__autotune.setBudget(${JSON.stringify(session?.budget_bits ?? "9/2")})`);
@@ -351,6 +367,23 @@ print(json.dumps(out))
   await b.setup(1440, 1800);
   check("fixture page loads (fake requests + profiles)", await open(`${FIXTURE}/fixture/autotune.html`));
   const fixtureMin = await evaluate("window.__autotune.sliderMin()");
+  // the recipe file of a recorded solution is the file its GPU measurement recorded; a new grid clears it
+  if (session) {
+    await evaluate(`window.__autotune.setBudget(${JSON.stringify(session.budget_bits)})`);
+    const recorded = bundle.solutions.find((row) => (row.kv ?? "none") === "none" && sameFrac(row.budget_bits, session.budget_bits));
+    const file = await getRecipe(0);
+    check(`recipe of ${recorded?.id}: ${recorded?.id}.yaml, SHA-256 ${recorded?.recipe_file_sha256.slice(0, 12)} = the measured file, its KL and PPL`,
+      !!recorded && file.file === `${recorded.id}.yaml` && file.same === "true" && file.yaml.startsWith("---\n")
+      && file.head.includes(recorded.recipe_file_sha256.slice(0, 12)) && file.status.includes(recorded.kl.toFixed(4))
+      && file.status.includes(recorded.ppl.toFixed(2)), file);
+    await evaluate(`document.querySelectorAll(".at-recipe")[0].scrollIntoView({block: "center"})`);
+    await shot(`autotune_${label}_recipe_1440`);
+    await evaluate(`window.__autotune.setBudget("9/2")`);
+    const cleared = await evaluate(`document.querySelectorAll(".at-recipe-out")[0].childElementCount`);
+    const best = await getRecipe(1);
+    check(`a new budget clears the file; the AI best's file (${session.best?.name}) comes from the session`, cleared === 0
+      && best.file === `${session.best?.name}.yaml` && best.same === "true", {cleared, best});
+  }
   const examples = fixtureBundle.requests;
   const tuneIndex = examples.findIndex((item) => item.request.outcome === "tune");
   const tune = examples[tuneIndex];
@@ -440,6 +473,9 @@ print(json.dumps(out))
     const message = await proposeError();
     check("propose with no agent (HTTP 503): the server's message; stored rounds kept", message.includes("fixture 503")
       && (await roundBadges()).length === session.rounds.length, message);
+    const [grid, proposal] = [await getRecipe(0), await getRecipe(1)];
+    check("with no agent the knapsack recipe still comes; the proposal file answers 503 with the server's message",
+      !!grid.file && grid.yaml.startsWith("---\n") && !proposal.file && proposal.error.includes("fixture 503"), {grid, proposal});
   }
 
   // ---------- 6 missing bundle ----------
@@ -457,8 +493,8 @@ print(json.dumps(out))
     || (e.method === "Log.entryAdded" && e.params.entry.level === "error")));
   const text = (e) => e.params.exceptionDetails?.exception?.description ?? `${e.params.entry?.text ?? JSON.stringify(e.params.args)} ${e.params.entry?.url ?? ""}`;
   // intended: POSTs to the static server (501), the fixture's 422 / 503, the missing bundle (404)
-  const intended = (e) => e.method === "Log.entryAdded" && (new RegExp(`^${STATIC}/api/autotune/(parse|propose)$`).test(e.params.entry.url ?? "")
-    || /\/fixture\/api\/autotune\/parse$|\/down\/api\/autotune\/(parse|propose)$|\/missing\/demo\/autotune\/bundle\.json$/.test(e.params.entry.url ?? ""));
+  const intended = (e) => e.method === "Log.entryAdded" && (new RegExp(`^${STATIC}/api/autotune/(parse|propose|recipe)$`).test(e.params.entry.url ?? "")
+    || /\/fixture\/api\/autotune\/parse$|\/down\/api\/autotune\/(parse|propose|recipe)$|\/missing\/demo\/autotune\/bundle\.json$/.test(e.params.entry.url ?? ""));
   const control = problems.filter((e) => text(e).includes("AT_POSITIVE_CONTROL"));
   const unexpected = problems.filter((e) => !intended(e) && !text(e).includes("AT_POSITIVE_CONTROL"));
   const uncaught = b.stderr().split("\n").filter((line) => /Uncaught|CONSOLE.*(Error|error)/.test(line));

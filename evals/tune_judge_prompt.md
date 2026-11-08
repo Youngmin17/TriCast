@@ -1,4 +1,4 @@
-AI 작성 초안 — 팀 확정 필요 · judge 버전 `tune_judge_v1`
+AI 작성 초안 → 2026-11-08 사용자 승인 (판정 기준) · judge 버전 `tune_judge_v1` · 사람 라벨 검증 전
 
 # 튜닝 evals 의 judge 프롬프트
 

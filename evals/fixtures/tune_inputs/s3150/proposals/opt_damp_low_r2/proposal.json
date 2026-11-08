@@ -1,0 +1,349 @@
+{
+ "schema": "tricast.tune.proposal/1",
+ "name": "opt_damp_low_r2",
+ "author": "claude-code-loop",
+ "parent": "iso_3.15",
+ "created_utc": "2026-11-04T08:51:02+00:00",
+ "rationale": "The base recipe iso_3.15 measured kl=0.43614466651129274 with default options. This grid keeps every layer method and bit count, and sets weight_algo.damp=0.005 on the GPTQ family to measure the effect of lower damping on whole-recipe KL.",
+ "cites": [
+  "E514ab09c524e"
+ ],
+ "checks": true,
+ "avg_bits": 3.147953869047619,
+ "avg_bits_fraction": "84617/26880",
+ "budget_bits": 3.1484375,
+ "budget_bits_fraction": "403/128",
+ "method_counts": {
+  "gptq_int2": 1,
+  "gptq_int3": 9,
+  "gptq_int4": 2,
+  "hqq_int4": 4,
+  "nf4": 13,
+  "rht_gptq_int2": 27,
+  "rht_gptq_int3": 109,
+  "rht_gptq_int4": 31
+ },
+ "predicted": {
+  "predicted_kl_sum": null,
+  "predicted_kl_sum_minus_floor": null,
+  "predicted_kv_kl_sum": null,
+  "unpredicted": "method or KV options: the table has entries for the default options only",
+  "floor_rule": "max(0, kl - floor) for every non-BF16 method; BF16 is a skip (no patch): 0, no floor"
+ },
+ "table": {
+  "path": "/Users/mincho/Documents/AI캡스톤/TriCast/runs/20261104_lowbit/qz_trackm_qwen/table.json",
+  "sha256": "40c43639b6f6b7bac7d900ace5b831e76c19c6de0bf3f0bbb7d20d4c16f57aee"
+ },
+ "recipe_sha256": "55f08236b2a751a51bf16f422e0b86d9099349d385e51a1501f7fe17bb99d68d",
+ "spec": {
+  "default": "rht_gptq_int3",
+  "grid": [
+   [
+    "rht_gptq_int3",
+    "rht_gptq_int4",
+    "rht_gptq_int4",
+    "gptq_int4",
+    "rht_gptq_int3",
+    "gptq_int3",
+    "rht_gptq_int4"
+   ],
+   [
+    "gptq_int2",
+    "rht_gptq_int3",
+    "gptq_int3",
+    "rht_gptq_int3",
+    "gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int4"
+   ],
+   [
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "gptq_int3",
+    "rht_gptq_int4"
+   ],
+   [
+    "rht_gptq_int3",
+    "hqq_int4",
+    "nf4",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int4"
+   ],
+   [
+    "rht_gptq_int3",
+    "gptq_int4",
+    "nf4",
+    "gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int3",
+    "rht_gptq_int4",
+    "rht_gptq_int4",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int3",
+    "nf4",
+    "rht_gptq_int4",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int2",
+    "rht_gptq_int4",
+    "rht_gptq_int4",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int3",
+    "rht_gptq_int4",
+    "rht_gptq_int4",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int3",
+    "rht_gptq_int4",
+    "rht_gptq_int4",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int2",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int2",
+    "rht_gptq_int4",
+    "rht_gptq_int4",
+    "rht_gptq_int3",
+    "rht_gptq_int2",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int2",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int2",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int2",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int2",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int2",
+    "rht_gptq_int4",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int2",
+    "rht_gptq_int3",
+    "rht_gptq_int2"
+   ],
+   [
+    "rht_gptq_int2",
+    "rht_gptq_int4",
+    "rht_gptq_int4",
+    "rht_gptq_int3",
+    "rht_gptq_int2",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int2",
+    "rht_gptq_int4",
+    "rht_gptq_int4",
+    "rht_gptq_int3",
+    "rht_gptq_int2",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int3",
+    "rht_gptq_int4",
+    "rht_gptq_int4",
+    "rht_gptq_int3",
+    "rht_gptq_int2",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int2",
+    "rht_gptq_int4",
+    "rht_gptq_int4",
+    "rht_gptq_int2",
+    "rht_gptq_int2",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int2",
+    "rht_gptq_int4",
+    "rht_gptq_int4",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int2",
+    "nf4",
+    "rht_gptq_int4",
+    "rht_gptq_int2",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int3",
+    "nf4",
+    "nf4",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int3",
+    "rht_gptq_int4",
+    "nf4",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int2",
+    "nf4",
+    "nf4",
+    "rht_gptq_int2",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int2",
+    "hqq_int4",
+    "nf4",
+    "rht_gptq_int2",
+    "gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int3",
+    "hqq_int4",
+    "nf4",
+    "rht_gptq_int2",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int3",
+    "hqq_int4",
+    "nf4",
+    "gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int3",
+    "rht_gptq_int4",
+    "nf4",
+    "gptq_int3",
+    "rht_gptq_int3",
+    "gptq_int3",
+    "rht_gptq_int3"
+   ]
+  ],
+  "kv": "none",
+  "options": {
+   "gptq_int2": {
+    "weight.group_size": 128,
+    "weight.rounding": "rne",
+    "weight_algo.damp": 0.005,
+    "weight_algo.act_order": false,
+    "weight_algo.block_size": 128
+   },
+   "gptq_int3": {
+    "weight.group_size": 128,
+    "weight.rounding": "rne",
+    "weight_algo.damp": 0.005,
+    "weight_algo.act_order": false,
+    "weight_algo.block_size": 128
+   },
+   "gptq_int4": {
+    "weight.group_size": 128,
+    "weight.rounding": "rne",
+    "weight_algo.damp": 0.005,
+    "weight_algo.act_order": false,
+    "weight_algo.block_size": 128
+   },
+   "rht_gptq_int2": {
+    "weight.group_size": 128,
+    "weight.rounding": "rne",
+    "weight_algo.damp": 0.005,
+    "weight_algo.act_order": false,
+    "weight_algo.block_size": 128
+   },
+   "rht_gptq_int3": {
+    "weight.group_size": 128,
+    "weight.rounding": "rne",
+    "weight_algo.damp": 0.005,
+    "weight_algo.act_order": false,
+    "weight_algo.block_size": 128
+   },
+   "rht_gptq_int4": {
+    "weight.group_size": 128,
+    "weight.rounding": "rne",
+    "weight_algo.damp": 0.005,
+    "weight_algo.act_order": false,
+    "weight_algo.block_size": 128
+   }
+  },
+  "calibration": {
+   "dataset": "wikitext2",
+   "samples": 128,
+   "seqlen": 2048,
+   "seed": 42,
+   "sequential": false
+  },
+  "kv_options": null,
+  "mma": "fp32_fma"
+ }
+}

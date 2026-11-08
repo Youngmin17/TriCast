@@ -1,0 +1,347 @@
+{
+ "schema": "tricast.tune.proposal/1",
+ "name": "replan_r4",
+ "author": "knapsack-replan",
+ "parent": "act_damp05_r3",
+ "created_utc": "2026-11-05T03:51:22+00:00",
+ "rationale": "Keeps the options of act_damp05_r3 [E1d6f622c292e]. The gptq_int2, gptq_int3, gptq_int4, rht_gptq_int2, rht_gptq_int3, rht_gptq_int4 columns of the session table were measured again with those options, and the knapsack was solved again at the session budget on that table; these are the cells it moves.",
+ "cites": [
+  "E1d6f622c292e"
+ ],
+ "checks": true,
+ "avg_bits": 3.1478980654761903,
+ "avg_bits_fraction": "169231/53760",
+ "budget_bits": 3.1484375,
+ "budget_bits_fraction": "403/128",
+ "method_counts": {
+  "gptq_int3": 17,
+  "hqq_int4": 4,
+  "nf4": 10,
+  "rht_gptq_int2": 29,
+  "rht_gptq_int3": 100,
+  "rht_gptq_int4": 36
+ },
+ "predicted": {
+  "predicted_kl_sum": null,
+  "predicted_kl_sum_minus_floor": null,
+  "predicted_kv_kl_sum": null,
+  "unpredicted": "method or KV options: the table has entries for the default options only",
+  "floor_rule": "max(0, kl - floor) for every non-BF16 method; BF16 is a skip (no patch): 0, no floor"
+ },
+ "table": {
+  "path": "/Users/mincho/Documents/AI캡스톤/TriCast/runs/20261104_lowbit/qz_trackm_qwen/table.json",
+  "sha256": "40c43639b6f6b7bac7d900ace5b831e76c19c6de0bf3f0bbb7d20d4c16f57aee"
+ },
+ "recipe_sha256": "c46d167a61a09c5eccbccd898e635c0d6bed1a59ad4eb7bf496ef2eaa11e3608",
+ "spec": {
+  "default": "rht_gptq_int3",
+  "grid": [
+   [
+    "gptq_int3",
+    "gptq_int3",
+    "rht_gptq_int4",
+    "rht_gptq_int4",
+    "gptq_int3",
+    "gptq_int3",
+    "rht_gptq_int4"
+   ],
+   [
+    "rht_gptq_int2",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "gptq_int3",
+    "gptq_int3",
+    "rht_gptq_int4",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int2",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "gptq_int3",
+    "rht_gptq_int4"
+   ],
+   [
+    "rht_gptq_int3",
+    "hqq_int4",
+    "nf4",
+    "gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int4"
+   ],
+   [
+    "rht_gptq_int3",
+    "hqq_int4",
+    "rht_gptq_int4",
+    "gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int3",
+    "rht_gptq_int4",
+    "nf4",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int3",
+    "nf4",
+    "rht_gptq_int4",
+    "gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int2",
+    "rht_gptq_int4",
+    "rht_gptq_int4",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int3",
+    "rht_gptq_int4",
+    "rht_gptq_int4",
+    "gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int3",
+    "rht_gptq_int4",
+    "rht_gptq_int4",
+    "gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int2",
+    "rht_gptq_int4",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int2",
+    "rht_gptq_int4",
+    "rht_gptq_int4",
+    "rht_gptq_int3",
+    "rht_gptq_int2",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int2",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int2",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int2",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "gptq_int3",
+    "rht_gptq_int2",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int2",
+    "rht_gptq_int3",
+    "rht_gptq_int4",
+    "gptq_int3",
+    "rht_gptq_int2",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int2",
+    "rht_gptq_int3",
+    "rht_gptq_int4",
+    "rht_gptq_int3",
+    "rht_gptq_int2",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int2",
+    "rht_gptq_int4",
+    "rht_gptq_int4",
+    "rht_gptq_int2",
+    "rht_gptq_int2",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int3",
+    "rht_gptq_int4",
+    "rht_gptq_int4",
+    "rht_gptq_int3",
+    "rht_gptq_int2",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int2",
+    "rht_gptq_int4",
+    "rht_gptq_int4",
+    "rht_gptq_int2",
+    "rht_gptq_int2",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int2",
+    "rht_gptq_int4",
+    "rht_gptq_int4",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int2",
+    "rht_gptq_int4",
+    "rht_gptq_int4",
+    "rht_gptq_int2",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int3",
+    "rht_gptq_int4",
+    "nf4",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int3",
+    "rht_gptq_int4",
+    "rht_gptq_int4",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int2",
+    "nf4",
+    "nf4",
+    "rht_gptq_int2",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int2",
+    "hqq_int4",
+    "nf4",
+    "rht_gptq_int2",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int3",
+    "hqq_int4",
+    "nf4",
+    "rht_gptq_int2",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int3",
+    "rht_gptq_int4",
+    "nf4",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int3",
+    "rht_gptq_int4",
+    "nf4",
+    "gptq_int3",
+    "rht_gptq_int4",
+    "gptq_int3",
+    "rht_gptq_int3"
+   ]
+  ],
+  "kv": "none",
+  "options": {
+   "gptq_int2": {
+    "weight.group_size": 128,
+    "weight.rounding": "rne",
+    "weight_algo.damp": 0.05,
+    "weight_algo.act_order": true,
+    "weight_algo.block_size": 128
+   },
+   "gptq_int3": {
+    "weight.group_size": 128,
+    "weight.rounding": "rne",
+    "weight_algo.damp": 0.05,
+    "weight_algo.act_order": true,
+    "weight_algo.block_size": 128
+   },
+   "gptq_int4": {
+    "weight.group_size": 128,
+    "weight.rounding": "rne",
+    "weight_algo.damp": 0.05,
+    "weight_algo.act_order": true,
+    "weight_algo.block_size": 128
+   },
+   "rht_gptq_int2": {
+    "weight.group_size": 128,
+    "weight.rounding": "rne",
+    "weight_algo.damp": 0.05,
+    "weight_algo.act_order": true,
+    "weight_algo.block_size": 128
+   },
+   "rht_gptq_int3": {
+    "weight.group_size": 128,
+    "weight.rounding": "rne",
+    "weight_algo.damp": 0.05,
+    "weight_algo.act_order": true,
+    "weight_algo.block_size": 128
+   },
+   "rht_gptq_int4": {
+    "weight.group_size": 128,
+    "weight.rounding": "rne",
+    "weight_algo.damp": 0.05,
+    "weight_algo.act_order": true,
+    "weight_algo.block_size": 128
+   }
+  },
+  "calibration": {
+   "dataset": "wikitext2",
+   "samples": 128,
+   "seqlen": 2048,
+   "seed": 42,
+   "sequential": false
+  },
+  "kv_options": null,
+  "mma": "fp32_fma"
+ }
+}

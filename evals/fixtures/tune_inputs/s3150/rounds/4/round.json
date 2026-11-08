@@ -1,0 +1,14 @@
+{
+ "schema": "tricast.tune.round/1",
+ "round": 4,
+ "names": [
+  "replan_r4"
+ ],
+ "measure": {
+  "windows": 8,
+  "seqlen": 512,
+  "seed": 43,
+  "split": "validation",
+  "gpu": "NVIDIA A100-SXM4-80GB"
+ }
+}

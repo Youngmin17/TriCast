@@ -1,0 +1,436 @@
+{
+ "run_id": "2026-11-08T0106",
+ "case_id": "r_c2",
+ "calls": [
+  {
+   "role": "request",
+   "key": "request",
+   "returncode": 0,
+   "stdout": {
+    "duration_api_ms": 7470,
+    "stop_reason": "tool_use",
+    "session_id": "4766a547-b647-4146-8905-e29e10bea4e8",
+    "total_cost_usd": 0.0157351,
+    "usage": {
+     "input_tokens": 2,
+     "cache_creation_input_tokens": 639,
+     "cache_read_input_tokens": 2169,
+     "output_tokens": 490,
+     "output_tokens_details": {
+      "thinking_tokens": 63
+     },
+     "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+     },
+     "service_tier": "standard",
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 639,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "inference_geo": "global",
+     "iterations": [
+      {
+       "input_tokens": 2,
+       "output_tokens": 490,
+       "cache_read_input_tokens": 2169,
+       "cache_creation_input_tokens": 639,
+       "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 639
+       },
+       "type": "message"
+      }
+     ],
+     "speed": "standard",
+     "fallback_credit": null
+    },
+    "modelUsage": {
+     "claude-haiku-5-5": {
+      "inputTokens": 1663,
+      "outputTokens": 430,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.0003813,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 397,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 0,
+      "canonicalModel": "claude-haiku-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     },
+     "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 490,
+      "cacheReadInputTokens": 2169,
+      "cacheCreationInputTokens": 639,
+      "webSearchRequests": 0,
+      "costUSD": 0.015353799999999999,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 63,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 639,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "subagent_stats": {
+     "spawned": 0,
+     "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+     },
+     "started_in_background": 0,
+     "max_depth": 0,
+     "spawned_by_subagents": 0,
+     "completed": 0,
+     "failed": 0,
+     "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+     },
+     "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+     },
+     "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 2,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "{\"outcome\":\"tune\",\"model\":\"Qwen/Qwen3-0.6B\",\"budget_bits\":\"403/128\",\"compute_budget\":null,\"keep_bf16_blocks\":[0,-1],\"exclude_methods\":[],\"only_methods\":null,\"questions\":[],\"reason\":null,\"assumptions\":[\"'Qwen3-0.6B' is read as the listed model Qwen/Qwen3-0.6B.\",\"'평균 403/128 비트' (average 403/128 bits, about 3.15 bits per weight) is used as the weight-size budget.\",\"No compute budget is given, so the compute budget is left unset.\",\"The weight-size budget is assumed to include the BF16 first and last blocks.\"]}",
+    "structured_output": {
+     "outcome": "tune",
+     "model": "Qwen/Qwen3-0.6B",
+     "budget_bits": "403/128",
+     "compute_budget": null,
+     "keep_bf16_blocks": [
+      0,
+      -1
+     ],
+     "exclude_methods": [],
+     "only_methods": null,
+     "questions": [],
+     "reason": null,
+     "assumptions": [
+      "'Qwen3-0.6B' is read as the listed model Qwen/Qwen3-0.6B.",
+      "'평균 403/128 비트' (average 403/128 bits, about 3.15 bits per weight) is used as the weight-size budget.",
+      "No compute budget is given, so the compute budget is left unset.",
+      "The weight-size budget is assumed to include the BF16 first and last blocks."
+     ]
+    },
+    "ttft_ms": 2911,
+    "type": "result",
+    "duration_ms": 5713,
+    "uuid": "f2ffc9d4-c6ec-4aaa-8f6c-fe4e948059dd",
+    "ttft_stream_ms": 2174,
+    "time_to_request_ms": 880,
+    "time_to_request_phases_ms": {
+     "other": 2,
+     "system_prompt": 0,
+     "resume_other": 0,
+     "process_user_input": 2,
+     "input_attachments": 10,
+     "input_hooks": 1,
+     "conversation_append": 0,
+     "tool_pool_refresh": 1,
+     "init_message": 2,
+     "init_frame_send": 2,
+     "engine_pickup": 1,
+     "loop_entry": 1,
+     "message_prep": 0,
+     "model_config_wait": 1,
+     "autocompact": 1,
+     "request_announcements": 3,
+     "query_setup": 0,
+     "model_gates": 845,
+     "tool_schema_build": 4,
+     "message_normalization": 1,
+     "client_creation": 2,
+     "request_build": 1
+    },
+    "turn_start_resume_kind": "none",
+    "process_turn_index": 0,
+    "time_to_request_loop_lag_ms": 5,
+    "time_to_request_cpu_ms": 171,
+    "time_to_request_major_faults": 0,
+    "input_attachments_detail": {
+     "slowest_producer": "session_settings",
+     "slowest_producer_ms": 7,
+     "cpu_ms": 16,
+     "major_faults": 0,
+     "setup_ms": 0,
+     "prompt_producers_ms": 0,
+     "ambient_start_ms": 1,
+     "ambient_wait_ms": 7,
+     "render_ms": 0,
+     "producers": 43,
+     "token_counts": 0
+    },
+    "tool_schema_build_detail": {
+     "betas_ms": 0,
+     "waits_ms": 1,
+     "placement_ms": 2,
+     "render_ms": 1,
+     "after_ms": 0,
+     "other_ms": 0,
+     "tools": 1,
+     "new_schemas": 1
+    },
+    "message_normalization_detail": {
+     "before_ms": 0,
+     "normalize_ms": 0,
+     "images_ms": 0,
+     "post_process_ms": 0,
+     "after_ms": 0,
+     "other_ms": 1,
+     "messages": 8,
+     "wire_messages": 2
+    },
+    "request_build_detail": {
+     "records_ms": 0,
+     "system_ms": 0,
+     "headers_ms": 0,
+     "cache_break_record_ms": 1,
+     "plans_ms": 0,
+     "retry_setup_ms": 0,
+     "sent_build_ms": 0,
+     "record_attempt_ms": 0,
+     "other_ms": 0,
+     "sent_build_safety_context_ms": 0,
+     "sent_build_cache_breakpoints_ms": 0,
+     "sent_build_surrogate_scan_ms": 0
+    },
+    "first_content_frame_ms": 2174,
+    "queued_turn_count": 0,
+    "result_index": 0,
+    "credential_expires_at": "2026-12-04T04:51:21.312Z"
+   },
+   "stderr": ""
+  },
+  {
+   "role": "judge",
+   "key": "request",
+   "returncode": 0,
+   "stdout": {
+    "duration_api_ms": 8190,
+    "stop_reason": "tool_use",
+    "session_id": "248a3a4b-0e19-4f11-a12a-95b34c9b5769",
+    "total_cost_usd": 0.0190025,
+    "usage": {
+     "input_tokens": 2,
+     "cache_creation_input_tokens": 1198,
+     "cache_read_input_tokens": 1426,
+     "output_tokens": 438,
+     "output_tokens_details": {
+      "thinking_tokens": 98
+     },
+     "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+     },
+     "service_tier": "standard",
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 1198,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "inference_geo": "global",
+     "iterations": [
+      {
+       "input_tokens": 2,
+       "output_tokens": 438,
+       "cache_read_input_tokens": 1426,
+       "cache_creation_input_tokens": 1198,
+       "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 1198
+       },
+       "type": "message"
+      }
+     ],
+     "speed": "standard",
+     "fallback_credit": null
+    },
+    "modelUsage": {
+     "claude-haiku-5-5": {
+      "inputTokens": 1423,
+      "outputTokens": 446,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.00036530000000000004,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 415,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 0,
+      "canonicalModel": "claude-haiku-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     },
+     "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 438,
+      "cacheReadInputTokens": 1426,
+      "cacheCreationInputTokens": 1198,
+      "webSearchRequests": 0,
+      "costUSD": 0.0186372,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 98,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 1198,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "subagent_stats": {
+     "spawned": 0,
+     "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+     },
+     "started_in_background": 0,
+     "max_depth": 0,
+     "spawned_by_subagents": 0,
+     "completed": 0,
+     "failed": 0,
+     "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+     },
+     "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+     },
+     "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 2,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "{\"q1\":null,\"q2\":{\"reason\":\"The request gives the model (\\\"Qwen3-0.6B\\\"), the budget (\\\"평균 403/128 비트\\\") and the restriction to keep the first and last blocks in BF16. The one open point, whether the budget counts the BF16 blocks, is written in assumptions: \\\"The weight-size budget is assumed to include the BF16 first and last blocks.\\\" The compute budget is also stated as unset, so no value is settled silently.\",\"pass\":true},\"c1\":null,\"c2\":null,\"c3\":null,\"c4\":null,\"needs_human_review\":false}",
+    "structured_output": {
+     "q1": null,
+     "q2": {
+      "reason": "The request gives the model (\"Qwen3-0.6B\"), the budget (\"평균 403/128 비트\") and the restriction to keep the first and last blocks in BF16. The one open point, whether the budget counts the BF16 blocks, is written in assumptions: \"The weight-size budget is assumed to include the BF16 first and last blocks.\" The compute budget is also stated as unset, so no value is settled silently.",
+      "pass": true
+     },
+     "c1": null,
+     "c2": null,
+     "c3": null,
+     "c4": null,
+     "needs_human_review": false
+    },
+    "ttft_ms": 4530,
+    "type": "result",
+    "duration_ms": 6666,
+    "uuid": "51c64234-5e50-4ba4-97aa-6c6c79a79688",
+    "ttft_stream_ms": 3383,
+    "time_to_request_ms": 1073,
+    "time_to_request_phases_ms": {
+     "other": 1,
+     "system_prompt": 0,
+     "resume_other": 0,
+     "process_user_input": 2,
+     "input_attachments": 9,
+     "input_hooks": 1,
+     "conversation_append": 0,
+     "tool_pool_refresh": 0,
+     "init_message": 2,
+     "init_frame_send": 1,
+     "engine_pickup": 1,
+     "loop_entry": 1,
+     "message_prep": 0,
+     "model_config_wait": 1,
+     "autocompact": 1,
+     "request_announcements": 2,
+     "query_setup": 0,
+     "model_gates": 1041,
+     "tool_schema_build": 5,
+     "message_normalization": 1,
+     "client_creation": 2,
+     "request_build": 2
+    },
+    "turn_start_resume_kind": "none",
+    "process_turn_index": 0,
+    "time_to_request_loop_lag_ms": 12,
+    "time_to_request_cpu_ms": 293,
+    "time_to_request_major_faults": 0,
+    "input_attachments_detail": {
+     "slowest_producer": "session_settings",
+     "slowest_producer_ms": 6,
+     "cpu_ms": 15,
+     "major_faults": 0,
+     "setup_ms": 0,
+     "prompt_producers_ms": 0,
+     "ambient_start_ms": 2,
+     "ambient_wait_ms": 5,
+     "render_ms": 0,
+     "producers": 43,
+     "token_counts": 0
+    },
+    "tool_schema_build_detail": {
+     "betas_ms": 0,
+     "waits_ms": 1,
+     "placement_ms": 3,
+     "render_ms": 1,
+     "after_ms": 0,
+     "other_ms": 0,
+     "tools": 1,
+     "new_schemas": 1
+    },
+    "message_normalization_detail": {
+     "before_ms": 0,
+     "normalize_ms": 1,
+     "images_ms": 0,
+     "post_process_ms": 0,
+     "after_ms": 0,
+     "other_ms": 0,
+     "messages": 8,
+     "wire_messages": 2
+    },
+    "request_build_detail": {
+     "records_ms": 0,
+     "system_ms": 0,
+     "headers_ms": 1,
+     "cache_break_record_ms": 0,
+     "plans_ms": 0,
+     "retry_setup_ms": 0,
+     "sent_build_ms": 0,
+     "record_attempt_ms": 1,
+     "other_ms": 0,
+     "sent_build_safety_context_ms": 0,
+     "sent_build_cache_breakpoints_ms": 0,
+     "sent_build_surrogate_scan_ms": 0
+    },
+    "first_content_frame_ms": 3383,
+    "queued_turn_count": 0,
+    "result_index": 0,
+    "credential_expires_at": "2026-12-04T04:51:21.312Z"
+   },
+   "stderr": ""
+  }
+ ]
+}

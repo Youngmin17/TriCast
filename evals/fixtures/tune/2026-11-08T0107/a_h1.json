@@ -1,0 +1,319 @@
+{
+ "run_id": "2026-11-08T0107",
+ "case_id": "a_h1",
+ "calls": [
+  {
+   "role": "proposer",
+   "key": "round_1",
+   "returncode": 0,
+   "stdout": {
+    "duration_api_ms": 34650,
+    "stop_reason": "tool_use",
+    "session_id": "d04855c9-9efa-4b58-9b6a-6186a87e15a7",
+    "total_cost_usd": 0.08010389999999998,
+    "usage": {
+     "input_tokens": 2,
+     "cache_creation_input_tokens": 645,
+     "cache_read_input_tokens": 17955,
+     "output_tokens": 3480,
+     "output_tokens_details": {
+      "thinking_tokens": 1543
+     },
+     "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+     },
+     "service_tier": "standard",
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 645,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "inference_geo": "global",
+     "iterations": [
+      {
+       "input_tokens": 2,
+       "output_tokens": 3480,
+       "cache_read_input_tokens": 17955,
+       "cache_creation_input_tokens": 645,
+       "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 645
+       },
+       "type": "message"
+      }
+     ],
+     "speed": "standard",
+     "fallback_credit": null
+    },
+    "modelUsage": {
+     "claude-haiku-5-5": {
+      "inputTokens": 17319,
+      "outputTokens": 26,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.0017449000000000002,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 0,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 0,
+      "canonicalModel": "claude-haiku-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     },
+     "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 3480,
+      "cacheReadInputTokens": 17955,
+      "cacheCreationInputTokens": 645,
+      "webSearchRequests": 0,
+      "costUSD": 0.07835899999999998,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 1543,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 645,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "subagent_stats": {
+     "spawned": 0,
+     "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+     },
+     "started_in_background": 0,
+     "max_depth": 0,
+     "spawned_by_subagents": 0,
+     "completed": 0,
+     "failed": 0,
+     "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+     },
+     "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+     },
+     "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 2,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "{\"analysis\":\"The only measured grid is iso_3.15, with KL 0.43614 (E514ab09c524e) and 3.14795 average bits against a 3.1484375 budget. That leaves room for only about 0.2M bits, which is not enough to upgrade any 3.1M-parameter MLP layer. Every bit-funded swap would need int3→int2 downgrades, and measured single-layer KLs show those cost far more than they save (for example, layer 3 up_proj measured 0.0064 at rht_gptq_int3 vs 0.0302 at rht_gptq_int2). The measured KL (0.436) is also above the predicted 0.398, so per-layer swaps are a weak lever here. The better next step is to change GPTQ options that do not change the bit count. Activation ordering and damping have never been tested. Activation outliers are severe in the high-loss layers, so act_order is the most likely to help.\",\"stop\":false,\"proposals\":[{\"name\":\"iso_3.15_actorder\",\"base\":\"iso_3.15\",\"changes\":[],\"options\":{\"gptq_int2\":{\"weight_algo.act_order\":true},\"gptq_int3\":{\"weight_algo.act_order\":true},\"gptq_int4\":{\"weight_algo.act_order\":true},\"rht_gptq_int2\":{\"weight_algo.act_order\":true},\"rht_gptq_int3\":{\"weight_algo.act_order\":true},\"rht_gptq_int4\":{\"weight_algo.act_order\":true}},\"rationale\":\"Same bits as iso_3.15 (KL 0.43614, E514ab09c524e), so it stays within budget. The highest-loss GPTQ layers have heavy-tailed activations: activation kurtosis is 1090.09 for layer 27 up_proj (E24beed188b6a), 241.283 for layer 3 up_proj (Eb1b68d163774) and 146.379 for layer 14 down_proj (Ef95b39c759fb). Setting weight_algo.act_order=true makes GPTQ quantize the most salient columns first, which should reduce the error from int3 and int2 layers such as layer 27 up_proj at gptq_int3 (0.0057182, Ef04d8aa7bded) and layer 14 down_proj at rht_gptq_int2 (0.00633466, E4c3f9b73e065).\",\"cites\":[\"E514ab09c524e\",\"E24beed188b6a\",\"Eb1b68d163774\",\"Ef95b39c759fb\",\"Ef04d8aa7bded\",\"E4c3f9b73e065\"]},{\"name\":\"iso_3.15_actorder_damp05\",\"base\":\"iso_3.15\",\"changes\":[],\"options\":{\"gptq_int2\":{\"weight_algo.act_order\":true,\"weight_algo.damp\":0.05},\"gptq_int3\":{\"weight_algo.act_order\":true,\"weight_algo.damp\":0.05},\"gptq_int4\":{\"weight_algo.act_order\":true,\"weight_algo.damp\":0.05},\"rht_gptq_int2\":{\"weight_algo.act_order\":true,\"weight_algo.damp\":0.05},\"rht_gptq_int3\":{\"weight_algo.act_order\":true,\"weight_algo.damp\":0.05},\"rht_gptq_int4\":{\"weight_algo.act_order\":true,\"weight_algo.damp\":0.05}},\"rationale\":\"Same bits as iso_3.15 (KL 0.43614, E514ab09c524e). The cross-window KL is above the single-layer prediction, which suggests overfitting to the 8x512 calibration set. Stronger damping (weight_algo.damp=0.05) together with weight_algo.act_order=true regularizes the Hessian for layers with extreme activation kurtosis (1090.09 for layer 27 gate_proj, E5aee24c5494a). That layer currently measures 0.00498703 at rht_gptq_int3 (Efa0bb391da67).\",\"cites\":[\"E514ab09c524e\",\"E5aee24c5494a\",\"Efa0bb391da67\"]},{\"name\":\"iso_3.15_damp005_bs64\",\"base\":\"iso_3.15\",\"changes\":[],\"options\":{\"gptq_int2\":{\"weight_algo.damp\":0.005,\"weight_algo.block_size\":64},\"gptq_int3\":{\"weight_algo.damp\":0.005,\"weight_algo.block_size\":64},\"gptq_int4\":{\"weight_algo.damp\":0.005,\"weight_algo.block_size\":64},\"rht_gptq_int2\":{\"weight_algo.damp\":0.005,\"weight_algo.block_size\":64},\"rht_gptq_int3\":{\"weight_algo.damp\":0.005,\"weight_algo.block_size\":64},\"rht_gptq_int4\":{\"weight_algo.damp\":0.005,\"weight_algo.block_size\":64}},\"rationale\":\"Bits stay the same because block_size and damp are not stored. This tests the opposite damping direction to the damp=0.05 grid. Lighter damping (weight_algo.damp=0.005) gives a more accurate Hessian, and weight_algo.block_size=64 applies error updates more often. The targets are the int3 MLP layers that dominate the loss, such as layer 2 up_proj at gptq_int3 (0.00641875, E9baa10763ebe) and layer 1 up_proj at rht_gptq_int3 (0.00611131, E0564bc6ad1eb). The base is iso_3.15 (E514ab09c524e).\",\"cites\":[\"E514ab09c524e\",\"E9baa10763ebe\",\"E0564bc6ad1eb\"]}]}",
+    "structured_output": {
+     "analysis": "The only measured grid is iso_3.15, with KL 0.43614 (E514ab09c524e) and 3.14795 average bits against a 3.1484375 budget. That leaves room for only about 0.2M bits, which is not enough to upgrade any 3.1M-parameter MLP layer. Every bit-funded swap would need int3→int2 downgrades, and measured single-layer KLs show those cost far more than they save (for example, layer 3 up_proj measured 0.0064 at rht_gptq_int3 vs 0.0302 at rht_gptq_int2). The measured KL (0.436) is also above the predicted 0.398, so per-layer swaps are a weak lever here. The better next step is to change GPTQ options that do not change the bit count. Activation ordering and damping have never been tested. Activation outliers are severe in the high-loss layers, so act_order is the most likely to help.",
+     "stop": false,
+     "proposals": [
+      {
+       "name": "iso_3.15_actorder",
+       "base": "iso_3.15",
+       "changes": [],
+       "options": {
+        "gptq_int2": {
+         "weight_algo.act_order": true
+        },
+        "gptq_int3": {
+         "weight_algo.act_order": true
+        },
+        "gptq_int4": {
+         "weight_algo.act_order": true
+        },
+        "rht_gptq_int2": {
+         "weight_algo.act_order": true
+        },
+        "rht_gptq_int3": {
+         "weight_algo.act_order": true
+        },
+        "rht_gptq_int4": {
+         "weight_algo.act_order": true
+        }
+       },
+       "rationale": "Same bits as iso_3.15 (KL 0.43614, E514ab09c524e), so it stays within budget. The highest-loss GPTQ layers have heavy-tailed activations: activation kurtosis is 1090.09 for layer 27 up_proj (E24beed188b6a), 241.283 for layer 3 up_proj (Eb1b68d163774) and 146.379 for layer 14 down_proj (Ef95b39c759fb). Setting weight_algo.act_order=true makes GPTQ quantize the most salient columns first, which should reduce the error from int3 and int2 layers such as layer 27 up_proj at gptq_int3 (0.0057182, Ef04d8aa7bded) and layer 14 down_proj at rht_gptq_int2 (0.00633466, E4c3f9b73e065).",
+       "cites": [
+        "E514ab09c524e",
+        "E24beed188b6a",
+        "Eb1b68d163774",
+        "Ef95b39c759fb",
+        "Ef04d8aa7bded",
+        "E4c3f9b73e065"
+       ]
+      },
+      {
+       "name": "iso_3.15_actorder_damp05",
+       "base": "iso_3.15",
+       "changes": [],
+       "options": {
+        "gptq_int2": {
+         "weight_algo.act_order": true,
+         "weight_algo.damp": 0.05
+        },
+        "gptq_int3": {
+         "weight_algo.act_order": true,
+         "weight_algo.damp": 0.05
+        },
+        "gptq_int4": {
+         "weight_algo.act_order": true,
+         "weight_algo.damp": 0.05
+        },
+        "rht_gptq_int2": {
+         "weight_algo.act_order": true,
+         "weight_algo.damp": 0.05
+        },
+        "rht_gptq_int3": {
+         "weight_algo.act_order": true,
+         "weight_algo.damp": 0.05
+        },
+        "rht_gptq_int4": {
+         "weight_algo.act_order": true,
+         "weight_algo.damp": 0.05
+        }
+       },
+       "rationale": "Same bits as iso_3.15 (KL 0.43614, E514ab09c524e). The cross-window KL is above the single-layer prediction, which suggests overfitting to the 8x512 calibration set. Stronger damping (weight_algo.damp=0.05) together with weight_algo.act_order=true regularizes the Hessian for layers with extreme activation kurtosis (1090.09 for layer 27 gate_proj, E5aee24c5494a). That layer currently measures 0.00498703 at rht_gptq_int3 (Efa0bb391da67).",
+       "cites": [
+        "E514ab09c524e",
+        "E5aee24c5494a",
+        "Efa0bb391da67"
+       ]
+      },
+      {
+       "name": "iso_3.15_damp005_bs64",
+       "base": "iso_3.15",
+       "changes": [],
+       "options": {
+        "gptq_int2": {
+         "weight_algo.damp": 0.005,
+         "weight_algo.block_size": 64
+        },
+        "gptq_int3": {
+         "weight_algo.damp": 0.005,
+         "weight_algo.block_size": 64
+        },
+        "gptq_int4": {
+         "weight_algo.damp": 0.005,
+         "weight_algo.block_size": 64
+        },
+        "rht_gptq_int2": {
+         "weight_algo.damp": 0.005,
+         "weight_algo.block_size": 64
+        },
+        "rht_gptq_int3": {
+         "weight_algo.damp": 0.005,
+         "weight_algo.block_size": 64
+        },
+        "rht_gptq_int4": {
+         "weight_algo.damp": 0.005,
+         "weight_algo.block_size": 64
+        }
+       },
+       "rationale": "Bits stay the same because block_size and damp are not stored. This tests the opposite damping direction to the damp=0.05 grid. Lighter damping (weight_algo.damp=0.005) gives a more accurate Hessian, and weight_algo.block_size=64 applies error updates more often. The targets are the int3 MLP layers that dominate the loss, such as layer 2 up_proj at gptq_int3 (0.00641875, E9baa10763ebe) and layer 1 up_proj at rht_gptq_int3 (0.00611131, E0564bc6ad1eb). The base is iso_3.15 (E514ab09c524e).",
+       "cites": [
+        "E514ab09c524e",
+        "E9baa10763ebe",
+        "E0564bc6ad1eb"
+       ]
+      }
+     ]
+    },
+    "ttft_ms": 19407,
+    "type": "result",
+    "duration_ms": 34357,
+    "uuid": "31e847aa-fa4a-46ed-8787-3c9bb1923be6",
+    "ttft_stream_ms": 2684,
+    "time_to_request_ms": 1083,
+    "time_to_request_phases_ms": {
+     "other": 1,
+     "system_prompt": 0,
+     "resume_other": 0,
+     "process_user_input": 2,
+     "input_attachments": 9,
+     "input_hooks": 1,
+     "conversation_append": 0,
+     "tool_pool_refresh": 0,
+     "init_message": 2,
+     "init_frame_send": 1,
+     "engine_pickup": 1,
+     "loop_entry": 1,
+     "message_prep": 0,
+     "model_config_wait": 1,
+     "autocompact": 1,
+     "request_announcements": 2,
+     "query_setup": 0,
+     "model_gates": 1053,
+     "tool_schema_build": 4,
+     "message_normalization": 1,
+     "client_creation": 2,
+     "request_build": 1
+    },
+    "turn_start_resume_kind": "none",
+    "process_turn_index": 0,
+    "time_to_request_loop_lag_ms": 9,
+    "time_to_request_cpu_ms": 211,
+    "time_to_request_major_faults": 6,
+    "input_attachments_detail": {
+     "slowest_producer": "session_settings",
+     "slowest_producer_ms": 6,
+     "cpu_ms": 16,
+     "major_faults": 0,
+     "setup_ms": 0,
+     "prompt_producers_ms": 0,
+     "ambient_start_ms": 1,
+     "ambient_wait_ms": 5,
+     "render_ms": 0,
+     "producers": 43,
+     "token_counts": 0
+    },
+    "tool_schema_build_detail": {
+     "betas_ms": 0,
+     "waits_ms": 1,
+     "placement_ms": 2,
+     "render_ms": 1,
+     "after_ms": 0,
+     "other_ms": 0,
+     "tools": 1,
+     "new_schemas": 1
+    },
+    "message_normalization_detail": {
+     "before_ms": 0,
+     "normalize_ms": 0,
+     "images_ms": 0,
+     "post_process_ms": 0,
+     "after_ms": 1,
+     "other_ms": 0,
+     "messages": 8,
+     "wire_messages": 2
+    },
+    "request_build_detail": {
+     "records_ms": 0,
+     "system_ms": 0,
+     "headers_ms": 0,
+     "cache_break_record_ms": 1,
+     "plans_ms": 0,
+     "retry_setup_ms": 0,
+     "sent_build_ms": 0,
+     "record_attempt_ms": 0,
+     "other_ms": 0,
+     "sent_build_safety_context_ms": 0,
+     "sent_build_cache_breakpoints_ms": 0,
+     "sent_build_surrogate_scan_ms": 0
+    },
+    "first_content_frame_ms": 2684,
+    "queued_turn_count": 0,
+    "result_index": 0,
+    "credential_expires_at": "2026-12-04T04:51:21.312Z"
+   },
+   "stderr": ""
+  }
+ ]
+}

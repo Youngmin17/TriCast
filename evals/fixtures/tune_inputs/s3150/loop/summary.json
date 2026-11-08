@@ -1,0 +1,69 @@
+[
+ {
+  "round": 1,
+  "accepted": [],
+  "refused": [
+   {
+    "name": "opt_act_order",
+    "reason": "rationale numbers not supported by the cited records or the proposal: ['0.436144']"
+   },
+   {
+    "name": "opt_damp_high",
+    "reason": "rationale numbers not supported by the cited records or the proposal: ['0.436144']"
+   },
+   {
+    "name": "opt_damp_low",
+    "reason": "rationale numbers not supported by the cited records or the proposal: ['0.436144']"
+   },
+   {
+    "name": "g256_rht3_mlp_upgrades",
+    "reason": "rationale numbers not supported by the cited records or the proposal: ['0.436144']"
+   }
+  ],
+  "stop": false,
+  "analysis": "Only iso_3.15 is measured (KL 0.43614, E514ab09c524e). It sits about 213k bits under budget, while an MLP upgrade costs about 3.17M bits. All tabled moves have a positive predicted delta, so single-cell swaps are exhausted under the knapsack. Loss is spread across many MLP layers, and the measured KL is above the single-layer sum.\n\nThe untested levers are the GPTQ-family options. Two of them leave stored bits unchanged:\n- act_order\n- damp, tested in both directions because activation kurtosis is high and the direction is unknown\n\ngroup_size is the only option that can fund upgrades. Assuming group overhead is (16+nbits)/group_size, which matches the bits deltas in the analysis, rht_gptq_int3 at group_size=256 saves about 0.074 bits per weight across 109 cells. By my estimate that pays for the four most efficient MLP upgrades. The estimate does not use exact parameter counts, so this grid could still be refused as over budget, and the KL cost of the larger groups is unmeasured.",
+  "improved": false
+ },
+ {
+  "round": 2,
+  "accepted": [
+   "opt_act_order_r2",
+   "opt_damp_low_r2",
+   "opt_damp_high_r2",
+   "g256_mlp_upgrades_r2"
+  ],
+  "refused": [],
+  "stop": false,
+  "analysis": "All four grids from last round were refused because a truncated KL value was cited, so no options have been measured yet. Bits per weight implied by bits_delta_per_weight fit n + (16+n)/group_size at the default group size. For the budget, 28 blocks of 15 units of 2^20 weights give 420 units, which matches the method mix and leaves only 13/64 unit-bits of slack. An int3 to int4 swap costs exactly what an int3 to int2 downgrade saves, and the retrieved layers show int2 is very costly, so swaps at fixed options look unattractive. Three grids therefore test GPTQ options one at a time at no bit cost. The fourth buys upgrades by raising group_size on the whole GPTQ family. Assuming the same overhead formula holds at group_size 256, savings are at least 26 unit-bits even if all 17 non-GPTQ cells were MLP layers, against about 24 unit-bits for the 8 MLP upgrades. The KL penalty of the larger group size is unmeasured, and this grid will show whether the upgrades outweigh it.",
+  "improved": true,
+  "best": "opt_act_order_r2",
+  "best_kl": 0.39127873985876804
+ },
+ {
+  "round": 3,
+  "accepted": [
+   "act_damp05_r3",
+   "act_damp10_r3",
+   "act_damp025_r3",
+   "int4_g256_fund_b14down_r3"
+  ],
+  "refused": [],
+  "stop": false,
+  "analysis": "The best grid is opt_act_order_r2. Switching act_order on gave the largest measured gain so far, with no cell changes. Raising damp without act_order also lowered KL, while lowering it did nothing useful, and the two settings have not been measured together. The budget slack is too small to pay for an MLP upgrade, and the per-layer table does not show enough to pick safe downgrades. A whole-grid group_size=256 made KL worse, so this round tests damp alongside act_order and tries coarser groups on the int4 methods only, to pay for one upgrade. That last grid may be refused as over budget, because the int4 layer sizes are not in the evidence.",
+  "improved": true,
+  "best": "act_damp05_r3",
+  "best_kl": 0.38644206288408633
+ },
+ {
+  "round": 4,
+  "accepted": [
+   "replan_r4"
+  ],
+  "refused": [],
+  "stop": false,
+  "analysis": "Knapsack solved again under the options of act_damp05_r3.",
+  "improved": false,
+  "best": "act_damp05_r3",
+  "best_kl": 0.38644206288408633
+ }
+]

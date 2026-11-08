@@ -1,0 +1,17 @@
+{
+ "schema": "tricast.tune.round/1",
+ "round": 2,
+ "names": [
+  "opt_act_order_r2",
+  "opt_damp_low_r2",
+  "opt_damp_high_r2",
+  "g256_mlp_upgrades_r2"
+ ],
+ "measure": {
+  "windows": 8,
+  "seqlen": 512,
+  "seed": 43,
+  "split": "validation",
+  "gpu": "NVIDIA A100-SXM4-80GB"
+ }
+}

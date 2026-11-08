@@ -1,0 +1,222 @@
+{
+ "run_id": "2026-11-08T0107",
+ "case_id": "r_k3",
+ "calls": [
+  {
+   "role": "request",
+   "key": "request",
+   "returncode": 0,
+   "stdout": {
+    "duration_api_ms": 11673,
+    "stop_reason": "tool_use",
+    "session_id": "3d763902-5b44-4df5-bf96-a7391cce7080",
+    "total_cost_usd": 0.026240700000000002,
+    "usage": {
+     "input_tokens": 2,
+     "cache_creation_input_tokens": 638,
+     "cache_read_input_tokens": 2086,
+     "output_tokens": 1022,
+     "output_tokens_details": {
+      "thinking_tokens": 366
+     },
+     "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+     },
+     "service_tier": "standard",
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 638,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "inference_geo": "global",
+     "iterations": [
+      {
+       "input_tokens": 2,
+       "output_tokens": 1022,
+       "cache_read_input_tokens": 2086,
+       "cache_creation_input_tokens": 638,
+       "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 638
+       },
+       "type": "message"
+      }
+     ],
+     "speed": "standard",
+     "fallback_credit": null
+    },
+    "modelUsage": {
+     "claude-haiku-5-5": {
+      "inputTokens": 1580,
+      "outputTokens": 227,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.00027150000000000004,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 198,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 0,
+      "canonicalModel": "claude-haiku-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     },
+     "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 1022,
+      "cacheReadInputTokens": 2086,
+      "cacheCreationInputTokens": 638,
+      "webSearchRequests": 0,
+      "costUSD": 0.0259692,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 366,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 638,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "subagent_stats": {
+     "spawned": 0,
+     "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+     },
+     "started_in_background": 0,
+     "max_depth": 0,
+     "spawned_by_subagents": 0,
+     "completed": 0,
+     "failed": 0,
+     "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+     },
+     "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+     },
+     "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 2,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "{\"outcome\":\"conflict\",\"model\":\"Qwen/Qwen3-0.6B\",\"budget_bits\":\"1.5\",\"compute_budget\":null,\"keep_bf16_blocks\":[],\"exclude_methods\":[],\"only_methods\":null,\"questions\":[\"요청하신 1.5비트 예산은 사용 가능한 가장 낮은 방식(2비트: gptq_int2, hqq_int2, rht_gptq_int2)보다 낮아서 달성할 수 없습니다. 2비트 이상의 예산(예: 2.5 또는 3)으로 진행할까요?\"],\"reason\":\"요청한 크기 예산(가중치당 평균 1.5비트)은 사용 가능한 모든 방식의 최소 비트 수보다 낮습니다. 가장 낮은 방식은 2비트(gptq_int2, hqq_int2, rht_gptq_int2)이며, 스케일 저장 비용을 더하면 실제로는 2비트를 넘습니다. 따라서 Qwen/Qwen3-0.6B에서 이 예산을 만족하는 레이어별 배정은 없습니다.\",\"assumptions\":[\"'1.5비트'는 Linear 가중치 기준 평균 저장 비트(budget_bits)로 해석했습니다.\",\"연산 예산은 명시되지 않아 null로 두었습니다.\"]}",
+    "structured_output": {
+     "outcome": "conflict",
+     "model": "Qwen/Qwen3-0.6B",
+     "budget_bits": "1.5",
+     "compute_budget": null,
+     "keep_bf16_blocks": [],
+     "exclude_methods": [],
+     "only_methods": null,
+     "questions": [
+      "요청하신 1.5비트 예산은 사용 가능한 가장 낮은 방식(2비트: gptq_int2, hqq_int2, rht_gptq_int2)보다 낮아서 달성할 수 없습니다. 2비트 이상의 예산(예: 2.5 또는 3)으로 진행할까요?"
+     ],
+     "reason": "요청한 크기 예산(가중치당 평균 1.5비트)은 사용 가능한 모든 방식의 최소 비트 수보다 낮습니다. 가장 낮은 방식은 2비트(gptq_int2, hqq_int2, rht_gptq_int2)이며, 스케일 저장 비용을 더하면 실제로는 2비트를 넘습니다. 따라서 Qwen/Qwen3-0.6B에서 이 예산을 만족하는 레이어별 배정은 없습니다.",
+     "assumptions": [
+      "'1.5비트'는 Linear 가중치 기준 평균 저장 비트(budget_bits)로 해석했습니다.",
+      "연산 예산은 명시되지 않아 null로 두었습니다."
+     ]
+    },
+    "ttft_ms": 6413,
+    "type": "result",
+    "duration_ms": 11224,
+    "uuid": "bcfcd843-f594-4112-97ba-e5d8b9124dbf",
+    "ttft_stream_ms": 2803,
+    "time_to_request_ms": 1029,
+    "time_to_request_phases_ms": {
+     "other": 1,
+     "system_prompt": 0,
+     "resume_other": 0,
+     "process_user_input": 2,
+     "input_attachments": 8,
+     "input_hooks": 1,
+     "conversation_append": 0,
+     "tool_pool_refresh": 1,
+     "init_message": 3,
+     "init_frame_send": 1,
+     "engine_pickup": 0,
+     "loop_entry": 2,
+     "message_prep": 0,
+     "model_config_wait": 1,
+     "autocompact": 1,
+     "request_announcements": 2,
+     "query_setup": 0,
+     "model_gates": 986,
+     "tool_schema_build": 12,
+     "message_normalization": 1,
+     "client_creation": 4,
+     "request_build": 3
+    },
+    "turn_start_resume_kind": "none",
+    "process_turn_index": 0,
+    "time_to_request_loop_lag_ms": 16,
+    "time_to_request_cpu_ms": 213,
+    "time_to_request_major_faults": 0,
+    "input_attachments_detail": {
+     "slowest_producer": "session_settings",
+     "slowest_producer_ms": 5,
+     "cpu_ms": 17,
+     "major_faults": 0,
+     "setup_ms": 0,
+     "prompt_producers_ms": 0,
+     "ambient_start_ms": 2,
+     "ambient_wait_ms": 5,
+     "render_ms": 0,
+     "producers": 43,
+     "token_counts": 0
+    },
+    "tool_schema_build_detail": {
+     "betas_ms": 1,
+     "waits_ms": 2,
+     "placement_ms": 8,
+     "render_ms": 1,
+     "after_ms": 0,
+     "other_ms": 0,
+     "tools": 1,
+     "new_schemas": 1
+    },
+    "message_normalization_detail": {
+     "before_ms": 0,
+     "normalize_ms": 0,
+     "images_ms": 0,
+     "post_process_ms": 0,
+     "after_ms": 1,
+     "other_ms": 0,
+     "messages": 8,
+     "wire_messages": 2
+    },
+    "request_build_detail": {
+     "records_ms": 0,
+     "system_ms": 0,
+     "headers_ms": 1,
+     "cache_break_record_ms": 0,
+     "plans_ms": 1,
+     "retry_setup_ms": 0,
+     "sent_build_ms": 1,
+     "record_attempt_ms": 0,
+     "other_ms": 0,
+     "sent_build_safety_context_ms": 0,
+     "sent_build_cache_breakpoints_ms": 0,
+     "sent_build_surrogate_scan_ms": 0
+    },
+    "first_content_frame_ms": 2803,
+    "queued_turn_count": 0,
+    "result_index": 0,
+    "credential_expires_at": "2026-12-04T04:51:21.312Z"
+   },
+   "stderr": ""
+  }
+ ]
+}

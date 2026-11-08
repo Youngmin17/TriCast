@@ -1,0 +1,363 @@
+{
+ "schema": "tricast.tune.proposal/1",
+ "name": "g256_mlp_upgrades_r2",
+ "author": "claude-code-loop",
+ "parent": "iso_3.15",
+ "created_utc": "2026-11-04T08:51:03+00:00",
+ "rationale": "This grid sets weight.group_size=256 on the GPTQ family to free stored bits, and spends them on layers where the single-layer table shows large drops. model.layers.14.mlp.down_proj: rht_gptq_int2 0.00633466 to rht_gptq_int3 0.00181478. model.layers.2.mlp.up_proj: gptq_int3 0.00641875 to gptq_int4 0.00237045. model.layers.3.mlp.up_proj: rht_gptq_int3 0.0064177 to gptq_int4 0.00237732. model.layers.1.mlp.up_proj: rht_gptq_int3 0.00611131 to rht_gptq_int4 0.00227173. model.layers.27.mlp.up_proj: gptq_int3 0.0057182 to gptq_int4 0.00216589. model.layers.27.mlp.gate_proj: rht_gptq_int3 0.00498703 to rht_gptq_int4 0.00153131. The gate_proj layers of blocks 18 and 11 are also raised from rht_gptq_int2, since both appear in the loss concentration list, but their target KLs were not retrieved. These table values were not measured at this group size, so the whole-recipe measurement must settle the net effect against the base kl=0.43614466651129274.",
+ "cites": [
+  "E514ab09c524e",
+  "E4c3f9b73e065",
+  "E90bd4b2f3645",
+  "E9baa10763ebe",
+  "Ef3d9c7b4502c",
+  "E6f4f7ea296d5",
+  "Ef4ee8cb4969e",
+  "E0564bc6ad1eb",
+  "E779bc065b72e",
+  "Ef04d8aa7bded",
+  "Efea8c18d2abc",
+  "Efa0bb391da67",
+  "Ef428ac081334",
+  "Eb1dd74cd6447",
+  "E9c454f30c659"
+ ],
+ "checks": true,
+ "avg_bits": 3.1343191964285713,
+ "avg_bits_fraction": "56167/17920",
+ "budget_bits": 3.1484375,
+ "budget_bits_fraction": "403/128",
+ "method_counts": {
+  "gptq_int2": 1,
+  "gptq_int3": 7,
+  "gptq_int4": 5,
+  "hqq_int4": 4,
+  "nf4": 13,
+  "rht_gptq_int2": 24,
+  "rht_gptq_int3": 109,
+  "rht_gptq_int4": 33
+ },
+ "predicted": {
+  "predicted_kl_sum": null,
+  "predicted_kl_sum_minus_floor": null,
+  "predicted_kv_kl_sum": null,
+  "unpredicted": "method or KV options: the table has entries for the default options only",
+  "floor_rule": "max(0, kl - floor) for every non-BF16 method; BF16 is a skip (no patch): 0, no floor"
+ },
+ "table": {
+  "path": "/Users/mincho/Documents/AI캡스톤/TriCast/runs/20261104_lowbit/qz_trackm_qwen/table.json",
+  "sha256": "40c43639b6f6b7bac7d900ace5b831e76c19c6de0bf3f0bbb7d20d4c16f57aee"
+ },
+ "recipe_sha256": "cee6a6d98aa234f05fb1f68cb177190565ec2a8693dd59f35d332dde2b9460a4",
+ "spec": {
+  "default": "rht_gptq_int3",
+  "grid": [
+   [
+    "rht_gptq_int3",
+    "rht_gptq_int4",
+    "rht_gptq_int4",
+    "gptq_int4",
+    "rht_gptq_int3",
+    "gptq_int3",
+    "rht_gptq_int4"
+   ],
+   [
+    "gptq_int2",
+    "rht_gptq_int3",
+    "gptq_int3",
+    "rht_gptq_int3",
+    "gptq_int3",
+    "rht_gptq_int4",
+    "rht_gptq_int4"
+   ],
+   [
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "gptq_int4",
+    "rht_gptq_int4"
+   ],
+   [
+    "rht_gptq_int3",
+    "hqq_int4",
+    "nf4",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "gptq_int4",
+    "rht_gptq_int4"
+   ],
+   [
+    "rht_gptq_int3",
+    "gptq_int4",
+    "nf4",
+    "gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int3",
+    "rht_gptq_int4",
+    "rht_gptq_int4",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int3",
+    "nf4",
+    "rht_gptq_int4",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int2",
+    "rht_gptq_int4",
+    "rht_gptq_int4",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int3",
+    "rht_gptq_int4",
+    "rht_gptq_int4",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int3",
+    "rht_gptq_int4",
+    "rht_gptq_int4",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int2",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int2",
+    "rht_gptq_int4",
+    "rht_gptq_int4",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int2",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int2",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int2",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int2",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int2",
+    "rht_gptq_int4",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int2",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int2",
+    "rht_gptq_int4",
+    "rht_gptq_int4",
+    "rht_gptq_int3",
+    "rht_gptq_int2",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int2",
+    "rht_gptq_int4",
+    "rht_gptq_int4",
+    "rht_gptq_int3",
+    "rht_gptq_int2",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int3",
+    "rht_gptq_int4",
+    "rht_gptq_int4",
+    "rht_gptq_int3",
+    "rht_gptq_int2",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int2",
+    "rht_gptq_int4",
+    "rht_gptq_int4",
+    "rht_gptq_int2",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int2",
+    "rht_gptq_int4",
+    "rht_gptq_int4",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int2",
+    "nf4",
+    "rht_gptq_int4",
+    "rht_gptq_int2",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int3",
+    "nf4",
+    "nf4",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int3",
+    "rht_gptq_int4",
+    "nf4",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int2",
+    "nf4",
+    "nf4",
+    "rht_gptq_int2",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int2",
+    "hqq_int4",
+    "nf4",
+    "rht_gptq_int2",
+    "gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int3",
+    "hqq_int4",
+    "nf4",
+    "rht_gptq_int2",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int3",
+    "hqq_int4",
+    "nf4",
+    "gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3",
+    "rht_gptq_int3"
+   ],
+   [
+    "rht_gptq_int3",
+    "rht_gptq_int4",
+    "nf4",
+    "gptq_int3",
+    "rht_gptq_int4",
+    "gptq_int4",
+    "rht_gptq_int3"
+   ]
+  ],
+  "kv": "none",
+  "options": {
+   "gptq_int2": {
+    "weight.group_size": 256,
+    "weight.rounding": "rne",
+    "weight_algo.damp": 0.01,
+    "weight_algo.act_order": false,
+    "weight_algo.block_size": 128
+   },
+   "gptq_int3": {
+    "weight.group_size": 256,
+    "weight.rounding": "rne",
+    "weight_algo.damp": 0.01,
+    "weight_algo.act_order": false,
+    "weight_algo.block_size": 128
+   },
+   "gptq_int4": {
+    "weight.group_size": 256,
+    "weight.rounding": "rne",
+    "weight_algo.damp": 0.01,
+    "weight_algo.act_order": false,
+    "weight_algo.block_size": 128
+   },
+   "rht_gptq_int2": {
+    "weight.group_size": 256,
+    "weight.rounding": "rne",
+    "weight_algo.damp": 0.01,
+    "weight_algo.act_order": false,
+    "weight_algo.block_size": 128
+   },
+   "rht_gptq_int3": {
+    "weight.group_size": 256,
+    "weight.rounding": "rne",
+    "weight_algo.damp": 0.01,
+    "weight_algo.act_order": false,
+    "weight_algo.block_size": 128
+   },
+   "rht_gptq_int4": {
+    "weight.group_size": 256,
+    "weight.rounding": "rne",
+    "weight_algo.damp": 0.01,
+    "weight_algo.act_order": false,
+    "weight_algo.block_size": 128
+   }
+  },
+  "calibration": {
+   "dataset": "wikitext2",
+   "samples": 128,
+   "seqlen": 2048,
+   "seed": 42,
+   "sequential": false
+  },
+  "kv_options": null,
+  "mma": "fp32_fma"
+ }
+}

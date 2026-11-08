@@ -1,0 +1,680 @@
+name: g256_mlp_upgrades_r2
+description: "Built with the Tri-Cast Quantizer demo (one method per Linear layer)."
+defaults:
+  weight:
+    scheme: int4_g128_zp
+    format: uint3
+    group_size: 256
+  activation: null
+  transform:
+    kind: random_hadamard
+  weight_algo: gptq
+  mma: fp32_fma
+overrides:
+  - match: model.layers.0.self_attn.k_proj
+    weight:
+      scheme: int4_g128_zp
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.0.self_attn.v_proj
+    weight:
+      scheme: int4_g128_zp
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.0.self_attn.o_proj
+    weight:
+      scheme: int4_g128_zp
+      group_size: 256
+    activation: null
+    transform: none
+    weight_algo: gptq
+  - match: model.layers.0.mlp.up_proj
+    weight:
+      scheme: int4_g128_zp
+      format: uint3
+      group_size: 256
+    activation: null
+    transform: none
+    weight_algo: gptq
+  - match: model.layers.0.mlp.down_proj
+    weight:
+      scheme: int4_g128_zp
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.1.self_attn.q_proj
+    weight:
+      scheme: int4_g128_zp
+      format: uint2
+      group_size: 256
+    activation: null
+    transform: none
+    weight_algo: gptq
+  - match: model.layers.1.self_attn.v_proj
+    weight:
+      scheme: int4_g128_zp
+      format: uint3
+      group_size: 256
+    activation: null
+    transform: none
+    weight_algo: gptq
+  - match: model.layers.1.mlp.gate_proj
+    weight:
+      scheme: int4_g128_zp
+      format: uint3
+      group_size: 256
+    activation: null
+    transform: none
+    weight_algo: gptq
+  - match: model.layers.1.mlp.up_proj
+    weight:
+      scheme: int4_g128_zp
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.1.mlp.down_proj
+    weight:
+      scheme: int4_g128_zp
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.2.mlp.up_proj
+    weight:
+      scheme: int4_g128_zp
+      group_size: 256
+    activation: null
+    transform: none
+    weight_algo: gptq
+  - match: model.layers.2.mlp.down_proj
+    weight:
+      scheme: int4_g128_zp
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.3.self_attn.k_proj
+    weight: null
+    activation: null
+    transform: none
+    weight_algo: hqq
+  - match: model.layers.3.self_attn.v_proj
+    weight: null
+    activation: null
+    transform: none
+    weight_algo: nf4
+  - match: model.layers.3.mlp.up_proj
+    weight:
+      scheme: int4_g128_zp
+      group_size: 256
+    activation: null
+    transform: none
+    weight_algo: gptq
+  - match: model.layers.3.mlp.down_proj
+    weight:
+      scheme: int4_g128_zp
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.4.self_attn.k_proj
+    weight:
+      scheme: int4_g128_zp
+      group_size: 256
+    activation: null
+    transform: none
+    weight_algo: gptq
+  - match: model.layers.4.self_attn.v_proj
+    weight: null
+    activation: null
+    transform: none
+    weight_algo: nf4
+  - match: model.layers.4.self_attn.o_proj
+    weight:
+      scheme: int4_g128_zp
+      format: uint3
+      group_size: 256
+    activation: null
+    transform: none
+    weight_algo: gptq
+  - match: model.layers.5.self_attn.k_proj
+    weight:
+      scheme: int4_g128_zp
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.5.self_attn.v_proj
+    weight:
+      scheme: int4_g128_zp
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.6.self_attn.k_proj
+    weight: null
+    activation: null
+    transform: none
+    weight_algo: nf4
+  - match: model.layers.6.self_attn.v_proj
+    weight:
+      scheme: int4_g128_zp
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.7.self_attn.q_proj
+    weight:
+      scheme: int4_g128_zp
+      format: uint2
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.7.self_attn.k_proj
+    weight:
+      scheme: int4_g128_zp
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.7.self_attn.v_proj
+    weight:
+      scheme: int4_g128_zp
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.8.self_attn.k_proj
+    weight:
+      scheme: int4_g128_zp
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.8.self_attn.v_proj
+    weight:
+      scheme: int4_g128_zp
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.9.self_attn.k_proj
+    weight:
+      scheme: int4_g128_zp
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.9.self_attn.v_proj
+    weight:
+      scheme: int4_g128_zp
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.10.self_attn.q_proj
+    weight:
+      scheme: int4_g128_zp
+      format: uint2
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.11.self_attn.q_proj
+    weight:
+      scheme: int4_g128_zp
+      format: uint2
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.11.self_attn.k_proj
+    weight:
+      scheme: int4_g128_zp
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.11.self_attn.v_proj
+    weight:
+      scheme: int4_g128_zp
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.12.self_attn.q_proj
+    weight:
+      scheme: int4_g128_zp
+      format: uint2
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.12.mlp.gate_proj
+    weight:
+      scheme: int4_g128_zp
+      format: uint2
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.13.self_attn.q_proj
+    weight:
+      scheme: int4_g128_zp
+      format: uint2
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.13.mlp.gate_proj
+    weight:
+      scheme: int4_g128_zp
+      format: uint2
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.14.self_attn.q_proj
+    weight:
+      scheme: int4_g128_zp
+      format: uint2
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.14.self_attn.k_proj
+    weight:
+      scheme: int4_g128_zp
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.14.mlp.gate_proj
+    weight:
+      scheme: int4_g128_zp
+      format: uint2
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.15.self_attn.q_proj
+    weight:
+      scheme: int4_g128_zp
+      format: uint2
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.15.self_attn.k_proj
+    weight:
+      scheme: int4_g128_zp
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.15.self_attn.v_proj
+    weight:
+      scheme: int4_g128_zp
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.15.mlp.gate_proj
+    weight:
+      scheme: int4_g128_zp
+      format: uint2
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.16.self_attn.q_proj
+    weight:
+      scheme: int4_g128_zp
+      format: uint2
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.16.self_attn.k_proj
+    weight:
+      scheme: int4_g128_zp
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.16.self_attn.v_proj
+    weight:
+      scheme: int4_g128_zp
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.16.mlp.gate_proj
+    weight:
+      scheme: int4_g128_zp
+      format: uint2
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.17.self_attn.k_proj
+    weight:
+      scheme: int4_g128_zp
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.17.self_attn.v_proj
+    weight:
+      scheme: int4_g128_zp
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.17.mlp.gate_proj
+    weight:
+      scheme: int4_g128_zp
+      format: uint2
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.18.self_attn.q_proj
+    weight:
+      scheme: int4_g128_zp
+      format: uint2
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.18.self_attn.k_proj
+    weight:
+      scheme: int4_g128_zp
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.18.self_attn.v_proj
+    weight:
+      scheme: int4_g128_zp
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.18.self_attn.o_proj
+    weight:
+      scheme: int4_g128_zp
+      format: uint2
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.19.self_attn.q_proj
+    weight:
+      scheme: int4_g128_zp
+      format: uint2
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.19.self_attn.k_proj
+    weight:
+      scheme: int4_g128_zp
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.19.self_attn.v_proj
+    weight:
+      scheme: int4_g128_zp
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.20.self_attn.q_proj
+    weight:
+      scheme: int4_g128_zp
+      format: uint2
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.20.self_attn.k_proj
+    weight: null
+    activation: null
+    transform: none
+    weight_algo: nf4
+  - match: model.layers.20.self_attn.v_proj
+    weight:
+      scheme: int4_g128_zp
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.20.self_attn.o_proj
+    weight:
+      scheme: int4_g128_zp
+      format: uint2
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.21.self_attn.k_proj
+    weight: null
+    activation: null
+    transform: none
+    weight_algo: nf4
+  - match: model.layers.21.self_attn.v_proj
+    weight: null
+    activation: null
+    transform: none
+    weight_algo: nf4
+  - match: model.layers.22.self_attn.k_proj
+    weight:
+      scheme: int4_g128_zp
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.22.self_attn.v_proj
+    weight: null
+    activation: null
+    transform: none
+    weight_algo: nf4
+  - match: model.layers.23.self_attn.q_proj
+    weight:
+      scheme: int4_g128_zp
+      format: uint2
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.23.self_attn.k_proj
+    weight: null
+    activation: null
+    transform: none
+    weight_algo: nf4
+  - match: model.layers.23.self_attn.v_proj
+    weight: null
+    activation: null
+    transform: none
+    weight_algo: nf4
+  - match: model.layers.23.self_attn.o_proj
+    weight:
+      scheme: int4_g128_zp
+      format: uint2
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.24.self_attn.q_proj
+    weight:
+      scheme: int4_g128_zp
+      format: uint2
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.24.self_attn.k_proj
+    weight: null
+    activation: null
+    transform: none
+    weight_algo: hqq
+  - match: model.layers.24.self_attn.v_proj
+    weight: null
+    activation: null
+    transform: none
+    weight_algo: nf4
+  - match: model.layers.24.self_attn.o_proj
+    weight:
+      scheme: int4_g128_zp
+      format: uint2
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.24.mlp.gate_proj
+    weight:
+      scheme: int4_g128_zp
+      format: uint3
+      group_size: 256
+    activation: null
+    transform: none
+    weight_algo: gptq
+  - match: model.layers.25.self_attn.k_proj
+    weight: null
+    activation: null
+    transform: none
+    weight_algo: hqq
+  - match: model.layers.25.self_attn.v_proj
+    weight: null
+    activation: null
+    transform: none
+    weight_algo: nf4
+  - match: model.layers.25.self_attn.o_proj
+    weight:
+      scheme: int4_g128_zp
+      format: uint2
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.26.self_attn.k_proj
+    weight: null
+    activation: null
+    transform: none
+    weight_algo: hqq
+  - match: model.layers.26.self_attn.v_proj
+    weight: null
+    activation: null
+    transform: none
+    weight_algo: nf4
+  - match: model.layers.26.self_attn.o_proj
+    weight:
+      scheme: int4_g128_zp
+      format: uint3
+      group_size: 256
+    activation: null
+    transform: none
+    weight_algo: gptq
+  - match: model.layers.27.self_attn.k_proj
+    weight:
+      scheme: int4_g128_zp
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.27.self_attn.v_proj
+    weight: null
+    activation: null
+    transform: none
+    weight_algo: nf4
+  - match: model.layers.27.self_attn.o_proj
+    weight:
+      scheme: int4_g128_zp
+      format: uint3
+      group_size: 256
+    activation: null
+    transform: none
+    weight_algo: gptq
+  - match: model.layers.27.mlp.gate_proj
+    weight:
+      scheme: int4_g128_zp
+      group_size: 256
+    activation: null
+    transform:
+      kind: random_hadamard
+    weight_algo: gptq
+  - match: model.layers.27.mlp.up_proj
+    weight:
+      scheme: int4_g128_zp
+      group_size: 256
+    activation: null
+    transform: none
+    weight_algo: gptq
+exclude: [lm_head]
+calibration:
+  seed: 42

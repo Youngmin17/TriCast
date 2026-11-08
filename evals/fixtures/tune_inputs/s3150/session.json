@@ -1,0 +1,16 @@
+{
+ "schema": "tricast.tune.session/1",
+ "model_id": "Qwen/Qwen3-0.6B",
+ "model_sha": "c1899de289a04d12100db370d81485cdf75e47ca",
+ "table": {
+  "path": "runs/20261104_lowbit/qz_trackm_qwen/table.json",
+  "sha256": "40c43639b6f6b7bac7d900ace5b831e76c19c6de0bf3f0bbb7d20d4c16f57aee"
+ },
+ "measure": {
+  "windows": 8,
+  "seqlen": 512,
+  "seed": 43,
+  "split": "validation",
+  "gpu": "NVIDIA A100-SXM4-80GB"
+ }
+}

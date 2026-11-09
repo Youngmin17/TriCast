@@ -79,7 +79,8 @@ GOOD = {
     "r_h2": {"outcome": "needs_clarification", "budget_bits": "2.5",
              "questions": ["QuIP# E8P 는 방법 목록에 없습니다. 다른 방법으로 할까요?"]},
     # 2026-11-09 extension (user-approved): compute budget, English, compound constraints
-    "r_c9": {"budget_bits": "4", "compute_budget": "5/16"},
+    "r_k5": {"outcome": "conflict", "budget_bits": "4", "compute_budget": "5/16",
+             "reason": "weight-only methods run a BF16 GEMM: compute 5/16 cannot be met"},
     "r_c10": {"budget_bits": "3.5", "keep_bf16_blocks": [-1],
               "exclude_methods": ["hqq_int2", "hqq_int3", "hqq_int4"]},
     "r_q4": {"outcome": "needs_clarification", "compute_budget": "1/4",
@@ -496,7 +497,7 @@ def test_every_case_of_the_eval_set_runs_and_the_labeling_sheet_holds_no_verdict
     sheet = (tmp_path / "results" / f"{result['run']['run_id']}_labeling.md").read_text(encoding="utf-8")
     judged = [record["id"] for record in result["cases"] if "judge" in record["graders"]]
     assert all(f"## {case_id} " in sheet for case_id in judged) and "## r_o1 " not in sheet
-    assert REASON not in sheet and sheet.count("| q1 | | |") == 15 + 5
+    assert REASON not in sheet and sheet.count("| q1 | | |") == 14 + 5
 
 
 # ---------- fault injection: docs/prompts/delegation_evals.md §1-2 ----------

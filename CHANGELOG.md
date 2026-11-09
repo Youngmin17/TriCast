@@ -103,9 +103,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 - Recorded Quantizer demo data for Qwen3-0.6B (five presets: PPL, layer reports, lm-eval 5 tasks × 300 docs).
 
 ### Changed
-- Tune eval set 27 → 35 cases (2026-11-09, user-approved): compute budget, English and compound
-  constraints, compute-only clarification, an English out-of-scope request, an allowed-method conflict, an
-  admin-impersonation injection and an unknown excluded method; expect key `compute_budget`.
+- Tune eval set 27 → 35 cases (2026-11-09, user-approved): English and compound constraints, compute-only
+  clarification, an English out-of-scope request, allowed-method and compute-budget conflicts, an
+  admin-impersonation injection and an unknown excluded method; expect key `compute_budget`. The first
+  baseline of the set (b7e3eca) showed that `r_c9` expected `tune` for a compute budget the weight-only
+  table cannot meet; it is now the conflict case `r_k5`.
 - Midterm-2 demo (`docs/DEMO.md`): one unbroken live chain (sentence → parse → knapsack → recipe file whose
   SHA-256 is the measured file's → AI rounds → AI best's file), the live Claude round asked early, a blanket
   disclosure of what is recorded, and the final goals confirmed with S2 and evals rows; the tune evals'
@@ -128,6 +130,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   animated), rendered from the v3 deck PDF, followed by a short Korean text section.
 
 ### Fixed
+- A tune request whose compute budget is below the least MAC weight the constraints allow (any budget
+  below 1 on a weight-only table: every A16 method runs a BF16 GEMM) is now a computed `conflict`, as a
+  size budget already was; before, a `tune` parse went on to a knapsack that ignores the compute budget.
 - Tune evals runner: a target with decimals ("≥ 87.5%") was read as its digits after the point (5%), a
   metric with no case to count (0/0) was reported as met, and a live run read `git status` after writing its
   kept replies, so it was always dirty; values and case verdicts of the 2026-11-08 runs are unchanged.

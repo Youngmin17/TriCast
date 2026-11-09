@@ -173,6 +173,20 @@ cases:
     expected: {outcome: conflict, reason_has: "9.0703 bits"}
     note: "AC28 충돌 (코드 판정): 28 블록 중 14 블록이 16비트면 그것만으로 평균 8비트 > 2.2 (평가 세트 r_k2)."
 
+  - id: tune_request_compute_below_any_assignment
+    ac: AC28
+    kind: request
+    input: {reply: {model: Qwen/Qwen3-0.6B, budget_bits: "4", compute_budget: 5/16}}
+    expected: {outcome: conflict, reason_has: "the cheapest compute these constraints allow is 1.0000"}
+    note: "AC28 충돌 (코드 판정): 이 표의 16 방법은 모두 가중치 전용이라 GEMM 이 BF16 (B200 MAC 가중치 1) 이다. 연산 예산 5/16 < 1 은 어떤 배정으로도 못 맞춘다 (평가 세트 r_k5 — 첫 기준선에서 해석기 1회가 짚은 경우)."
+
+  - id: tune_request_compute_budget_met
+    ac: AC28
+    kind: request
+    input: {reply: {model: Qwen/Qwen3-0.6B, budget_bits: "4", compute_budget: "1"}}
+    expected: {outcome: tune, solved: true}
+    note: "AC28 tune: 연산 예산 1 (BF16 과 같음) 은 가중치 전용 표에서도 맞는다 — 크기 예산 4 비트 안 배낭."
+
   - id: tune_request_no_size_budget_asks
     ac: AC28
     kind: request

@@ -6,7 +6,9 @@ empty working directory). Then the code decides what it can check by itself, so 
 - a method outside the table's methods and a block outside the model are refused (``RequestError``);
 - ``tune`` without a model or a budget becomes ``needs_clarification`` (a value the request did not state is
   never filled in: it stays null, or is listed in ``assumptions`` when the request implies it);
-- a budget below the cheapest assignment the constraints allow becomes ``conflict`` (computed, not asked).
+- a budget below the cheapest assignment the constraints allow becomes ``conflict`` (computed, not asked): the
+  size budget against the fewest stored bits, a compute budget against the least MAC weight of rated methods
+  (weight-only methods run a BF16 GEMM, so on a weight-only table any compute budget below 1 conflicts).
 ``constrained`` applies a tune request to a table in the solver's form (BF16-kept blocks, excluded or allowed
 methods), so the knapsack (``app.autotune.solve_mckp`` / ``app/web/js/mckp.js``) solves within it.
 """
@@ -143,6 +145,15 @@ def check(reply: dict[str, Any], table: dict[str, Any] | None, models: Sequence[
                 f"the cheapest assignment these constraints allow is {float(cheapest):.4f} bits"
             result.update(outcome="conflict", reason=f"budget {result['budget_bits']} bits: {what} (code)")
             result["checks"].append("budget below the constrained cheapest assignment: conflict (code)")
+    if result["outcome"] == "tune" and table is not None and result["compute_budget"] is not None:
+        least = cheapest_compute(constrained(table, result))
+        if least is None:
+            result["checks"].append("compute budget not checked: some layer has only unrated methods (code)")
+        elif Fraction(result["compute_budget"]) < least:
+            result.update(outcome="conflict", reason=(
+                f"compute budget {result['compute_budget']}: the cheapest compute these constraints allow is "
+                f"{float(least):.4f} (BF16 = 1; weight-only methods run a BF16 GEMM) (code)"))
+            result["checks"].append("compute budget below the constrained cheapest compute: conflict (code)")
     return result
 
 
@@ -175,5 +186,21 @@ def cheapest_bits(table: dict[str, Any]) -> Fraction | None:
         if not costs:
             return None
         total += min(costs)
+        params += layer["params"]
+    return total / params
+
+
+def cheapest_compute(table: dict[str, Any]) -> Fraction | None:
+    """The smallest average MAC weight (``app.autotune.COMPUTE_WEIGHT``, BF16 = 1) any assignment of the
+    table's remaining options reaches, counting rated methods only; None if a layer has no rated option."""
+    total = Fraction(0)
+    params = 0
+    for layer in table["layers"]:
+        options = zip(table["methods"], layer["value"], strict=True)
+        classes = [at.compute_class(method) for method, value in options if value is not None]
+        weights = [at.COMPUTE_WEIGHT[rate] for rate in classes if rate is not None]
+        if not weights:
+            return None
+        total += min(weights) * layer["params"]
         params += layer["params"]
     return total / params

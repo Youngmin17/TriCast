@@ -27,6 +27,14 @@ PROTECTED = (
     "src/tricast/quant/spec.py",
     "src/tricast/mma/spec.py",
     "src/tricast/reference/*",
+    # the evals' criteria: eval sets, thresholds (EVAL_DESIGN §1, read by the runner), judge rules,
+    # human labels, runners, kept replies and packed inputs
+    "evals/*evalset.jsonl",
+    "evals/EVAL_DESIGN.md",
+    "evals/*judge_prompt.md",
+    "evals/judge_labels.jsonl",
+    "evals/run_*evals.py",
+    "evals/fixtures/*",
     # the gate: narrowing it would narrow the definition of done (AGENTS.md §4.2)
     "Makefile",
     "pyproject.toml",

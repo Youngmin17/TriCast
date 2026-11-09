@@ -133,6 +133,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 - A tune request whose compute budget is below the least MAC weight the constraints allow (any budget
   below 1 on a weight-only table: every A16 method runs a BF16 GEMM) is now a computed `conflict`, as a
   size budget already was; before, a `tune` parse went on to a knapsack that ignores the compute budget.
+- A tune request whose budget the schema pattern lets through but no number reads ("1/0", "1.5/2") is refused
+  with a RequestError (422) instead of a ZeroDivisionError / ValueError (500 on the server, a crashed eval run).
 - Tune evals runner: a target with decimals ("≥ 87.5%") was read as its digits after the point (5%), a
   metric with no case to count (0/0) was reported as met, and a live run read `git status` after writing its
   kept replies, so it was always dirty; values and case verdicts of the 2026-11-08 runs are unchanged.

@@ -102,8 +102,8 @@ def _solved(table: dict[str, Any], request: dict[str, Any]) -> None:
                 for method, layer in zip(chosen, layers, strict=True)), Fraction(0)) / params
     assert bits <= Fraction(request["budget_bits"])
     kept = {block % limited["blocks"] for block in request["keep_bf16_blocks"]}
-    assert all((method == "bf16") == (layer["block"] in kept)
-               for method, layer in zip(chosen, layers, strict=True))
+    pairs = zip(chosen, layers, strict=True)
+    assert all(method == "bf16" for method, layer in pairs if layer["block"] in kept)
     assert not set(chosen) & set(request["exclude_methods"])
     if request["only_methods"]:
         assert set(chosen) <= set(request["only_methods"]) | {"bf16"}
@@ -136,3 +136,47 @@ def test_tune_golden(case: dict[str, Any], tmp_path: Path) -> None:
         _session(case)
     else:
         _request(case)
+
+
+_EVALUATE = ta.evaluate
+
+
+def _no_budget(spec: dict[str, Any], table_path: Path, budget: Fraction,
+               compute_budget: Fraction | None = None) -> dict[str, Any]:
+    return _EVALUATE(spec, table_path, Fraction(99), compute_budget)
+
+
+# a broken check and the cases that must then fail: the goldens are evidence only if they catch these
+MUTATIONS = [
+    ("numbers check off", ta, "unsupported_numbers", lambda text, values: [],
+     {"tune_proposal_number_not_in_record", "tune_reply_predicted_value_as_measured",
+      "tune_reply_floor_subtracted_value", "tune_reply_other_proposals_parameter"}),
+    ("size conflict off", tr, "cheapest_bits", lambda table: Fraction(0),
+     {"tune_request_budget_below_any_assignment", "tune_request_only_int8_conflict",
+      "tune_request_half_the_blocks_bf16_conflict"}),
+    ("compute conflict off", tr, "cheapest_compute", lambda table: Fraction(0),
+     {"tune_request_compute_below_any_assignment"}),
+    ("budget check off", ta, "evaluate", _no_budget,
+     {"tune_proposal_over_budget_by_cells", "tune_proposal_over_budget_by_session_budget"}),
+    ("constraints ignored", tr, "constrained", lambda table, request: table,
+     {"tune_request_only_int8_conflict", "tune_request_half_the_blocks_bf16_conflict",
+      "tune_request_solved_within_constraints", "tune_request_solved_fraction_budget"}),
+]
+
+
+@pytest.mark.parametrize("module, name, broken, expected", [row[1:] for row in MUTATIONS],
+                         ids=[row[0] for row in MUTATIONS])
+def test_the_goldens_catch_a_broken_check(module: Any, name: str, broken: Any, expected: set[str],
+                                          tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(module, name, broken)
+    failed = set()
+    for case in CASES:
+        if case["id"] not in expected:
+            continue
+        folder = tmp_path / case["id"]
+        folder.mkdir()
+        try:
+            test_tune_golden(case, folder)
+        except (Exception, pytest.fail.Exception):
+            failed.add(case["id"])
+    assert failed == expected

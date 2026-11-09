@@ -132,6 +132,13 @@ def check(reply: dict[str, Any], table: dict[str, Any] | None, models: Sequence[
     outside = [block for block in result["keep_bf16_blocks"] if not -blocks <= block < blocks]
     if outside:
         raise RequestError(f"keep_bf16_blocks: {outside} are outside the model's {blocks} blocks")
+    for field in ("budget_bits", "compute_budget"):  # the schema pattern lets "1/0" and "1.5/2" through
+        try:
+            if result[field] is not None:
+                Fraction(result[field])
+        except (ValueError, ZeroDivisionError):
+            raise RequestError(f"{field}: {result[field]!r} is not a number (write \"3.2\" or \"403/128\")") \
+                from None
     if result["outcome"] == "tune" and (result["model"] is None or result["budget_bits"] is None):
         missing = [name for name in ("model", "budget_bits") if result[name] is None]
         result.update(outcome="needs_clarification",
@@ -175,32 +182,37 @@ def constrained(table: dict[str, Any], request: dict[str, Any]) -> dict[str, Any
     return out
 
 
-def cheapest_bits(table: dict[str, Any]) -> Fraction | None:
-    """The smallest average bits any assignment of ``table``'s remaining options reaches; None if a layer has
-    no option left."""
+Cost = Callable[[str, dict[str, Any]], "Fraction | None"]
+
+
+def _cheapest(table: dict[str, Any], cost: Cost) -> Fraction | None:
+    """The parameter-weighted average of each layer's smallest ``cost`` over its remaining options (an option
+    whose cost is None is not counted); None if a layer has no counted option left."""
     total = Fraction(0)
     params = 0
     for layer in table["layers"]:
-        costs = [at.weight_bits(method, layer["in_features"]) * layer["params"]
-                 for method, value in zip(table["methods"], layer["value"], strict=True) if value is not None]
+        options = zip(table["methods"], layer["value"], strict=True)
+        costs = [value for value in (cost(method, layer) for method, kept in options if kept is not None)
+                 if value is not None]
         if not costs:
             return None
-        total += min(costs)
+        total += min(costs) * layer["params"]
         params += layer["params"]
     return total / params
+
+
+def cheapest_bits(table: dict[str, Any]) -> Fraction | None:
+    """The smallest average bits any assignment of ``table``'s remaining options reaches; None if a layer has
+    no option left."""
+    return _cheapest(table, lambda method, layer: at.weight_bits(method, layer["in_features"]))
+
+
+def _mac_weight(method: str, layer: dict[str, Any]) -> Fraction | None:
+    rate = at.compute_class(method)
+    return None if rate is None else at.COMPUTE_WEIGHT[rate]
 
 
 def cheapest_compute(table: dict[str, Any]) -> Fraction | None:
     """The smallest average MAC weight (``app.autotune.COMPUTE_WEIGHT``, BF16 = 1) any assignment of the
     table's remaining options reaches, counting rated methods only; None if a layer has no rated option."""
-    total = Fraction(0)
-    params = 0
-    for layer in table["layers"]:
-        options = zip(table["methods"], layer["value"], strict=True)
-        classes = [at.compute_class(method) for method, value in options if value is not None]
-        weights = [at.COMPUTE_WEIGHT[rate] for rate in classes if rate is not None]
-        if not weights:
-            return None
-        total += min(weights) * layer["params"]
-        params += layer["params"]
-    return total / params
+    return _cheapest(table, _mac_weight)

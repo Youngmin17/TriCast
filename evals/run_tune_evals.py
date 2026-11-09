@@ -217,10 +217,13 @@ def _same_fraction(want: Any, got: Any) -> bool | None:
 
 
 def _fraction_key(field: str) -> Callable[..., dict[str, Any] | None]:
-    """A budget compared as a number ("3.50" == "7/2"); None (not handled) when ``want`` does not parse."""
+    """A budget compared as a number ("3.50" == "7/2"); None (not handled) when ``want`` does not parse, a
+    failure when the reply's value does not."""
     def check(want: Any, result: dict[str, Any], blocks: int, methods: list[str]) -> dict[str, Any] | None:
+        if want is not None and _same_fraction(want, want) is None:
+            return None
         same = _same_fraction(want, result[field])
-        return None if same is None else _ok(same, f"{field} {result[field]!r}, expected {want!r}")
+        return _ok(bool(same), f"{field} {result[field]!r}, expected {want!r}")
     return check
 
 
@@ -641,7 +644,7 @@ def _met(target: str, numerator: int, denominator: int) -> bool | None:
         return None
     if "0건" in target:
         return numerator == 0
-    match = re.search(r"(≥)?\s*(\d+(?:\.\d+)?)\s*%", target)  # "≥ 87.5%" reads 87.5, not 5
+    match = re.search(r"(≥|>=)?\s*(\d+(?:\.\d+)?)\s*%", target)  # "≥ 87.5%" reads 87.5, not 5
     if match is None:
         return None
     rate, goal = Fraction(numerator, denominator), Fraction(match.group(2)) / 100

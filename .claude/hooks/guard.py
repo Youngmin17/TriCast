@@ -28,13 +28,17 @@ PROTECTED = (
     "src/tricast/mma/spec.py",
     "src/tricast/reference/*",
     # the evals' criteria: eval sets, thresholds (EVAL_DESIGN §1, read by the runner), judge rules,
-    # human labels, runners, kept replies and packed inputs
+    # human labels, runners and the judge-agreement / fault-injection tools, kept replies, packed inputs
+    # and the recorded results
     "evals/*evalset.jsonl",
     "evals/EVAL_DESIGN.md",
     "evals/*judge_prompt.md",
     "evals/judge_labels.jsonl",
     "evals/run_*evals.py",
+    "evals/judge_agreement.py",
+    "evals/inject_faults.py",
     "evals/fixtures/*",
+    "evals/results/*",
     # the gate: narrowing it would narrow the definition of done (AGENTS.md §4.2)
     "Makefile",
     "pyproject.toml",

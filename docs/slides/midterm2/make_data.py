@@ -85,7 +85,7 @@ def evals_rows() -> tuple[str, str]:
     code = max(value for name, value in spread.items() if name != "B1")
     labels = ROOT / "evals" / "judge_labels.jsonl"
     return (f"기준선 {len(rows)}회 ({rows[0]['run_id'][:10]}): 최대 {rule}건",
-            f"같은 커밋 {len(rows)}회 변동: 코드 지표 {code:.2f}, B1 ±{spread['B1']:.2f}; judge 라벨 "
+            f"같은 커밋 {len(rows)}회 변동 폭: 코드 지표 {code:.2f}, B1 {spread['B1']:.2f}; judge 라벨 "
             + ("작성됨" if labels.is_file() else "미작성 (사람) → judge 지표 판정 보류"))
 
 

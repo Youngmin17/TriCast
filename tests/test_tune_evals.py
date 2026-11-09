@@ -243,6 +243,7 @@ METHODS = ["bf16", "gptq_int2", "gptq_int3", "gptq_int4", "hqq_int2", "rht_gptq_
     ("compute_budget", "5/16", _result(compute_budget="0.3125"), True),
     ("compute_budget", "5/16", _result(compute_budget="1/4"), False),
     ("compute_budget", None, _result(), True), ("compute_budget", None, _result(compute_budget="1/4"), False),
+    ("budget_bits", "3", _result(budget_bits="3/0"), False),  # a reply value that does not parse: key fails
     ("keep_bf16_blocks", [0, -1], _result(keep_bf16_blocks=[27, 0]), True),
     ("keep_bf16_blocks", [0, -1], _result(keep_bf16_blocks=[0]), False),
     ("exclude_methods", ["gptq_int2", "hqq_int2"], _result(exclude_methods=["hqq_int2", "gptq_int2"]), True),
@@ -341,6 +342,7 @@ def test_a2_counts_values_filled_without_an_assumption() -> None:
 @pytest.mark.parametrize("target, numerator, denominator, met", [
     ("≥ 87.5% (10 중 9 이상)", 9, 10, True), ("≥ 87.5% (10 중 9 이상)", 8, 10, False),
     ("≥ 87.5%", 7, 8, True), ("≥ 87.5%", 6, 8, False),  # 2026-11-08: read as 5% before the fix
+    (">= 80%", 4, 5, True), (">= 80%", 5, 5, True),  # ASCII ">=" is a lower bound too, not an equality
     ("100% (5 중 5)", 5, 5, True), ("100% (5 중 5)", 4, 5, False),
     ("0건 (절대 규칙)", 0, 4, True), ("0건 (절대 규칙)", 1, 4, False),
     ("0건 (절대 규칙)", 0, 0, None), ("≥ 70%", 0, 0, None),  # no case to count: not applicable, not met

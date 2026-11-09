@@ -67,8 +67,9 @@ HardwarePreset 수치는 `provenance` 에 적힌 출처까지만 믿는다. Eval
 1. **테스트와 골든 데이터를 고치지 않는다.** `tests/`, `tests/harness/golden_cases.yaml`, `tests/data/`, `app/tests/`,
    `app/web/demo/webgpu/golden.json` 의 변경은 사람이 승인한다. evals 의 판정 기준도 같다 — 평가 세트
    (`evals/tune_evalset.jsonl`, v1 `evals/evalset.jsonl`), 합격선 (`evals/EVAL_DESIGN.md` §1, 러너가 읽는다), judge 기준
-   (`evals/tune_judge_prompt.md`, `evals/judge_prompt.md`), 사람 라벨 (`evals/judge_labels.jsonl`), 러너
-   (`evals/run_tune_evals.py`, `evals/run_evals.py`), 저장된 응답과 입력 묶음 (`evals/fixtures/`). 실패하면 구현을 고친다. 사람이 지시한 변경과 포매팅은 예외지만, 판정에 쓰이는 것 (단언문,
+   (`evals/tune_judge_prompt.md`, `evals/judge_prompt.md`), 사람 라벨 (`evals/judge_labels.jsonl`), 러너와 검증 도구
+   (`evals/run_tune_evals.py`, `evals/run_evals.py`, `evals/judge_agreement.py`, `evals/inject_faults.py`), 저장된 응답과
+   입력 묶음 (`evals/fixtures/`), 기록된 결과 (`evals/results/`). 실패하면 구현을 고친다. 사람이 지시한 변경과 포매팅은 예외지만, 판정에 쓰이는 것 (단언문,
    케이스, 기대값, skip 조건) 은 건드리지 않는다.
 2. **완료 조건을 좁히지 않는다.** skip·xfail·케이스 삭제·허용 오차 추가로 통과시키지 않는다.
 3. **근거 없는 결과를 내놓지 않는다.** 통과했다면 각 케이스가 왜 통과하는지 한 줄씩 설명한다.

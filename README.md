@@ -117,7 +117,7 @@ make test-app                                                     # 웹 앱 · A
 node scripts/quantizer/autotune_check.mjs out python <table.json>  # 브라우저 배낭 = Python 배낭 (예산별)
 python evals/run_tune_evals.py --table evals/fixtures/tune_inputs/table.json \
     --ledger evals/fixtures/tune_inputs/ledger.jsonl --fixture s3150=evals/fixtures/tune_inputs/s3150 \
-    --mode stored --from-run 2026-11-08T0104 --change re-grade --golden n/a --out /tmp/tricast_evals   # 튜닝 evals 재채점 (LLM 호출 없음, 저장소를 바꾸지 않음, evals/EVAL_DESIGN.md §9)
+    --mode stored --from-run 2026-11-09T0054 --change re-grade --golden n/a --out /tmp/tricast_evals   # 튜닝 evals 재채점 (LLM 호출 없음, 저장소를 바꾸지 않음, evals/EVAL_DESIGN.md §9)
 ```
 
 피드백은 GitHub 이슈로 남겨 주면 된다 (무엇을 하려 했는지 · 본 화면 · 기대한 것).

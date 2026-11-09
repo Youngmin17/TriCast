@@ -70,13 +70,15 @@ def transfer(bundle: dict) -> list[dict]:
 
 
 def evals_rows() -> tuple[str, str]:
-    """The evals rows from the baseline runs in history.csv (change "baseline k/3 ...")."""
+    """The evals rows from the baseline runs in history.csv (change "baseline k/3 ...") of the latest eval set
+    version (a baseline is compared only within one eval set and judge version, EVAL_DESIGN §6)."""
     import csv
 
     rows = [row for row in csv.DictReader((ROOT / HISTORY).open(encoding="utf-8"))
             if row["change"].startswith("baseline ") and row["mode"] == "live"]
     if not rows:
         return "기준선 미측정", "기준선 미측정 · judge 라벨 미작성"
+    rows = [row for row in rows if row["evalset_version"] == rows[-1]["evalset_version"]]
     rule = max(int(row[name] or 0) for row in rows for name in ("A2", "A6", "B2", "B3", "B5"))
     spread = {name: max(float(r[name]) for r in rows) - min(float(r[name]) for r in rows)
               for name in ("A1", "A3", "A4", "A5", "A7", "B1") if all(r[name] for r in rows)}

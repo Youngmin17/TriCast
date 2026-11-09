@@ -1,0 +1,217 @@
+{
+ "run_id": "2026-11-09T0034",
+ "case_id": "r_o2",
+ "calls": [
+  {
+   "role": "request",
+   "key": "request",
+   "returncode": 0,
+   "stdout": {
+    "duration_api_ms": 10865,
+    "stop_reason": "tool_use",
+    "session_id": "0b387fbb-d44f-49a8-be9d-704dfd3b51b9",
+    "total_cost_usd": 0.0174571,
+    "usage": {
+     "input_tokens": 2,
+     "cache_creation_input_tokens": 640,
+     "cache_read_input_tokens": 2139,
+     "output_tokens": 579,
+     "output_tokens_details": {
+      "thinking_tokens": 116
+     },
+     "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+     },
+     "service_tier": "standard",
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 640,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "inference_geo": "global",
+     "iterations": [
+      {
+       "input_tokens": 2,
+       "output_tokens": 579,
+       "cache_read_input_tokens": 2139,
+       "cache_creation_input_tokens": 640,
+       "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 640
+       },
+       "type": "message"
+      }
+     ],
+     "speed": "standard",
+     "fallback_credit": null
+    },
+    "modelUsage": {
+     "claude-haiku-5-5": {
+      "inputTokens": 1633,
+      "outputTokens": 316,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.0003213,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 286,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 0,
+      "canonicalModel": "claude-haiku-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     },
+     "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 579,
+      "cacheReadInputTokens": 2139,
+      "cacheCreationInputTokens": 640,
+      "webSearchRequests": 0,
+      "costUSD": 0.0171358,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 116,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 640,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "subagent_stats": {
+     "spawned": 0,
+     "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+     },
+     "started_in_background": 0,
+     "max_depth": 0,
+     "spawned_by_subagents": 0,
+     "completed": 0,
+     "failed": 0,
+     "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+     },
+     "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+     },
+     "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 2,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "{\"outcome\":\"out_of_scope\",\"model\":\"Qwen/Qwen3-0.6B\",\"budget_bits\":\"2\",\"compute_budget\":null,\"keep_bf16_blocks\":[],\"exclude_methods\":[],\"only_methods\":null,\"questions\":[],\"reason\":\"요청은 QAT(양자화 인식 학습)로 모델을 재학습하는 것입니다. TriCast는 학습이나 QAT를 하지 않습니다. 이미 학습된 모델의 Linear 레이어마다 크기 예산 안에서 사후 양자화 방법을 고르는 일만 합니다. 재학습 없이 평균 2비트 예산으로 레이어별 방법을 고르고 싶으시면 그렇게 다시 요청해 주세요.\",\"assumptions\":[]}",
+    "structured_output": {
+     "outcome": "out_of_scope",
+     "model": "Qwen/Qwen3-0.6B",
+     "budget_bits": "2",
+     "compute_budget": null,
+     "keep_bf16_blocks": [],
+     "exclude_methods": [],
+     "only_methods": null,
+     "questions": [],
+     "reason": "요청은 QAT(양자화 인식 학습)로 모델을 재학습하는 것입니다. TriCast는 학습이나 QAT를 하지 않습니다. 이미 학습된 모델의 Linear 레이어마다 크기 예산 안에서 사후 양자화 방법을 고르는 일만 합니다. 재학습 없이 평균 2비트 예산으로 레이어별 방법을 고르고 싶으시면 그렇게 다시 요청해 주세요.",
+     "assumptions": []
+    },
+    "ttft_ms": 5857,
+    "type": "result",
+    "duration_ms": 9013,
+    "uuid": "4921ef25-8677-4e1c-9642-d388ab443693",
+    "ttft_stream_ms": 4310,
+    "time_to_request_ms": 885,
+    "time_to_request_phases_ms": {
+     "other": 3,
+     "system_prompt": 0,
+     "resume_other": 1,
+     "process_user_input": 2,
+     "input_attachments": 15,
+     "input_hooks": 1,
+     "conversation_append": 0,
+     "tool_pool_refresh": 2,
+     "init_message": 2,
+     "init_frame_send": 2,
+     "engine_pickup": 0,
+     "loop_entry": 2,
+     "message_prep": 0,
+     "model_config_wait": 2,
+     "autocompact": 0,
+     "request_announcements": 3,
+     "query_setup": 0,
+     "model_gates": 788,
+     "tool_schema_build": 29,
+     "message_normalization": 5,
+     "client_creation": 18,
+     "request_build": 10
+    },
+    "turn_start_resume_kind": "none",
+    "process_turn_index": 0,
+    "time_to_request_loop_lag_ms": 70,
+    "time_to_request_cpu_ms": 263,
+    "time_to_request_major_faults": 0,
+    "input_attachments_detail": {
+     "slowest_producer": "session_settings",
+     "slowest_producer_ms": 10,
+     "cpu_ms": 24,
+     "major_faults": 0,
+     "setup_ms": 0,
+     "prompt_producers_ms": 0,
+     "ambient_start_ms": 3,
+     "ambient_wait_ms": 10,
+     "render_ms": 0,
+     "producers": 43,
+     "token_counts": 0
+    },
+    "tool_schema_build_detail": {
+     "betas_ms": 0,
+     "waits_ms": 1,
+     "placement_ms": 17,
+     "render_ms": 9,
+     "after_ms": 2,
+     "other_ms": 0,
+     "tools": 1,
+     "new_schemas": 1
+    },
+    "message_normalization_detail": {
+     "before_ms": 0,
+     "normalize_ms": 4,
+     "images_ms": 0,
+     "post_process_ms": 0,
+     "after_ms": 1,
+     "other_ms": 0,
+     "messages": 8,
+     "wire_messages": 2
+    },
+    "request_build_detail": {
+     "records_ms": 0,
+     "system_ms": 2,
+     "headers_ms": 4,
+     "cache_break_record_ms": 0,
+     "plans_ms": 0,
+     "retry_setup_ms": 1,
+     "sent_build_ms": 2,
+     "record_attempt_ms": 1,
+     "other_ms": 0,
+     "sent_build_safety_context_ms": 1,
+     "sent_build_cache_breakpoints_ms": 0,
+     "sent_build_surrogate_scan_ms": 0
+    },
+    "first_content_frame_ms": 4311,
+    "queued_turn_count": 0,
+    "result_index": 0,
+    "credential_expires_at": "2026-12-04T04:51:21.312Z"
+   },
+   "stderr": ""
+  }
+ ]
+}

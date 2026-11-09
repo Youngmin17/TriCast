@@ -1,0 +1,751 @@
+{
+ "run_id": "2026-11-09T0054",
+ "case_id": "a_k1",
+ "calls": [
+  {
+   "role": "proposer",
+   "key": "round_1",
+   "returncode": 0,
+   "stdout": {
+    "duration_api_ms": 34113,
+    "stop_reason": "tool_use",
+    "session_id": "a8ff5e02-ccfb-45b2-a4c6-949322f52c8a",
+    "total_cost_usd": 0.0816009,
+    "usage": {
+     "input_tokens": 2,
+     "cache_creation_input_tokens": 643,
+     "cache_read_input_tokens": 17930,
+     "output_tokens": 3556,
+     "output_tokens_details": {
+      "thinking_tokens": 1715
+     },
+     "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+     },
+     "service_tier": "standard",
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 643,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "inference_geo": "global",
+     "iterations": [
+      {
+       "input_tokens": 2,
+       "output_tokens": 3556,
+       "cache_read_input_tokens": 17930,
+       "cache_creation_input_tokens": 643,
+       "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 643
+       },
+       "type": "message"
+      }
+     ],
+     "speed": "standard",
+     "fallback_credit": null
+    },
+    "modelUsage": {
+     "claude-haiku-5-5": {
+      "inputTokens": 17294,
+      "outputTokens": 27,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.0017429000000000001,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 0,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 0,
+      "canonicalModel": "claude-haiku-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     },
+     "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 3556,
+      "cacheReadInputTokens": 17930,
+      "cacheCreationInputTokens": 643,
+      "webSearchRequests": 0,
+      "costUSD": 0.079858,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 1715,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 643,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "subagent_stats": {
+     "spawned": 0,
+     "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+     },
+     "started_in_background": 0,
+     "max_depth": 0,
+     "spawned_by_subagents": 0,
+     "completed": 0,
+     "failed": 0,
+     "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+     },
+     "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+     },
+     "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 2,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "{\"analysis\":\"The budget is fully used: 84617/26880 works out to the 3.148 average bits of iso_3.15 (KL 0.43614, E514ab09c524e). Upgrading any layer needs an equal-sized downgrade elsewhere. None of the retrieved layers is a clearly cheap downgrade target, and I can't see the bit cost of the other layers, so a paired swap would risk being refused for going over budget. The largest measured single-layer losses are all MLP projections at 3 or 2 bits. Examples: model.layers.14.mlp.down_proj with rht_gptq_int2 at 0.00633 (E4c3f9b73e065) against 0.00181 with rht_gptq_int3 (E90bd4b2f3645), and model.layers.27.mlp.up_proj with gptq_int3 at 0.00572 (Ef04d8aa7bded) against 0.00217 with gptq_int4 (Efea8c18d2abc). Every layer already uses the best measured method at its bit width, so a same-width method swap gains nothing. The changes that cost no bits are GPTQ solver options: act_order and damp don't change the stored bits. This round therefore tests act_order=true and damp=0.005 across the GPTQ-family methods, which make up 179 of 196 layers. The aim is to lower the 3-bit and 2-bit errors without spending budget.\",\"stop\":false,\"proposals\":[{\"name\":\"iso_3.15_actorder\",\"base\":\"iso_3.15\",\"changes\":[],\"options\":{\"gptq_int2\":{\"weight_algo.act_order\":true},\"gptq_int3\":{\"weight_algo.act_order\":true},\"gptq_int4\":{\"weight_algo.act_order\":true},\"rht_gptq_int2\":{\"weight_algo.act_order\":true},\"rht_gptq_int3\":{\"weight_algo.act_order\":true},\"rht_gptq_int4\":{\"weight_algo.act_order\":true}},\"rationale\":\"Uses the same bits as iso_3.15 (KL 0.43614, E514ab09c524e) and turns on act_order=true for all GPTQ-family methods. The loss sits in 3-bit and 2-bit GPTQ MLP layers: 14.down_proj with rht_gptq_int2 at 0.00633 (E4c3f9b73e065) and 27.up_proj with gptq_int3 at 0.00572 (Ef04d8aa7bded). 27.up_proj also has activation kurtosis 1090.09 (E24beed188b6a), where ordering columns by activation importance should help most.\",\"cites\":[\"E514ab09c524e\",\"E4c3f9b73e065\",\"Ef04d8aa7bded\",\"E24beed188b6a\"]},{\"name\":\"iso_3.15_actorder_damp005\",\"base\":\"iso_3.15\",\"changes\":[],\"options\":{\"gptq_int2\":{\"weight_algo.act_order\":true,\"weight_algo.damp\":0.005},\"gptq_int3\":{\"weight_algo.act_order\":true,\"weight_algo.damp\":0.005},\"gptq_int4\":{\"weight_algo.act_order\":true,\"weight_algo.damp\":0.005},\"rht_gptq_int2\":{\"weight_algo.act_order\":true,\"weight_algo.damp\":0.005},\"rht_gptq_int3\":{\"weight_algo.act_order\":true,\"weight_algo.damp\":0.005},\"rht_gptq_int4\":{\"weight_algo.act_order\":true,\"weight_algo.damp\":0.005}},\"rationale\":\"Costs no bits relative to iso_3.15 (KL 0.43614, E514ab09c524e). Sets act_order=true and damp=0.005 (lower than the default 0.01) so the Hessian correction matters more in the low-bit layers. Examples: 3.up_proj with rht_gptq_int3 at 0.00642 (E6f4f7ea296d5) and 18.gate_proj with rht_gptq_int2 at 0.00497 above floor (Eb1dd74cd6447).\",\"cites\":[\"E514ab09c524e\",\"E6f4f7ea296d5\",\"Eb1dd74cd6447\"]},{\"name\":\"iso_3.15_damp005\",\"base\":\"iso_3.15\",\"changes\":[],\"options\":{\"gptq_int2\":{\"weight_algo.damp\":0.005},\"gptq_int3\":{\"weight_algo.damp\":0.005},\"gptq_int4\":{\"weight_algo.damp\":0.005},\"rht_gptq_int2\":{\"weight_algo.damp\":0.005},\"rht_gptq_int3\":{\"weight_algo.damp\":0.005},\"rht_gptq_int4\":{\"weight_algo.damp\":0.005}},\"rationale\":\"Costs no bits relative to iso_3.15 (KL 0.43614, E514ab09c524e). Changes only damp=0.005, so its effect can be separated from act_order. The target is the GPTQ-dominated loss, such as 1.up_proj with rht_gptq_int3 at 0.00611 (E0564bc6ad1eb) and 27.gate_proj with rht_gptq_int3 at 0.00499 (Efa0bb391da67).\",\"cites\":[\"E514ab09c524e\",\"E0564bc6ad1eb\",\"Efa0bb391da67\"]}]}",
+    "structured_output": {
+     "analysis": "The budget is fully used: 84617/26880 works out to the 3.148 average bits of iso_3.15 (KL 0.43614, E514ab09c524e). Upgrading any layer needs an equal-sized downgrade elsewhere. None of the retrieved layers is a clearly cheap downgrade target, and I can't see the bit cost of the other layers, so a paired swap would risk being refused for going over budget. The largest measured single-layer losses are all MLP projections at 3 or 2 bits. Examples: model.layers.14.mlp.down_proj with rht_gptq_int2 at 0.00633 (E4c3f9b73e065) against 0.00181 with rht_gptq_int3 (E90bd4b2f3645), and model.layers.27.mlp.up_proj with gptq_int3 at 0.00572 (Ef04d8aa7bded) against 0.00217 with gptq_int4 (Efea8c18d2abc). Every layer already uses the best measured method at its bit width, so a same-width method swap gains nothing. The changes that cost no bits are GPTQ solver options: act_order and damp don't change the stored bits. This round therefore tests act_order=true and damp=0.005 across the GPTQ-family methods, which make up 179 of 196 layers. The aim is to lower the 3-bit and 2-bit errors without spending budget.",
+     "stop": false,
+     "proposals": [
+      {
+       "name": "iso_3.15_actorder",
+       "base": "iso_3.15",
+       "changes": [],
+       "options": {
+        "gptq_int2": {
+         "weight_algo.act_order": true
+        },
+        "gptq_int3": {
+         "weight_algo.act_order": true
+        },
+        "gptq_int4": {
+         "weight_algo.act_order": true
+        },
+        "rht_gptq_int2": {
+         "weight_algo.act_order": true
+        },
+        "rht_gptq_int3": {
+         "weight_algo.act_order": true
+        },
+        "rht_gptq_int4": {
+         "weight_algo.act_order": true
+        }
+       },
+       "rationale": "Uses the same bits as iso_3.15 (KL 0.43614, E514ab09c524e) and turns on act_order=true for all GPTQ-family methods. The loss sits in 3-bit and 2-bit GPTQ MLP layers: 14.down_proj with rht_gptq_int2 at 0.00633 (E4c3f9b73e065) and 27.up_proj with gptq_int3 at 0.00572 (Ef04d8aa7bded). 27.up_proj also has activation kurtosis 1090.09 (E24beed188b6a), where ordering columns by activation importance should help most.",
+       "cites": [
+        "E514ab09c524e",
+        "E4c3f9b73e065",
+        "Ef04d8aa7bded",
+        "E24beed188b6a"
+       ]
+      },
+      {
+       "name": "iso_3.15_actorder_damp005",
+       "base": "iso_3.15",
+       "changes": [],
+       "options": {
+        "gptq_int2": {
+         "weight_algo.act_order": true,
+         "weight_algo.damp": 0.005
+        },
+        "gptq_int3": {
+         "weight_algo.act_order": true,
+         "weight_algo.damp": 0.005
+        },
+        "gptq_int4": {
+         "weight_algo.act_order": true,
+         "weight_algo.damp": 0.005
+        },
+        "rht_gptq_int2": {
+         "weight_algo.act_order": true,
+         "weight_algo.damp": 0.005
+        },
+        "rht_gptq_int3": {
+         "weight_algo.act_order": true,
+         "weight_algo.damp": 0.005
+        },
+        "rht_gptq_int4": {
+         "weight_algo.act_order": true,
+         "weight_algo.damp": 0.005
+        }
+       },
+       "rationale": "Costs no bits relative to iso_3.15 (KL 0.43614, E514ab09c524e). Sets act_order=true and damp=0.005 (lower than the default 0.01) so the Hessian correction matters more in the low-bit layers. Examples: 3.up_proj with rht_gptq_int3 at 0.00642 (E6f4f7ea296d5) and 18.gate_proj with rht_gptq_int2 at 0.00497 above floor (Eb1dd74cd6447).",
+       "cites": [
+        "E514ab09c524e",
+        "E6f4f7ea296d5",
+        "Eb1dd74cd6447"
+       ]
+      },
+      {
+       "name": "iso_3.15_damp005",
+       "base": "iso_3.15",
+       "changes": [],
+       "options": {
+        "gptq_int2": {
+         "weight_algo.damp": 0.005
+        },
+        "gptq_int3": {
+         "weight_algo.damp": 0.005
+        },
+        "gptq_int4": {
+         "weight_algo.damp": 0.005
+        },
+        "rht_gptq_int2": {
+         "weight_algo.damp": 0.005
+        },
+        "rht_gptq_int3": {
+         "weight_algo.damp": 0.005
+        },
+        "rht_gptq_int4": {
+         "weight_algo.damp": 0.005
+        }
+       },
+       "rationale": "Costs no bits relative to iso_3.15 (KL 0.43614, E514ab09c524e). Changes only damp=0.005, so its effect can be separated from act_order. The target is the GPTQ-dominated loss, such as 1.up_proj with rht_gptq_int3 at 0.00611 (E0564bc6ad1eb) and 27.gate_proj with rht_gptq_int3 at 0.00499 (Efa0bb391da67).",
+       "cites": [
+        "E514ab09c524e",
+        "E0564bc6ad1eb",
+        "Efa0bb391da67"
+       ]
+      }
+     ]
+    },
+    "ttft_ms": 19596,
+    "type": "result",
+    "duration_ms": 33193,
+    "uuid": "5e45eaaf-1377-4206-90dc-e0246f608f87",
+    "ttft_stream_ms": 2168,
+    "time_to_request_ms": 756,
+    "time_to_request_phases_ms": {
+     "other": 2,
+     "system_prompt": 0,
+     "resume_other": 1,
+     "process_user_input": 1,
+     "input_attachments": 22,
+     "input_hooks": 1,
+     "conversation_append": 0,
+     "tool_pool_refresh": 1,
+     "init_message": 3,
+     "init_frame_send": 1,
+     "engine_pickup": 0,
+     "loop_entry": 2,
+     "message_prep": 0,
+     "model_config_wait": 2,
+     "autocompact": 1,
+     "request_announcements": 3,
+     "query_setup": 0,
+     "model_gates": 707,
+     "tool_schema_build": 5,
+     "message_normalization": 0,
+     "client_creation": 2,
+     "request_build": 2
+    },
+    "turn_start_resume_kind": "none",
+    "process_turn_index": 0,
+    "time_to_request_loop_lag_ms": 6,
+    "time_to_request_cpu_ms": 203,
+    "time_to_request_major_faults": 0,
+    "input_attachments_detail": {
+     "slowest_producer": "session_settings",
+     "slowest_producer_ms": 17,
+     "cpu_ms": 33,
+     "major_faults": 0,
+     "setup_ms": 0,
+     "prompt_producers_ms": 1,
+     "ambient_start_ms": 2,
+     "ambient_wait_ms": 16,
+     "render_ms": 0,
+     "producers": 43,
+     "token_counts": 0
+    },
+    "tool_schema_build_detail": {
+     "betas_ms": 0,
+     "waits_ms": 1,
+     "placement_ms": 3,
+     "render_ms": 1,
+     "after_ms": 0,
+     "other_ms": 0,
+     "tools": 1,
+     "new_schemas": 1
+    },
+    "message_normalization_detail": {
+     "before_ms": 0,
+     "normalize_ms": 0,
+     "images_ms": 0,
+     "post_process_ms": 0,
+     "after_ms": 0,
+     "other_ms": 0,
+     "messages": 8,
+     "wire_messages": 2
+    },
+    "request_build_detail": {
+     "records_ms": 0,
+     "system_ms": 0,
+     "headers_ms": 1,
+     "cache_break_record_ms": 0,
+     "plans_ms": 0,
+     "retry_setup_ms": 0,
+     "sent_build_ms": 1,
+     "record_attempt_ms": 0,
+     "other_ms": 0,
+     "sent_build_safety_context_ms": 0,
+     "sent_build_cache_breakpoints_ms": 0,
+     "sent_build_surrogate_scan_ms": 0
+    },
+    "first_content_frame_ms": 2168,
+    "queued_turn_count": 0,
+    "result_index": 0,
+    "credential_expires_at": "2026-12-04T04:51:21.312Z"
+   },
+   "stderr": ""
+  },
+  {
+   "role": "judge",
+   "key": "iso_3.15_actorder",
+   "returncode": 0,
+   "stdout": {
+    "duration_api_ms": 13812,
+    "stop_reason": "tool_use",
+    "session_id": "6cd16f53-0153-491a-974b-00b666b1c5d1",
+    "total_cost_usd": 0.1115093,
+    "usage": {
+     "input_tokens": 2,
+     "cache_creation_input_tokens": 11017,
+     "cache_read_input_tokens": 1426,
+     "output_tokens": 1097,
+     "output_tokens_details": {
+      "thinking_tokens": 518
+     },
+     "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+     },
+     "service_tier": "standard",
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 11017,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "inference_geo": "global",
+     "iterations": [
+      {
+       "input_tokens": 2,
+       "output_tokens": 1097,
+       "cache_read_input_tokens": 1426,
+       "cache_creation_input_tokens": 11017,
+       "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 11017
+       },
+       "type": "message"
+      }
+     ],
+     "speed": "standard",
+     "fallback_credit": null
+    },
+    "modelUsage": {
+     "claude-haiku-5-5": {
+      "inputTokens": 11246,
+      "outputTokens": 31,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.0011401000000000002,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 0,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 0,
+      "canonicalModel": "claude-haiku-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     },
+     "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 1097,
+      "cacheReadInputTokens": 1426,
+      "cacheCreationInputTokens": 11017,
+      "webSearchRequests": 0,
+      "costUSD": 0.1103692,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 518,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 11017,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "subagent_stats": {
+     "spawned": 0,
+     "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+     },
+     "started_in_background": 0,
+     "max_depth": 0,
+     "spawned_by_subagents": 0,
+     "completed": 0,
+     "failed": 0,
+     "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+     },
+     "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+     },
+     "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 2,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "{\"q1\":null,\"q2\":null,\"c1\":{\"reason\":\"Every citation matches what it is used for. E514ab09c524e is recipe_kl 0.43614 and is cited for the iso_3.15 KL. E4c3f9b73e065 is the layer_kl for 14.down_proj with rht_gptq_int2 (0.00633). Ef04d8aa7bded is the layer_kl for 27.up_proj with gptq_int3 (0.00572). E24beed188b6a is the activation kurtosis for 27.up_proj (1090.09).\",\"pass\":true},\"c2\":{\"reason\":\"The rationale makes no comparison that contradicts the cited values. The quoted KLs and kurtosis match the records exactly, and \\\"should help most\\\" is a prediction, not a comparison of record values.\",\"pass\":true},\"c3\":{\"reason\":\"The effect of act_order is written as an expectation: \\\"ordering columns by activation importance should help most\\\". No unmeasured improvement is stated as a result.\",\"pass\":true},\"c4\":{\"reason\":\"The rationale only says it \\\"Uses the same bits as iso_3.15\\\". It never says the budget (84617/26880) leaves no room and never names what the proposal gives up, and the reply does not stop for that reason.\",\"pass\":false},\"needs_human_review\":false}",
+    "structured_output": {
+     "q1": null,
+     "q2": null,
+     "c1": {
+      "reason": "Every citation matches what it is used for. E514ab09c524e is recipe_kl 0.43614 and is cited for the iso_3.15 KL. E4c3f9b73e065 is the layer_kl for 14.down_proj with rht_gptq_int2 (0.00633). Ef04d8aa7bded is the layer_kl for 27.up_proj with gptq_int3 (0.00572). E24beed188b6a is the activation kurtosis for 27.up_proj (1090.09).",
+      "pass": true
+     },
+     "c2": {
+      "reason": "The rationale makes no comparison that contradicts the cited values. The quoted KLs and kurtosis match the records exactly, and \"should help most\" is a prediction, not a comparison of record values.",
+      "pass": true
+     },
+     "c3": {
+      "reason": "The effect of act_order is written as an expectation: \"ordering columns by activation importance should help most\". No unmeasured improvement is stated as a result.",
+      "pass": true
+     },
+     "c4": {
+      "reason": "The rationale only says it \"Uses the same bits as iso_3.15\". It never says the budget (84617/26880) leaves no room and never names what the proposal gives up, and the reply does not stop for that reason.",
+      "pass": false
+     },
+     "needs_human_review": false
+    },
+    "ttft_ms": 9287,
+    "type": "result",
+    "duration_ms": 13400,
+    "uuid": "cad69e55-c2b7-46cf-b6f1-90d2fdfae8e1",
+    "ttft_stream_ms": 4720,
+    "time_to_request_ms": 751,
+    "time_to_request_phases_ms": {
+     "other": 2,
+     "system_prompt": 0,
+     "resume_other": 1,
+     "process_user_input": 2,
+     "input_attachments": 10,
+     "input_hooks": 1,
+     "conversation_append": 0,
+     "tool_pool_refresh": 1,
+     "init_message": 3,
+     "init_frame_send": 1,
+     "engine_pickup": 0,
+     "loop_entry": 2,
+     "message_prep": 0,
+     "model_config_wait": 1,
+     "autocompact": 2,
+     "request_announcements": 2,
+     "query_setup": 0,
+     "model_gates": 713,
+     "tool_schema_build": 5,
+     "message_normalization": 1,
+     "client_creation": 3,
+     "request_build": 1
+    },
+    "turn_start_resume_kind": "none",
+    "process_turn_index": 0,
+    "time_to_request_loop_lag_ms": 10,
+    "time_to_request_cpu_ms": 204,
+    "time_to_request_major_faults": 0,
+    "input_attachments_detail": {
+     "slowest_producer": "session_settings",
+     "slowest_producer_ms": 6,
+     "cpu_ms": 18,
+     "major_faults": 0,
+     "setup_ms": 0,
+     "prompt_producers_ms": 0,
+     "ambient_start_ms": 2,
+     "ambient_wait_ms": 6,
+     "render_ms": 1,
+     "producers": 43,
+     "token_counts": 0
+    },
+    "tool_schema_build_detail": {
+     "betas_ms": 0,
+     "waits_ms": 1,
+     "placement_ms": 3,
+     "render_ms": 1,
+     "after_ms": 0,
+     "other_ms": 0,
+     "tools": 1,
+     "new_schemas": 1
+    },
+    "message_normalization_detail": {
+     "before_ms": 0,
+     "normalize_ms": 0,
+     "images_ms": 0,
+     "post_process_ms": 1,
+     "after_ms": 0,
+     "other_ms": 0,
+     "messages": 8,
+     "wire_messages": 2
+    },
+    "request_build_detail": {
+     "records_ms": 0,
+     "system_ms": 0,
+     "headers_ms": 0,
+     "cache_break_record_ms": 1,
+     "plans_ms": 0,
+     "retry_setup_ms": 0,
+     "sent_build_ms": 0,
+     "record_attempt_ms": 0,
+     "other_ms": 0,
+     "sent_build_safety_context_ms": 0,
+     "sent_build_cache_breakpoints_ms": 0,
+     "sent_build_surrogate_scan_ms": 0
+    },
+    "first_content_frame_ms": 4720,
+    "queued_turn_count": 0,
+    "result_index": 0,
+    "credential_expires_at": "2026-12-04T04:51:21.312Z"
+   },
+   "stderr": ""
+  },
+  {
+   "role": "judge",
+   "key": "iso_3.15_damp005",
+   "returncode": 0,
+   "stdout": {
+    "duration_api_ms": 14967,
+    "stop_reason": "tool_use",
+    "session_id": "e6af503d-8bd0-4bd6-b606-1ceb1ea5c1ee",
+    "total_cost_usd": 0.1173825,
+    "usage": {
+     "input_tokens": 2,
+     "cache_creation_input_tokens": 10893,
+     "cache_read_input_tokens": 1426,
+     "output_tokens": 1441,
+     "output_tokens_details": {
+      "thinking_tokens": 455
+     },
+     "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+     },
+     "service_tier": "standard",
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 10893,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "inference_geo": "global",
+     "iterations": [
+      {
+       "input_tokens": 2,
+       "output_tokens": 1441,
+       "cache_read_input_tokens": 1426,
+       "cache_creation_input_tokens": 10893,
+       "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 10893
+       },
+       "type": "message"
+      }
+     ],
+     "speed": "standard",
+     "fallback_credit": null
+    },
+    "modelUsage": {
+     "claude-haiku-5-5": {
+      "inputTokens": 11118,
+      "outputTokens": 27,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.0011253,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 0,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 0,
+      "canonicalModel": "claude-haiku-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     },
+     "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 1441,
+      "cacheReadInputTokens": 1426,
+      "cacheCreationInputTokens": 10893,
+      "webSearchRequests": 0,
+      "costUSD": 0.1162572,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 455,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 10893,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "subagent_stats": {
+     "spawned": 0,
+     "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+     },
+     "started_in_background": 0,
+     "max_depth": 0,
+     "spawned_by_subagents": 0,
+     "completed": 0,
+     "failed": 0,
+     "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+     },
+     "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+     },
+     "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 2,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "{\"q1\":null,\"q2\":null,\"c1\":{\"reason\":\"Each cite matches its use: E514ab09c524e is a recipe_kl of 0.43614 (\\\"iso_3.15 (KL 0.43614…)\\\"); E0564bc6ad1eb is layers.1.mlp.up_proj rht_gptq_int3 0.00611; Efa0bb391da67 is layers.27.mlp.gate_proj rht_gptq_int3 0.00499.\",\"pass\":true},\"c2\":{\"reason\":\"No comparison against record values is made; \\\"Costs no bits\\\" concerns bit cost, which the cited records do not contain, so nothing contradicts them.\",\"pass\":true},\"c3\":{\"reason\":\"No measured effect of damp=0.005 is asserted; it only says \\\"The target is the GPTQ-dominated loss\\\".\",\"pass\":true},\"c4\":{\"reason\":\"Conflict case, but the rationale only says \\\"Costs no bits relative to iso_3.15\\\"; it never states the budget leaves no room nor names what is given up.\",\"pass\":false},\"needs_human_review\":false}",
+    "structured_output": {
+     "q1": null,
+     "q2": null,
+     "c1": {
+      "reason": "Each cite matches its use: E514ab09c524e is a recipe_kl of 0.43614 (\"iso_3.15 (KL 0.43614…)\"); E0564bc6ad1eb is layers.1.mlp.up_proj rht_gptq_int3 0.00611; Efa0bb391da67 is layers.27.mlp.gate_proj rht_gptq_int3 0.00499.",
+      "pass": true
+     },
+     "c2": {
+      "reason": "No comparison against record values is made; \"Costs no bits\" concerns bit cost, which the cited records do not contain, so nothing contradicts them.",
+      "pass": true
+     },
+     "c3": {
+      "reason": "No measured effect of damp=0.005 is asserted; it only says \"The target is the GPTQ-dominated loss\".",
+      "pass": true
+     },
+     "c4": {
+      "reason": "Conflict case, but the rationale only says \"Costs no bits relative to iso_3.15\"; it never states the budget leaves no room nor names what is given up.",
+      "pass": false
+     },
+     "needs_human_review": false
+    },
+    "ttft_ms": 6602,
+    "type": "result",
+    "duration_ms": 14452,
+    "uuid": "b98cbd91-30a6-4bdf-9791-e592478ea4fa",
+    "ttft_stream_ms": 2540,
+    "time_to_request_ms": 788,
+    "time_to_request_phases_ms": {
+     "other": 2,
+     "system_prompt": 0,
+     "resume_other": 1,
+     "process_user_input": 1,
+     "input_attachments": 13,
+     "input_hooks": 1,
+     "conversation_append": 0,
+     "tool_pool_refresh": 1,
+     "init_message": 3,
+     "init_frame_send": 2,
+     "engine_pickup": 0,
+     "loop_entry": 2,
+     "message_prep": 0,
+     "model_config_wait": 2,
+     "autocompact": 1,
+     "request_announcements": 2,
+     "query_setup": 1,
+     "model_gates": 745,
+     "tool_schema_build": 6,
+     "message_normalization": 1,
+     "client_creation": 3,
+     "request_build": 1
+    },
+    "turn_start_resume_kind": "none",
+    "process_turn_index": 0,
+    "time_to_request_loop_lag_ms": 5,
+    "time_to_request_cpu_ms": 216,
+    "time_to_request_major_faults": 0,
+    "input_attachments_detail": {
+     "slowest_producer": "session_settings",
+     "slowest_producer_ms": 8,
+     "cpu_ms": 20,
+     "major_faults": 0,
+     "setup_ms": 0,
+     "prompt_producers_ms": 0,
+     "ambient_start_ms": 2,
+     "ambient_wait_ms": 7,
+     "render_ms": 0,
+     "producers": 43,
+     "token_counts": 0
+    },
+    "tool_schema_build_detail": {
+     "betas_ms": 0,
+     "waits_ms": 1,
+     "placement_ms": 4,
+     "render_ms": 1,
+     "after_ms": 0,
+     "other_ms": 0,
+     "tools": 1,
+     "new_schemas": 1
+    },
+    "message_normalization_detail": {
+     "before_ms": 0,
+     "normalize_ms": 1,
+     "images_ms": 0,
+     "post_process_ms": 0,
+     "after_ms": 0,
+     "other_ms": 0,
+     "messages": 8,
+     "wire_messages": 2
+    },
+    "request_build_detail": {
+     "records_ms": 0,
+     "system_ms": 0,
+     "headers_ms": 1,
+     "cache_break_record_ms": 0,
+     "plans_ms": 0,
+     "retry_setup_ms": 0,
+     "sent_build_ms": 0,
+     "record_attempt_ms": 0,
+     "other_ms": 0,
+     "sent_build_safety_context_ms": 0,
+     "sent_build_cache_breakpoints_ms": 0,
+     "sent_build_surrogate_scan_ms": 0
+    },
+    "first_content_frame_ms": 2540,
+    "queued_turn_count": 0,
+    "result_index": 0,
+    "credential_expires_at": "2026-12-04T04:51:21.312Z"
+   },
+   "stderr": ""
+  }
+ ]
+}

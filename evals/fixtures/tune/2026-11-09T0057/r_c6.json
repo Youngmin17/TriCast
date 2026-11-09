@@ -1,0 +1,436 @@
+{
+ "run_id": "2026-11-09T0057",
+ "case_id": "r_c6",
+ "calls": [
+  {
+   "role": "request",
+   "key": "request",
+   "returncode": 0,
+   "stdout": {
+    "duration_api_ms": 6713,
+    "stop_reason": "tool_use",
+    "session_id": "5d486fed-3718-4cc6-814e-d5af24314846",
+    "total_cost_usd": 0.0161829,
+    "usage": {
+     "input_tokens": 2,
+     "cache_creation_input_tokens": 639,
+     "cache_read_input_tokens": 2145,
+     "output_tokens": 516,
+     "output_tokens_details": {
+      "thinking_tokens": 70
+     },
+     "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+     },
+     "service_tier": "standard",
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 639,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "inference_geo": "global",
+     "iterations": [
+      {
+       "input_tokens": 2,
+       "output_tokens": 516,
+       "cache_read_input_tokens": 2145,
+       "cache_creation_input_tokens": 639,
+       "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 639
+       },
+       "type": "message"
+      }
+     ],
+     "speed": "standard",
+     "fallback_credit": null
+    },
+    "modelUsage": {
+     "claude-haiku-5-5": {
+      "inputTokens": 1639,
+      "outputTokens": 300,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.0003139,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 265,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 0,
+      "canonicalModel": "claude-haiku-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     },
+     "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 516,
+      "cacheReadInputTokens": 2145,
+      "cacheCreationInputTokens": 639,
+      "webSearchRequests": 0,
+      "costUSD": 0.015869,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 70,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 639,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "subagent_stats": {
+     "spawned": 0,
+     "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+     },
+     "started_in_background": 0,
+     "max_depth": 0,
+     "spawned_by_subagents": 0,
+     "completed": 0,
+     "failed": 0,
+     "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+     },
+     "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+     },
+     "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 2,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "{\"outcome\":\"tune\",\"model\":\"Qwen/Qwen3-0.6B\",\"budget_bits\":\"3.2\",\"compute_budget\":null,\"keep_bf16_blocks\":[],\"exclude_methods\":[\"gptq_int2\",\"hqq_int2\",\"rht_gptq_int2\"],\"only_methods\":null,\"questions\":[],\"reason\":null,\"assumptions\":[\"'2비트 방법은 전부 빼고' (exclude all 2-bit methods) is taken to mean every method with 2-bit elements: gptq_int2, hqq_int2 and rht_gptq_int2.\",\"The request gives no compute budget, so none is set (weight-size budget only).\",\"The request names no blocks to keep in BF16, so no blocks are kept unquantized.\"]}",
+    "structured_output": {
+     "outcome": "tune",
+     "model": "Qwen/Qwen3-0.6B",
+     "budget_bits": "3.2",
+     "compute_budget": null,
+     "keep_bf16_blocks": [],
+     "exclude_methods": [
+      "gptq_int2",
+      "hqq_int2",
+      "rht_gptq_int2"
+     ],
+     "only_methods": null,
+     "questions": [],
+     "reason": null,
+     "assumptions": [
+      "'2비트 방법은 전부 빼고' (exclude all 2-bit methods) is taken to mean every method with 2-bit elements: gptq_int2, hqq_int2 and rht_gptq_int2.",
+      "The request gives no compute budget, so none is set (weight-size budget only).",
+      "The request names no blocks to keep in BF16, so no blocks are kept unquantized."
+     ]
+    },
+    "ttft_ms": 2891,
+    "type": "result",
+    "duration_ms": 5732,
+    "uuid": "7079dc97-ddd6-4044-b7aa-8d6848b5fd26",
+    "ttft_stream_ms": 2218,
+    "time_to_request_ms": 813,
+    "time_to_request_phases_ms": {
+     "other": 3,
+     "system_prompt": 1,
+     "resume_other": 0,
+     "process_user_input": 1,
+     "input_attachments": 19,
+     "input_hooks": 1,
+     "conversation_append": 0,
+     "tool_pool_refresh": 2,
+     "init_message": 7,
+     "init_frame_send": 3,
+     "engine_pickup": 1,
+     "loop_entry": 4,
+     "message_prep": 0,
+     "model_config_wait": 2,
+     "autocompact": 2,
+     "request_announcements": 3,
+     "query_setup": 1,
+     "model_gates": 750,
+     "tool_schema_build": 6,
+     "message_normalization": 1,
+     "client_creation": 4,
+     "request_build": 2
+    },
+    "turn_start_resume_kind": "none",
+    "process_turn_index": 0,
+    "time_to_request_loop_lag_ms": 9,
+    "time_to_request_cpu_ms": 256,
+    "time_to_request_major_faults": 0,
+    "input_attachments_detail": {
+     "slowest_producer": "session_settings",
+     "slowest_producer_ms": 14,
+     "cpu_ms": 31,
+     "major_faults": 0,
+     "setup_ms": 0,
+     "prompt_producers_ms": 0,
+     "ambient_start_ms": 2,
+     "ambient_wait_ms": 14,
+     "render_ms": 0,
+     "producers": 43,
+     "token_counts": 0
+    },
+    "tool_schema_build_detail": {
+     "betas_ms": 0,
+     "waits_ms": 1,
+     "placement_ms": 5,
+     "render_ms": 0,
+     "after_ms": 0,
+     "other_ms": 0,
+     "tools": 1,
+     "new_schemas": 1
+    },
+    "message_normalization_detail": {
+     "before_ms": 0,
+     "normalize_ms": 1,
+     "images_ms": 0,
+     "post_process_ms": 0,
+     "after_ms": 0,
+     "other_ms": 0,
+     "messages": 8,
+     "wire_messages": 2
+    },
+    "request_build_detail": {
+     "records_ms": 0,
+     "system_ms": 0,
+     "headers_ms": 1,
+     "cache_break_record_ms": 0,
+     "plans_ms": 1,
+     "retry_setup_ms": 0,
+     "sent_build_ms": 0,
+     "record_attempt_ms": 0,
+     "other_ms": 0,
+     "sent_build_safety_context_ms": 0,
+     "sent_build_cache_breakpoints_ms": 0,
+     "sent_build_surrogate_scan_ms": 0
+    },
+    "first_content_frame_ms": 2218,
+    "queued_turn_count": 0,
+    "result_index": 0,
+    "credential_expires_at": "2026-12-04T04:51:21.312Z"
+   },
+   "stderr": ""
+  },
+  {
+   "role": "judge",
+   "key": "request",
+   "returncode": 0,
+   "stdout": {
+    "duration_api_ms": 6967,
+    "stop_reason": "tool_use",
+    "session_id": "2ec84d51-076c-400e-8f93-6d97feafa974",
+    "total_cost_usd": 0.0178084,
+    "usage": {
+     "input_tokens": 2,
+     "cache_creation_input_tokens": 1177,
+     "cache_read_input_tokens": 1426,
+     "output_tokens": 397,
+     "output_tokens_details": {
+      "thinking_tokens": 79
+     },
+     "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+     },
+     "service_tier": "standard",
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 1177,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "inference_geo": "global",
+     "iterations": [
+      {
+       "input_tokens": 2,
+       "output_tokens": 397,
+       "cache_read_input_tokens": 1426,
+       "cache_creation_input_tokens": 1177,
+       "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 1177
+       },
+       "type": "message"
+      }
+     ],
+     "speed": "standard",
+     "fallback_credit": null
+    },
+    "modelUsage": {
+     "claude-haiku-5-5": {
+      "inputTokens": 1407,
+      "outputTokens": 37,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.0001592,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 0,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 0,
+      "canonicalModel": "claude-haiku-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     },
+     "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 397,
+      "cacheReadInputTokens": 1426,
+      "cacheCreationInputTokens": 1177,
+      "webSearchRequests": 0,
+      "costUSD": 0.017649199999999997,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 79,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 1177,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "subagent_stats": {
+     "spawned": 0,
+     "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+     },
+     "started_in_background": 0,
+     "max_depth": 0,
+     "spawned_by_subagents": 0,
+     "completed": 0,
+     "failed": 0,
+     "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+     },
+     "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+     },
+     "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 2,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "{\"q1\":null,\"q2\":{\"reason\":\"The request names the model and budget (\\\"Qwen3-0.6B 3.2비트\\\"), and the output uses those values. Every value the request left open is written in assumptions: the reading of \\\"2비트 방법은 전부 빼고\\\" as gptq_int2, hqq_int2 and rht_gptq_int2, no compute budget, and no BF16 blocks.\",\"pass\":true},\"c1\":null,\"c2\":null,\"c3\":null,\"c4\":null,\"needs_human_review\":false}",
+    "structured_output": {
+     "q1": null,
+     "q2": {
+      "reason": "The request names the model and budget (\"Qwen3-0.6B 3.2비트\"), and the output uses those values. Every value the request left open is written in assumptions: the reading of \"2비트 방법은 전부 빼고\" as gptq_int2, hqq_int2 and rht_gptq_int2, no compute budget, and no BF16 blocks.",
+      "pass": true
+     },
+     "c1": null,
+     "c2": null,
+     "c3": null,
+     "c4": null,
+     "needs_human_review": false
+    },
+    "ttft_ms": 4219,
+    "type": "result",
+    "duration_ms": 6091,
+    "uuid": "82dd5778-1e5c-45bc-94cd-e3430a03de69",
+    "ttft_stream_ms": 3017,
+    "time_to_request_ms": 456,
+    "time_to_request_phases_ms": {
+     "other": 111,
+     "system_prompt": 1,
+     "resume_other": 0,
+     "process_user_input": 3,
+     "input_attachments": 86,
+     "input_hooks": 1,
+     "conversation_append": 0,
+     "tool_pool_refresh": 2,
+     "init_message": 13,
+     "init_frame_send": 2,
+     "engine_pickup": 0,
+     "loop_entry": 4,
+     "message_prep": 3,
+     "model_config_wait": 5,
+     "autocompact": 5,
+     "request_announcements": 18,
+     "query_setup": 1,
+     "model_gates": 139,
+     "tool_schema_build": 23,
+     "message_normalization": 11,
+     "client_creation": 20,
+     "request_build": 8
+    },
+    "turn_start_resume_kind": "none",
+    "process_turn_index": 0,
+    "time_to_request_loop_lag_ms": 158,
+    "time_to_request_cpu_ms": 274,
+    "time_to_request_major_faults": 2,
+    "input_attachments_detail": {
+     "slowest_producer": "session_settings",
+     "slowest_producer_ms": 78,
+     "cpu_ms": 58,
+     "major_faults": 0,
+     "setup_ms": 0,
+     "prompt_producers_ms": 0,
+     "ambient_start_ms": 5,
+     "ambient_wait_ms": 77,
+     "render_ms": 0,
+     "producers": 43,
+     "token_counts": 0
+    },
+    "tool_schema_build_detail": {
+     "betas_ms": 0,
+     "waits_ms": 1,
+     "placement_ms": 16,
+     "render_ms": 6,
+     "after_ms": 0,
+     "other_ms": 0,
+     "tools": 1,
+     "new_schemas": 1
+    },
+    "message_normalization_detail": {
+     "before_ms": 0,
+     "normalize_ms": 8,
+     "images_ms": 0,
+     "post_process_ms": 1,
+     "after_ms": 1,
+     "other_ms": 1,
+     "messages": 8,
+     "wire_messages": 2
+    },
+    "request_build_detail": {
+     "records_ms": 1,
+     "system_ms": 2,
+     "headers_ms": 1,
+     "cache_break_record_ms": 1,
+     "plans_ms": 0,
+     "retry_setup_ms": 0,
+     "sent_build_ms": 2,
+     "record_attempt_ms": 1,
+     "other_ms": 0,
+     "sent_build_safety_context_ms": 1,
+     "sent_build_cache_breakpoints_ms": 0,
+     "sent_build_surrogate_scan_ms": 0
+    },
+    "first_content_frame_ms": 3018,
+    "queued_turn_count": 0,
+    "result_index": 0,
+    "credential_expires_at": "2026-12-04T04:51:21.312Z"
+   },
+   "stderr": ""
+  }
+ ]
+}

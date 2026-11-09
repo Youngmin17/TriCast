@@ -1,0 +1,271 @@
+{
+ "run_id": "2026-11-09T0054",
+ "case_id": "a_c2",
+ "calls": [
+  {
+   "role": "proposer",
+   "key": "round_2",
+   "returncode": 0,
+   "stdout": {
+    "duration_api_ms": 36221,
+    "stop_reason": "tool_use",
+    "session_id": "210a24c5-8575-4958-9e39-1c6725357515",
+    "total_cost_usd": 0.07624619999999999,
+    "usage": {
+     "input_tokens": 2,
+     "cache_creation_input_tokens": 642,
+     "cache_read_input_tokens": 18126,
+     "output_tokens": 3279,
+     "output_tokens_details": {
+      "thinking_tokens": 1858
+     },
+     "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+     },
+     "service_tier": "standard",
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 642,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "inference_geo": "global",
+     "iterations": [
+      {
+       "input_tokens": 2,
+       "output_tokens": 3279,
+       "cache_read_input_tokens": 18126,
+       "cache_creation_input_tokens": 642,
+       "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 642
+       },
+       "type": "message"
+      }
+     ],
+     "speed": "standard",
+     "fallback_credit": null
+    },
+    "modelUsage": {
+     "claude-haiku-5-5": {
+      "inputTokens": 17490,
+      "outputTokens": 296,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.0018969999999999998,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 268,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 0,
+      "canonicalModel": "claude-haiku-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     },
+     "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 3279,
+      "cacheReadInputTokens": 18126,
+      "cacheCreationInputTokens": 642,
+      "webSearchRequests": 0,
+      "costUSD": 0.07434919999999999,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 1858,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 642,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "subagent_stats": {
+     "spawned": 0,
+     "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+     },
+     "started_in_background": 0,
+     "max_depth": 0,
+     "spawned_by_subagents": 0,
+     "completed": 0,
+     "failed": 0,
+     "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+     },
+     "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+     },
+     "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 2,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "{\"analysis\":\"The budget is 403/128 bits per weight, and the best grid iso_3.15 (E514ab09c524e) is already within about 2e-4 bits per weight of it, so any per-layer upgrade has to be paid for by a downgrade. For the layers where loss is concentrated, the only records I have show that dropping one more of them to int2 costs several times what an upgrade gains. For example, 27.gate_proj measures 0.0234424 at rht_gptq_int2 against 0.00498703 at rht_gptq_int3. So a bit-neutral swap backed by records is not available yet. Last round's option proposals were refused only because their rationales quoted a rounded KL. I am resubmitting the same option ideas without unsupported numbers. Changing act_order or damp does not change the stored bits, so these grids stay within budget.\",\"stop\":false,\"proposals\":[{\"name\":\"opt_act_order_v2\",\"base\":\"iso_3.15\",\"changes\":[],\"options\":{\"weight_algo.act_order\":true},\"rationale\":\"This keeps the per-layer grid of iso_3.15 (E514ab09c524e) and sets act_order=true for the GPTQ-family layers. Stored bits are unchanged. The worst layers have very spread-out activations: 27.up_proj has activation kurtosis 1090.09 (E24beed188b6a) and channel absmax ratio 65.2425 (E3c29dce14bae). Quantizing the most active columns first should lower GPTQ error on layers like these.\",\"cites\":[\"E514ab09c524e\",\"E24beed188b6a\",\"E3c29dce14bae\",\"Ef04d8aa7bded\"]},{\"name\":\"opt_damp_high_v2\",\"base\":\"iso_3.15\",\"changes\":[],\"options\":{\"weight_algo.damp\":0.05},\"rationale\":\"This keeps the iso_3.15 grid (E514ab09c524e) and sets damp=0.05. Stored bits are unchanged. Calibration is small (8x512), and activation kurtosis is extreme: 1090.09 in 27.gate_proj (E5aee24c5494a) and 324.063 in 2.up_proj (Ecbd8d8937247). Stronger damping regularizes the Hessian, which may reduce overfitting on low-bit layers such as 14.down_proj at rht_gptq_int2 (E4c3f9b73e065).\",\"cites\":[\"E514ab09c524e\",\"E5aee24c5494a\",\"Ecbd8d8937247\",\"E4c3f9b73e065\"]},{\"name\":\"opt_act_order_damp_high\",\"base\":\"iso_3.15\",\"changes\":[],\"options\":{\"weight_algo.act_order\":true,\"weight_algo.damp\":0.05},\"rationale\":\"This combines act_order=true with damp=0.05 on the iso_3.15 grid (E514ab09c524e) at the same stored bits. It targets layers with outlier activation channels, such as 27.up_proj with outlier_channels 0.00976562 (E1cdf4d37dde6) and 3.up_proj with activation kurtosis 241.283 (Eb1b68d163774), where reordering and stronger damping may help together.\",\"cites\":[\"E514ab09c524e\",\"E1cdf4d37dde6\",\"Eb1b68d163774\",\"E6f4f7ea296d5\"]},{\"name\":\"opt_damp_low_v2\",\"base\":\"iso_3.15\",\"changes\":[],\"options\":{\"weight_algo.damp\":0.002},\"rationale\":\"This keeps the iso_3.15 grid (E514ab09c524e) and sets damp=0.002, so the GPTQ error compensation follows the calibration Hessian more closely. Stored bits are unchanged. It brackets the damp=0.05 proposal so the measured whole-recipe KL shows which direction helps the int3 MLP layers, such as 1.up_proj (E0564bc6ad1eb) and 2.up_proj (E9baa10763ebe).\",\"cites\":[\"E514ab09c524e\",\"E0564bc6ad1eb\",\"E9baa10763ebe\"]}]}",
+    "structured_output": {
+     "analysis": "The budget is 403/128 bits per weight, and the best grid iso_3.15 (E514ab09c524e) is already within about 2e-4 bits per weight of it, so any per-layer upgrade has to be paid for by a downgrade. For the layers where loss is concentrated, the only records I have show that dropping one more of them to int2 costs several times what an upgrade gains. For example, 27.gate_proj measures 0.0234424 at rht_gptq_int2 against 0.00498703 at rht_gptq_int3. So a bit-neutral swap backed by records is not available yet. Last round's option proposals were refused only because their rationales quoted a rounded KL. I am resubmitting the same option ideas without unsupported numbers. Changing act_order or damp does not change the stored bits, so these grids stay within budget.",
+     "stop": false,
+     "proposals": [
+      {
+       "name": "opt_act_order_v2",
+       "base": "iso_3.15",
+       "changes": [],
+       "options": {
+        "weight_algo.act_order": true
+       },
+       "rationale": "This keeps the per-layer grid of iso_3.15 (E514ab09c524e) and sets act_order=true for the GPTQ-family layers. Stored bits are unchanged. The worst layers have very spread-out activations: 27.up_proj has activation kurtosis 1090.09 (E24beed188b6a) and channel absmax ratio 65.2425 (E3c29dce14bae). Quantizing the most active columns first should lower GPTQ error on layers like these.",
+       "cites": [
+        "E514ab09c524e",
+        "E24beed188b6a",
+        "E3c29dce14bae",
+        "Ef04d8aa7bded"
+       ]
+      },
+      {
+       "name": "opt_damp_high_v2",
+       "base": "iso_3.15",
+       "changes": [],
+       "options": {
+        "weight_algo.damp": 0.05
+       },
+       "rationale": "This keeps the iso_3.15 grid (E514ab09c524e) and sets damp=0.05. Stored bits are unchanged. Calibration is small (8x512), and activation kurtosis is extreme: 1090.09 in 27.gate_proj (E5aee24c5494a) and 324.063 in 2.up_proj (Ecbd8d8937247). Stronger damping regularizes the Hessian, which may reduce overfitting on low-bit layers such as 14.down_proj at rht_gptq_int2 (E4c3f9b73e065).",
+       "cites": [
+        "E514ab09c524e",
+        "E5aee24c5494a",
+        "Ecbd8d8937247",
+        "E4c3f9b73e065"
+       ]
+      },
+      {
+       "name": "opt_act_order_damp_high",
+       "base": "iso_3.15",
+       "changes": [],
+       "options": {
+        "weight_algo.act_order": true,
+        "weight_algo.damp": 0.05
+       },
+       "rationale": "This combines act_order=true with damp=0.05 on the iso_3.15 grid (E514ab09c524e) at the same stored bits. It targets layers with outlier activation channels, such as 27.up_proj with outlier_channels 0.00976562 (E1cdf4d37dde6) and 3.up_proj with activation kurtosis 241.283 (Eb1b68d163774), where reordering and stronger damping may help together.",
+       "cites": [
+        "E514ab09c524e",
+        "E1cdf4d37dde6",
+        "Eb1b68d163774",
+        "E6f4f7ea296d5"
+       ]
+      },
+      {
+       "name": "opt_damp_low_v2",
+       "base": "iso_3.15",
+       "changes": [],
+       "options": {
+        "weight_algo.damp": 0.002
+       },
+       "rationale": "This keeps the iso_3.15 grid (E514ab09c524e) and sets damp=0.002, so the GPTQ error compensation follows the calibration Hessian more closely. Stored bits are unchanged. It brackets the damp=0.05 proposal so the measured whole-recipe KL shows which direction helps the int3 MLP layers, such as 1.up_proj (E0564bc6ad1eb) and 2.up_proj (E9baa10763ebe).",
+       "cites": [
+        "E514ab09c524e",
+        "E0564bc6ad1eb",
+        "E9baa10763ebe"
+       ]
+      }
+     ]
+    },
+    "ttft_ms": 22725,
+    "type": "result",
+    "duration_ms": 34082,
+    "uuid": "59b1c6c9-ac0d-42c1-92a2-bfa973d03749",
+    "ttft_stream_ms": 3826,
+    "time_to_request_ms": 752,
+    "time_to_request_phases_ms": {
+     "other": 2,
+     "system_prompt": 0,
+     "resume_other": 1,
+     "process_user_input": 1,
+     "input_attachments": 11,
+     "input_hooks": 1,
+     "conversation_append": 0,
+     "tool_pool_refresh": 2,
+     "init_message": 2,
+     "init_frame_send": 2,
+     "engine_pickup": 1,
+     "loop_entry": 1,
+     "message_prep": 1,
+     "model_config_wait": 1,
+     "autocompact": 1,
+     "request_announcements": 2,
+     "query_setup": 0,
+     "model_gates": 708,
+     "tool_schema_build": 9,
+     "message_normalization": 0,
+     "client_creation": 4,
+     "request_build": 2
+    },
+    "turn_start_resume_kind": "none",
+    "process_turn_index": 0,
+    "time_to_request_loop_lag_ms": 2,
+    "time_to_request_cpu_ms": 168,
+    "time_to_request_major_faults": 0,
+    "input_attachments_detail": {
+     "slowest_producer": "session_settings",
+     "slowest_producer_ms": 7,
+     "cpu_ms": 19,
+     "major_faults": 0,
+     "setup_ms": 0,
+     "prompt_producers_ms": 0,
+     "ambient_start_ms": 2,
+     "ambient_wait_ms": 6,
+     "render_ms": 0,
+     "producers": 43,
+     "token_counts": 0
+    },
+    "tool_schema_build_detail": {
+     "betas_ms": 0,
+     "waits_ms": 2,
+     "placement_ms": 5,
+     "render_ms": 1,
+     "after_ms": 0,
+     "other_ms": 1,
+     "tools": 1,
+     "new_schemas": 1
+    },
+    "message_normalization_detail": {
+     "before_ms": 0,
+     "normalize_ms": 0,
+     "images_ms": 0,
+     "post_process_ms": 0,
+     "after_ms": 0,
+     "other_ms": 0,
+     "messages": 8,
+     "wire_messages": 2
+    },
+    "request_build_detail": {
+     "records_ms": 0,
+     "system_ms": 0,
+     "headers_ms": 1,
+     "cache_break_record_ms": 0,
+     "plans_ms": 1,
+     "retry_setup_ms": 0,
+     "sent_build_ms": 0,
+     "record_attempt_ms": 0,
+     "other_ms": 0,
+     "sent_build_safety_context_ms": 0,
+     "sent_build_cache_breakpoints_ms": 0,
+     "sent_build_surrogate_scan_ms": 0
+    },
+    "first_content_frame_ms": 3826,
+    "queued_turn_count": 0,
+    "result_index": 0,
+    "credential_expires_at": "2026-12-04T04:51:21.312Z"
+   },
+   "stderr": ""
+  }
+ ]
+}

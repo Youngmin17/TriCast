@@ -1,0 +1,241 @@
+{
+ "run_id": "2026-11-09T0057",
+ "case_id": "a_k1",
+ "calls": [
+  {
+   "role": "proposer",
+   "key": "round_1",
+   "returncode": 0,
+   "stdout": {
+    "duration_api_ms": 24469,
+    "stop_reason": "tool_use",
+    "session_id": "70d52fcd-63a0-4c0b-a47e-64e00e5e95cc",
+    "total_cost_usd": 0.0536289,
+    "usage": {
+     "input_tokens": 2,
+     "cache_creation_input_tokens": 649,
+     "cache_read_input_tokens": 17930,
+     "output_tokens": 2155,
+     "output_tokens_details": {
+      "thinking_tokens": 1206
+     },
+     "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+     },
+     "service_tier": "standard",
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 649,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "inference_geo": "global",
+     "iterations": [
+      {
+       "input_tokens": 2,
+       "output_tokens": 2155,
+       "cache_read_input_tokens": 17930,
+       "cache_creation_input_tokens": 649,
+       "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 649
+       },
+       "type": "message"
+      }
+     ],
+     "speed": "standard",
+     "fallback_credit": null
+    },
+    "modelUsage": {
+     "claude-haiku-5-5": {
+      "inputTokens": 17294,
+      "outputTokens": 27,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.0017429000000000001,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 0,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 0,
+      "canonicalModel": "claude-haiku-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     },
+     "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 2155,
+      "cacheReadInputTokens": 17930,
+      "cacheCreationInputTokens": 649,
+      "webSearchRequests": 0,
+      "costUSD": 0.051886,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 1206,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 649,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "subagent_stats": {
+     "spawned": 0,
+     "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+     },
+     "started_in_background": 0,
+     "max_depth": 0,
+     "spawned_by_subagents": 0,
+     "completed": 0,
+     "failed": 0,
+     "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+     },
+     "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+     },
+     "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 2,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "{\"analysis\":\"The budget is 84617/26880, about 3.148 bits per weight, and iso_3.15 uses 3.1480 avg bits (E514ab09c524e). So the budget is already full and any method upgrade has to be paid for with a downgrade of the same size. The layers where the loss concentrates are all MLP projections at int3 or int2. Moving one of them down to int2 costs a lot: for example, 27.up_proj measures 0.00572 at gptq_int3 against 0.0269 at gptq_int2 (Ef04d8aa7bded, Ec2994e80f2d5). I don't know which layers are currently at int4 or what they measure, so I can't price a downgrade to pay for an upgrade. For this round I'm only changing GPTQ options, since act_order and damp don't change the stored bits.\",\"stop\":false,\"proposals\":[{\"name\":\"iso_3.15_actorder\",\"base\":\"iso_3.15\",\"changes\":[],\"options\":{\"weight_algo.act_order\":true},\"rationale\":\"Bit-neutral option change. iso_3.15 measured KL=0.4361 at 3.148 avg bits (E514ab09c524e), and the top loss layers are GPTQ int3/int2, e.g. 27.up_proj gptq_int3 at 0.00572 (Ef04d8aa7bded) and 14.down_proj rht_gptq_int2 at 0.00633 (E4c3f9b73e065). Setting act_order=true makes GPTQ quantize the columns with the most activation energy first. 27.up_proj has activation kurtosis 1090 (E24beed188b6a), so it may benefit.\",\"cites\":[\"E514ab09c524e\",\"Ef04d8aa7bded\",\"E4c3f9b73e065\",\"E24beed188b6a\"]},{\"name\":\"iso_3.15_actorder_damp005\",\"base\":\"iso_3.15\",\"changes\":[],\"options\":{\"weight_algo.act_order\":true,\"weight_algo.damp\":0.005},\"rationale\":\"Same bit count as iso_3.15 (KL=0.4361, E514ab09c524e). This adds act_order=true and lowers damp from 0.01 to damp=0.005 so GPTQ follows the measured Hessian more closely on the int3 MLP layers that carry the most loss, e.g. 3.up_proj rht_gptq_int3 at 0.00642 (E6f4f7ea296d5) and 1.up_proj at 0.00611 (E0564bc6ad1eb).\",\"cites\":[\"E514ab09c524e\",\"E6f4f7ea296d5\",\"E0564bc6ad1eb\"]}]}",
+    "structured_output": {
+     "analysis": "The budget is 84617/26880, about 3.148 bits per weight, and iso_3.15 uses 3.1480 avg bits (E514ab09c524e). So the budget is already full and any method upgrade has to be paid for with a downgrade of the same size. The layers where the loss concentrates are all MLP projections at int3 or int2. Moving one of them down to int2 costs a lot: for example, 27.up_proj measures 0.00572 at gptq_int3 against 0.0269 at gptq_int2 (Ef04d8aa7bded, Ec2994e80f2d5). I don't know which layers are currently at int4 or what they measure, so I can't price a downgrade to pay for an upgrade. For this round I'm only changing GPTQ options, since act_order and damp don't change the stored bits.",
+     "stop": false,
+     "proposals": [
+      {
+       "name": "iso_3.15_actorder",
+       "base": "iso_3.15",
+       "changes": [],
+       "options": {
+        "weight_algo.act_order": true
+       },
+       "rationale": "Bit-neutral option change. iso_3.15 measured KL=0.4361 at 3.148 avg bits (E514ab09c524e), and the top loss layers are GPTQ int3/int2, e.g. 27.up_proj gptq_int3 at 0.00572 (Ef04d8aa7bded) and 14.down_proj rht_gptq_int2 at 0.00633 (E4c3f9b73e065). Setting act_order=true makes GPTQ quantize the columns with the most activation energy first. 27.up_proj has activation kurtosis 1090 (E24beed188b6a), so it may benefit.",
+       "cites": [
+        "E514ab09c524e",
+        "Ef04d8aa7bded",
+        "E4c3f9b73e065",
+        "E24beed188b6a"
+       ]
+      },
+      {
+       "name": "iso_3.15_actorder_damp005",
+       "base": "iso_3.15",
+       "changes": [],
+       "options": {
+        "weight_algo.act_order": true,
+        "weight_algo.damp": 0.005
+       },
+       "rationale": "Same bit count as iso_3.15 (KL=0.4361, E514ab09c524e). This adds act_order=true and lowers damp from 0.01 to damp=0.005 so GPTQ follows the measured Hessian more closely on the int3 MLP layers that carry the most loss, e.g. 3.up_proj rht_gptq_int3 at 0.00642 (E6f4f7ea296d5) and 1.up_proj at 0.00611 (E0564bc6ad1eb).",
+       "cites": [
+        "E514ab09c524e",
+        "E6f4f7ea296d5",
+        "E0564bc6ad1eb"
+       ]
+      }
+     ]
+    },
+    "ttft_ms": 16443,
+    "type": "result",
+    "duration_ms": 24192,
+    "uuid": "79571c3e-8777-4733-9a00-4ca47405c6df",
+    "ttft_stream_ms": 3450,
+    "time_to_request_ms": 814,
+    "time_to_request_phases_ms": {
+     "other": 2,
+     "system_prompt": 0,
+     "resume_other": 1,
+     "process_user_input": 1,
+     "input_attachments": 18,
+     "input_hooks": 1,
+     "conversation_append": 0,
+     "tool_pool_refresh": 1,
+     "init_message": 3,
+     "init_frame_send": 1,
+     "engine_pickup": 1,
+     "loop_entry": 1,
+     "message_prep": 1,
+     "model_config_wait": 1,
+     "autocompact": 1,
+     "request_announcements": 3,
+     "query_setup": 0,
+     "model_gates": 766,
+     "tool_schema_build": 7,
+     "message_normalization": 1,
+     "client_creation": 3,
+     "request_build": 1
+    },
+    "turn_start_resume_kind": "none",
+    "process_turn_index": 0,
+    "time_to_request_loop_lag_ms": 8,
+    "time_to_request_cpu_ms": 258,
+    "time_to_request_major_faults": 0,
+    "input_attachments_detail": {
+     "slowest_producer": "session_settings",
+     "slowest_producer_ms": 13,
+     "cpu_ms": 30,
+     "major_faults": 0,
+     "setup_ms": 0,
+     "prompt_producers_ms": 0,
+     "ambient_start_ms": 2,
+     "ambient_wait_ms": 13,
+     "render_ms": 0,
+     "producers": 43,
+     "token_counts": 0
+    },
+    "tool_schema_build_detail": {
+     "betas_ms": 0,
+     "waits_ms": 1,
+     "placement_ms": 5,
+     "render_ms": 1,
+     "after_ms": 0,
+     "other_ms": 0,
+     "tools": 1,
+     "new_schemas": 1
+    },
+    "message_normalization_detail": {
+     "before_ms": 0,
+     "normalize_ms": 1,
+     "images_ms": 0,
+     "post_process_ms": 0,
+     "after_ms": 0,
+     "other_ms": 0,
+     "messages": 8,
+     "wire_messages": 2
+    },
+    "request_build_detail": {
+     "records_ms": 0,
+     "system_ms": 0,
+     "headers_ms": 1,
+     "cache_break_record_ms": 0,
+     "plans_ms": 0,
+     "retry_setup_ms": 0,
+     "sent_build_ms": 0,
+     "record_attempt_ms": 0,
+     "other_ms": 0,
+     "sent_build_safety_context_ms": 0,
+     "sent_build_cache_breakpoints_ms": 0,
+     "sent_build_surrogate_scan_ms": 0
+    },
+    "first_content_frame_ms": 3451,
+    "queued_turn_count": 0,
+    "result_index": 0,
+    "credential_expires_at": "2026-12-04T04:51:21.312Z"
+   },
+   "stderr": ""
+  }
+ ]
+}

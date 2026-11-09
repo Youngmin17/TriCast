@@ -1,0 +1,279 @@
+{
+ "run_id": "2026-11-09T0035",
+ "case_id": "a_h1",
+ "calls": [
+  {
+   "role": "proposer",
+   "key": "round_1",
+   "returncode": 0,
+   "stdout": {
+    "duration_api_ms": 37233,
+    "stop_reason": "tool_use",
+    "session_id": "505bc558-b603-41e8-b670-8c74ccc1c47c",
+    "total_cost_usd": 0.08034839999999999,
+    "usage": {
+     "input_tokens": 2,
+     "cache_creation_input_tokens": 643,
+     "cache_read_input_tokens": 17955,
+     "output_tokens": 3493,
+     "output_tokens_details": {
+      "thinking_tokens": 2123
+     },
+     "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+     },
+     "service_tier": "standard",
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 643,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "inference_geo": "global",
+     "iterations": [
+      {
+       "input_tokens": 2,
+       "output_tokens": 3493,
+       "cache_read_input_tokens": 17955,
+       "cache_creation_input_tokens": 643,
+       "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 643
+       },
+       "type": "message"
+      }
+     ],
+     "speed": "standard",
+     "fallback_credit": null
+    },
+    "modelUsage": {
+     "claude-haiku-5-5": {
+      "inputTokens": 17319,
+      "outputTokens": 27,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.0017454000000000002,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 0,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 0,
+      "canonicalModel": "claude-haiku-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     },
+     "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 3493,
+      "cacheReadInputTokens": 17955,
+      "cacheCreationInputTokens": 643,
+      "webSearchRequests": 0,
+      "costUSD": 0.07860299999999999,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 2123,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 643,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "subagent_stats": {
+     "spawned": 0,
+     "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+     },
+     "started_in_background": 0,
+     "max_depth": 0,
+     "spawned_by_subagents": 0,
+     "completed": 0,
+     "failed": 0,
+     "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+     },
+     "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+     },
+     "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 2,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "{\"analysis\":\"The budget is 403/128 = 3.1484 bits per weight. The best grid, iso_3.15, uses 3.14795 (E514ab09c524e), so almost no bits are free. The knapsack already picked each layer's method from single-layer KL. For example, 14.down_proj is on rht_gptq_int2 at 0.00633 (E4c3f9b73e065) even though rht_gptq_int3 gives 0.00181 (E90bd4b2f3645), because every possible downgrade to pay for it costs more: the int2 KLs I could see are all around 0.02–0.035 (for example E829dc44cee68 and E97708161110f). Swapping layers while keeping the size fixed therefore looks unprofitable. The measured KL (0.436) is above the prediction (0.398), which points to interactions between layers. The cheapest lever that stays inside the budget is the GPTQ solver options, since they don't change the bit count. This round tests act_order=true alone, and act_order=true together with damp=0.005. Both apply to every GPTQ-family method, and the cell methods stay the same.\",\"stop\":false,\"proposals\":[{\"name\":\"iso_3.15_actorder\",\"base\":\"iso_3.15\",\"changes\":[],\"options\":{\"gptq_int2\":{\"weight_algo.act_order\":true},\"gptq_int3\":{\"weight_algo.act_order\":true},\"gptq_int4\":{\"weight_algo.act_order\":true},\"rht_gptq_int2\":{\"weight_algo.act_order\":true},\"rht_gptq_int3\":{\"weight_algo.act_order\":true},\"rht_gptq_int4\":{\"weight_algo.act_order\":true}},\"rationale\":\"iso_3.15 measures 0.436 (E514ab09c524e) against a single-layer prediction of 0.398, and it uses 3.14795 bits per weight, leaving almost no room for upgrades. The largest remaining losses sit on GPTQ-quantized MLP layers: 27.up_proj on gptq_int3 at 0.00572 (Ef04d8aa7bded) and 14.down_proj on rht_gptq_int2 at 0.00633 (E4c3f9b73e065). Setting act_order=true changes the solver order without changing the stored bits, so the size stays within budget.\",\"cites\":[\"E514ab09c524e\",\"Ef04d8aa7bded\",\"E4c3f9b73e065\"]},{\"name\":\"iso_3.15_actorder_damp005\",\"base\":\"iso_3.15\",\"changes\":[],\"options\":{\"gptq_int2\":{\"weight_algo.act_order\":true,\"weight_algo.damp\":0.005},\"gptq_int3\":{\"weight_algo.act_order\":true,\"weight_algo.damp\":0.005},\"gptq_int4\":{\"weight_algo.act_order\":true,\"weight_algo.damp\":0.005},\"rht_gptq_int2\":{\"weight_algo.act_order\":true,\"weight_algo.damp\":0.005},\"rht_gptq_int3\":{\"weight_algo.act_order\":true,\"weight_algo.damp\":0.005},\"rht_gptq_int4\":{\"weight_algo.act_order\":true,\"weight_algo.damp\":0.005}},\"rationale\":\"This grid keeps the same bits as iso_3.15 (avg 3.14795 bits, KL 0.436, E514ab09c524e). It combines act_order=true with lower damping, damp=0.005, so the solver follows the calibration Hessian more closely. The layers carrying the most loss are on GPTQ variants: 3.up_proj on rht_gptq_int3 at 0.00642 (E6f4f7ea296d5) and 27.gate_proj on rht_gptq_int3 at 0.00499 (Efa0bb391da67).\",\"cites\":[\"E514ab09c524e\",\"E6f4f7ea296d5\",\"Efa0bb391da67\"]}]}",
+    "structured_output": {
+     "analysis": "The budget is 403/128 = 3.1484 bits per weight. The best grid, iso_3.15, uses 3.14795 (E514ab09c524e), so almost no bits are free. The knapsack already picked each layer's method from single-layer KL. For example, 14.down_proj is on rht_gptq_int2 at 0.00633 (E4c3f9b73e065) even though rht_gptq_int3 gives 0.00181 (E90bd4b2f3645), because every possible downgrade to pay for it costs more: the int2 KLs I could see are all around 0.02–0.035 (for example E829dc44cee68 and E97708161110f). Swapping layers while keeping the size fixed therefore looks unprofitable. The measured KL (0.436) is above the prediction (0.398), which points to interactions between layers. The cheapest lever that stays inside the budget is the GPTQ solver options, since they don't change the bit count. This round tests act_order=true alone, and act_order=true together with damp=0.005. Both apply to every GPTQ-family method, and the cell methods stay the same.",
+     "stop": false,
+     "proposals": [
+      {
+       "name": "iso_3.15_actorder",
+       "base": "iso_3.15",
+       "changes": [],
+       "options": {
+        "gptq_int2": {
+         "weight_algo.act_order": true
+        },
+        "gptq_int3": {
+         "weight_algo.act_order": true
+        },
+        "gptq_int4": {
+         "weight_algo.act_order": true
+        },
+        "rht_gptq_int2": {
+         "weight_algo.act_order": true
+        },
+        "rht_gptq_int3": {
+         "weight_algo.act_order": true
+        },
+        "rht_gptq_int4": {
+         "weight_algo.act_order": true
+        }
+       },
+       "rationale": "iso_3.15 measures 0.436 (E514ab09c524e) against a single-layer prediction of 0.398, and it uses 3.14795 bits per weight, leaving almost no room for upgrades. The largest remaining losses sit on GPTQ-quantized MLP layers: 27.up_proj on gptq_int3 at 0.00572 (Ef04d8aa7bded) and 14.down_proj on rht_gptq_int2 at 0.00633 (E4c3f9b73e065). Setting act_order=true changes the solver order without changing the stored bits, so the size stays within budget.",
+       "cites": [
+        "E514ab09c524e",
+        "Ef04d8aa7bded",
+        "E4c3f9b73e065"
+       ]
+      },
+      {
+       "name": "iso_3.15_actorder_damp005",
+       "base": "iso_3.15",
+       "changes": [],
+       "options": {
+        "gptq_int2": {
+         "weight_algo.act_order": true,
+         "weight_algo.damp": 0.005
+        },
+        "gptq_int3": {
+         "weight_algo.act_order": true,
+         "weight_algo.damp": 0.005
+        },
+        "gptq_int4": {
+         "weight_algo.act_order": true,
+         "weight_algo.damp": 0.005
+        },
+        "rht_gptq_int2": {
+         "weight_algo.act_order": true,
+         "weight_algo.damp": 0.005
+        },
+        "rht_gptq_int3": {
+         "weight_algo.act_order": true,
+         "weight_algo.damp": 0.005
+        },
+        "rht_gptq_int4": {
+         "weight_algo.act_order": true,
+         "weight_algo.damp": 0.005
+        }
+       },
+       "rationale": "This grid keeps the same bits as iso_3.15 (avg 3.14795 bits, KL 0.436, E514ab09c524e). It combines act_order=true with lower damping, damp=0.005, so the solver follows the calibration Hessian more closely. The layers carrying the most loss are on GPTQ variants: 3.up_proj on rht_gptq_int3 at 0.00642 (E6f4f7ea296d5) and 27.gate_proj on rht_gptq_int3 at 0.00499 (Efa0bb391da67).",
+       "cites": [
+        "E514ab09c524e",
+        "E6f4f7ea296d5",
+        "Efa0bb391da67"
+       ]
+      }
+     ]
+    },
+    "ttft_ms": 26650,
+    "type": "result",
+    "duration_ms": 37263,
+    "uuid": "e7d72536-e71e-4140-8a7d-7dd5ef855f32",
+    "ttft_stream_ms": 4498,
+    "time_to_request_ms": 865,
+    "time_to_request_phases_ms": {
+     "other": 2,
+     "system_prompt": 0,
+     "resume_other": 1,
+     "process_user_input": 1,
+     "input_attachments": 18,
+     "input_hooks": 1,
+     "conversation_append": 0,
+     "tool_pool_refresh": 1,
+     "init_message": 4,
+     "init_frame_send": 1,
+     "engine_pickup": 1,
+     "loop_entry": 1,
+     "message_prep": 0,
+     "model_config_wait": 2,
+     "autocompact": 1,
+     "request_announcements": 2,
+     "query_setup": 1,
+     "model_gates": 818,
+     "tool_schema_build": 5,
+     "message_normalization": 1,
+     "client_creation": 2,
+     "request_build": 2
+    },
+    "turn_start_resume_kind": "none",
+    "process_turn_index": 0,
+    "time_to_request_loop_lag_ms": 3,
+    "time_to_request_cpu_ms": 196,
+    "time_to_request_major_faults": 2,
+    "input_attachments_detail": {
+     "slowest_producer": "session_settings",
+     "slowest_producer_ms": 13,
+     "cpu_ms": 30,
+     "major_faults": 0,
+     "setup_ms": 0,
+     "prompt_producers_ms": 0,
+     "ambient_start_ms": 2,
+     "ambient_wait_ms": 13,
+     "render_ms": 0,
+     "producers": 43,
+     "token_counts": 0
+    },
+    "tool_schema_build_detail": {
+     "betas_ms": 0,
+     "waits_ms": 1,
+     "placement_ms": 3,
+     "render_ms": 1,
+     "after_ms": 0,
+     "other_ms": 0,
+     "tools": 1,
+     "new_schemas": 1
+    },
+    "message_normalization_detail": {
+     "before_ms": 0,
+     "normalize_ms": 1,
+     "images_ms": 0,
+     "post_process_ms": 0,
+     "after_ms": 0,
+     "other_ms": 0,
+     "messages": 8,
+     "wire_messages": 2
+    },
+    "request_build_detail": {
+     "records_ms": 0,
+     "system_ms": 0,
+     "headers_ms": 1,
+     "cache_break_record_ms": 0,
+     "plans_ms": 0,
+     "retry_setup_ms": 0,
+     "sent_build_ms": 1,
+     "record_attempt_ms": 0,
+     "other_ms": 0,
+     "sent_build_safety_context_ms": 0,
+     "sent_build_cache_breakpoints_ms": 0,
+     "sent_build_surrogate_scan_ms": 0
+    },
+    "first_content_frame_ms": 4498,
+    "queued_turn_count": 0,
+    "result_index": 0,
+    "credential_expires_at": "2026-12-04T04:51:21.312Z"
+   },
+   "stderr": ""
+  }
+ ]
+}

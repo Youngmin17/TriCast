@@ -1,0 +1,436 @@
+{
+ "run_id": "2026-11-09T0034",
+ "case_id": "r_c4",
+ "calls": [
+  {
+   "role": "request",
+   "key": "request",
+   "returncode": 0,
+   "stdout": {
+    "duration_api_ms": 10083,
+    "stop_reason": "tool_use",
+    "session_id": "4b24fb4c-fc83-4171-809c-7693b9d3ebe5",
+    "total_cost_usd": 0.019071499999999995,
+    "usage": {
+     "input_tokens": 2,
+     "cache_creation_input_tokens": 644,
+     "cache_read_input_tokens": 2127,
+     "output_tokens": 658,
+     "output_tokens_details": {
+      "thinking_tokens": 177
+     },
+     "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+     },
+     "service_tier": "standard",
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 644,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "inference_geo": "global",
+     "iterations": [
+      {
+       "input_tokens": 2,
+       "output_tokens": 658,
+       "cache_read_input_tokens": 2127,
+       "cache_creation_input_tokens": 644,
+       "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 644
+       },
+       "type": "message"
+      }
+     ],
+     "speed": "standard",
+     "fallback_credit": null
+    },
+    "modelUsage": {
+     "claude-haiku-5-5": {
+      "inputTokens": 1621,
+      "outputTokens": 328,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.0003261,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 290,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 0,
+      "canonicalModel": "claude-haiku-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     },
+     "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 658,
+      "cacheReadInputTokens": 2127,
+      "cacheCreationInputTokens": 644,
+      "webSearchRequests": 0,
+      "costUSD": 0.018745399999999995,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 177,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 644,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "subagent_stats": {
+     "spawned": 0,
+     "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+     },
+     "started_in_background": 0,
+     "max_depth": 0,
+     "spawned_by_subagents": 0,
+     "completed": 0,
+     "failed": 0,
+     "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+     },
+     "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+     },
+     "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 2,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "{\"outcome\":\"tune\",\"model\":\"Qwen/Qwen3-0.6B\",\"budget_bits\":\"4.25\",\"compute_budget\":null,\"keep_bf16_blocks\":[],\"exclude_methods\":[],\"only_methods\":[\"gptq_int4\",\"gptq_int3\",\"gptq_int2\"],\"questions\":[],\"reason\":null,\"assumptions\":[\"I read '회전 없는 순수 GPTQ' (pure GPTQ, no rotation) as the plain GPTQ methods gptq_int4, gptq_int3 and gptq_int2. That leaves out the rotated rht_gptq_* variants, plus AWQ, HQQ, NF4 and int8_w.\",\"bf16 is not in the allowed list because the request says to use GPTQ only.\",\"No compute budget was given, so only the 4.25-bit weight-size budget applies.\"]}",
+    "structured_output": {
+     "outcome": "tune",
+     "model": "Qwen/Qwen3-0.6B",
+     "budget_bits": "4.25",
+     "compute_budget": null,
+     "keep_bf16_blocks": [],
+     "exclude_methods": [],
+     "only_methods": [
+      "gptq_int4",
+      "gptq_int3",
+      "gptq_int2"
+     ],
+     "questions": [],
+     "reason": null,
+     "assumptions": [
+      "I read '회전 없는 순수 GPTQ' (pure GPTQ, no rotation) as the plain GPTQ methods gptq_int4, gptq_int3 and gptq_int2. That leaves out the rotated rht_gptq_* variants, plus AWQ, HQQ, NF4 and int8_w.",
+      "bf16 is not in the allowed list because the request says to use GPTQ only.",
+      "No compute budget was given, so only the 4.25-bit weight-size budget applies."
+     ]
+    },
+    "ttft_ms": 5608,
+    "type": "result",
+    "duration_ms": 8644,
+    "uuid": "9bb16d71-91b0-4735-981d-3a8e7b743315",
+    "ttft_stream_ms": 3889,
+    "time_to_request_ms": 803,
+    "time_to_request_phases_ms": {
+     "other": 2,
+     "system_prompt": 0,
+     "resume_other": 1,
+     "process_user_input": 1,
+     "input_attachments": 11,
+     "input_hooks": 1,
+     "conversation_append": 0,
+     "tool_pool_refresh": 1,
+     "init_message": 3,
+     "init_frame_send": 1,
+     "engine_pickup": 1,
+     "loop_entry": 1,
+     "message_prep": 1,
+     "model_config_wait": 1,
+     "autocompact": 1,
+     "request_announcements": 2,
+     "query_setup": 1,
+     "model_gates": 759,
+     "tool_schema_build": 8,
+     "message_normalization": 1,
+     "client_creation": 4,
+     "request_build": 2
+    },
+    "turn_start_resume_kind": "none",
+    "process_turn_index": 0,
+    "time_to_request_loop_lag_ms": 3,
+    "time_to_request_cpu_ms": 274,
+    "time_to_request_major_faults": 0,
+    "input_attachments_detail": {
+     "slowest_producer": "session_settings",
+     "slowest_producer_ms": 7,
+     "cpu_ms": 19,
+     "major_faults": 0,
+     "setup_ms": 0,
+     "prompt_producers_ms": 0,
+     "ambient_start_ms": 2,
+     "ambient_wait_ms": 7,
+     "render_ms": 0,
+     "producers": 43,
+     "token_counts": 0
+    },
+    "tool_schema_build_detail": {
+     "betas_ms": 0,
+     "waits_ms": 1,
+     "placement_ms": 5,
+     "render_ms": 1,
+     "after_ms": 1,
+     "other_ms": 0,
+     "tools": 1,
+     "new_schemas": 1
+    },
+    "message_normalization_detail": {
+     "before_ms": 0,
+     "normalize_ms": 1,
+     "images_ms": 0,
+     "post_process_ms": 0,
+     "after_ms": 0,
+     "other_ms": 0,
+     "messages": 8,
+     "wire_messages": 2
+    },
+    "request_build_detail": {
+     "records_ms": 0,
+     "system_ms": 1,
+     "headers_ms": 0,
+     "cache_break_record_ms": 0,
+     "plans_ms": 1,
+     "retry_setup_ms": 0,
+     "sent_build_ms": 0,
+     "record_attempt_ms": 0,
+     "other_ms": 0,
+     "sent_build_safety_context_ms": 0,
+     "sent_build_cache_breakpoints_ms": 0,
+     "sent_build_surrogate_scan_ms": 0
+    },
+    "first_content_frame_ms": 3890,
+    "queued_turn_count": 0,
+    "result_index": 0,
+    "credential_expires_at": "2026-12-04T04:51:21.312Z"
+   },
+   "stderr": ""
+  },
+  {
+   "role": "judge",
+   "key": "request",
+   "returncode": 0,
+   "stdout": {
+    "duration_api_ms": 6056,
+    "stop_reason": "tool_use",
+    "session_id": "754232c9-9049-48b3-9f38-6e837656878e",
+    "total_cost_usd": 0.0186287,
+    "usage": {
+     "input_tokens": 2,
+     "cache_creation_input_tokens": 1211,
+     "cache_read_input_tokens": 1426,
+     "output_tokens": 419,
+     "output_tokens_details": {
+      "thinking_tokens": 75
+     },
+     "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+     },
+     "service_tier": "standard",
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 1211,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "inference_geo": "global",
+     "iterations": [
+      {
+       "input_tokens": 2,
+       "output_tokens": 419,
+       "cache_read_input_tokens": 1426,
+       "cache_creation_input_tokens": 1211,
+       "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 1211
+       },
+       "type": "message"
+      }
+     ],
+     "speed": "standard",
+     "fallback_credit": null
+    },
+    "modelUsage": {
+     "claude-haiku-5-5": {
+      "inputTokens": 1445,
+      "outputTokens": 246,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.00026750000000000005,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 208,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 0,
+      "canonicalModel": "claude-haiku-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     },
+     "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 419,
+      "cacheReadInputTokens": 1426,
+      "cacheCreationInputTokens": 1211,
+      "webSearchRequests": 0,
+      "costUSD": 0.0183612,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 75,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 1211,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "subagent_stats": {
+     "spawned": 0,
+     "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+     },
+     "started_in_background": 0,
+     "max_depth": 0,
+     "spawned_by_subagents": 0,
+     "completed": 0,
+     "failed": 0,
+     "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+     },
+     "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+     },
+     "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 2,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "{\"q1\":null,\"q2\":{\"reason\":\"The request states the model (\\\"Qwen3-0.6B\\\"), the budget (\\\"4.25비트\\\") and the method restriction (\\\"회전 없는 순수 GPTQ\\\"). The output's reading of that restriction (\\\"plain GPTQ methods gptq_int4, gptq_int3 and gptq_int2\\\"), the exclusion of bf16 and the missing compute budget are all written in assumptions, so no open value is settled silently.\",\"pass\":true},\"c1\":null,\"c2\":null,\"c3\":null,\"c4\":null,\"needs_human_review\":false}",
+    "structured_output": {
+     "q1": null,
+     "q2": {
+      "reason": "The request states the model (\"Qwen3-0.6B\"), the budget (\"4.25비트\") and the method restriction (\"회전 없는 순수 GPTQ\"). The output's reading of that restriction (\"plain GPTQ methods gptq_int4, gptq_int3 and gptq_int2\"), the exclusion of bf16 and the missing compute budget are all written in assumptions, so no open value is settled silently.",
+      "pass": true
+     },
+     "c1": null,
+     "c2": null,
+     "c3": null,
+     "c4": null,
+     "needs_human_review": false
+    },
+    "ttft_ms": 3183,
+    "type": "result",
+    "duration_ms": 5442,
+    "uuid": "a9d0643f-aa48-4b05-a0b9-d3a7a4470774",
+    "ttft_stream_ms": 2476,
+    "time_to_request_ms": 859,
+    "time_to_request_phases_ms": {
+     "other": 2,
+     "system_prompt": 1,
+     "resume_other": 1,
+     "process_user_input": 4,
+     "input_attachments": 24,
+     "input_hooks": 4,
+     "conversation_append": 0,
+     "tool_pool_refresh": 1,
+     "init_message": 7,
+     "init_frame_send": 11,
+     "engine_pickup": 0,
+     "loop_entry": 28,
+     "message_prep": 1,
+     "model_config_wait": 4,
+     "autocompact": 1,
+     "request_announcements": 88,
+     "query_setup": 1,
+     "model_gates": 671,
+     "tool_schema_build": 5,
+     "message_normalization": 0,
+     "client_creation": 3,
+     "request_build": 2
+    },
+    "turn_start_resume_kind": "none",
+    "process_turn_index": 0,
+    "time_to_request_loop_lag_ms": 144,
+    "time_to_request_cpu_ms": 262,
+    "time_to_request_major_faults": 0,
+    "input_attachments_detail": {
+     "slowest_producer": "session_settings",
+     "slowest_producer_ms": 15,
+     "cpu_ms": 27,
+     "major_faults": 0,
+     "setup_ms": 0,
+     "prompt_producers_ms": 0,
+     "ambient_start_ms": 5,
+     "ambient_wait_ms": 15,
+     "render_ms": 0,
+     "producers": 43,
+     "token_counts": 0
+    },
+    "tool_schema_build_detail": {
+     "betas_ms": 0,
+     "waits_ms": 1,
+     "placement_ms": 3,
+     "render_ms": 1,
+     "after_ms": 0,
+     "other_ms": 0,
+     "tools": 1,
+     "new_schemas": 1
+    },
+    "message_normalization_detail": {
+     "before_ms": 0,
+     "normalize_ms": 0,
+     "images_ms": 0,
+     "post_process_ms": 0,
+     "after_ms": 0,
+     "other_ms": 0,
+     "messages": 8,
+     "wire_messages": 2
+    },
+    "request_build_detail": {
+     "records_ms": 0,
+     "system_ms": 0,
+     "headers_ms": 1,
+     "cache_break_record_ms": 0,
+     "plans_ms": 0,
+     "retry_setup_ms": 0,
+     "sent_build_ms": 0,
+     "record_attempt_ms": 0,
+     "other_ms": 1,
+     "sent_build_safety_context_ms": 0,
+     "sent_build_cache_breakpoints_ms": 0,
+     "sent_build_surrogate_scan_ms": 0
+    },
+    "first_content_frame_ms": 2476,
+    "queued_turn_count": 0,
+    "result_index": 0,
+    "credential_expires_at": "2026-12-04T04:51:21.312Z"
+   },
+   "stderr": ""
+  }
+ ]
+}

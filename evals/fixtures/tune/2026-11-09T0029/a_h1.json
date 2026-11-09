@@ -1,0 +1,402 @@
+{
+ "run_id": "2026-11-09T0029",
+ "case_id": "a_h1",
+ "calls": [
+  {
+   "role": "proposer",
+   "key": "round_1",
+   "returncode": 0,
+   "stdout": {
+    "duration_api_ms": 41783,
+    "stop_reason": "tool_use",
+    "session_id": "61b5fa28-4694-48c1-aade-caf768ea8dbf",
+    "total_cost_usd": 0.23013250000000002,
+    "usage": {
+     "input_tokens": 2,
+     "cache_creation_input_tokens": 17087,
+     "cache_read_input_tokens": 1508,
+     "output_tokens": 4569,
+     "output_tokens_details": {
+      "thinking_tokens": 2298
+     },
+     "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+     },
+     "service_tier": "standard",
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 17087,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "inference_geo": "global",
+     "iterations": [
+      {
+       "input_tokens": 2,
+       "output_tokens": 4569,
+       "cache_read_input_tokens": 1508,
+       "cache_creation_input_tokens": 17087,
+       "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 17087
+       },
+       "type": "message"
+      }
+     ],
+     "speed": "standard",
+     "fallback_credit": null
+    },
+    "modelUsage": {
+     "claude-haiku-5-5": {
+      "inputTokens": 17319,
+      "outputTokens": 30,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.0017469000000000002,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 0,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 0,
+      "canonicalModel": "claude-haiku-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     },
+     "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 4569,
+      "cacheReadInputTokens": 1508,
+      "cacheCreationInputTokens": 17087,
+      "webSearchRequests": 0,
+      "costUSD": 0.22838560000000002,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 2298,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 17087,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "subagent_stats": {
+     "spawned": 0,
+     "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+     },
+     "started_in_background": 0,
+     "max_depth": 0,
+     "spawned_by_subagents": 0,
+     "completed": 0,
+     "failed": 0,
+     "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+     },
+     "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+     },
+     "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 2,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "{\"analysis\":\"The budget is 403/128 = 3.1484 bits. iso_3.15 (E514ab09c524e) uses 3.14795 bits, so almost no bits are left. Its measured KL of 0.4361 is above the predicted 0.3983, so these predictions run optimistic. The largest losses are MLP projections, each with 3.1M params. Upgrading one of them by 1 bit (int3 to int4, or int2 to int3) should cut single-layer KL by about 0.0035 to 0.0045. Examples: layer 14 down_proj goes from 0.00633 at rht_gptq_int2 (E4c3f9b73e065) to 0.00181 at rht_gptq_int3 (E90bd4b2f3645). Layer 2 up_proj goes from 0.00642 (E9baa10763ebe) to 0.00237 at gptq_int4 (Ef3d9c7b4502c). The table-move downgrades of o_proj layers and layer 7 gate_proj are each predicted to add only about 1e-5 to 5e-5 KL, so they are a cheap way to pay for the upgrades. The ledger line for quip_e8p (E111111111111) is for a method that is not in the option space, so I ignored it.\",\"stop\":false,\"proposals\":[{\"name\":\"mlp_up4_fund_oproj\",\"base\":\"iso_3.15\",\"changes\":[{\"block\":5,\"kind\":\"o_proj\",\"method\":\"gptq_int3\"},{\"block\":9,\"kind\":\"o_proj\",\"method\":\"gptq_int3\"},{\"block\":19,\"kind\":\"o_proj\",\"method\":\"gptq_int3\"},{\"block\":10,\"kind\":\"o_proj\",\"method\":\"gptq_int3\"},{\"block\":26,\"kind\":\"o_proj\",\"method\":\"rht_gptq_int3\"},{\"block\":27,\"kind\":\"o_proj\",\"method\":\"rht_gptq_int3\"},{\"block\":7,\"kind\":\"gate_proj\",\"method\":\"gptq_int3\"},{\"block\":14,\"kind\":\"down_proj\",\"method\":\"rht_gptq_int3\"},{\"block\":2,\"kind\":\"up_proj\",\"method\":\"gptq_int4\"},{\"block\":3,\"kind\":\"up_proj\",\"method\":\"gptq_int4\"},{\"block\":1,\"kind\":\"up_proj\",\"method\":\"rht_gptq_int4\"}],\"options\":null,\"rationale\":\"Four MLP upgrades: layer 14 down_proj from 0.00633 (E4c3f9b73e065) to 0.00181 (E90bd4b2f3645); layer 2 up_proj from 0.00642 (E9baa10763ebe) to 0.00237 (Ef3d9c7b4502c); layer 3 up_proj from 0.00642 (E6f4f7ea296d5) to 0.00238 (Ef4ee8cb4969e); layer 1 up_proj from 0.00611 (E0564bc6ad1eb) to 0.00227 (E779bc065b72e). They are paid for by the table-move downgrades, each predicted to cost under 5e-5 KL. The base is iso_3.15 (E514ab09c524e).\",\"cites\":[\"E514ab09c524e\",\"E4c3f9b73e065\",\"E90bd4b2f3645\",\"E9baa10763ebe\",\"Ef3d9c7b4502c\",\"E6f4f7ea296d5\",\"Ef4ee8cb4969e\",\"E0564bc6ad1eb\",\"E779bc065b72e\"]},{\"name\":\"mlp_int2_lift_fund_oproj\",\"base\":\"iso_3.15\",\"changes\":[{\"block\":5,\"kind\":\"o_proj\",\"method\":\"gptq_int3\"},{\"block\":9,\"kind\":\"o_proj\",\"method\":\"gptq_int3\"},{\"block\":19,\"kind\":\"o_proj\",\"method\":\"gptq_int3\"},{\"block\":10,\"kind\":\"o_proj\",\"method\":\"gptq_int3\"},{\"block\":26,\"kind\":\"o_proj\",\"method\":\"rht_gptq_int3\"},{\"block\":27,\"kind\":\"o_proj\",\"method\":\"rht_gptq_int3\"},{\"block\":7,\"kind\":\"gate_proj\",\"method\":\"gptq_int3\"},{\"block\":14,\"kind\":\"down_proj\",\"method\":\"rht_gptq_int3\"},{\"block\":18,\"kind\":\"gate_proj\",\"method\":\"rht_gptq_int3\"},{\"block\":11,\"kind\":\"gate_proj\",\"method\":\"rht_gptq_int3\"},{\"block\":27,\"kind\":\"up_proj\",\"method\":\"gptq_int4\"}],\"options\":null,\"rationale\":\"Lifts three rht_gptq_int2 MLP layers to int3: layer 14 down_proj (0.00633 to 0.00181, E4c3f9b73e065 / E90bd4b2f3645), layer 18 gate_proj (0.00497 at int2, Eb1dd74cd6447) and layer 11 gate_proj (0.00443 at int2, E9c454f30c659). Also moves layer 27 up_proj from 0.00572 (Ef04d8aa7bded) to 0.00217 (Efea8c18d2abc). Same funding as the first proposal.\",\"cites\":[\"E514ab09c524e\",\"E4c3f9b73e065\",\"E90bd4b2f3645\",\"Eb1dd74cd6447\",\"E9c454f30c659\",\"Ef04d8aa7bded\",\"Efea8c18d2abc\"]},{\"name\":\"mlp_up2_safe\",\"base\":\"iso_3.15\",\"changes\":[{\"block\":5,\"kind\":\"o_proj\",\"method\":\"gptq_int3\"},{\"block\":9,\"kind\":\"o_proj\",\"method\":\"gptq_int3\"},{\"block\":19,\"kind\":\"o_proj\",\"method\":\"gptq_int3\"},{\"block\":10,\"kind\":\"o_proj\",\"method\":\"gptq_int3\"},{\"block\":14,\"kind\":\"down_proj\",\"method\":\"rht_gptq_int3\"},{\"block\":2,\"kind\":\"up_proj\",\"method\":\"gptq_int4\"}],\"options\":null,\"rationale\":\"A smaller version with more budget headroom. Four o_proj downgrades, each predicted under 5e-5 KL, pay for two upgrades: layer 14 down_proj from 0.00633 (E4c3f9b73e065) to 0.00181 (E90bd4b2f3645) and layer 2 up_proj from 0.00642 (E9baa10763ebe) to 0.00237 (Ef3d9c7b4502c).\",\"cites\":[\"E514ab09c524e\",\"E4c3f9b73e065\",\"E90bd4b2f3645\",\"E9baa10763ebe\",\"Ef3d9c7b4502c\"]}]}",
+    "structured_output": {
+     "analysis": "The budget is 403/128 = 3.1484 bits. iso_3.15 (E514ab09c524e) uses 3.14795 bits, so almost no bits are left. Its measured KL of 0.4361 is above the predicted 0.3983, so these predictions run optimistic. The largest losses are MLP projections, each with 3.1M params. Upgrading one of them by 1 bit (int3 to int4, or int2 to int3) should cut single-layer KL by about 0.0035 to 0.0045. Examples: layer 14 down_proj goes from 0.00633 at rht_gptq_int2 (E4c3f9b73e065) to 0.00181 at rht_gptq_int3 (E90bd4b2f3645). Layer 2 up_proj goes from 0.00642 (E9baa10763ebe) to 0.00237 at gptq_int4 (Ef3d9c7b4502c). The table-move downgrades of o_proj layers and layer 7 gate_proj are each predicted to add only about 1e-5 to 5e-5 KL, so they are a cheap way to pay for the upgrades. The ledger line for quip_e8p (E111111111111) is for a method that is not in the option space, so I ignored it.",
+     "stop": false,
+     "proposals": [
+      {
+       "name": "mlp_up4_fund_oproj",
+       "base": "iso_3.15",
+       "changes": [
+        {
+         "block": 5,
+         "kind": "o_proj",
+         "method": "gptq_int3"
+        },
+        {
+         "block": 9,
+         "kind": "o_proj",
+         "method": "gptq_int3"
+        },
+        {
+         "block": 19,
+         "kind": "o_proj",
+         "method": "gptq_int3"
+        },
+        {
+         "block": 10,
+         "kind": "o_proj",
+         "method": "gptq_int3"
+        },
+        {
+         "block": 26,
+         "kind": "o_proj",
+         "method": "rht_gptq_int3"
+        },
+        {
+         "block": 27,
+         "kind": "o_proj",
+         "method": "rht_gptq_int3"
+        },
+        {
+         "block": 7,
+         "kind": "gate_proj",
+         "method": "gptq_int3"
+        },
+        {
+         "block": 14,
+         "kind": "down_proj",
+         "method": "rht_gptq_int3"
+        },
+        {
+         "block": 2,
+         "kind": "up_proj",
+         "method": "gptq_int4"
+        },
+        {
+         "block": 3,
+         "kind": "up_proj",
+         "method": "gptq_int4"
+        },
+        {
+         "block": 1,
+         "kind": "up_proj",
+         "method": "rht_gptq_int4"
+        }
+       ],
+       "options": null,
+       "rationale": "Four MLP upgrades: layer 14 down_proj from 0.00633 (E4c3f9b73e065) to 0.00181 (E90bd4b2f3645); layer 2 up_proj from 0.00642 (E9baa10763ebe) to 0.00237 (Ef3d9c7b4502c); layer 3 up_proj from 0.00642 (E6f4f7ea296d5) to 0.00238 (Ef4ee8cb4969e); layer 1 up_proj from 0.00611 (E0564bc6ad1eb) to 0.00227 (E779bc065b72e). They are paid for by the table-move downgrades, each predicted to cost under 5e-5 KL. The base is iso_3.15 (E514ab09c524e).",
+       "cites": [
+        "E514ab09c524e",
+        "E4c3f9b73e065",
+        "E90bd4b2f3645",
+        "E9baa10763ebe",
+        "Ef3d9c7b4502c",
+        "E6f4f7ea296d5",
+        "Ef4ee8cb4969e",
+        "E0564bc6ad1eb",
+        "E779bc065b72e"
+       ]
+      },
+      {
+       "name": "mlp_int2_lift_fund_oproj",
+       "base": "iso_3.15",
+       "changes": [
+        {
+         "block": 5,
+         "kind": "o_proj",
+         "method": "gptq_int3"
+        },
+        {
+         "block": 9,
+         "kind": "o_proj",
+         "method": "gptq_int3"
+        },
+        {
+         "block": 19,
+         "kind": "o_proj",
+         "method": "gptq_int3"
+        },
+        {
+         "block": 10,
+         "kind": "o_proj",
+         "method": "gptq_int3"
+        },
+        {
+         "block": 26,
+         "kind": "o_proj",
+         "method": "rht_gptq_int3"
+        },
+        {
+         "block": 27,
+         "kind": "o_proj",
+         "method": "rht_gptq_int3"
+        },
+        {
+         "block": 7,
+         "kind": "gate_proj",
+         "method": "gptq_int3"
+        },
+        {
+         "block": 14,
+         "kind": "down_proj",
+         "method": "rht_gptq_int3"
+        },
+        {
+         "block": 18,
+         "kind": "gate_proj",
+         "method": "rht_gptq_int3"
+        },
+        {
+         "block": 11,
+         "kind": "gate_proj",
+         "method": "rht_gptq_int3"
+        },
+        {
+         "block": 27,
+         "kind": "up_proj",
+         "method": "gptq_int4"
+        }
+       ],
+       "options": null,
+       "rationale": "Lifts three rht_gptq_int2 MLP layers to int3: layer 14 down_proj (0.00633 to 0.00181, E4c3f9b73e065 / E90bd4b2f3645), layer 18 gate_proj (0.00497 at int2, Eb1dd74cd6447) and layer 11 gate_proj (0.00443 at int2, E9c454f30c659). Also moves layer 27 up_proj from 0.00572 (Ef04d8aa7bded) to 0.00217 (Efea8c18d2abc). Same funding as the first proposal.",
+       "cites": [
+        "E514ab09c524e",
+        "E4c3f9b73e065",
+        "E90bd4b2f3645",
+        "Eb1dd74cd6447",
+        "E9c454f30c659",
+        "Ef04d8aa7bded",
+        "Efea8c18d2abc"
+       ]
+      },
+      {
+       "name": "mlp_up2_safe",
+       "base": "iso_3.15",
+       "changes": [
+        {
+         "block": 5,
+         "kind": "o_proj",
+         "method": "gptq_int3"
+        },
+        {
+         "block": 9,
+         "kind": "o_proj",
+         "method": "gptq_int3"
+        },
+        {
+         "block": 19,
+         "kind": "o_proj",
+         "method": "gptq_int3"
+        },
+        {
+         "block": 10,
+         "kind": "o_proj",
+         "method": "gptq_int3"
+        },
+        {
+         "block": 14,
+         "kind": "down_proj",
+         "method": "rht_gptq_int3"
+        },
+        {
+         "block": 2,
+         "kind": "up_proj",
+         "method": "gptq_int4"
+        }
+       ],
+       "options": null,
+       "rationale": "A smaller version with more budget headroom. Four o_proj downgrades, each predicted under 5e-5 KL, pay for two upgrades: layer 14 down_proj from 0.00633 (E4c3f9b73e065) to 0.00181 (E90bd4b2f3645) and layer 2 up_proj from 0.00642 (E9baa10763ebe) to 0.00237 (Ef3d9c7b4502c).",
+       "cites": [
+        "E514ab09c524e",
+        "E4c3f9b73e065",
+        "E90bd4b2f3645",
+        "E9baa10763ebe",
+        "Ef3d9c7b4502c"
+       ]
+      }
+     ]
+    },
+    "ttft_ms": 25874,
+    "type": "result",
+    "duration_ms": 41653,
+    "uuid": "ccce36cd-3816-4b98-9e2f-423e1234f0eb",
+    "ttft_stream_ms": 3720,
+    "time_to_request_ms": 807,
+    "time_to_request_phases_ms": {
+     "other": 2,
+     "system_prompt": 0,
+     "resume_other": 1,
+     "process_user_input": 2,
+     "input_attachments": 167,
+     "input_hooks": 1,
+     "conversation_append": 0,
+     "tool_pool_refresh": 2,
+     "init_message": 3,
+     "init_frame_send": 2,
+     "engine_pickup": 0,
+     "loop_entry": 2,
+     "message_prep": 1,
+     "model_config_wait": 1,
+     "autocompact": 1,
+     "request_announcements": 3,
+     "query_setup": 0,
+     "model_gates": 609,
+     "tool_schema_build": 5,
+     "message_normalization": 1,
+     "client_creation": 2,
+     "request_build": 2
+    },
+    "turn_start_resume_kind": "none",
+    "process_turn_index": 0,
+    "time_to_request_loop_lag_ms": 147,
+    "time_to_request_cpu_ms": 206,
+    "time_to_request_major_faults": 0,
+    "input_attachments_detail": {
+     "slowest_producer": "session_settings",
+     "slowest_producer_ms": 160,
+     "cpu_ms": 26,
+     "major_faults": 0,
+     "setup_ms": 0,
+     "prompt_producers_ms": 1,
+     "ambient_start_ms": 3,
+     "ambient_wait_ms": 160,
+     "render_ms": 0,
+     "producers": 43,
+     "token_counts": 0
+    },
+    "tool_schema_build_detail": {
+     "betas_ms": 0,
+     "waits_ms": 1,
+     "placement_ms": 3,
+     "render_ms": 1,
+     "after_ms": 0,
+     "other_ms": 0,
+     "tools": 1,
+     "new_schemas": 1
+    },
+    "message_normalization_detail": {
+     "before_ms": 0,
+     "normalize_ms": 0,
+     "images_ms": 0,
+     "post_process_ms": 1,
+     "after_ms": 0,
+     "other_ms": 0,
+     "messages": 8,
+     "wire_messages": 2
+    },
+    "request_build_detail": {
+     "records_ms": 0,
+     "system_ms": 0,
+     "headers_ms": 0,
+     "cache_break_record_ms": 1,
+     "plans_ms": 0,
+     "retry_setup_ms": 0,
+     "sent_build_ms": 0,
+     "record_attempt_ms": 1,
+     "other_ms": 0,
+     "sent_build_safety_context_ms": 0,
+     "sent_build_cache_breakpoints_ms": 0,
+     "sent_build_surrogate_scan_ms": 0
+    },
+    "first_content_frame_ms": 3720,
+    "queued_turn_count": 0,
+    "result_index": 0,
+    "credential_expires_at": "2026-12-04T04:51:21.312Z"
+   },
+   "stderr": ""
+  }
+ ]
+}

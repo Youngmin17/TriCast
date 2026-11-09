@@ -1,0 +1,322 @@
+{
+ "run_id": "2026-11-09T0034",
+ "case_id": "a_h1",
+ "calls": [
+  {
+   "role": "proposer",
+   "key": "round_1",
+   "returncode": 0,
+   "stdout": {
+    "duration_api_ms": 57635,
+    "stop_reason": "tool_use",
+    "session_id": "2199e67b-bb14-4f93-9442-2d7970638224",
+    "total_cost_usd": 0.12127389999999998,
+    "usage": {
+     "input_tokens": 2,
+     "cache_creation_input_tokens": 641,
+     "cache_read_input_tokens": 17955,
+     "output_tokens": 5540,
+     "output_tokens_details": {
+      "thinking_tokens": 3593
+     },
+     "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+     },
+     "service_tier": "standard",
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 641,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "inference_geo": "global",
+     "iterations": [
+      {
+       "input_tokens": 2,
+       "output_tokens": 5540,
+       "cache_read_input_tokens": 17955,
+       "cache_creation_input_tokens": 641,
+       "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 641
+       },
+       "type": "message"
+      }
+     ],
+     "speed": "standard",
+     "fallback_credit": null
+    },
+    "modelUsage": {
+     "claude-haiku-5-5": {
+      "inputTokens": 17319,
+      "outputTokens": 30,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.0017469000000000002,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 0,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 0,
+      "canonicalModel": "claude-haiku-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     },
+     "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 5540,
+      "cacheReadInputTokens": 17955,
+      "cacheCreationInputTokens": 641,
+      "webSearchRequests": 0,
+      "costUSD": 0.11952699999999998,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 3593,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 641,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "subagent_stats": {
+     "spawned": 0,
+     "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+     },
+     "started_in_background": 0,
+     "max_depth": 0,
+     "spawned_by_subagents": 0,
+     "completed": 0,
+     "failed": 0,
+     "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+     },
+     "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+     },
+     "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 2,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "{\"analysis\":\"There is almost no room left in the size budget. The current grid uses 3.14795 of the 3.1484375 bits allowed per weight, so every upgrade has to be paid for. The per-weight costs implied by bits_delta suggest a fixed group overhead: int3 at group_size=128 costs 3.1484 bits and int2 costs 2.1406, so int4 should cost about 4.156. Moving a 3.1M-parameter MLP layer up one bit width therefore costs about 3.17M bits.\\n\\nThe highest-loss layers all have measured gains from moving up one level:\\n- 14.down_proj: rht_gptq_int2 (0.00633) to rht_gptq_int3 (0.00181).\\n- 27.up_proj: gptq_int3 (0.00572) to gptq_int4 (0.00217).\\n- 2.up_proj: gptq_int3 (0.00642) to gptq_int4 (0.00237).\\n\\nI have no measured costs for downgrading any layer outside the loss list, so I am not proposing one-for-one swaps. Instead I test two changes that don't need that data. The first turns on act_order, which costs no bits. The second sets group_size=256 for rht_gptq_int3, which frees about 0.074 bits per weight across its 109 layers; that pays for the three upgrades above.\\n\\nThe ledger lists a quip_e8p entry. It is not an available method, so I ignored it.\",\"stop\":false,\"proposals\":[{\"name\":\"actorder_all\",\"base\":\"iso_3.15\",\"changes\":[],\"options\":{\"gptq_int2\":{\"weight_algo.act_order\":true},\"gptq_int3\":{\"weight_algo.act_order\":true},\"gptq_int4\":{\"weight_algo.act_order\":true},\"rht_gptq_int2\":{\"weight_algo.act_order\":true},\"rht_gptq_int3\":{\"weight_algo.act_order\":true},\"rht_gptq_int4\":{\"weight_algo.act_order\":true}},\"rationale\":\"Turns on act_order=true for every GPTQ variant without changing any bits per weight. The base iso_3.15 measures KL 0.43614 [E514ab09c524e], and its loss is concentrated in GPTQ int3 and int2 MLP layers, for example 27.up_proj gptq_int3 at 0.00572 [Ef04d8aa7bded] and 14.down_proj rht_gptq_int2 at 0.00633 [E4c3f9b73e065].\",\"cites\":[\"E514ab09c524e\",\"Ef04d8aa7bded\",\"E4c3f9b73e065\"]},{\"name\":\"rht3_gs256_fund3\",\"base\":\"iso_3.15\",\"changes\":[{\"block\":27,\"kind\":\"up_proj\",\"method\":\"gptq_int4\"},{\"block\":2,\"kind\":\"up_proj\",\"method\":\"gptq_int4\"},{\"block\":14,\"kind\":\"down_proj\",\"method\":\"rht_gptq_int3\"}],\"options\":{\"rht_gptq_int3\":{\"weight.group_size\":256}},\"rationale\":\"Setting group_size=256 for rht_gptq_int3 roughly halves the group overhead on its 109 layers. The bits freed pay for three upgrades with measured single-layer gains: 27.up_proj gptq_int3 0.00572 [Ef04d8aa7bded] to gptq_int4 0.00217 [Efea8c18d2abc]; 2.up_proj gptq_int3 0.00642 [E9baa10763ebe] to gptq_int4 0.00237 [Ef3d9c7b4502c]; 14.down_proj rht_gptq_int2 0.00633 [E4c3f9b73e065] to rht_gptq_int3 0.00181 [E90bd4b2f3645]. Together that is about 0.0126 of predicted gain, set against the KL cost of larger groups under RHT.\",\"cites\":[\"Ef04d8aa7bded\",\"Efea8c18d2abc\",\"E9baa10763ebe\",\"Ef3d9c7b4502c\",\"E4c3f9b73e065\",\"E90bd4b2f3645\"]},{\"name\":\"rht3_gs256_fund5\",\"base\":\"iso_3.15\",\"changes\":[{\"block\":27,\"kind\":\"up_proj\",\"method\":\"gptq_int4\"},{\"block\":2,\"kind\":\"up_proj\",\"method\":\"gptq_int4\"},{\"block\":14,\"kind\":\"down_proj\",\"method\":\"rht_gptq_int3\"},{\"block\":27,\"kind\":\"gate_proj\",\"method\":\"rht_gptq_int4\"},{\"block\":1,\"kind\":\"up_proj\",\"method\":\"rht_gptq_int4\"}],\"options\":{\"rht_gptq_int3\":{\"weight.group_size\":256}},\"rationale\":\"A larger version of rht3_gs256_fund3 that uses group_size=256 savings to pay for two more upgrades: 27.gate_proj rht_gptq_int3 0.00499 [Efa0bb391da67] to rht_gptq_int4 0.00153 [Ef428ac081334], and 1.up_proj rht_gptq_int3 0.00611 [E0564bc6ad1eb] to rht_gptq_int4 0.00227 [E779bc065b72e]. It also keeps 27.up_proj to gptq_int4 0.00217 [Efea8c18d2abc] and 14.down_proj to rht_gptq_int3 0.00181 [E90bd4b2f3645].\",\"cites\":[\"Efa0bb391da67\",\"Ef428ac081334\",\"E0564bc6ad1eb\",\"E779bc065b72e\",\"Efea8c18d2abc\",\"E90bd4b2f3645\"]}]}",
+    "structured_output": {
+     "analysis": "There is almost no room left in the size budget. The current grid uses 3.14795 of the 3.1484375 bits allowed per weight, so every upgrade has to be paid for. The per-weight costs implied by bits_delta suggest a fixed group overhead: int3 at group_size=128 costs 3.1484 bits and int2 costs 2.1406, so int4 should cost about 4.156. Moving a 3.1M-parameter MLP layer up one bit width therefore costs about 3.17M bits.\n\nThe highest-loss layers all have measured gains from moving up one level:\n- 14.down_proj: rht_gptq_int2 (0.00633) to rht_gptq_int3 (0.00181).\n- 27.up_proj: gptq_int3 (0.00572) to gptq_int4 (0.00217).\n- 2.up_proj: gptq_int3 (0.00642) to gptq_int4 (0.00237).\n\nI have no measured costs for downgrading any layer outside the loss list, so I am not proposing one-for-one swaps. Instead I test two changes that don't need that data. The first turns on act_order, which costs no bits. The second sets group_size=256 for rht_gptq_int3, which frees about 0.074 bits per weight across its 109 layers; that pays for the three upgrades above.\n\nThe ledger lists a quip_e8p entry. It is not an available method, so I ignored it.",
+     "stop": false,
+     "proposals": [
+      {
+       "name": "actorder_all",
+       "base": "iso_3.15",
+       "changes": [],
+       "options": {
+        "gptq_int2": {
+         "weight_algo.act_order": true
+        },
+        "gptq_int3": {
+         "weight_algo.act_order": true
+        },
+        "gptq_int4": {
+         "weight_algo.act_order": true
+        },
+        "rht_gptq_int2": {
+         "weight_algo.act_order": true
+        },
+        "rht_gptq_int3": {
+         "weight_algo.act_order": true
+        },
+        "rht_gptq_int4": {
+         "weight_algo.act_order": true
+        }
+       },
+       "rationale": "Turns on act_order=true for every GPTQ variant without changing any bits per weight. The base iso_3.15 measures KL 0.43614 [E514ab09c524e], and its loss is concentrated in GPTQ int3 and int2 MLP layers, for example 27.up_proj gptq_int3 at 0.00572 [Ef04d8aa7bded] and 14.down_proj rht_gptq_int2 at 0.00633 [E4c3f9b73e065].",
+       "cites": [
+        "E514ab09c524e",
+        "Ef04d8aa7bded",
+        "E4c3f9b73e065"
+       ]
+      },
+      {
+       "name": "rht3_gs256_fund3",
+       "base": "iso_3.15",
+       "changes": [
+        {
+         "block": 27,
+         "kind": "up_proj",
+         "method": "gptq_int4"
+        },
+        {
+         "block": 2,
+         "kind": "up_proj",
+         "method": "gptq_int4"
+        },
+        {
+         "block": 14,
+         "kind": "down_proj",
+         "method": "rht_gptq_int3"
+        }
+       ],
+       "options": {
+        "rht_gptq_int3": {
+         "weight.group_size": 256
+        }
+       },
+       "rationale": "Setting group_size=256 for rht_gptq_int3 roughly halves the group overhead on its 109 layers. The bits freed pay for three upgrades with measured single-layer gains: 27.up_proj gptq_int3 0.00572 [Ef04d8aa7bded] to gptq_int4 0.00217 [Efea8c18d2abc]; 2.up_proj gptq_int3 0.00642 [E9baa10763ebe] to gptq_int4 0.00237 [Ef3d9c7b4502c]; 14.down_proj rht_gptq_int2 0.00633 [E4c3f9b73e065] to rht_gptq_int3 0.00181 [E90bd4b2f3645]. Together that is about 0.0126 of predicted gain, set against the KL cost of larger groups under RHT.",
+       "cites": [
+        "Ef04d8aa7bded",
+        "Efea8c18d2abc",
+        "E9baa10763ebe",
+        "Ef3d9c7b4502c",
+        "E4c3f9b73e065",
+        "E90bd4b2f3645"
+       ]
+      },
+      {
+       "name": "rht3_gs256_fund5",
+       "base": "iso_3.15",
+       "changes": [
+        {
+         "block": 27,
+         "kind": "up_proj",
+         "method": "gptq_int4"
+        },
+        {
+         "block": 2,
+         "kind": "up_proj",
+         "method": "gptq_int4"
+        },
+        {
+         "block": 14,
+         "kind": "down_proj",
+         "method": "rht_gptq_int3"
+        },
+        {
+         "block": 27,
+         "kind": "gate_proj",
+         "method": "rht_gptq_int4"
+        },
+        {
+         "block": 1,
+         "kind": "up_proj",
+         "method": "rht_gptq_int4"
+        }
+       ],
+       "options": {
+        "rht_gptq_int3": {
+         "weight.group_size": 256
+        }
+       },
+       "rationale": "A larger version of rht3_gs256_fund3 that uses group_size=256 savings to pay for two more upgrades: 27.gate_proj rht_gptq_int3 0.00499 [Efa0bb391da67] to rht_gptq_int4 0.00153 [Ef428ac081334], and 1.up_proj rht_gptq_int3 0.00611 [E0564bc6ad1eb] to rht_gptq_int4 0.00227 [E779bc065b72e]. It also keeps 27.up_proj to gptq_int4 0.00217 [Efea8c18d2abc] and 14.down_proj to rht_gptq_int3 0.00181 [E90bd4b2f3645].",
+       "cites": [
+        "Efa0bb391da67",
+        "Ef428ac081334",
+        "E0564bc6ad1eb",
+        "E779bc065b72e",
+        "Efea8c18d2abc",
+        "E90bd4b2f3645"
+       ]
+      }
+     ]
+    },
+    "ttft_ms": 42458,
+    "type": "result",
+    "duration_ms": 57433,
+    "uuid": "200a4839-fc07-4f3c-9862-c57f444592dc",
+    "ttft_stream_ms": 5521,
+    "time_to_request_ms": 794,
+    "time_to_request_phases_ms": {
+     "other": 2,
+     "system_prompt": 0,
+     "resume_other": 1,
+     "process_user_input": 1,
+     "input_attachments": 12,
+     "input_hooks": 1,
+     "conversation_append": 1,
+     "tool_pool_refresh": 0,
+     "init_message": 3,
+     "init_frame_send": 1,
+     "engine_pickup": 1,
+     "loop_entry": 2,
+     "message_prep": 0,
+     "model_config_wait": 1,
+     "autocompact": 1,
+     "request_announcements": 3,
+     "query_setup": 0,
+     "model_gates": 753,
+     "tool_schema_build": 7,
+     "message_normalization": 0,
+     "client_creation": 3,
+     "request_build": 1
+    },
+    "turn_start_resume_kind": "none",
+    "process_turn_index": 0,
+    "time_to_request_loop_lag_ms": 12,
+    "time_to_request_cpu_ms": 206,
+    "time_to_request_major_faults": 0,
+    "input_attachments_detail": {
+     "slowest_producer": "session_settings",
+     "slowest_producer_ms": 8,
+     "cpu_ms": 20,
+     "major_faults": 0,
+     "setup_ms": 0,
+     "prompt_producers_ms": 0,
+     "ambient_start_ms": 2,
+     "ambient_wait_ms": 7,
+     "render_ms": 0,
+     "producers": 43,
+     "token_counts": 0
+    },
+    "tool_schema_build_detail": {
+     "betas_ms": 0,
+     "waits_ms": 1,
+     "placement_ms": 4,
+     "render_ms": 1,
+     "after_ms": 0,
+     "other_ms": 1,
+     "tools": 1,
+     "new_schemas": 1
+    },
+    "message_normalization_detail": {
+     "before_ms": 0,
+     "normalize_ms": 0,
+     "images_ms": 0,
+     "post_process_ms": 0,
+     "after_ms": 0,
+     "other_ms": 0,
+     "messages": 8,
+     "wire_messages": 2
+    },
+    "request_build_detail": {
+     "records_ms": 0,
+     "system_ms": 0,
+     "headers_ms": 1,
+     "cache_break_record_ms": 0,
+     "plans_ms": 0,
+     "retry_setup_ms": 0,
+     "sent_build_ms": 0,
+     "record_attempt_ms": 0,
+     "other_ms": 0,
+     "sent_build_safety_context_ms": 0,
+     "sent_build_cache_breakpoints_ms": 0,
+     "sent_build_surrogate_scan_ms": 0
+    },
+    "first_content_frame_ms": 5521,
+    "queued_turn_count": 0,
+    "result_index": 0,
+    "credential_expires_at": "2026-12-04T04:51:21.312Z"
+   },
+   "stderr": ""
+  }
+ ]
+}

@@ -216,9 +216,12 @@ def _same_fraction(want: Any, got: Any) -> bool | None:
         return None
 
 
-def _budget_key(want: Any, result: dict[str, Any], blocks: int, methods: list[str]) -> dict[str, Any] | None:
-    same = _same_fraction(want, result["budget_bits"])
-    return None if same is None else _ok(same, f"budget_bits {result['budget_bits']!r}, expected {want!r}")
+def _fraction_key(field: str) -> Callable[..., dict[str, Any] | None]:
+    """A budget compared as a number ("3.50" == "7/2"); None (not handled) when ``want`` does not parse."""
+    def check(want: Any, result: dict[str, Any], blocks: int, methods: list[str]) -> dict[str, Any] | None:
+        same = _same_fraction(want, result[field])
+        return None if same is None else _ok(same, f"{field} {result[field]!r}, expected {want!r}")
+    return check
 
 
 def _equal_key(field: str) -> Callable[..., dict[str, Any]]:
@@ -255,7 +258,8 @@ def _known_request_key(want: Any, result: dict[str, Any], blocks: int,
 
 
 REQUEST_KEYS: dict[str, Callable[..., dict[str, Any] | None]] = {
-    "outcome": _equal_key("outcome"), "model": _equal_key("model"), "budget_bits": _budget_key,
+    "outcome": _equal_key("outcome"), "model": _equal_key("model"),
+    "budget_bits": _fraction_key("budget_bits"), "compute_budget": _fraction_key("compute_budget"),
     "keep_bf16_blocks": _blocks_key, "exclude_methods": _set_key("exclude_methods"),
     "only_methods": _set_key("only_methods"), "outcome_in": _outcome_in_key,
     "no_unknown_methods": _known_request_key}
@@ -631,12 +635,16 @@ def run_case(case: dict[str, Any], ctx: Context, replies: Replies) -> dict[str, 
 
 # ---------- metrics ----------
 def _met(target: str, numerator: int, denominator: int) -> bool | None:
+    """Whether the §1 target is met; None for a reference metric, a target without a percentage or a count of
+    zero, and a metric with no case to count (0/0 is "not applicable", never "met")."""
+    if "참고" in target or denominator == 0:
+        return None
     if "0건" in target:
         return numerator == 0
-    match = re.search(r"(≥)?\s*(\d+)\s*%", target)
-    if "참고" in target or match is None or denominator == 0:
+    match = re.search(r"(≥)?\s*(\d+(?:\.\d+)?)\s*%", target)  # "≥ 87.5%" reads 87.5, not 5
+    if match is None:
         return None
-    rate, goal = Fraction(numerator, denominator), Fraction(int(match.group(2)), 100)
+    rate, goal = Fraction(numerator, denominator), Fraction(match.group(2)) / 100
     return rate >= goal if match.group(1) else rate == goal
 
 
@@ -866,6 +874,8 @@ def main(argv: list[str] | None = None, runner: Callable[..., Any] = subprocess.
     if stored is not None and not stored.is_dir():
         parser.exit(2, f"error: no kept replies {stored}\n")
     started = datetime.datetime.now(datetime.timezone.utc)
+    # the tree as the run starts: read before this run writes its kept replies or results into it
+    commit, status = _git("rev-parse", "HEAD"), _git("status", "--porcelain")
     args.out.mkdir(parents=True, exist_ok=True)
     run_id = new_run_id(args.out, started)
     kept = FIXTURES / run_id
@@ -891,7 +901,6 @@ def main(argv: list[str] | None = None, runner: Callable[..., Any] = subprocess.
     table_metrics = metrics(records, targets)
     models = sorted({model for record in records for model in record["llm"]["models"]})
     replied = sum(record["llm"]["cost_usd"] for record in records)
-    commit, status = _git("rev-parse", "HEAD"), _git("status", "--porcelain")
     version = f"{len(cases)}@{evalset_sha}" + ("" if only is None else f"|only={','.join(only)}")
     run = {"run_id": run_id, "started_utc": started.isoformat(timespec="seconds"),
            "finished_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"),

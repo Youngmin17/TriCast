@@ -5,6 +5,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 ## [Unreleased]
 
 ### Added
+- Tune golden cases (`tests/harness/golden_tune.yaml`, `tests/test_tune_golden.py`): AC24 proposal checks and
+  AC28 request checks on the demo data in the repository — a measured proposal re-accepted with its recipe
+  SHA-256, one-field edits of it refused, three real refused replies refused for the same numbers, conflicts
+  computed from the table and the constrained knapsack keeping every constraint.
 - Tune evals (`evals/EVAL_DESIGN.md`, `evals/tune_evalset.jsonl`, `evals/tune_judge_prompt.md`,
   `evals/run_tune_evals.py`): 27 cases over tune-request parsing (AC28) and evidence-cited proposals (AC24/27),
   code graders first and an LLM judge only for clarification and rationale quality, stored and live modes,
@@ -99,6 +103,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 - Recorded Quantizer demo data for Qwen3-0.6B (five presets: PPL, layer reports, lm-eval 5 tasks × 300 docs).
 
 ### Changed
+- Tune eval set 27 → 35 cases (2026-11-09, user-approved): compute budget, English and compound
+  constraints, compute-only clarification, an English out-of-scope request, an allowed-method conflict, an
+  admin-impersonation injection and an unknown excluded method; expect key `compute_budget`.
 - Midterm-2 demo (`docs/DEMO.md`): one unbroken live chain (sentence → parse → knapsack → recipe file whose
   SHA-256 is the measured file's → AI rounds → AI best's file), the live Claude round asked early, a blanket
   disclosure of what is recorded, and the final goals confirmed with S2 and evals rows; the tune evals'
@@ -121,6 +128,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   animated), rendered from the v3 deck PDF, followed by a short Korean text section.
 
 ### Fixed
+- Tune evals runner: a target with decimals ("≥ 87.5%") was read as its digits after the point (5%), a
+  metric with no case to count (0/0) was reported as met, and a live run read `git status` after writing its
+  kept replies, so it was always dirty; values and case verdicts of the 2026-11-08 runs are unchanged.
 - A tune-loop round with no LLM reply on file (`replan`) listed no cell changes in the Auto-tune bundle; the
   changes now come from the recorded grid against its parent's (`export_autotune_demo.grid_changes`).
 - C4 calibration (`calibration.dataset: c4`) loads its shard with no config name: under datasets 4.x config

@@ -51,33 +51,81 @@ python -m app.autotune solve --table table.json --budget-bits 9/2 --name auto_4.
 make check                              # ruff + CPU 테스트
 ```
 
-## 사용 방법 (처음 실행하는 분께)
+## MVP 사용자 가이드
 
-### 1. 화면만 보기 — GPU · API 키 없이 5분
+처음 보는 분이 **GPU · 계정 · API 키 없이 5분 안에** 핵심 기능을 실행해 보는 안내다. 리뷰 기간(11월 11일–18일) 동안 이 안내대로 실행되며, 실행 방법이 바뀌면 이 절을 고친다.
+
+### 서비스 소개
+
+| | |
+|---|---|
+| 팀 이름 | **skynet** |
+| 서비스 이름 | **TriCast** |
+| 대상 사용자 | 큰 언어 모델을 작게 줄여(양자화) 칩이나 서버에 올려야 하는 엔지니어 |
+
+- **해결하려는 문제**: 모델을 줄이려면 층마다 어떤 방법으로 줄일지 정해야 한다. 예시 모델(Qwen3-0.6B)만 해도 층 196개 × 방법 16종이라 손으로는 다 볼 수 없고, 조합을 바꿀 때마다 코드를 다시 짜고 모델 전체를 다시 평가해야 해서 배정을 정하는 데 3주~3개월이 걸린다 ([문제 정의](docs/PROBLEM.md)).
+- **이번 MVP 에서 쓸 수 있는 핵심 기능** — 화면 하나에서 순서대로:
+  1. **모델** 넣기
+  2. **Auto-tune (AI 추천)**: 목표 크기만 고르면 층마다 방법을 골라 주고, AI 가 GPU 로 재서 찾은 세부 설정을 더한다
+  3. **직접 편집**: 추천을 사람이 바꿔 본다
+  4. **평가**: 그 셋업의 품질을 원본 · 다른 방법과 비교한다. 결과물은 레시피 파일(YAML) 한 장이다
+
+### 실행 및 접속 방법
+
+- **저장소**: https://github.com/Youngmin17/TriCast (브랜치 `quantizer_develop` — 기본 브랜치)
+- **지원 환경**: macOS · Linux (Windows 는 WSL), Python 3.10 이상, 최신 Chrome · Edge · Safari. **GPU 는 필요 없다.** (확인한 환경: macOS + Chrome)
 
 ```bash
 git clone https://github.com/Youngmin17/TriCast.git && cd TriCast
-python3 --version                                         # 3.10 이상이어야 한다 (macOS 기본 python3 는 3.9)
+python3 --version                                            # 3.10 이상이어야 한다 (macOS 기본 python3 는 3.9)
 python3 -m venv .venv && source .venv/bin/activate
-pip install fastapi uvicorn pillow numpy jsonschema pyyaml   # 녹화 모드에 필요한 것만
-PYTHONPATH=src python -m app.server --demo               # http://127.0.0.1:8765 (src: 레시피 파일 생성용, torch 불필요)
+pip install fastapi uvicorn pillow numpy jsonschema pyyaml   # 이 체험에 필요한 것만 (torch 불필요)
+PYTHONPATH=src python -m app.server --demo --agent evals/fixtures/tune_inputs/s3150/loop.json
 ```
 
-브라우저에서 **http://127.0.0.1:8765/autotune.html** 을 연다 (`file://` 로 직접 열면 동작하지 않는다).
+서버가 뜨면 브라우저에서 **http://127.0.0.1:8765/tune.html** 을 연다 (`file://` 로 직접 열면 동작하지 않는다). 끌 때는 터미널에서 Ctrl+C.
 
-| 단계 | 해 볼 것 | 보이는 것 |
+### 핵심 기능 체험 순서
+
+**역할**: "이 모델을 원본의 20% 크기로 줄여 달라"는 요청을 받은 엔지니어. **목표**: 추천 셋업을 받고, 직접 바꿔 보고, 품질 차이를 숫자로 확인한다.
+
+| 단계 | 누를 것 | 보이는 것 |
 |---|---|---|
-| 1 크기 예산 | 슬라이더를 움직이거나 `3.15`, `403/128` 을 입력 | 브라우저가 정확 배낭을 다시 풀고 걸린 시간을 표시 |
-| 1 요청 문장 | 저장된 예시 칩을 누름 | 해석 결과(모델 · 예산 · 제약 · 가정 · 코드 판정)와 제약이 걸린 배정 |
-| 2 휴리스틱 배정 | 격자 칸에 마우스 · 방향키 | 칸마다 방법, 단층 KL, 가중치 MSE · 층 출력 SQNR (그 방법의 균일 리포트), 분포 · 희소화 정보, 같은 크기 균일 레시피와 비교 |
-| 3 AI 에이전트 | 제안 카드에 마우스 | 바뀌는 칸이 격자에 점선으로 표시, 인용 레코드, 검사 결과, 측정 KL |
-| 2 레시피 파일 | "이 배정의 레시피" → 레시피 파일 받기 | `app.autotune solve` 가 쓰는 것과 같은 YAML 한 장. 측정된 배정이면 SHA-256 이 GPU 측정 기록의 파일과 같다고 표시, 복사 · 내려받기 |
-| 4 측정 결과 | 차트 · "표로 보기" | 균일 · 휴리스틱 · AI 최선 · AI 옵션 적용의 비트 대비 검증 KL / test PPL (GPU 기록값, GPU · 트리 SHA 표시) |
+| ① 모델 | **불러오기** (모델 칸은 `Qwen/Qwen3-0.6B`) | Linear 196개 · 방법 16종. ② 에 목표 크기 버튼 6개가 열린다 |
+| ② Auto-tune | 목표 크기 **20%** | "AI 추천 PPL 26.51" 과 이유 두 줄: 층마다 방법을 다르게 골라 33.31 → 27.04, AI 가 찾은 세부 설정을 더해 27.04 → 26.51 |
+| ③ 직접 편집 | **층별 배정** 목록에서 `AWQ+클립 3비트` | 격자 196칸이 한 색(3비트)으로 바뀌고, 레시피 파일이 `u_awq_clip_int3.yaml` 로 바뀐다. 머리에 "직접 편집함" |
+| ④ 평가 | **평가 결과 불러오기** | PPL **33.31** 과 비교 막대. "Auto-tune 추천(PPL 26.51)은 이 편집보다 … 55% 작습니다" |
+| 되돌리기 | ③ 의 **추천으로 되돌리기** → ④ **평가 결과 불러오기** | PPL **26.51**. 막대: 한 방법 최선 33.31 · Auto-tune 배정 27.04 · AI 세부 설정 26.82 / 26.51 |
 
-화면의 AI 응답과 측정값은 **저장된 기록**이다. 배지("저장된 응답 · 날짜", "GPU 기록값")가 그 사실을 표시한다.
-Quantizer 격자(`/quantizer.html`), 레이어 지도(`/layers.html`), Studio(`/`)도 같은 서버에서 열린다.
+### 기대 결과 및 확인 방법
 
-### 2. AI 를 실시간으로 부르기 (선택)
+- **정상 실행**: ④ 에 큰 숫자(PPL)와 막대가 나오고, 제목 줄에 "기록된 GPU 측정 · A100 …" 과 "레시피 파일 SHA 일치" 칩이 붙는다. ③ 의 레시피 파일 카드에는 "✓ GPU 가 측정한 바로 그 파일" 이 보인다.
+- **결과물**: ③ 의 **다운로드** 로 받는 레시피 파일(YAML). 이 파일 하나로 같은 셋업을 다시 적용한다 (코드 수정 없음).
+- **다른 입력으로 다시**: ② 에서 다른 목표 크기(16% · 19% · 22% · 26% · 27%)를 고르거나, ③ 에서 다른 "한 방법" · 다른 세부 설정을 고른 뒤 ④ 를 다시 누른다. 고를 때마다 평가는 지워지고 새로 불러온다. 주소창의 주소를 복사해 두면 같은 셋업으로 다시 열린다.
+- **자동 확인 (선택, Node 22 이상 + Chrome)**: `node scripts/quantizer/demo_rehearsal.mjs /tmp/rehearsal` → `REHEARSAL_DONE 5/5` 가 나오면 위 순서가 그대로 동작한 것이다.
+
+### 추가 안내
+
+- **계정 · 접근 권한**: 필요 없다. 내 PC 에서만 도는 서버다 (로그인 · API 키 없음).
+- **샘플 데이터 · 사전 준비**: 모두 저장소에 들어 있다 — GPU 측정 기록 `app/web/demo/autotune/bundle.json`, AI 튜닝 세션 `evals/fixtures/tune_inputs/s3150/`. 모델 파일을 내려받지 않는다.
+- **필요한 배경지식**: 세 가지면 된다. *양자화* = 모델의 숫자를 적은 비트로 저장해 크기를 줄이는 것. *크기 20%* = 원본(16비트)의 1/5 크기. *PPL* = 모델이 다음 단어를 얼마나 헷갈리는지 잰 값으로, **낮을수록 좋다** (원본은 20.97).
+- **GPU 가 필요한 부분과 체험 방법**: 품질(PPL)을 실제로 재려면 GPU 가 필요하다 (A100 에서 수 분). 이 체험에서는 A100 으로 **미리 재 둔 기록**을 보여 준다 — 화면의 숫자는 지어낸 값이 아니라 측정 기록이고, 레시피 파일이 측정한 파일과 같은지 지문(SHA-256)으로 대조한다. 지금 실제로 도는 것은 층별 배정 계산(브라우저)과 레시피 파일 생성(서버)이다.
+- **제한 · 미구현**:
+  - 모델은 `Qwen/Qwen3-0.6B` 하나만 고를 수 있다.
+  - 직접 편집은 GPU 로 재 둔 조합만 고를 수 있다 (전체를 한 방법으로 · 세부 설정, 6개 크기에 모두 57개). **층 하나씩 바꾸는 편집은 아직 없다.**
+  - GPU 에서 바로 평가하는 버튼은 GPU 서버(`--live`, CUDA)에서만 나온다. 이 경로는 가짜 GPU 로 화면 처리만 확인했다.
+  - 글꼴은 인터넷이 있을 때 내려받는다 (없으면 기본 글꼴로 보인다).
+- **알려진 오류와 해결**:
+  - `python3` 가 3.9 이하 → 3.10 이상을 설치해 `python3.12 -m venv .venv` 처럼 만든다.
+  - ③ 에 "레시피 파일: … --agent …" 가 나옴 → 서버를 위 명령처럼 `--agent …` 를 붙여 다시 띄운다.
+  - 포트 8765 를 이미 쓰는 중 → 명령 끝에 `--port 8766` 을 붙이고 주소의 포트도 바꾼다.
+- **피드백**: GitHub 이슈로 남겨 주면 된다 (무엇을 하려 했는지 · 본 화면 · 기대한 것).
+
+## 더 해 보기 (선택 — Claude · GPU 가 있는 분)
+
+분석 화면(`/autotune.html`), Quantizer 격자(`/quantizer.html`), 레이어 지도(`/layers.html`)도 같은 서버에서 열린다.
+
+### AI 를 실시간으로 부르기
 
 [Claude Code](https://docs.claude.com/claude-code) CLI 에 로그인한 PC 에서, 전체 설치 뒤 세션 설정 파일을 주고 띄운다.
 
@@ -90,10 +138,20 @@ python -m app.server --demo --agent evals/fixtures/tune_inputs/s3150/loop.json  
 직접 돌린 세션이 있으면 `runs/<세션>/loop.json` 을 준다.
 
 요청 상자의 "요청 해석"과 "Claude 에게 새 제안 받기"가 실제로 호출된다 (도구 없음 · JSON 스키마 강제 · 비용 상한).
+
+**오프라인 재생** (네트워크 · `claude` 없이 같은 화면): 미리 녹화한 응답으로 두 버튼이 답하고, 화면에 "녹화 재생 · 실행 시각" 배지가 붙는다.
+녹화된 문장은 [`docs/DEMO.md`](docs/DEMO.md) §0 에 있다. `--record <폴더>` 로 띄우면 실시간 응답을 녹화한다.
+
+```bash
+PYTHONPATH=src python -m app.server --demo --agent evals/fixtures/tune_inputs/s3150/loop.json \
+    --replay app/web/demo/autotune/replay
+node scripts/quantizer/demo_rehearsal.mjs /tmp/rehearsal   # 튜닝 작업 앱의 시연 5단계를 자동으로 확인 (REHEARSAL_DONE 5/5)
+node scripts/quantizer/tune_app_check.mjs /tmp/tunecheck .venv/bin/python   # Worker · 4단계 한 화면 · 크기별 추천 · 측정된 편집 57개 · 평가 비교 막대 · 주소 복원 · 가짜 GPU 평가 경로 (15/15)
+```
 실시간 제안은 검사까지만 하고 측정하지 않는다. `--agent` 없이 띄우면 두 버튼은 이유와 띄우는 방법을 알려 주고 저장된
 기록을 계속 보여 준다.
 
-### 3. 명령줄로 같은 흐름 재현 (GPU 노드)
+### 명령줄로 같은 흐름 재현 (GPU 노드)
 
 ```bash
 python -m app.autotune table --model Qwen/Qwen3-0.6B --revision <sha> --device cuda --split validation \
@@ -109,7 +167,7 @@ python -m app.export_autotune_demo --table t/table.json --measured t --profile t
     --session runs/<세션> [--transfer t/xfer] --out app/web/demo/autotune                    # 화면 데이터
 ```
 
-### 4. 검사
+### 검사
 
 ```bash
 make check                                                        # ruff + CPU 테스트
@@ -120,7 +178,6 @@ python evals/run_tune_evals.py --table evals/fixtures/tune_inputs/table.json \
     --mode stored --from-run 2026-11-09T0054 --change re-grade --golden n/a --out /tmp/tricast_evals   # 튜닝 evals 재채점 (LLM 호출 없음, 저장소를 바꾸지 않음, evals/EVAL_DESIGN.md §9)
 ```
 
-피드백은 GitHub 이슈로 남겨 주면 된다 (무엇을 하려 했는지 · 본 화면 · 기대한 것).
 
 ## 문서 지도
 

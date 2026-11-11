@@ -5,6 +5,29 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 ## [Unreleased]
 
 ### Added
+- The one tool `app/web/tune.html`: a single column of four steps and nothing else (no menu to other pages, no
+  chat, no chart) — 1 put a model in (the ones with a sensitivity table); 2 Auto-tune recommends its setup for a
+  target size (the exact knapsack in a module worker, `js/mckp_worker.js`, plus the option settings the AI tune
+  session measured as better, said with how it was reached); 3 edit it by hand; 4 evaluate (the recipe run on the
+  server's GPU through `POST /api/quantizer/jobs` in live mode with CUDA; otherwise the recorded measurement with
+  the recipe-file SHA check, as bars of the PPL increase over BF16 for every measured way at that size).
+  Everything that can be chosen was measured on GPU: six target sizes; in the edit step one method on every layer
+  (the uniform recipes measured within the size) and the option settings measured on the recommended assignment —
+  57 setups over the six sizes; free per-layer edits wait for measurements. Sizes read as a share of the original,
+  methods by name; the address keeps the job. One screen at 1440 × 900. Checks:
+  `scripts/quantizer/tune_app_check.mjs` with a fake-GPU live fixture (`scripts/quantizer/tune_fixture_server.py`,
+  made-up job numbers); the analysis, Quantizer and layer-map pages stay at their addresses, off this page.
+- `POST /api/autotune/recipe` with a uniform grid (one method on every layer) answers with the measured uniform
+  recipe `u_<method>` (SHA equals the measured file's).
+- `POST /api/autotune/recipe {"transfer": id}` (with `--agent`): an option transfer's recipe rebuilt byte for byte
+  as the transfer script wrote it (SHA equals the measured file's).
+- Offline demo (`python -m app.server --demo --agent <loop.json> --replay DIR`, `--record DIR`): the request
+  parse and the Claude round answer from answers recorded on a live run, badged on the page as a recording with
+  its time; recordings of the scenario sentence, six Q&A sentences and one round. `scripts/quantizer/
+  demo_rehearsal.mjs` clicks through the ten demo steps and checks badges, numbers and SHA prefixes;
+  `scripts/quantizer/demo_backup.py` turns a rehearsal into a captioned backup GIF.
+- AI cross-labels of the judge's 21 units by another engine (`evals/judge_labels_ai.jsonl`, user-delegated,
+  kept apart from human labels; agreement 0.915 as a reference, not judge validation).
 - Tune golden cases (`tests/harness/golden_tune.yaml`, `tests/test_tune_golden.py`): AC24 proposal checks and
   AC28 request checks on the demo data in the repository — a measured proposal re-accepted with its recipe
   SHA-256, one-field edits of it refused, three real refused replies refused for the same numbers, conflicts
@@ -107,7 +130,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   clarification, an English out-of-scope request, allowed-method and compute-budget conflicts, an
   admin-impersonation injection and an unknown excluded method; expect key `compute_budget`. The first
   baseline of the set (b7e3eca) showed that `r_c9` expected `tune` for a compute budget the weight-only
-  table cannot meet; it is now the conflict case `r_k5`.
+  table cannot meet; it is now the conflict case `r_k5`. `r_q4` asks with a compute budget the table can meet
+  (two reviews found 1/4 left `conflict` a fair answer too).
 - Midterm-2 demo (`docs/DEMO.md`): one unbroken live chain (sentence → parse → knapsack → recipe file whose
   SHA-256 is the measured file's → AI rounds → AI best's file), the live Claude round asked early, a blanket
   disclosure of what is recorded, and the final goals confirmed with S2 and evals rows; the tune evals'
@@ -130,6 +154,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   animated), rendered from the v3 deck PDF, followed by a short Korean text section.
 
 ### Fixed
+- A live Claude round on the Auto-tune page is numbered after every recorded round (LLM and measured), so
+  it no longer shares a number with the replan round.
 - A tune request whose compute budget is below the least MAC weight the constraints allow (any budget
   below 1 on a weight-only table: every A16 method runs a BF16 GEMM) is now a computed `conflict`, as a
   size budget already was; before, a `tune` parse went on to a knapsack that ignores the compute budget.

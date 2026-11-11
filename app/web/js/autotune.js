@@ -438,7 +438,7 @@ function showRequest(item, live) {
   const llm = item.llm;
   ui.reqResult.replaceChildren(
     h("div", {class: "at-round-head"},
-      live ? h("span", {class: "at-badge live"}, "실시간 Claude 응답") : h("span", {class: "at-badge stored"}, `저장된 응답 · ${date}`),
+      live ? liveBadge(item) : h("span", {class: "at-badge stored"}, `저장된 응답 · ${date}`),
       h("span", {class: `at-badge ${outcomeClass}`}, outcomeLabel),
       llm ? h("span", {class: "at-muted"}, `${fmtUsd(llm.cost_usd)} · ${fmtSec(llm.duration_s)}${(llm.models ?? []).length ? ` · ${llm.models.join(", ")}` : ""}`) : null),
     h("p", {class: "at-req-text"}, `“${item.text ?? ""}”`),
@@ -991,6 +991,15 @@ function updateAgentNote() {
   ui.agentNote.hidden = !differs;
 }
 
+// What came back from the parse / propose API: a live Claude call, or (server --replay) an answer recorded before
+// the demo, shown with the time it was recorded so nobody mistakes it for a call made now.
+function liveBadge(item) {
+  if (item.mode !== "replay") return h("span", {class: "at-badge live"}, "실시간 Claude 응답");
+  const when = (item.recorded_utc ?? "").replace("T", " ").slice(0, 16) || "시각 기록 없음";
+  return h("span", {class: "at-badge replay", title: "오프라인 재생: 서버가 미리 녹화한 Claude 응답을 돌려줬습니다. 지금 Claude 를 부르지 않았습니다."},
+    `녹화 재생 · ${when} UTC 실행`);
+}
+
 // A round with no LLM call whose proposal the knapsack made again under the best grid's options (tune_loop replan).
 const REPLAN = "knapsack-replan";
 const isReplan = (round) => !round.llm && (round.proposals ?? []).some((p) => p.author === REPLAN);
@@ -998,7 +1007,7 @@ const isReplan = (round) => !round.llm && (round.proposals ?? []).some((p) => p.
 function roundView(round, live) {
   const llm = round.llm;
   const head = h("div", {class: "at-round-head"}, h("h3", null, `라운드 ${round.round ?? "?"}`),
-    live ? h("span", {class: "at-badge live"}, "실시간 Claude 응답")
+    live ? liveBadge(round)
       : isReplan(round) ? h("span", {class: "at-badge stored"}, "휴리스틱 재배정 · LLM 없음")
         : h("span", {class: "at-badge stored"}, "저장된 응답"),
     llm ? h("span", {class: "at-muted"}, `${fmtUsd(llm.cost_usd)} · ${fmtSec(llm.duration_s)}`) : null,
@@ -1142,7 +1151,7 @@ async function postLive(path, payload, {button, cancel, wait, waiting, usual, wh
       error.code = body?.error?.code ?? null;
       throw error;
     }
-    if (!body || body.mode !== "live") throw new Error(`${what} API 의 응답에 mode: live 가 없습니다. 서버 버전을 확인하세요.`);
+    if (!body || !["live", "replay"].includes(body.mode)) throw new Error(`${what} API 의 응답에 mode 가 없습니다. 서버 버전을 확인하세요.`);
     return body;
   } finally {
     clearInterval(timer);
@@ -1163,7 +1172,7 @@ async function askClaude() {
     for (const p of body.proposals) if (p?.name && !proposals.has(p.name)) proposals.set(p.name, p);
     state.liveRounds.push(body);
     ui.liveRounds.append(roundView(body, true));
-    announce(`실시간 Claude 응답: 제안 ${body.proposals.length}개`);
+    announce(`${body.mode === "replay" ? "녹화된" : "실시간"} Claude 응답: 제안 ${body.proposals.length}개`);
   } catch (error) {
     ui.liveError.textContent = error.name === "AbortError" ? "요청을 취소했습니다. 저장된 응답은 그대로 있습니다."
       : error.code ? error.message : `${error.message} 지금 화면의 AI 제안은 저장된 응답입니다.`;

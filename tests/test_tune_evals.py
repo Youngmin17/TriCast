@@ -83,7 +83,7 @@ GOOD = {
              "reason": "weight-only methods run a BF16 GEMM: compute 5/16 cannot be met"},
     "r_c10": {"budget_bits": "3.5", "keep_bf16_blocks": [-1],
               "exclude_methods": ["hqq_int2", "hqq_int3", "hqq_int4"]},
-    "r_q4": {"outcome": "needs_clarification", "compute_budget": "1/4",
+    "r_q4": {"outcome": "needs_clarification", "compute_budget": "1",
              "questions": ["크기 예산은 몇 비트로 할까요?"]},
     "r_q5": {"outcome": "needs_clarification", "model": None, "budget_bits": "3",
              "questions": ["Which model should I tune?"]},

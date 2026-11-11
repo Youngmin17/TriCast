@@ -1,0 +1,525 @@
+{
+ "run_id": "2026-11-09T0209",
+ "case_id": "a_c1",
+ "calls": [
+  {
+   "role": "proposer",
+   "key": "round_1",
+   "returncode": 0,
+   "stdout": {
+    "duration_api_ms": 33677,
+    "stop_reason": "tool_use",
+    "session_id": "6a8f97a8-a821-4df4-8be2-ea48b1ef98c0",
+    "total_cost_usd": 0.20509629999999998,
+    "usage": {
+     "input_tokens": 2,
+     "cache_creation_input_tokens": 17063,
+     "cache_read_input_tokens": 1508,
+     "output_tokens": 3327,
+     "output_tokens_details": {
+      "thinking_tokens": 1587
+     },
+     "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+     },
+     "service_tier": "standard",
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 17063,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "inference_geo": "global",
+     "iterations": [
+      {
+       "input_tokens": 2,
+       "output_tokens": 3327,
+       "cache_read_input_tokens": 1508,
+       "cache_creation_input_tokens": 17063,
+       "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 17063
+       },
+       "type": "message"
+      }
+     ],
+     "speed": "standard",
+     "fallback_credit": null
+    },
+    "modelUsage": {
+     "claude-haiku-5-5": {
+      "inputTokens": 17292,
+      "outputTokens": 27,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.0017427,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 0,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 0,
+      "canonicalModel": "claude-haiku-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     },
+     "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 3327,
+      "cacheReadInputTokens": 1508,
+      "cacheCreationInputTokens": 17063,
+      "webSearchRequests": 0,
+      "costUSD": 0.20335359999999997,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 1587,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 17063,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "subagent_stats": {
+     "spawned": 0,
+     "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+     },
+     "started_in_background": 0,
+     "max_depth": 0,
+     "spawned_by_subagents": 0,
+     "completed": 0,
+     "failed": 0,
+     "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+     },
+     "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+     },
+     "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 2,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "{\"analysis\":\"The budget is 403/128 = 3.1484 bits per weight. The base iso_3.15 averages 3.14795 bits [E514ab09c524e], so almost nothing is left. Any cell upgrade has to be paid for with a downgrade, but the evidence only gives downgrade costs for the layers where loss is concentrated, and those are expensive. For example, the up_proj layers lose about 0.02 KL going from int3 to int2 (E9dcea9299d95, Ea5d557685c3e). The cheapest upgrade found is 14.down_proj from rht_gptq_int2 (0.00633) to rht_gptq_int3 (0.00181) [E4c3f9b73e065, E90bd4b2f3645]. No measured downgrade of about 3.1M weights costs less than that gain. None of the retrieved layers has a same-bit swap that beats its current assignment; for example, 27.up_proj already uses the better int3 variant [Ef04d8aa7bded vs E8972491007e7]. The whole-recipe KL measured 0.436 against a prediction of 0.398, which suggests interactions where the layer errors add up. So this round tries option changes that cost no bits: GPTQ act_order, and act_order combined with a different damp, applied to every GPTQ-family method.\",\"stop\":false,\"proposals\":[{\"name\":\"iso_3.15_actorder\",\"base\":\"iso_3.15\",\"changes\":[],\"options\":{\"gptq_int2\":{\"weight_algo.act_order\":true},\"gptq_int3\":{\"weight_algo.act_order\":true},\"gptq_int4\":{\"weight_algo.act_order\":true},\"rht_gptq_int2\":{\"weight_algo.act_order\":true},\"rht_gptq_int3\":{\"weight_algo.act_order\":true},\"rht_gptq_int4\":{\"weight_algo.act_order\":true}},\"rationale\":\"Uses the same cells as iso_3.15 (KL 0.436 [E514ab09c524e]) with act_order=true on all GPTQ-family methods, so the stored bits do not change. The loss sits mostly in int3/int2 GPTQ MLP layers, such as 14.down_proj rht_gptq_int2 at 0.00633 [E4c3f9b73e065] and 27.up_proj gptq_int3 at 0.00572 [Ef04d8aa7bded], and act_order targets exactly that low-bit GPTQ error.\",\"cites\":[\"E514ab09c524e\",\"E4c3f9b73e065\",\"Ef04d8aa7bded\"]},{\"name\":\"iso_3.15_actorder_damp05\",\"base\":\"iso_3.15\",\"changes\":[],\"options\":{\"gptq_int2\":{\"weight_algo.act_order\":true,\"weight_algo.damp\":0.05},\"gptq_int3\":{\"weight_algo.act_order\":true,\"weight_algo.damp\":0.05},\"gptq_int4\":{\"weight_algo.act_order\":true,\"weight_algo.damp\":0.05},\"rht_gptq_int2\":{\"weight_algo.act_order\":true,\"weight_algo.damp\":0.05},\"rht_gptq_int3\":{\"weight_algo.act_order\":true,\"weight_algo.damp\":0.05},\"rht_gptq_int4\":{\"weight_algo.act_order\":true,\"weight_algo.damp\":0.05}},\"rationale\":\"Uses the same cells as iso_3.15 [E514ab09c524e] with act_order=true and damp=0.05, so the stored bits do not change. Whole-recipe KL was measured at 0.436 against a predicted 0.398, so a stronger damp may make the Hessian less overfit to the calibration set. This matters most on layers with extreme activations, such as 27.up_proj with activation kurtosis 1090 [E24beed188b6a].\",\"cites\":[\"E514ab09c524e\",\"E24beed188b6a\"]},{\"name\":\"iso_3.15_damp003\",\"base\":\"iso_3.15\",\"changes\":[],\"options\":{\"gptq_int2\":{\"weight_algo.damp\":0.003},\"gptq_int3\":{\"weight_algo.damp\":0.003},\"gptq_int4\":{\"weight_algo.damp\":0.003},\"rht_gptq_int2\":{\"weight_algo.damp\":0.003},\"rht_gptq_int3\":{\"weight_algo.damp\":0.003},\"rht_gptq_int4\":{\"weight_algo.damp\":0.003}},\"rationale\":\"Uses the same cells as iso_3.15 (KL 0.436 [E514ab09c524e]) with damp=0.003 in place of the default, so the stored bits do not change. This brackets the damp axis against the damp=0.05 grid, to see whether weaker regularisation lowers the GPTQ error in the dominant rht_gptq_int3 MLP layers, such as 3.up_proj at 0.00642 [E6f4f7ea296d5].\",\"cites\":[\"E514ab09c524e\",\"E6f4f7ea296d5\"]}]}",
+    "structured_output": {
+     "analysis": "The budget is 403/128 = 3.1484 bits per weight. The base iso_3.15 averages 3.14795 bits [E514ab09c524e], so almost nothing is left. Any cell upgrade has to be paid for with a downgrade, but the evidence only gives downgrade costs for the layers where loss is concentrated, and those are expensive. For example, the up_proj layers lose about 0.02 KL going from int3 to int2 (E9dcea9299d95, Ea5d557685c3e). The cheapest upgrade found is 14.down_proj from rht_gptq_int2 (0.00633) to rht_gptq_int3 (0.00181) [E4c3f9b73e065, E90bd4b2f3645]. No measured downgrade of about 3.1M weights costs less than that gain. None of the retrieved layers has a same-bit swap that beats its current assignment; for example, 27.up_proj already uses the better int3 variant [Ef04d8aa7bded vs E8972491007e7]. The whole-recipe KL measured 0.436 against a prediction of 0.398, which suggests interactions where the layer errors add up. So this round tries option changes that cost no bits: GPTQ act_order, and act_order combined with a different damp, applied to every GPTQ-family method.",
+     "stop": false,
+     "proposals": [
+      {
+       "name": "iso_3.15_actorder",
+       "base": "iso_3.15",
+       "changes": [],
+       "options": {
+        "gptq_int2": {
+         "weight_algo.act_order": true
+        },
+        "gptq_int3": {
+         "weight_algo.act_order": true
+        },
+        "gptq_int4": {
+         "weight_algo.act_order": true
+        },
+        "rht_gptq_int2": {
+         "weight_algo.act_order": true
+        },
+        "rht_gptq_int3": {
+         "weight_algo.act_order": true
+        },
+        "rht_gptq_int4": {
+         "weight_algo.act_order": true
+        }
+       },
+       "rationale": "Uses the same cells as iso_3.15 (KL 0.436 [E514ab09c524e]) with act_order=true on all GPTQ-family methods, so the stored bits do not change. The loss sits mostly in int3/int2 GPTQ MLP layers, such as 14.down_proj rht_gptq_int2 at 0.00633 [E4c3f9b73e065] and 27.up_proj gptq_int3 at 0.00572 [Ef04d8aa7bded], and act_order targets exactly that low-bit GPTQ error.",
+       "cites": [
+        "E514ab09c524e",
+        "E4c3f9b73e065",
+        "Ef04d8aa7bded"
+       ]
+      },
+      {
+       "name": "iso_3.15_actorder_damp05",
+       "base": "iso_3.15",
+       "changes": [],
+       "options": {
+        "gptq_int2": {
+         "weight_algo.act_order": true,
+         "weight_algo.damp": 0.05
+        },
+        "gptq_int3": {
+         "weight_algo.act_order": true,
+         "weight_algo.damp": 0.05
+        },
+        "gptq_int4": {
+         "weight_algo.act_order": true,
+         "weight_algo.damp": 0.05
+        },
+        "rht_gptq_int2": {
+         "weight_algo.act_order": true,
+         "weight_algo.damp": 0.05
+        },
+        "rht_gptq_int3": {
+         "weight_algo.act_order": true,
+         "weight_algo.damp": 0.05
+        },
+        "rht_gptq_int4": {
+         "weight_algo.act_order": true,
+         "weight_algo.damp": 0.05
+        }
+       },
+       "rationale": "Uses the same cells as iso_3.15 [E514ab09c524e] with act_order=true and damp=0.05, so the stored bits do not change. Whole-recipe KL was measured at 0.436 against a predicted 0.398, so a stronger damp may make the Hessian less overfit to the calibration set. This matters most on layers with extreme activations, such as 27.up_proj with activation kurtosis 1090 [E24beed188b6a].",
+       "cites": [
+        "E514ab09c524e",
+        "E24beed188b6a"
+       ]
+      },
+      {
+       "name": "iso_3.15_damp003",
+       "base": "iso_3.15",
+       "changes": [],
+       "options": {
+        "gptq_int2": {
+         "weight_algo.damp": 0.003
+        },
+        "gptq_int3": {
+         "weight_algo.damp": 0.003
+        },
+        "gptq_int4": {
+         "weight_algo.damp": 0.003
+        },
+        "rht_gptq_int2": {
+         "weight_algo.damp": 0.003
+        },
+        "rht_gptq_int3": {
+         "weight_algo.damp": 0.003
+        },
+        "rht_gptq_int4": {
+         "weight_algo.damp": 0.003
+        }
+       },
+       "rationale": "Uses the same cells as iso_3.15 (KL 0.436 [E514ab09c524e]) with damp=0.003 in place of the default, so the stored bits do not change. This brackets the damp axis against the damp=0.05 grid, to see whether weaker regularisation lowers the GPTQ error in the dominant rht_gptq_int3 MLP layers, such as 3.up_proj at 0.00642 [E6f4f7ea296d5].",
+       "cites": [
+        "E514ab09c524e",
+        "E6f4f7ea296d5"
+       ]
+      }
+     ]
+    },
+    "ttft_ms": 19897,
+    "type": "result",
+    "duration_ms": 32907,
+    "uuid": "f46f9fc4-6165-4ede-8604-c3ca58285fe8",
+    "ttft_stream_ms": 3150,
+    "time_to_request_ms": 366,
+    "time_to_request_phases_ms": {
+     "other": 6,
+     "system_prompt": 5,
+     "resume_other": 2,
+     "process_user_input": 9,
+     "input_attachments": 31,
+     "input_hooks": 2,
+     "conversation_append": 0,
+     "tool_pool_refresh": 3,
+     "init_message": 4,
+     "init_frame_send": 1,
+     "engine_pickup": 1,
+     "loop_entry": 4,
+     "message_prep": 1,
+     "model_config_wait": 47,
+     "autocompact": 3,
+     "request_announcements": 44,
+     "query_setup": 3,
+     "model_gates": 171,
+     "tool_schema_build": 13,
+     "message_normalization": 1,
+     "client_creation": 11,
+     "request_build": 4
+    },
+    "turn_start_resume_kind": "none",
+    "process_turn_index": 0,
+    "time_to_request_loop_lag_ms": 132,
+    "time_to_request_cpu_ms": 304,
+    "time_to_request_major_faults": 2,
+    "input_attachments_detail": {
+     "slowest_producer": "session_settings",
+     "slowest_producer_ms": 12,
+     "cpu_ms": 30,
+     "major_faults": 0,
+     "setup_ms": 0,
+     "prompt_producers_ms": 2,
+     "ambient_start_ms": 12,
+     "ambient_wait_ms": 12,
+     "render_ms": 2,
+     "producers": 43,
+     "token_counts": 0
+    },
+    "tool_schema_build_detail": {
+     "betas_ms": 0,
+     "waits_ms": 1,
+     "placement_ms": 9,
+     "render_ms": 2,
+     "after_ms": 1,
+     "other_ms": 0,
+     "tools": 1,
+     "new_schemas": 1
+    },
+    "message_normalization_detail": {
+     "before_ms": 0,
+     "normalize_ms": 1,
+     "images_ms": 0,
+     "post_process_ms": 0,
+     "after_ms": 0,
+     "other_ms": 0,
+     "messages": 8,
+     "wire_messages": 2
+    },
+    "request_build_detail": {
+     "records_ms": 0,
+     "system_ms": 1,
+     "headers_ms": 0,
+     "cache_break_record_ms": 1,
+     "plans_ms": 1,
+     "retry_setup_ms": 0,
+     "sent_build_ms": 0,
+     "record_attempt_ms": 1,
+     "other_ms": 0,
+     "sent_build_safety_context_ms": 0,
+     "sent_build_cache_breakpoints_ms": 0,
+     "sent_build_surrogate_scan_ms": 0
+    },
+    "first_content_frame_ms": 3151,
+    "queued_turn_count": 0,
+    "result_index": 0,
+    "credential_expires_at": "2026-12-04T04:51:21.312Z"
+   },
+   "stderr": ""
+  },
+  {
+   "role": "judge",
+   "key": "iso_3.15_actorder",
+   "returncode": 0,
+   "stdout": {
+    "duration_api_ms": 13600,
+    "stop_reason": "tool_use",
+    "session_id": "6f1fb4ba-5935-4f95-8b87-8f35150eb9eb",
+    "total_cost_usd": 0.1121379,
+    "usage": {
+     "input_tokens": 2,
+     "cache_creation_input_tokens": 10905,
+     "cache_read_input_tokens": 1426,
+     "output_tokens": 1174,
+     "output_tokens_details": {
+      "thinking_tokens": 623
+     },
+     "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+     },
+     "service_tier": "standard",
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 10905,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "inference_geo": "global",
+     "iterations": [
+      {
+       "input_tokens": 2,
+       "output_tokens": 1174,
+       "cache_read_input_tokens": 1426,
+       "cache_creation_input_tokens": 10905,
+       "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 10905
+       },
+       "type": "message"
+      }
+     ],
+     "speed": "standard",
+     "fallback_credit": null
+    },
+    "modelUsage": {
+     "claude-haiku-5-5": {
+      "inputTokens": 11132,
+      "outputTokens": 23,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.0011247,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 0,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 0,
+      "canonicalModel": "claude-haiku-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     },
+     "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 1174,
+      "cacheReadInputTokens": 1426,
+      "cacheCreationInputTokens": 10905,
+      "webSearchRequests": 0,
+      "costUSD": 0.11101319999999999,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 623,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 10905,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "subagent_stats": {
+     "spawned": 0,
+     "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+     },
+     "started_in_background": 0,
+     "max_depth": 0,
+     "spawned_by_subagents": 0,
+     "completed": 0,
+     "failed": 0,
+     "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+     },
+     "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+     },
+     "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 2,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "{\"q1\":null,\"q2\":null,\"c1\":{\"reason\":\"Each citation matches the layer, method and metric it is used for. E514ab09c524e is the recipe_kl of 0.436, cited as \\\"KL 0.436\\\". E4c3f9b73e065 is model.layers.14.mlp.down_proj rht_gptq_int2 KL 0.00633. Ef04d8aa7bded is model.layers.27.mlp.up_proj gptq_int3 KL 0.00572.\",\"pass\":true},\"c2\":{\"reason\":\"The rationale makes no larger, smaller or better comparison that the cited values contradict. The quoted figures (0.436, 0.00633, 0.00572) match the records. The phrase \\\"sits mostly in int3/int2 GPTQ MLP layers\\\" is weakly supported but does not go against any cited value.\",\"pass\":true},\"c3\":{\"reason\":\"The rationale does not claim any measured KL gain from act_order. It only says \\\"act_order targets exactly that low-bit GPTQ error\\\", which describes how act_order works. \\\"the stored bits do not change\\\" is a property of the configuration, not an unmeasured result.\",\"pass\":true},\"c4\":null,\"needs_human_review\":false}",
+    "structured_output": {
+     "q1": null,
+     "q2": null,
+     "c1": {
+      "reason": "Each citation matches the layer, method and metric it is used for. E514ab09c524e is the recipe_kl of 0.436, cited as \"KL 0.436\". E4c3f9b73e065 is model.layers.14.mlp.down_proj rht_gptq_int2 KL 0.00633. Ef04d8aa7bded is model.layers.27.mlp.up_proj gptq_int3 KL 0.00572.",
+      "pass": true
+     },
+     "c2": {
+      "reason": "The rationale makes no larger, smaller or better comparison that the cited values contradict. The quoted figures (0.436, 0.00633, 0.00572) match the records. The phrase \"sits mostly in int3/int2 GPTQ MLP layers\" is weakly supported but does not go against any cited value.",
+      "pass": true
+     },
+     "c3": {
+      "reason": "The rationale does not claim any measured KL gain from act_order. It only says \"act_order targets exactly that low-bit GPTQ error\", which describes how act_order works. \"the stored bits do not change\" is a property of the configuration, not an unmeasured result.",
+      "pass": true
+     },
+     "c4": null,
+     "needs_human_review": false
+    },
+    "ttft_ms": 8909,
+    "type": "result",
+    "duration_ms": 13055,
+    "uuid": "68fd0e1d-a7f6-4626-8b64-9b02f90f3ab6",
+    "ttft_stream_ms": 3170,
+    "time_to_request_ms": 597,
+    "time_to_request_phases_ms": {
+     "other": 22,
+     "system_prompt": 1,
+     "resume_other": 0,
+     "process_user_input": 8,
+     "input_attachments": 65,
+     "input_hooks": 7,
+     "conversation_append": 1,
+     "tool_pool_refresh": 19,
+     "init_message": 14,
+     "init_frame_send": 12,
+     "engine_pickup": 2,
+     "loop_entry": 15,
+     "message_prep": 1,
+     "model_config_wait": 15,
+     "autocompact": 6,
+     "request_announcements": 42,
+     "query_setup": 11,
+     "model_gates": 312,
+     "tool_schema_build": 16,
+     "message_normalization": 0,
+     "client_creation": 23,
+     "request_build": 5
+    },
+    "turn_start_resume_kind": "none",
+    "process_turn_index": 0,
+    "time_to_request_loop_lag_ms": 205,
+    "time_to_request_cpu_ms": 323,
+    "time_to_request_major_faults": 0,
+    "input_attachments_detail": {
+     "slowest_producer": "session_settings",
+     "slowest_producer_ms": 27,
+     "cpu_ms": 49,
+     "major_faults": 0,
+     "setup_ms": 3,
+     "prompt_producers_ms": 0,
+     "ambient_start_ms": 25,
+     "ambient_wait_ms": 26,
+     "render_ms": 7,
+     "producers": 43,
+     "token_counts": 0
+    },
+    "tool_schema_build_detail": {
+     "betas_ms": 0,
+     "waits_ms": 3,
+     "placement_ms": 10,
+     "render_ms": 2,
+     "after_ms": 1,
+     "other_ms": 0,
+     "tools": 1,
+     "new_schemas": 1
+    },
+    "message_normalization_detail": {
+     "before_ms": 0,
+     "normalize_ms": 0,
+     "images_ms": 0,
+     "post_process_ms": 0,
+     "after_ms": 0,
+     "other_ms": 0,
+     "messages": 8,
+     "wire_messages": 2
+    },
+    "request_build_detail": {
+     "records_ms": 1,
+     "system_ms": 0,
+     "headers_ms": 0,
+     "cache_break_record_ms": 1,
+     "plans_ms": 0,
+     "retry_setup_ms": 0,
+     "sent_build_ms": 3,
+     "record_attempt_ms": 0,
+     "other_ms": 0,
+     "sent_build_safety_context_ms": 0,
+     "sent_build_cache_breakpoints_ms": 2,
+     "sent_build_surrogate_scan_ms": 0
+    },
+    "first_content_frame_ms": 3170,
+    "queued_turn_count": 0,
+    "result_index": 0,
+    "credential_expires_at": "2026-12-04T04:51:21.312Z"
+   },
+   "stderr": ""
+  }
+ ]
+}

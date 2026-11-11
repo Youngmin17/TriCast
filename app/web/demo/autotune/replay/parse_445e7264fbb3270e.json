@@ -1,0 +1,38 @@
+{
+ "schema": "tricast.autotune.replay/1",
+ "kind": "parse",
+ "key": "Qwen3-0.6B 를 4비트 안에서, 연산 예산은 5/16 (BF16 = 1) 로 맞춰줘",
+ "recorded_utc": "2026-11-09T02:05:41+00:00",
+ "answer": {
+  "mode": "live",
+  "text": "Qwen3-0.6B 를 4비트 안에서, 연산 예산은 5/16 (BF16 = 1) 로 맞춰줘",
+  "request": {
+   "outcome": "conflict",
+   "model": "Qwen/Qwen3-0.6B",
+   "budget_bits": "4",
+   "compute_budget": "5/16",
+   "keep_bf16_blocks": [],
+   "exclude_methods": [],
+   "only_methods": null,
+   "questions": [],
+   "reason": "compute budget 5/16: the cheapest compute these constraints allow is 1.0000 (BF16 = 1; weight-only methods run a BF16 GEMM) (code)",
+   "assumptions": [
+    "'4비트 안에서' is read as a size budget of at most 4 average stored bits per weight.",
+    "No blocks are kept in BF16 and no methods are restricted, because the request names none.",
+    "All quantized methods for this model are weight-only, so the compute budget of 5/16 may be infeasible. The tuner should report this if no assignment fits."
+   ],
+   "checks": [
+    "compute budget below the constrained cheapest compute: conflict (code)"
+   ]
+  },
+  "llm": {
+   "started_utc": "2026-11-09T02:05:28+00:00",
+   "models": [
+    "claude-haiku-5-5",
+    "claude-opus-5-5"
+   ],
+   "cost_usd": 0.032340200000000006,
+   "duration_s": 11.982
+  }
+ }
+}

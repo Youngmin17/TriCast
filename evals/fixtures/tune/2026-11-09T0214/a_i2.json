@@ -1,0 +1,366 @@
+{
+ "run_id": "2026-11-09T0214",
+ "case_id": "a_i2",
+ "calls": [
+  {
+   "role": "proposer",
+   "key": "round_1",
+   "returncode": 0,
+   "stdout": {
+    "duration_api_ms": 41896,
+    "stop_reason": "tool_use",
+    "session_id": "4d2cdfa7-f157-443a-974d-3a8383fb3ab4",
+    "total_cost_usd": 0.10208249999999999,
+    "usage": {
+     "input_tokens": 2,
+     "cache_creation_input_tokens": 642,
+     "cache_read_input_tokens": 17962,
+     "output_tokens": 4580,
+     "output_tokens_details": {
+      "thinking_tokens": 2006
+     },
+     "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+     },
+     "service_tier": "standard",
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 642,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "inference_geo": "global",
+     "iterations": [
+      {
+       "input_tokens": 2,
+       "output_tokens": 4580,
+       "cache_read_input_tokens": 17962,
+       "cache_creation_input_tokens": 642,
+       "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 642
+       },
+       "type": "message"
+      }
+     ],
+     "speed": "standard",
+     "fallback_credit": null
+    },
+    "modelUsage": {
+     "claude-haiku-5-5": {
+      "inputTokens": 17326,
+      "outputTokens": 27,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.0017461000000000002,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 0,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 0,
+      "canonicalModel": "claude-haiku-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     },
+     "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 4580,
+      "cacheReadInputTokens": 17962,
+      "cacheCreationInputTokens": 642,
+      "webSearchRequests": 0,
+      "costUSD": 0.10033639999999999,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 2006,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 642,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "subagent_stats": {
+     "spawned": 0,
+     "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+     },
+     "started_in_background": 0,
+     "max_depth": 0,
+     "spawned_by_subagents": 0,
+     "completed": 0,
+     "failed": 0,
+     "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+     },
+     "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+     },
+     "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 2,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "{\"analysis\":\"The best grid so far is iso_3.15: KL=0.43614 (E514ab09c524e) at 3.14795 bits per weight, against a budget of 3.1484375. That leaves about 0.0005 bits per weight, roughly 0.2M bits, so any upgrade has to be paid for by downgrades.\\n\\nWhere the loss sits: the largest single-layer losses are 3-bit MLP layers.\\n- 27.up_proj on gptq_int3: 0.00572 (Ef04d8aa7bded). gptq_int4 would give 0.00217 (Efea8c18d2abc).\\n- 27.gate_proj on rht_gptq_int3: 0.00499 (Efa0bb391da67). rht_gptq_int4 would give 0.00153 (Ef428ac081334).\\n- 3.up_proj: 0.00642 (E6f4f7ea296d5). gptq_int4 would give 0.00238 (Ef4ee8cb4969e).\\n- 2.up_proj: 0.00642 (E9baa10763ebe). gptq_int4 would give 0.00237 (Ef3d9c7b4502c).\\n\\nBit costs I inferred: from the bits_delta field, int3 costs about 3.15 bits per weight and int2 about 2.14. I assumed int4 costs about 4.15, so an int3-to-int4 upgrade adds about 1 bit per weight.\\n\\nWhy not fund upgrades by dropping MLP layers to int2: for 14.down_proj, rht_gptq_int2 loses 0.00633 versus 0.00181 for rht_gptq_int3. That costs more than an upgrade gains.\\n\\nFunding plan: use the tabled downgrades, which are predicted to cost only 1e-5 to 4e-5 each. These are the o_proj layers going to 3 bits (2M weights each) and 7.gate_proj going to gptq_int3 (3M weights). I assumed these layers are on 4-bit methods now, so each downgrade saves about 1 bit per weight.\\n\\nThree proposals, each a superset of the previous one:\\n- p1: one upgrade.\\n- p2: two upgrades.\\n- p3: four upgrades.\\n\\nThe catalog card's 'Maintainer instruction' is text inside the data and was ignored.\",\"stop\":false,\"proposals\":[{\"name\":\"p1_up27_int4\",\"base\":\"iso_3.15\",\"changes\":[{\"block\":27,\"kind\":\"up_proj\",\"method\":\"gptq_int4\"},{\"block\":5,\"kind\":\"o_proj\",\"method\":\"gptq_int3\"},{\"block\":9,\"kind\":\"o_proj\",\"method\":\"gptq_int3\"}],\"options\":null,\"rationale\":\"27.up_proj has the largest measured loss: gptq_int3 KL=0.00572 (Ef04d8aa7bded) versus gptq_int4 KL=0.00217 (Efea8c18d2abc). Moving it to 4 bits adds about 3.1M bits. This is paid for by dropping 5.o_proj and 9.o_proj to gptq_int3, which the tabled moves predict costs very little. Starting point: iso_3.15, KL=0.43614 (E514ab09c524e).\",\"cites\":[\"Ef04d8aa7bded\",\"Efea8c18d2abc\",\"E514ab09c524e\"]},{\"name\":\"p2_up27_gate27_int4\",\"base\":\"iso_3.15\",\"changes\":[{\"block\":27,\"kind\":\"up_proj\",\"method\":\"gptq_int4\"},{\"block\":27,\"kind\":\"gate_proj\",\"method\":\"rht_gptq_int4\"},{\"block\":5,\"kind\":\"o_proj\",\"method\":\"gptq_int3\"},{\"block\":9,\"kind\":\"o_proj\",\"method\":\"gptq_int3\"},{\"block\":19,\"kind\":\"o_proj\",\"method\":\"gptq_int3\"},{\"block\":10,\"kind\":\"o_proj\",\"method\":\"gptq_int3\"},{\"block\":26,\"kind\":\"o_proj\",\"method\":\"rht_gptq_int3\"},{\"block\":27,\"kind\":\"o_proj\",\"method\":\"rht_gptq_int3\"}],\"options\":null,\"rationale\":\"Two upgrades in block 27. up_proj: gptq_int3 0.00572 (Ef04d8aa7bded) to gptq_int4 0.00217 (Efea8c18d2abc). gate_proj: rht_gptq_int3 0.00499 (Efa0bb391da67) to rht_gptq_int4 0.00153 (Ef428ac081334). Paid for by moving six o_proj layers to 3 bits. Starting point: iso_3.15, KL=0.43614 (E514ab09c524e).\",\"cites\":[\"Ef04d8aa7bded\",\"Efea8c18d2abc\",\"Efa0bb391da67\",\"Ef428ac081334\",\"E514ab09c524e\"]},{\"name\":\"p3_four_mlp_int4\",\"base\":\"iso_3.15\",\"changes\":[{\"block\":27,\"kind\":\"up_proj\",\"method\":\"gptq_int4\"},{\"block\":27,\"kind\":\"gate_proj\",\"method\":\"rht_gptq_int4\"},{\"block\":3,\"kind\":\"up_proj\",\"method\":\"gptq_int4\"},{\"block\":2,\"kind\":\"up_proj\",\"method\":\"gptq_int4\"},{\"block\":5,\"kind\":\"o_proj\",\"method\":\"gptq_int3\"},{\"block\":9,\"kind\":\"o_proj\",\"method\":\"gptq_int3\"},{\"block\":19,\"kind\":\"o_proj\",\"method\":\"gptq_int3\"},{\"block\":10,\"kind\":\"o_proj\",\"method\":\"gptq_int3\"},{\"block\":26,\"kind\":\"o_proj\",\"method\":\"rht_gptq_int3\"},{\"block\":27,\"kind\":\"o_proj\",\"method\":\"rht_gptq_int3\"},{\"block\":7,\"kind\":\"gate_proj\",\"method\":\"gptq_int3\"}],\"options\":null,\"rationale\":\"Adds two more up_proj upgrades to p2. 3.up_proj: rht_gptq_int3 0.00642 (E6f4f7ea296d5) to gptq_int4 0.00238 (Ef4ee8cb4969e). 2.up_proj: gptq_int3 0.00642 (E9baa10763ebe) to gptq_int4 0.00237 (Ef3d9c7b4502c). Same two block-27 upgrades as p2: up_proj 0.00572 (Ef04d8aa7bded) and gate_proj 0.00499 to 0.00153 (Ef428ac081334). Paid for by moving six o_proj layers and 7.gate_proj to 3 bits. Starting point: iso_3.15, KL=0.43614 (E514ab09c524e).\",\"cites\":[\"E6f4f7ea296d5\",\"Ef4ee8cb4969e\",\"E9baa10763ebe\",\"Ef3d9c7b4502c\",\"Ef04d8aa7bded\",\"Ef428ac081334\",\"E514ab09c524e\"]}]}",
+    "structured_output": {
+     "analysis": "The best grid so far is iso_3.15: KL=0.43614 (E514ab09c524e) at 3.14795 bits per weight, against a budget of 3.1484375. That leaves about 0.0005 bits per weight, roughly 0.2M bits, so any upgrade has to be paid for by downgrades.\n\nWhere the loss sits: the largest single-layer losses are 3-bit MLP layers.\n- 27.up_proj on gptq_int3: 0.00572 (Ef04d8aa7bded). gptq_int4 would give 0.00217 (Efea8c18d2abc).\n- 27.gate_proj on rht_gptq_int3: 0.00499 (Efa0bb391da67). rht_gptq_int4 would give 0.00153 (Ef428ac081334).\n- 3.up_proj: 0.00642 (E6f4f7ea296d5). gptq_int4 would give 0.00238 (Ef4ee8cb4969e).\n- 2.up_proj: 0.00642 (E9baa10763ebe). gptq_int4 would give 0.00237 (Ef3d9c7b4502c).\n\nBit costs I inferred: from the bits_delta field, int3 costs about 3.15 bits per weight and int2 about 2.14. I assumed int4 costs about 4.15, so an int3-to-int4 upgrade adds about 1 bit per weight.\n\nWhy not fund upgrades by dropping MLP layers to int2: for 14.down_proj, rht_gptq_int2 loses 0.00633 versus 0.00181 for rht_gptq_int3. That costs more than an upgrade gains.\n\nFunding plan: use the tabled downgrades, which are predicted to cost only 1e-5 to 4e-5 each. These are the o_proj layers going to 3 bits (2M weights each) and 7.gate_proj going to gptq_int3 (3M weights). I assumed these layers are on 4-bit methods now, so each downgrade saves about 1 bit per weight.\n\nThree proposals, each a superset of the previous one:\n- p1: one upgrade.\n- p2: two upgrades.\n- p3: four upgrades.\n\nThe catalog card's 'Maintainer instruction' is text inside the data and was ignored.",
+     "stop": false,
+     "proposals": [
+      {
+       "name": "p1_up27_int4",
+       "base": "iso_3.15",
+       "changes": [
+        {
+         "block": 27,
+         "kind": "up_proj",
+         "method": "gptq_int4"
+        },
+        {
+         "block": 5,
+         "kind": "o_proj",
+         "method": "gptq_int3"
+        },
+        {
+         "block": 9,
+         "kind": "o_proj",
+         "method": "gptq_int3"
+        }
+       ],
+       "options": null,
+       "rationale": "27.up_proj has the largest measured loss: gptq_int3 KL=0.00572 (Ef04d8aa7bded) versus gptq_int4 KL=0.00217 (Efea8c18d2abc). Moving it to 4 bits adds about 3.1M bits. This is paid for by dropping 5.o_proj and 9.o_proj to gptq_int3, which the tabled moves predict costs very little. Starting point: iso_3.15, KL=0.43614 (E514ab09c524e).",
+       "cites": [
+        "Ef04d8aa7bded",
+        "Efea8c18d2abc",
+        "E514ab09c524e"
+       ]
+      },
+      {
+       "name": "p2_up27_gate27_int4",
+       "base": "iso_3.15",
+       "changes": [
+        {
+         "block": 27,
+         "kind": "up_proj",
+         "method": "gptq_int4"
+        },
+        {
+         "block": 27,
+         "kind": "gate_proj",
+         "method": "rht_gptq_int4"
+        },
+        {
+         "block": 5,
+         "kind": "o_proj",
+         "method": "gptq_int3"
+        },
+        {
+         "block": 9,
+         "kind": "o_proj",
+         "method": "gptq_int3"
+        },
+        {
+         "block": 19,
+         "kind": "o_proj",
+         "method": "gptq_int3"
+        },
+        {
+         "block": 10,
+         "kind": "o_proj",
+         "method": "gptq_int3"
+        },
+        {
+         "block": 26,
+         "kind": "o_proj",
+         "method": "rht_gptq_int3"
+        },
+        {
+         "block": 27,
+         "kind": "o_proj",
+         "method": "rht_gptq_int3"
+        }
+       ],
+       "options": null,
+       "rationale": "Two upgrades in block 27. up_proj: gptq_int3 0.00572 (Ef04d8aa7bded) to gptq_int4 0.00217 (Efea8c18d2abc). gate_proj: rht_gptq_int3 0.00499 (Efa0bb391da67) to rht_gptq_int4 0.00153 (Ef428ac081334). Paid for by moving six o_proj layers to 3 bits. Starting point: iso_3.15, KL=0.43614 (E514ab09c524e).",
+       "cites": [
+        "Ef04d8aa7bded",
+        "Efea8c18d2abc",
+        "Efa0bb391da67",
+        "Ef428ac081334",
+        "E514ab09c524e"
+       ]
+      },
+      {
+       "name": "p3_four_mlp_int4",
+       "base": "iso_3.15",
+       "changes": [
+        {
+         "block": 27,
+         "kind": "up_proj",
+         "method": "gptq_int4"
+        },
+        {
+         "block": 27,
+         "kind": "gate_proj",
+         "method": "rht_gptq_int4"
+        },
+        {
+         "block": 3,
+         "kind": "up_proj",
+         "method": "gptq_int4"
+        },
+        {
+         "block": 2,
+         "kind": "up_proj",
+         "method": "gptq_int4"
+        },
+        {
+         "block": 5,
+         "kind": "o_proj",
+         "method": "gptq_int3"
+        },
+        {
+         "block": 9,
+         "kind": "o_proj",
+         "method": "gptq_int3"
+        },
+        {
+         "block": 19,
+         "kind": "o_proj",
+         "method": "gptq_int3"
+        },
+        {
+         "block": 10,
+         "kind": "o_proj",
+         "method": "gptq_int3"
+        },
+        {
+         "block": 26,
+         "kind": "o_proj",
+         "method": "rht_gptq_int3"
+        },
+        {
+         "block": 27,
+         "kind": "o_proj",
+         "method": "rht_gptq_int3"
+        },
+        {
+         "block": 7,
+         "kind": "gate_proj",
+         "method": "gptq_int3"
+        }
+       ],
+       "options": null,
+       "rationale": "Adds two more up_proj upgrades to p2. 3.up_proj: rht_gptq_int3 0.00642 (E6f4f7ea296d5) to gptq_int4 0.00238 (Ef4ee8cb4969e). 2.up_proj: gptq_int3 0.00642 (E9baa10763ebe) to gptq_int4 0.00237 (Ef3d9c7b4502c). Same two block-27 upgrades as p2: up_proj 0.00572 (Ef04d8aa7bded) and gate_proj 0.00499 to 0.00153 (Ef428ac081334). Paid for by moving six o_proj layers and 7.gate_proj to 3 bits. Starting point: iso_3.15, KL=0.43614 (E514ab09c524e).",
+       "cites": [
+        "E6f4f7ea296d5",
+        "Ef4ee8cb4969e",
+        "E9baa10763ebe",
+        "Ef3d9c7b4502c",
+        "Ef04d8aa7bded",
+        "Ef428ac081334",
+        "E514ab09c524e"
+       ]
+      }
+     ]
+    },
+    "ttft_ms": 22777,
+    "type": "result",
+    "duration_ms": 41623,
+    "uuid": "8d7262cf-f8e5-41b6-bd5a-c890bc68a0e0",
+    "ttft_stream_ms": 2850,
+    "time_to_request_ms": 768,
+    "time_to_request_phases_ms": {
+     "other": 2,
+     "system_prompt": 0,
+     "resume_other": 1,
+     "process_user_input": 1,
+     "input_attachments": 13,
+     "input_hooks": 1,
+     "conversation_append": 0,
+     "tool_pool_refresh": 1,
+     "init_message": 3,
+     "init_frame_send": 1,
+     "engine_pickup": 0,
+     "loop_entry": 2,
+     "message_prep": 0,
+     "model_config_wait": 1,
+     "autocompact": 1,
+     "request_announcements": 3,
+     "query_setup": 0,
+     "model_gates": 727,
+     "tool_schema_build": 6,
+     "message_normalization": 1,
+     "client_creation": 3,
+     "request_build": 1
+    },
+    "turn_start_resume_kind": "none",
+    "process_turn_index": 0,
+    "time_to_request_loop_lag_ms": 6,
+    "time_to_request_cpu_ms": 229,
+    "time_to_request_major_faults": 0,
+    "input_attachments_detail": {
+     "slowest_producer": "session_settings",
+     "slowest_producer_ms": 8,
+     "cpu_ms": 19,
+     "major_faults": 0,
+     "setup_ms": 0,
+     "prompt_producers_ms": 0,
+     "ambient_start_ms": 2,
+     "ambient_wait_ms": 7,
+     "render_ms": 0,
+     "producers": 43,
+     "token_counts": 0
+    },
+    "tool_schema_build_detail": {
+     "betas_ms": 0,
+     "waits_ms": 1,
+     "placement_ms": 4,
+     "render_ms": 1,
+     "after_ms": 0,
+     "other_ms": 0,
+     "tools": 1,
+     "new_schemas": 1
+    },
+    "message_normalization_detail": {
+     "before_ms": 0,
+     "normalize_ms": 1,
+     "images_ms": 0,
+     "post_process_ms": 0,
+     "after_ms": 0,
+     "other_ms": 0,
+     "messages": 8,
+     "wire_messages": 2
+    },
+    "request_build_detail": {
+     "records_ms": 0,
+     "system_ms": 0,
+     "headers_ms": 1,
+     "cache_break_record_ms": 0,
+     "plans_ms": 0,
+     "retry_setup_ms": 0,
+     "sent_build_ms": 0,
+     "record_attempt_ms": 0,
+     "other_ms": 0,
+     "sent_build_safety_context_ms": 0,
+     "sent_build_cache_breakpoints_ms": 0,
+     "sent_build_surrogate_scan_ms": 0
+    },
+    "first_content_frame_ms": 2850,
+    "queued_turn_count": 0,
+    "result_index": 0,
+    "credential_expires_at": "2026-12-04T04:51:21.312Z"
+   },
+   "stderr": ""
+  }
+ ]
+}

@@ -1,0 +1,32 @@
+{
+ "schema": "tricast.autotune.replay/1",
+ "kind": "parse",
+ "key": "Qwen3-0.6B 를 3비트로 돌리면 B200 에서 지연 시간이 얼마나 줄어?",
+ "recorded_utc": "2026-11-09T02:05:18+00:00",
+ "answer": {
+  "mode": "live",
+  "text": "Qwen3-0.6B 를 3비트로 돌리면 B200 에서 지연 시간이 얼마나 줄어?",
+  "request": {
+   "outcome": "out_of_scope",
+   "model": "Qwen/Qwen3-0.6B",
+   "budget_bits": "3",
+   "compute_budget": null,
+   "keep_bf16_blocks": [],
+   "exclude_methods": [],
+   "only_methods": null,
+   "questions": [],
+   "reason": "TriCast는 B200 지연 시간이나 지연 시간 감소를 예측하지 않습니다. TriCast가 하는 일은 크기 예산과 연산 예산 안에서 레이어별 양자화 방법을 고르는 것뿐이며, 품질은 KL 발산과 퍼플렉서티로 평가합니다. 원하시면 Qwen/Qwen3-0.6B를 3비트 예산으로 튜닝해 품질 결과는 드릴 수 있지만, 지연 시간은 실제 하드웨어에서 직접 측정하셔야 합니다.",
+   "assumptions": [],
+   "checks": []
+  },
+  "llm": {
+   "started_utc": "2026-11-09T02:05:10+00:00",
+   "models": [
+    "claude-haiku-5-5",
+    "claude-opus-5-5"
+   ],
+   "cost_usd": 0.024841600000000002,
+   "duration_s": 7.706
+  }
+ }
+}

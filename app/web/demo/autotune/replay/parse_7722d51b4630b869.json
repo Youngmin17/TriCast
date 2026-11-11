@@ -1,0 +1,37 @@
+{
+ "schema": "tricast.autotune.replay/1",
+ "kind": "parse",
+ "key": "Tune Qwen/Qwen3-0.6B to 3.5 bits per weight and keep block 0 in BF16.",
+ "recorded_utc": "2026-11-09T02:05:48+00:00",
+ "answer": {
+  "mode": "live",
+  "text": "Tune Qwen/Qwen3-0.6B to 3.5 bits per weight and keep block 0 in BF16.",
+  "request": {
+   "outcome": "tune",
+   "model": "Qwen/Qwen3-0.6B",
+   "budget_bits": "3.5",
+   "compute_budget": null,
+   "keep_bf16_blocks": [
+    0
+   ],
+   "exclude_methods": [],
+   "only_methods": null,
+   "questions": [],
+   "reason": null,
+   "assumptions": [
+    "No compute budget was given, so the tune has only the weight-size budget and is not on the chip track.",
+    "No method restriction was given, so all listed methods are allowed."
+   ],
+   "checks": []
+  },
+  "llm": {
+   "started_utc": "2026-11-09T02:05:41+00:00",
+   "models": [
+    "claude-haiku-5-5",
+    "claude-opus-5-5"
+   ],
+   "cost_usd": 0.018285199999999998,
+   "duration_s": 5.452
+  }
+ }
+}

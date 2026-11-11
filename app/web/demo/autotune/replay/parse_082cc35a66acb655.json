@@ -1,0 +1,36 @@
+{
+ "schema": "tricast.autotune.replay/1",
+ "kind": "parse",
+ "key": "Qwen3-0.6B 를 403/128 비트 안에서 레이어별로 최적화해줘",
+ "recorded_utc": "2026-11-09T02:04:56+00:00",
+ "answer": {
+  "mode": "live",
+  "text": "Qwen3-0.6B 를 403/128 비트 안에서 레이어별로 최적화해줘",
+  "request": {
+   "outcome": "tune",
+   "model": "Qwen/Qwen3-0.6B",
+   "budget_bits": "403/128",
+   "compute_budget": null,
+   "keep_bf16_blocks": [],
+   "exclude_methods": [],
+   "only_methods": null,
+   "questions": [],
+   "reason": null,
+   "assumptions": [
+    "'403/128 비트' is read as the weight-size budget (about 3.15 average stored bits per weight), not a compute budget.",
+    "No compute budget was given, so none is applied.",
+    "No blocks are kept in BF16 and no methods are restricted, because the request does not ask for either."
+   ],
+   "checks": []
+  },
+  "llm": {
+   "started_utc": "2026-11-09T02:04:47+00:00",
+   "models": [
+    "claude-haiku-5-5",
+    "claude-opus-5-5"
+   ],
+   "cost_usd": 0.0318969,
+   "duration_s": 5.353
+  }
+ }
+}

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TriCast</title>
+<link rel="icon" type="image/png" href="assets/tricast-mark-64.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="tune.css">
+</head>
+<body class="ta">
+<header class="ta-bar">
+  <a class="ta-brand" href="tune.html"><img src="assets/tricast-mark.png" alt="" width="24" height="24"><span>TriCast</span></a>
+  <span class="ta-bar-note" id="server"></span>
+</header>
+
+<main class="ta-main" id="main">
+  <section class="ta-sec" id="sec-model" aria-labelledby="h-model">
+    <div class="ta-sec-head">
+      <span class="ta-no">1</span><h2 id="h-model">모델</h2>
+      <form class="ta-model" id="model-form">
+        <select id="model" aria-label="모델 — GPU 측정 기록이 있는 것"></select>
+        <button type="submit" class="ta-btn primary" id="load">불러오기</button>
+      </form>
+      <div class="ta-model-info" id="model-info"></div>
+      <span class="ta-sec-state" id="model-state"></span>
+    </div>
+  </section>
+
+  <section class="ta-sec" id="sec-tune" aria-labelledby="h-tune" data-off>
+    <div class="ta-sec-head"><span class="ta-no">2</span><h2 id="h-tune">Auto-tune</h2><span class="ta-sub">AI 추천</span>
+      <span class="ta-sec-state" id="tune-state"></span></div>
+    <div class="ta-sec-body" id="tune"></div>
+  </section>
+
+  <section class="ta-sec" id="sec-edit" aria-labelledby="h-edit" data-off>
+    <div class="ta-sec-head"><span class="ta-no">3</span><h2 id="h-edit">직접 편집</h2><span class="ta-sec-state" id="edit-state"></span></div>
+    <div class="ta-sec-body" id="edit"></div>
+  </section>
+
+  <section class="ta-sec" id="sec-eval" aria-labelledby="h-eval" data-off>
+    <div class="ta-sec-head"><span class="ta-no">4</span><h2 id="h-eval">평가</h2><span class="ta-sec-state" id="eval-state"></span></div>
+    <div class="ta-sec-body" id="eval"></div>
+  </section>
+</main>
+<script>
+  if (location.protocol === "file:") {
+    document.getElementById("main").textContent = "이 페이지는 파일을 직접 열면 동작하지 않습니다. "
+      + "python -m app.server --demo 로 띄운 주소에서 여세요.";
+  }
+</script>
+<div class="tip" id="tip" role="tooltip" hidden></div>
+<script type="module" src="js/tune.js"></script>
+</body>
+</html>

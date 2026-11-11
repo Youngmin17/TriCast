@@ -56,4 +56,6 @@ evals/run_tune_evals.py 를 만들어줘. 튜닝 평가 세트를 읽어 실행 
 
 결과 칸: 2026-11-08 기준선 실행 `2026-11-08T0104` 의 **실제 저장 응답**에 위 8건을 하나씩 넣어 stored 모드로 다시 채점한 결과 (`python evals/inject_faults.py 2026-11-08T0104 --table … --ledger … --fixture s3150=…` → `INJECT_DONE 8/8`, 넣은 케이스만 판정이 바뀜). 합성 데이터로 같은 8건(+ judge 결과 문장 1건)을 보는 회귀 테스트는 `tests/test_tune_evals.py::test_fault_injection_gives_the_expected_verdict` (9건). 사람이 결과를 다시 돌려 확인한 서명: ______ (날짜 ______)
 
+2026-11-09 사용자 위임으로 이 확인을 AI 가 했다 (사람 서명이 아니다): `598c757` 전과 `344cb8e` 의 `runs/` 없는 클론에서 각각 `INJECT_DONE 8/8`. 서명 칸은 사람이 실행 결과를 보고 채운다.
+
 2026-11-09 러너 수정 (사용자 승인 — 목표 퍼센트의 소수, 0/0 = 해당 없음, git 상태를 쓰기 전에 읽기, 기대 키 `compute_budget`) 뒤 같은 명령을 다시 돌려 `INJECT_DONE 8/8` (같은 행 · 같은 판정). 같은 수정 뒤 11-08 기준선 3회의 stored 재채점은 지표 분자 · 분모와 27 케이스 판정이 그대로이고 A1 충족 표시만 바로잡혔다 (`evals/EVAL_DESIGN.md` §4).

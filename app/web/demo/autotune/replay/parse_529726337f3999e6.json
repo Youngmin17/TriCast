@@ -1,0 +1,38 @@
+{
+ "schema": "tricast.autotune.replay/1",
+ "kind": "parse",
+ "key": "Qwen3-0.6B, 평균 403/128 비트. 첫 블록과 마지막 블록은 BF16 으로 남겨줘",
+ "recorded_utc": "2026-11-09T02:05:02+00:00",
+ "answer": {
+  "mode": "live",
+  "text": "Qwen3-0.6B, 평균 403/128 비트. 첫 블록과 마지막 블록은 BF16 으로 남겨줘",
+  "request": {
+   "outcome": "tune",
+   "model": "Qwen/Qwen3-0.6B",
+   "budget_bits": "403/128",
+   "compute_budget": null,
+   "keep_bf16_blocks": [
+    0,
+    -1
+   ],
+   "exclude_methods": [],
+   "only_methods": null,
+   "questions": [],
+   "reason": null,
+   "assumptions": [
+    "The request gives no compute budget, so none is applied (weight-size track only).",
+    "The request names no method restriction, so all listed methods may be chosen."
+   ],
+   "checks": []
+  },
+  "llm": {
+   "started_utc": "2026-11-09T02:04:56+00:00",
+   "models": [
+    "claude-haiku-5-5",
+    "claude-opus-5-5"
+   ],
+   "cost_usd": 0.0220649,
+   "duration_s": 5.89
+  }
+ }
+}

@@ -1,0 +1,1042 @@
+{
+ "schema": "tricast.autotune.replay/1",
+ "kind": "propose",
+ "key": "count=4",
+ "recorded_utc": "2026-11-09T02:15:24+00:00",
+ "answer": {
+  "mode": "live",
+  "round": 5,
+  "analysis": "The best grid is act_damp05_r3 (KL 0.38644, E1d6f622c292e, avg_bits 3.14795). The budget is 3.1484 bits per weight, so there is almost no room for bit upgrades. Two measured results warn against per-layer swaps: the knapsack replan (E9b36f86be389) and g256 funding (E7fde79566655) both made KL worse. Damp results with act_order=true are: 0.01 gives 0.39128 (E71985ad81ef7), 0.025 gives 0.38856 (E2809f3b455cc), 0.05 gives 0.38644 (E1d6f622c292e) and 0.1 gives 0.40459 (Ef94d802b1fc3). The best damp is therefore somewhere between 0.025 and 0.1, probably close to 0.05. These proposals refine damp without changing the bit count, including separate damp values per bit width. In standard GPTQ, block_size does not change the result, so I skip it.",
+  "stop": false,
+  "proposals": [
+   {
+    "name": "act_damp065_r5",
+    "base": "act_damp05_r3",
+    "changes": [],
+    "options": {
+     "gptq_int2": {
+      "weight.group_size": 128,
+      "weight.rounding": "rne",
+      "weight_algo.damp": 0.065,
+      "weight_algo.act_order": true,
+      "weight_algo.block_size": 128
+     },
+     "gptq_int3": {
+      "weight.group_size": 128,
+      "weight.rounding": "rne",
+      "weight_algo.damp": 0.065,
+      "weight_algo.act_order": true,
+      "weight_algo.block_size": 128
+     },
+     "gptq_int4": {
+      "weight.group_size": 128,
+      "weight.rounding": "rne",
+      "weight_algo.damp": 0.065,
+      "weight_algo.act_order": true,
+      "weight_algo.block_size": 128
+     },
+     "rht_gptq_int2": {
+      "weight.group_size": 128,
+      "weight.rounding": "rne",
+      "weight_algo.damp": 0.065,
+      "weight_algo.act_order": true,
+      "weight_algo.block_size": 128
+     },
+     "rht_gptq_int3": {
+      "weight.group_size": 128,
+      "weight.rounding": "rne",
+      "weight_algo.damp": 0.065,
+      "weight_algo.act_order": true,
+      "weight_algo.block_size": 128
+     },
+     "rht_gptq_int4": {
+      "weight.group_size": 128,
+      "weight.rounding": "rne",
+      "weight_algo.damp": 0.065,
+      "weight_algo.act_order": true,
+      "weight_algo.block_size": 128
+     }
+    },
+    "rationale": "damp=0.05 gave KL 0.38644 (E1d6f622c292e) and damp=0.1 gave 0.40459 (Ef94d802b1fc3). This tests damp=0.065, a value between them, at the same bit count.",
+    "cites": [
+     "E1d6f622c292e",
+     "Ef94d802b1fc3"
+    ],
+    "status": "accepted",
+    "reason": null,
+    "avg_bits": 3.147953869047619,
+    "predicted": {
+     "predicted_kl_sum": null,
+     "predicted_kl_sum_minus_floor": null,
+     "predicted_kv_kl_sum": null,
+     "unpredicted": "method or KV options: the table has entries for the default options only",
+     "floor_rule": "max(0, kl - floor) for every non-BF16 method; BF16 is a skip (no patch): 0, no floor"
+    },
+    "grid": [
+     [
+      "rht_gptq_int3",
+      "rht_gptq_int4",
+      "rht_gptq_int4",
+      "gptq_int4",
+      "rht_gptq_int3",
+      "gptq_int3",
+      "rht_gptq_int4"
+     ],
+     [
+      "gptq_int2",
+      "rht_gptq_int3",
+      "gptq_int3",
+      "rht_gptq_int3",
+      "gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int4"
+     ],
+     [
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "gptq_int3",
+      "rht_gptq_int4"
+     ],
+     [
+      "rht_gptq_int3",
+      "hqq_int4",
+      "nf4",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int4"
+     ],
+     [
+      "rht_gptq_int3",
+      "gptq_int4",
+      "nf4",
+      "gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int3",
+      "rht_gptq_int4",
+      "rht_gptq_int4",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int3",
+      "nf4",
+      "rht_gptq_int4",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int2",
+      "rht_gptq_int4",
+      "rht_gptq_int4",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int3",
+      "rht_gptq_int4",
+      "rht_gptq_int4",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int3",
+      "rht_gptq_int4",
+      "rht_gptq_int4",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int2",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int2",
+      "rht_gptq_int4",
+      "rht_gptq_int4",
+      "rht_gptq_int3",
+      "rht_gptq_int2",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int2",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int2",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int2",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int2",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int2",
+      "rht_gptq_int4",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int2",
+      "rht_gptq_int3",
+      "rht_gptq_int2"
+     ],
+     [
+      "rht_gptq_int2",
+      "rht_gptq_int4",
+      "rht_gptq_int4",
+      "rht_gptq_int3",
+      "rht_gptq_int2",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int2",
+      "rht_gptq_int4",
+      "rht_gptq_int4",
+      "rht_gptq_int3",
+      "rht_gptq_int2",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int3",
+      "rht_gptq_int4",
+      "rht_gptq_int4",
+      "rht_gptq_int3",
+      "rht_gptq_int2",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int2",
+      "rht_gptq_int4",
+      "rht_gptq_int4",
+      "rht_gptq_int2",
+      "rht_gptq_int2",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int2",
+      "rht_gptq_int4",
+      "rht_gptq_int4",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int2",
+      "nf4",
+      "rht_gptq_int4",
+      "rht_gptq_int2",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int3",
+      "nf4",
+      "nf4",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int3",
+      "rht_gptq_int4",
+      "nf4",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int2",
+      "nf4",
+      "nf4",
+      "rht_gptq_int2",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int2",
+      "hqq_int4",
+      "nf4",
+      "rht_gptq_int2",
+      "gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int3",
+      "hqq_int4",
+      "nf4",
+      "rht_gptq_int2",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int3",
+      "hqq_int4",
+      "nf4",
+      "gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int3",
+      "rht_gptq_int4",
+      "nf4",
+      "gptq_int3",
+      "rht_gptq_int3",
+      "gptq_int3",
+      "rht_gptq_int3"
+     ]
+    ],
+    "kl": null,
+    "ppl": null
+   },
+   {
+    "name": "act_damp04_r5",
+    "base": "act_damp05_r3",
+    "changes": [],
+    "options": {
+     "gptq_int2": {
+      "weight.group_size": 128,
+      "weight.rounding": "rne",
+      "weight_algo.damp": 0.04,
+      "weight_algo.act_order": true,
+      "weight_algo.block_size": 128
+     },
+     "gptq_int3": {
+      "weight.group_size": 128,
+      "weight.rounding": "rne",
+      "weight_algo.damp": 0.04,
+      "weight_algo.act_order": true,
+      "weight_algo.block_size": 128
+     },
+     "gptq_int4": {
+      "weight.group_size": 128,
+      "weight.rounding": "rne",
+      "weight_algo.damp": 0.04,
+      "weight_algo.act_order": true,
+      "weight_algo.block_size": 128
+     },
+     "rht_gptq_int2": {
+      "weight.group_size": 128,
+      "weight.rounding": "rne",
+      "weight_algo.damp": 0.04,
+      "weight_algo.act_order": true,
+      "weight_algo.block_size": 128
+     },
+     "rht_gptq_int3": {
+      "weight.group_size": 128,
+      "weight.rounding": "rne",
+      "weight_algo.damp": 0.04,
+      "weight_algo.act_order": true,
+      "weight_algo.block_size": 128
+     },
+     "rht_gptq_int4": {
+      "weight.group_size": 128,
+      "weight.rounding": "rne",
+      "weight_algo.damp": 0.04,
+      "weight_algo.act_order": true,
+      "weight_algo.block_size": 128
+     }
+    },
+    "rationale": "damp=0.025 gave KL 0.38856 (E2809f3b455cc) and damp=0.05 gave 0.38644 (E1d6f622c292e). This tests damp=0.04 to find where the minimum lies between them, at the same bit count.",
+    "cites": [
+     "E2809f3b455cc",
+     "E1d6f622c292e"
+    ],
+    "status": "accepted",
+    "reason": null,
+    "avg_bits": 3.147953869047619,
+    "predicted": {
+     "predicted_kl_sum": null,
+     "predicted_kl_sum_minus_floor": null,
+     "predicted_kv_kl_sum": null,
+     "unpredicted": "method or KV options: the table has entries for the default options only",
+     "floor_rule": "max(0, kl - floor) for every non-BF16 method; BF16 is a skip (no patch): 0, no floor"
+    },
+    "grid": [
+     [
+      "rht_gptq_int3",
+      "rht_gptq_int4",
+      "rht_gptq_int4",
+      "gptq_int4",
+      "rht_gptq_int3",
+      "gptq_int3",
+      "rht_gptq_int4"
+     ],
+     [
+      "gptq_int2",
+      "rht_gptq_int3",
+      "gptq_int3",
+      "rht_gptq_int3",
+      "gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int4"
+     ],
+     [
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "gptq_int3",
+      "rht_gptq_int4"
+     ],
+     [
+      "rht_gptq_int3",
+      "hqq_int4",
+      "nf4",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int4"
+     ],
+     [
+      "rht_gptq_int3",
+      "gptq_int4",
+      "nf4",
+      "gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int3",
+      "rht_gptq_int4",
+      "rht_gptq_int4",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int3",
+      "nf4",
+      "rht_gptq_int4",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int2",
+      "rht_gptq_int4",
+      "rht_gptq_int4",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int3",
+      "rht_gptq_int4",
+      "rht_gptq_int4",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int3",
+      "rht_gptq_int4",
+      "rht_gptq_int4",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int2",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int2",
+      "rht_gptq_int4",
+      "rht_gptq_int4",
+      "rht_gptq_int3",
+      "rht_gptq_int2",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int2",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int2",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int2",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int2",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int2",
+      "rht_gptq_int4",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int2",
+      "rht_gptq_int3",
+      "rht_gptq_int2"
+     ],
+     [
+      "rht_gptq_int2",
+      "rht_gptq_int4",
+      "rht_gptq_int4",
+      "rht_gptq_int3",
+      "rht_gptq_int2",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int2",
+      "rht_gptq_int4",
+      "rht_gptq_int4",
+      "rht_gptq_int3",
+      "rht_gptq_int2",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int3",
+      "rht_gptq_int4",
+      "rht_gptq_int4",
+      "rht_gptq_int3",
+      "rht_gptq_int2",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int2",
+      "rht_gptq_int4",
+      "rht_gptq_int4",
+      "rht_gptq_int2",
+      "rht_gptq_int2",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int2",
+      "rht_gptq_int4",
+      "rht_gptq_int4",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int2",
+      "nf4",
+      "rht_gptq_int4",
+      "rht_gptq_int2",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int3",
+      "nf4",
+      "nf4",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int3",
+      "rht_gptq_int4",
+      "nf4",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int2",
+      "nf4",
+      "nf4",
+      "rht_gptq_int2",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int2",
+      "hqq_int4",
+      "nf4",
+      "rht_gptq_int2",
+      "gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int3",
+      "hqq_int4",
+      "nf4",
+      "rht_gptq_int2",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int3",
+      "hqq_int4",
+      "nf4",
+      "gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int3",
+      "rht_gptq_int4",
+      "nf4",
+      "gptq_int3",
+      "rht_gptq_int3",
+      "gptq_int3",
+      "rht_gptq_int3"
+     ]
+    ],
+    "kl": null,
+    "ppl": null
+   },
+   {
+    "name": "act_damp_lowbit_hi_r5",
+    "base": "act_damp05_r3",
+    "changes": [],
+    "options": {
+     "gptq_int2": {
+      "weight.group_size": 128,
+      "weight.rounding": "rne",
+      "weight_algo.damp": 0.08,
+      "weight_algo.act_order": true,
+      "weight_algo.block_size": 128
+     },
+     "gptq_int3": {
+      "weight.group_size": 128,
+      "weight.rounding": "rne",
+      "weight_algo.damp": 0.05,
+      "weight_algo.act_order": true,
+      "weight_algo.block_size": 128
+     },
+     "gptq_int4": {
+      "weight.group_size": 128,
+      "weight.rounding": "rne",
+      "weight_algo.damp": 0.025,
+      "weight_algo.act_order": true,
+      "weight_algo.block_size": 128
+     },
+     "rht_gptq_int2": {
+      "weight.group_size": 128,
+      "weight.rounding": "rne",
+      "weight_algo.damp": 0.08,
+      "weight_algo.act_order": true,
+      "weight_algo.block_size": 128
+     },
+     "rht_gptq_int3": {
+      "weight.group_size": 128,
+      "weight.rounding": "rne",
+      "weight_algo.damp": 0.05,
+      "weight_algo.act_order": true,
+      "weight_algo.block_size": 128
+     },
+     "rht_gptq_int4": {
+      "weight.group_size": 128,
+      "weight.rounding": "rne",
+      "weight_algo.damp": 0.025,
+      "weight_algo.act_order": true,
+      "weight_algo.block_size": 128
+     }
+    },
+    "rationale": "Uniform damp=0.05 is best so far (0.38644, E1d6f622c292e), and damp=0.025 (E2809f3b455cc) and damp=0.1 (Ef94d802b1fc3) were both worse. This tests damp per bit width: damp=0.08 for int2, damp=0.05 for int3 and damp=0.025 for int4. Coarser grids may benefit from more regularization.",
+    "cites": [
+     "E1d6f622c292e",
+     "E2809f3b455cc",
+     "Ef94d802b1fc3"
+    ],
+    "status": "accepted",
+    "reason": null,
+    "avg_bits": 3.147953869047619,
+    "predicted": {
+     "predicted_kl_sum": null,
+     "predicted_kl_sum_minus_floor": null,
+     "predicted_kv_kl_sum": null,
+     "unpredicted": "method or KV options: the table has entries for the default options only",
+     "floor_rule": "max(0, kl - floor) for every non-BF16 method; BF16 is a skip (no patch): 0, no floor"
+    },
+    "grid": [
+     [
+      "rht_gptq_int3",
+      "rht_gptq_int4",
+      "rht_gptq_int4",
+      "gptq_int4",
+      "rht_gptq_int3",
+      "gptq_int3",
+      "rht_gptq_int4"
+     ],
+     [
+      "gptq_int2",
+      "rht_gptq_int3",
+      "gptq_int3",
+      "rht_gptq_int3",
+      "gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int4"
+     ],
+     [
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "gptq_int3",
+      "rht_gptq_int4"
+     ],
+     [
+      "rht_gptq_int3",
+      "hqq_int4",
+      "nf4",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int4"
+     ],
+     [
+      "rht_gptq_int3",
+      "gptq_int4",
+      "nf4",
+      "gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int3",
+      "rht_gptq_int4",
+      "rht_gptq_int4",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int3",
+      "nf4",
+      "rht_gptq_int4",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int2",
+      "rht_gptq_int4",
+      "rht_gptq_int4",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int3",
+      "rht_gptq_int4",
+      "rht_gptq_int4",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int3",
+      "rht_gptq_int4",
+      "rht_gptq_int4",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int2",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int2",
+      "rht_gptq_int4",
+      "rht_gptq_int4",
+      "rht_gptq_int3",
+      "rht_gptq_int2",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int2",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int2",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int2",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int2",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int2",
+      "rht_gptq_int4",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int2",
+      "rht_gptq_int3",
+      "rht_gptq_int2"
+     ],
+     [
+      "rht_gptq_int2",
+      "rht_gptq_int4",
+      "rht_gptq_int4",
+      "rht_gptq_int3",
+      "rht_gptq_int2",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int2",
+      "rht_gptq_int4",
+      "rht_gptq_int4",
+      "rht_gptq_int3",
+      "rht_gptq_int2",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int3",
+      "rht_gptq_int4",
+      "rht_gptq_int4",
+      "rht_gptq_int3",
+      "rht_gptq_int2",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int2",
+      "rht_gptq_int4",
+      "rht_gptq_int4",
+      "rht_gptq_int2",
+      "rht_gptq_int2",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int2",
+      "rht_gptq_int4",
+      "rht_gptq_int4",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int2",
+      "nf4",
+      "rht_gptq_int4",
+      "rht_gptq_int2",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int3",
+      "nf4",
+      "nf4",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int3",
+      "rht_gptq_int4",
+      "nf4",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int2",
+      "nf4",
+      "nf4",
+      "rht_gptq_int2",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int2",
+      "hqq_int4",
+      "nf4",
+      "rht_gptq_int2",
+      "gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int3",
+      "hqq_int4",
+      "nf4",
+      "rht_gptq_int2",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int3",
+      "hqq_int4",
+      "nf4",
+      "gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3",
+      "rht_gptq_int3"
+     ],
+     [
+      "rht_gptq_int3",
+      "rht_gptq_int4",
+      "nf4",
+      "gptq_int3",
+      "rht_gptq_int3",
+      "gptq_int3",
+      "rht_gptq_int3"
+     ]
+    ],
+    "kl": null,
+    "ppl": null
+   },
+   {
+    "name": "act_damp_lowbit_lo_r5",
+    "base": "act_damp05_r3",
+    "changes": [],
+    "options": {
+     "gptq_int2": {
+      "weight.group_size": 128,
+      "weight.rounding": "rne",
+      "weight_algo.damp": 0.05,
+      "weight_algo.act_order": true,
+      "weight_algo.block_size": 128
+     },
+     "gptq_int3": {
+      "weight.group_size": 128,
+      "weight.rounding": "rne",
+      "weight_algo.damp": 0.065,
+      "weight_algo.act_order": true,
+      "weight_algo.block_size": 128
+     },
+     "gptq_int4": {
+      "weight.group_size": 128,
+      "weight.rounding": "rne",
+      "weight_algo.damp": 0.05,
+      "weight_algo.act_order": true,
+      "weight_algo.block_size": 128
+     },
+     "rht_gptq_int2": {
+      "weight.group_size": 128,
+      "weight.rounding": "rne",
+      "weight_algo.damp": 0.05,
+      "weight_algo.act_order": true,
+      "weight_algo.block_size": 128
+     },
+     "rht_gptq_int3": {
+      "weight.group_size": 128,
+      "weight.rounding": "rne",
+      "weight_algo.damp": 0.065,
+      "weight_algo.act_order": true,
+      "weight_algo.block_size": 128
+     },
+     "rht_gptq_int4": {
+      "weight.group_size": 128,
+      "weight.rounding": "rne",
+      "weight_algo.damp": 0.05,
+      "weight_algo.act_order": true,
+      "weight_algo.block_size": 128
+     }
+    },
+    "rationale": "int3 methods cover most layers (109 rht_gptq_int3 in E1d6f622c292e). This raises damp to 0.065 for int3 only and keeps damp=0.05 elsewhere, so the int3 effect is measured separately from the uniform 0.05 result (0.38644). damp=0.1 was worse (0.40459, Ef94d802b1fc3).",
+    "cites": [
+     "E1d6f622c292e",
+     "Ef94d802b1fc3"
+    ],
+    "status": "refused",
+    "reason": "rationale numbers not supported by the cited records or the proposal: ['0.065', '0.05']"
+   }
+  ],
+  "llm": {
+   "models": [
+    "claude-haiku-5-5",
+    "claude-opus-5-5"
+   ],
+   "cost_usd": 0.2171624,
+   "duration_s": 30.743,
+   "returncode": 0,
+   "started_utc": "2026-11-09T02:14:51+00:00"
+  },
+  "note": "검사만 했고 측정하지 않았습니다. 채택된 제안의 KL 은 GPU 측정이 필요합니다."
+ }
+}

@@ -1,0 +1,39 @@
+{
+ "schema": "tricast.autotune.replay/1",
+ "kind": "parse",
+ "key": "Qwen3-0.6B 를 1.5비트로",
+ "recorded_utc": "2026-11-09T02:05:28+00:00",
+ "answer": {
+  "mode": "live",
+  "text": "Qwen3-0.6B 를 1.5비트로",
+  "request": {
+   "outcome": "conflict",
+   "model": "Qwen/Qwen3-0.6B",
+   "budget_bits": "1.5",
+   "compute_budget": null,
+   "keep_bf16_blocks": [],
+   "exclude_methods": [],
+   "only_methods": null,
+   "questions": [],
+   "reason": "budget 1.5 bits: the cheapest assignment these constraints allow is 2.1406 bits (code)",
+   "assumptions": [
+    "'1.5비트' is read as the weight-size budget of 1.5 average stored bits per weight.",
+    "No compute budget was given, so the weight-only track is used with no compute limit.",
+    "No method restrictions and no blocks kept in BF16.",
+    "Warning: the smallest method available is 2-bit (gptq_int2, hqq_int2, rht_gptq_int2), and stored bits also include scale overhead. A 1.5-bit average is therefore probably not reachable, and the solver may report the budget as infeasible."
+   ],
+   "checks": [
+    "budget below the constrained cheapest assignment: conflict (code)"
+   ]
+  },
+  "llm": {
+   "started_utc": "2026-11-09T02:05:18+00:00",
+   "models": [
+    "claude-haiku-5-5",
+    "claude-opus-5-5"
+   ],
+   "cost_usd": 0.027467100000000005,
+   "duration_s": 8.48
+  }
+ }
+}

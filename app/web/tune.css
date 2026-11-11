@@ -1,0 +1,209 @@
+/* TriCast (tune.html): one tool in one column, read top to bottom in the order it is used — 1 model, 2 Auto-tune
+   (AI recommendation), 3 edit by hand, 4 evaluation. styles.css tokens. Six type sizes (--t-*). Values in the data
+   face; the readout face for the few key numbers. Bits are one teal ramp, light (few bits) to dark (many). Bar colors
+   follow the entity: grey = one method on every layer, blue = the Auto-tune assignment, orange = the AI's settings. */
+:root {
+  --b2: #a6d9de; --b3: #64b9c1; --b4: #2a939c; --b8: #005f69; --b16: #12263a;
+  --rail: #0f2233; --rail-ink: #c9d6e0; --bad: #c4314b;
+  /* series, validated (dataviz validate_palette.js, both modes) */
+  --c-uni: var(--ink-3); --c-heur: #2a78d6; --c-ai: #c4661b;
+  --t-xs: 11px; --t-sm: 12px; --t-md: 13px; --t-lg: 14px; --t-xl: 16px; --t-hero: 34px;
+  --on-accent: #fff;  /* text on the teal accent (primary buttons): dark where the accent is light */
+  --muted: #586a7a;   /* supporting text: 4.5:1 or more on the panel, the page and the tints (--ink-3 is 3.1:1, kept for marks) */
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --b2: #17474c; --b3: #1f7178; --b4: #32a0a7; --b8: #6fd3d8; --b16: #e3ebf1; --rail: #08131d; --bad: #ff7a8f;
+    --c-heur: #3987e5; --c-ai: #d95926; --on-accent: #06222a; --muted: #93a4b2; }
+}
+:root[data-theme="dark"] { --b2: #17474c; --b3: #1f7178; --b4: #32a0a7; --b8: #6fd3d8; --b16: #e3ebf1; --rail: #08131d; --bad: #ff7a8f;
+  --c-heur: #3987e5; --c-ai: #d95926; --on-accent: #06222a; --muted: #93a4b2; }
+
+.ta { margin: 0; min-height: 100vh; display: block; background: var(--paper); color: var(--ink); font: var(--t-md)/1.5 var(--font-ui);
+  word-break: keep-all; }
+.ta :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* ---------- the bar: the one name, and where evaluations come from ---------- */
+.ta-bar { background: var(--rail); color: var(--rail-ink); display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 0 24px; height: 46px; }
+.ta-brand { display: flex; align-items: center; gap: 8px; color: #fff; text-decoration: none; font: 600 var(--t-xl)/1 var(--font-readout); flex: none; }
+.ta-bar-note { font-size: var(--t-sm); text-align: right; min-width: 0; }
+
+/* ---------- the four steps ---------- */
+.ta-main { max-width: 1040px; margin: 0 auto; padding: 16px 24px 32px; display: grid; gap: 12px; container-type: inline-size; }
+.ta-sec { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; box-shadow: var(--shadow); min-width: 0; scroll-margin: 8px; }
+.ta-sec-head { display: flex; align-items: center; gap: 10px; padding: 9px 16px; min-height: 46px; }
+.ta-sec-body { border-top: 1px solid var(--rule); padding: 14px 16px 16px; display: grid; gap: 12px; min-width: 0; }
+.ta-no { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 6px; background: var(--ch-b-tint); color: var(--ch-b);
+  font: 600 var(--t-sm)/1 var(--font-data); flex: none; }
+.ta-sec-head h2 { margin: 0; font-size: var(--t-lg); font-weight: 600; white-space: nowrap; }
+.ta-sub { font-size: var(--t-sm); color: var(--muted); }
+.ta-sec-state { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; align-items: center; }
+/* a step whose turn has not come: a quiet placeholder that says what will land in it */
+.ta-sec[data-off] { background: none; box-shadow: none; border-style: dashed; }
+.ta-sec[data-off] .ta-sec-body { display: none; }
+.ta-sec[data-off] h2, .ta-sec[data-off] .ta-sub { color: var(--muted); }
+.ta-sec[data-off] .ta-no { background: var(--sunken); color: var(--muted); }
+.ta-row { display: flex; gap: 8px 10px; align-items: center; flex-wrap: wrap; }
+.ta-muted { margin: 0; color: var(--muted); font-size: var(--t-sm); }
+.ta-err { margin: 0; color: var(--bad); }
+.ta-warn { margin: 0; padding: 10px 12px; border-radius: 8px; background: var(--diff-tint); display: grid; gap: 6px; }
+.ta-cmd { margin: 0; padding: 8px 10px; border-radius: 7px; background: var(--sunken); font: var(--t-sm)/1.5 var(--font-data); white-space: pre-wrap;
+  overflow-wrap: anywhere; user-select: all; }
+.ta-col { display: grid; gap: 14px; align-content: start; min-width: 0; }
+.ta-block { display: grid; gap: 6px; min-width: 0; }
+.ta-block-head { display: flex; align-items: center; gap: 6px 10px; flex-wrap: wrap; font-size: var(--t-sm); color: var(--muted); }
+.ta-block-head b { font-weight: 600; color: var(--ink); font-size: var(--t-md); }
+.ta select { font: var(--t-md)/1.3 var(--font-ui); padding: 7px 8px; border-radius: 7px; border: 1px solid var(--rule); background: var(--paper);
+  color: var(--ink); min-width: 0; max-width: 100%; }
+.ta select:focus { outline: 2px solid var(--focus); outline-offset: 0; border-color: transparent; }
+
+/* 1 model: one row — pick, load, then what was loaded */
+.ta-model { display: flex; gap: 8px; align-items: center; margin-left: 4px; }
+.ta-model select { font-family: var(--font-data); }
+.ta-model-info { min-width: 0; flex: 1; }
+.ta-facts { margin: 0; display: flex; flex-wrap: wrap; gap: 2px 0; font-size: var(--t-sm); }
+.ta-facts div { display: flex; gap: 6px; align-items: baseline; padding: 0 12px; border-left: 1px solid var(--rule); }
+.ta-facts dt { color: var(--muted); }
+.ta-facts dd { margin: 0; font-family: var(--font-data); }
+
+/* choices as buttons over what was GPU-measured: the size and its measured quality, the settings and theirs */
+.ta-presets { display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); gap: 6px; }
+/* the settings as a list: what is set on the left, its measured quality on the right */
+.ta-presets.list { grid-template-columns: minmax(0, 1fr); }
+.ta-presets.list .ta-preset { display: flex; align-items: baseline; justify-content: space-between; gap: 4px 12px; flex-wrap: wrap; padding: 7px 10px; }
+.ta-preset { border: 1px solid var(--rule); background: var(--panel); border-radius: 8px; padding: 6px 10px; min-width: 0;
+  color: var(--ink-2); cursor: pointer; display: grid; justify-items: start; gap: 1px; text-align: left; }
+.ta-preset b { font: 600 var(--t-lg)/1.25 var(--font-readout); color: var(--ink); }
+.ta-preset b code { font: 500 var(--t-sm)/1.4 var(--font-data); }
+.ta-preset small { font: var(--t-xs)/1.3 var(--font-data); color: var(--muted); }
+.ta-preset small .k { font-family: var(--font-ui); }
+.ta-preset:hover { border-color: var(--ch-b); }
+.ta-preset[aria-pressed="true"] { border-color: var(--ch-b); background: var(--ch-b-tint); box-shadow: inset 0 0 0 1px var(--ch-b); }
+.ta-preset[aria-pressed="true"] small { color: var(--ink-2); }
+.ta-preset .warn { color: var(--bad); }
+.ta-help { width: 16px; height: 16px; border-radius: 50%; border: 1px solid var(--rule); background: var(--panel); color: var(--muted);
+  font: 600 var(--t-xs)/1 var(--font-ui); padding: 0; cursor: help; display: inline-grid; place-items: center; flex: none; }
+.ta-help:hover, .ta-help:focus-visible { border-color: var(--ch-b); color: var(--ch-b); }
+.ta-help-tip { max-width: 260px; display: grid; gap: 4px; }
+.ta-help-tip p { margin: 0; font: var(--t-sm)/1.45 var(--font-ui); }
+
+/* 2 Auto-tune: the recommendation, and the two things done to reach it */
+.ta-reco { border: 1px solid var(--ch-b); border-radius: 8px; padding: 10px 14px; display: grid; gap: 6px; }
+.ta-reco-head { display: flex; align-items: baseline; gap: 6px 12px; flex-wrap: wrap; }
+.ta-reco-head b { font-weight: 600; }
+.ta-reco-head .ppl { font: 600 var(--t-xl)/1.2 var(--font-readout); font-variant-numeric: tabular-nums; color: var(--ch-b); }
+.ta-steps { margin: 0; padding-left: 20px; display: grid; gap: 3px; font-size: var(--t-sm); }
+.ta-steps li > span, .ta-steps li > code { margin-right: 12px; }
+.ta-steps .num { font-family: var(--font-data); font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 500; }
+.ta-steps code { font: var(--t-sm) var(--font-data); color: var(--ink-2); }
+.ta-steps .skip { color: var(--muted); }
+
+/* 3 edit: the choices on the left, the assignment they make on the right */
+.ta-edit { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px 28px; align-items: start; }
+@container (min-width: 760px) { .ta-edit { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); } }
+.ta-plan { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 7px; align-items: center; }
+.ta-kinds { display: grid; grid-template-rows: repeat(7, 14px); gap: 2px; font: var(--t-xs)/14px var(--font-data); color: var(--muted); text-align: right; }
+.ta-grid { display: grid; grid-template-columns: repeat(28, minmax(5px, 1fr)); grid-template-rows: repeat(7, 14px); gap: 2px; grid-auto-flow: column; }
+.ta-cell { border-radius: 2px; }
+.ta-cell:hover { outline: 2px solid var(--ink-2); outline-offset: 0; }
+.ta-cell[data-b="2"] { background: var(--b2); }
+.ta-cell[data-b="3"] { background: var(--b3); }
+.ta-cell[data-b="4"] { background: var(--b4); }
+.ta-cell[data-b="8"] { background: var(--b8); }
+.ta-cell[data-b="16"] { background: var(--b16); }
+.ta-axis { grid-column: 2; display: flex; justify-content: space-between; font: var(--t-xs)/1 var(--font-data); color: var(--muted); }
+.ta-legend { display: flex; gap: 4px 12px; flex-wrap: wrap; font-size: var(--t-xs); color: var(--ink-2); }
+.ta-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.ta-legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.ta-file { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--rule); }
+.ta-file-icon { font: 600 var(--t-xs)/1 var(--font-data); padding: 8px 6px; border-radius: 5px; background: var(--sunken); color: var(--ink-2); }
+.ta-file-meta { display: grid; gap: 1px; flex: 1 1 180px; min-width: 0; }
+.ta-file-meta b { font: 600 var(--t-md)/1.3 var(--font-data); overflow-wrap: anywhere; }
+.ta-file-meta span { font: var(--t-xs)/1.4 var(--font-data); color: var(--muted); }
+.ta-file-meta .ok { font: 500 var(--t-sm)/1.4 var(--font-ui); color: var(--ok); }
+.ta-code { margin: 6px 0 0; max-height: 240px; overflow: auto; padding: 10px 12px; border-radius: 8px; background: var(--sunken);
+  font: var(--t-xs)/1.5 var(--font-data); white-space: pre; }
+.ta-more summary { cursor: pointer; font-size: var(--t-sm); color: var(--ink-2); }
+
+/* 4 evaluation: the number, then how far each way of reaching this size drifts from the original */
+.ta-tasks { display: flex; gap: 6px 16px; flex-wrap: wrap; font-size: var(--t-sm); align-items: center; }
+.ta-tasks label { display: inline-flex; align-items: center; gap: 6px; }
+.ta-tasks input:disabled + span { color: var(--muted); }
+.ta-tasks input[type="number"] { width: 5em; padding: 4px 8px; font: var(--t-sm) var(--font-data); border-radius: 6px; border: 1px solid var(--rule);
+  background: var(--paper); color: var(--ink); }
+.ta-result { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px 28px; align-items: center; }
+@container (min-width: 700px) {
+  .ta-result { grid-template-columns: max-content minmax(0, 1fr); }
+  .ta-hero { padding-right: 28px; border-right: 1px solid var(--rule); }
+}
+.ta-hero { display: grid; gap: 4px; align-content: center; }
+.ta-hero > span { display: flex; align-items: center; gap: 6px; font-size: var(--t-sm); color: var(--muted); }
+.ta-hero > b { font: 600 var(--t-hero)/1 var(--font-readout); font-variant-numeric: tabular-nums; }
+.ta-hero > small { font-size: var(--t-sm); color: var(--ink-2); }
+.ta-ladder { display: grid; grid-template-columns: max-content minmax(60px, 1fr) max-content max-content; gap: 7px 12px; align-items: center;
+  font-size: var(--t-sm); min-width: 0; }
+.ta-ladder > div { display: contents; }
+.ta-ladder .th { font-size: var(--t-xs); color: var(--muted); }
+.ta-ladder .name { display: inline-flex; align-items: center; gap: 7px; color: var(--ink-2); }
+.ta-ladder .name small { font-size: var(--t-xs); color: var(--muted); }
+.ta-ladder .num { font-family: var(--font-data); font-variant-numeric: tabular-nums; text-align: right; color: var(--ink-2); }
+.ta-ladder .cur .name, .ta-ladder .cur .num { color: var(--ink); font-weight: 600; }
+.ta-ladder .track { height: 12px; }
+.ta-ladder .track i { display: block; height: 100%; min-width: 2px; border-radius: 0 4px 4px 0; transform-origin: left; animation: ta-grow 0.45s ease-out backwards; }
+.ta-ladder .uni .track i { background: var(--c-uni); }
+.ta-ladder .heur .track i { background: var(--c-heur); animation-delay: 0.08s; }
+.ta-ladder .ai .track i { background: var(--c-ai); animation-delay: 0.16s; }
+.ta-ladder .base .track { border-left: 1px solid var(--ink-3); }
+.ta-sw { width: 9px; height: 9px; border-radius: 50%; flex: none; display: inline-block; }
+.ta-sw.uni { background: var(--c-uni); }
+.ta-sw.heur { background: var(--c-heur); }
+.ta-sw.ai { background: var(--c-ai); }
+@keyframes ta-grow { from { transform: scaleX(0); } }
+/* a narrow column: each way's name on its own line, its bar and numbers under it */
+@container (max-width: 560px) {
+  .ta-ladder { grid-template-columns: minmax(40px, 1fr) max-content max-content; gap: 3px 10px; }
+  .ta-ladder .name, .ta-ladder .th:first-child { grid-column: 1 / -1; }
+  .ta-ladder .name { margin-top: 6px; }
+}
+.ta-gain { margin: 0; }
+.ta-gain b { font-weight: 600; }
+.ta-progress { height: 4px; border-radius: 2px; background: var(--sunken); overflow: hidden; }
+.ta-progress i { display: block; height: 100%; background: var(--ch-b); border-radius: 2px; transition: width 0.3s; }
+.ta-table { width: 100%; border-collapse: collapse; font-size: var(--t-sm); }
+.ta-table th { text-align: left; font-weight: 500; font-size: var(--t-xs); color: var(--muted); padding: 5px 8px; border-bottom: 1px solid var(--rule); }
+.ta-table td { padding: 6px 8px; border-bottom: 1px solid var(--rule); vertical-align: middle; }
+.ta-table tr:last-child td { border-bottom: 0; }
+.ta-table .num { text-align: right; font-family: var(--font-data); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ta-table .mono { font-family: var(--font-data); overflow-wrap: anywhere; }
+
+/* buttons and chips */
+.ta-btn { border: 1px solid var(--rule); background: var(--panel); color: var(--ink); border-radius: 7px; padding: 7px 13px;
+  font: 500 var(--t-md)/1 var(--font-ui); cursor: pointer; white-space: nowrap; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+.ta-btn:hover:not(:disabled) { border-color: var(--ink-3); }
+.ta-btn.primary { background: var(--ch-b); border-color: var(--ch-b); color: var(--on-accent); font-weight: 600; }
+.ta-btn.small { padding: 5px 10px; font-size: var(--t-sm); }
+.ta-btn:disabled { opacity: 0.45; cursor: default; pointer-events: none; }
+.ta-chip { display: inline-flex; align-items: center; gap: 6px; font-size: var(--t-xs); line-height: 1.2; padding: 4px 9px; border-radius: 999px;
+  border: 1px solid var(--rule); background: var(--panel); color: var(--ink-2); white-space: nowrap; }
+.ta-chip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--ink-3); flex: none; }
+.ta-chip[data-kind="live"]::before, .ta-chip[data-kind="ok"]::before { background: var(--ok); }
+.ta-chip[data-kind="ai"]::before { background: var(--diff); }
+.ta-chip[data-kind="bad"]::before { background: var(--bad); }
+.ta-chip[data-kind="plain"]::before { display: none; }
+
+@media (max-width: 760px) {
+  .ta-bar { padding: 0 12px; }
+  .ta-bar-note { display: none; }  /* step 4 says the same where it matters */
+  .ta-main { padding: 12px 12px 24px; }
+  .ta-sec-head { flex-wrap: wrap; }
+  .ta-model { margin-left: 0; flex: 1 1 100%; order: 3; }
+  .ta-model select { flex: 1; }
+  .ta-model-info { flex-basis: 100%; order: 4; }
+  .ta-facts div:first-child { padding-left: 0; border-left: 0; }
+  .ta-chip { white-space: normal; }
+  .ta-steps li > span, .ta-steps li > code { display: block; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ta-progress i { transition: none; }
+  .ta-ladder .track i { animation: none; }
+}

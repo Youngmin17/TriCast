@@ -1,0 +1,220 @@
+{
+ "run_id": "2026-11-09T0210",
+ "case_id": "r_h3",
+ "calls": [
+  {
+   "role": "request",
+   "key": "request",
+   "returncode": 0,
+   "stdout": {
+    "duration_api_ms": 8305,
+    "stop_reason": "tool_use",
+    "session_id": "27bdfc60-2fa0-44dd-bbaf-369b3277dd2f",
+    "total_cost_usd": 0.0156102,
+    "usage": {
+     "input_tokens": 2,
+     "cache_creation_input_tokens": 645,
+     "cache_read_input_tokens": 2111,
+     "output_tokens": 485,
+     "output_tokens_details": {
+      "thinking_tokens": 83
+     },
+     "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+     },
+     "service_tier": "standard",
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 645,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "inference_geo": "global",
+     "iterations": [
+      {
+       "input_tokens": 2,
+       "output_tokens": 485,
+       "cache_read_input_tokens": 2111,
+       "cache_creation_input_tokens": 645,
+       "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 645
+       },
+       "type": "message"
+      }
+     ],
+     "speed": "standard",
+     "fallback_credit": null
+    },
+    "modelUsage": {
+     "claude-haiku-5-5": {
+      "inputTokens": 1605,
+      "outputTokens": 319,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.00032,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 292,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 0,
+      "canonicalModel": "claude-haiku-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     },
+     "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 485,
+      "cacheReadInputTokens": 2111,
+      "cacheCreationInputTokens": 645,
+      "webSearchRequests": 0,
+      "costUSD": 0.015290199999999999,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 83,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 645,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "subagent_stats": {
+     "spawned": 0,
+     "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+     },
+     "started_in_background": 0,
+     "max_depth": 0,
+     "spawned_by_subagents": 0,
+     "completed": 0,
+     "failed": 0,
+     "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+     },
+     "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+     },
+     "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 2,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "{\"outcome\":\"tune\",\"model\":\"Qwen/Qwen3-0.6B\",\"budget_bits\":\"3\",\"compute_budget\":null,\"keep_bf16_blocks\":[],\"exclude_methods\":[],\"only_methods\":null,\"questions\":[],\"reason\":null,\"assumptions\":[\"SpQR(제외 요청)는 메서드 목록에 없어 제외할 메서드가 없음 / SpQR is not among the listed methods, so nothing is excluded\",\"요청에 연산 예산이 없어 compute_budget은 null(크기 예산만 적용) / No compute budget stated; only the size budget applies\"]}",
+    "structured_output": {
+     "outcome": "tune",
+     "model": "Qwen/Qwen3-0.6B",
+     "budget_bits": "3",
+     "compute_budget": null,
+     "keep_bf16_blocks": [],
+     "exclude_methods": [],
+     "only_methods": null,
+     "questions": [],
+     "reason": null,
+     "assumptions": [
+      "SpQR(제외 요청)는 메서드 목록에 없어 제외할 메서드가 없음 / SpQR is not among the listed methods, so nothing is excluded",
+      "요청에 연산 예산이 없어 compute_budget은 null(크기 예산만 적용) / No compute budget stated; only the size budget applies"
+     ]
+    },
+    "ttft_ms": 4074,
+    "type": "result",
+    "duration_ms": 6898,
+    "uuid": "af4a7f53-fe1b-42b3-a0dd-cfb4e8e7cf6a",
+    "ttft_stream_ms": 3126,
+    "time_to_request_ms": 829,
+    "time_to_request_phases_ms": {
+     "other": 2,
+     "system_prompt": 0,
+     "resume_other": 1,
+     "process_user_input": 1,
+     "input_attachments": 19,
+     "input_hooks": 1,
+     "conversation_append": 0,
+     "tool_pool_refresh": 1,
+     "init_message": 5,
+     "init_frame_send": 2,
+     "engine_pickup": 0,
+     "loop_entry": 2,
+     "message_prep": 0,
+     "model_config_wait": 2,
+     "autocompact": 1,
+     "request_announcements": 3,
+     "query_setup": 0,
+     "model_gates": 749,
+     "tool_schema_build": 14,
+     "message_normalization": 1,
+     "client_creation": 16,
+     "request_build": 9
+    },
+    "turn_start_resume_kind": "none",
+    "process_turn_index": 0,
+    "time_to_request_loop_lag_ms": 10,
+    "time_to_request_cpu_ms": 258,
+    "time_to_request_major_faults": 0,
+    "input_attachments_detail": {
+     "slowest_producer": "session_settings",
+     "slowest_producer_ms": 14,
+     "cpu_ms": 31,
+     "major_faults": 0,
+     "setup_ms": 0,
+     "prompt_producers_ms": 0,
+     "ambient_start_ms": 2,
+     "ambient_wait_ms": 14,
+     "render_ms": 0,
+     "producers": 43,
+     "token_counts": 0
+    },
+    "tool_schema_build_detail": {
+     "betas_ms": 0,
+     "waits_ms": 3,
+     "placement_ms": 9,
+     "render_ms": 2,
+     "after_ms": 0,
+     "other_ms": 0,
+     "tools": 1,
+     "new_schemas": 1
+    },
+    "message_normalization_detail": {
+     "before_ms": 0,
+     "normalize_ms": 1,
+     "images_ms": 0,
+     "post_process_ms": 0,
+     "after_ms": 0,
+     "other_ms": 0,
+     "messages": 8,
+     "wire_messages": 2
+    },
+    "request_build_detail": {
+     "records_ms": 0,
+     "system_ms": 1,
+     "headers_ms": 0,
+     "cache_break_record_ms": 1,
+     "plans_ms": 1,
+     "retry_setup_ms": 0,
+     "sent_build_ms": 2,
+     "record_attempt_ms": 4,
+     "other_ms": 0,
+     "sent_build_safety_context_ms": 0,
+     "sent_build_cache_breakpoints_ms": 0,
+     "sent_build_surrogate_scan_ms": 1
+    },
+    "first_content_frame_ms": 3126,
+    "queued_turn_count": 0,
+    "result_index": 0,
+    "credential_expires_at": "2026-12-04T04:51:21.312Z"
+   },
+   "stderr": ""
+  }
+ ]
+}

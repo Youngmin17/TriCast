@@ -15,6 +15,8 @@ The API contract is app/README.md. Two modes answer it:
 recorded session ``--agent <loop.json>`` names and checks them (app/autotune_live.py; nothing is measured).
 It is served only with ``--agent`` (it needs the full install and a logged-in ``claude`` CLI), in either
 mode, and answers otherwise with how to enable it; the Auto-tune page then keeps showing the stored rounds.
+``--record DIR`` keeps each live answer of the two; ``--replay DIR`` answers them from those recordings
+without calling claude (``mode: "replay"``, badged on the page) for a venue with no network.
 ``/api/autotune/recipe`` hands over the recipe file of a page grid (app/autotune_recipe.py, stdlib only): a
 knapsack grid in either mode, a session proposal's measured file with ``--agent``.
 
@@ -131,11 +133,12 @@ class ParseRequest(BaseModel):
 
 class RecipeRequest(BaseModel):
     """``POST /api/autotune/recipe`` body: a knapsack ``grid`` (blocks × kinds of method ids) and the page's
-    ``budget_bits``, or a session ``proposal`` name."""
+    ``budget_bits``, a session ``proposal`` name, or an option ``transfer`` id of the bundle."""
 
     grid: list[list[str]] | None = None
     budget_bits: str | None = None
     proposal: str | None = None
+    transfer: str | None = None
 
 
 class QuantizerJobRequest(BaseModel):
@@ -635,11 +638,14 @@ def _add_run_routes(app: FastAPI, live: LiveBackend) -> None:
 def create_app(mode: str, device: str, demo_dir: Path, runner: Runner | None = None, *,
                runs_dir: Path = DEFAULT_RUNS_DIR, checkpoints: dict[str, Path] | None = None,
                identity: dict | None = None, quantizer_runner: QuantizerRunner | None = None,
-               agent: Path | None = None, agent_runner: Callable[..., Any] | None = None) -> FastAPI:
+               agent: Path | None = None, agent_runner: Callable[..., Any] | None = None,
+               record: Path | None = None, replay: Path | None = None) -> FastAPI:
     """Build the app; ``mode`` is "demo" or "live", ``runner`` replaces :func:`run_live` and
     ``quantizer_runner`` :func:`run_quantizer_live` (tests), ``checkpoints`` maps vision model ids to
     checkpoint files and ``identity`` (device and code hashes) joins the run cache key (live). ``agent``
-    (a loop.json) serves ``/api/autotune/propose``; ``agent_runner`` replaces ``subprocess.run`` there."""
+    (a loop.json) serves ``/api/autotune/propose``; ``agent_runner`` replaces ``subprocess.run`` there. With
+    ``record`` every live parse / propose answer is also kept in that folder; with ``replay`` they are
+    answered from such a folder (``mode: "replay"``) and claude is never called (an offline venue)."""
     if mode == "demo":
         backend: DemoBackend | LiveBackend = DemoBackend(demo_dir)
     else:
@@ -679,11 +685,17 @@ def create_app(mode: str, device: str, demo_dir: Path, runner: Runner | None = N
     def propose(body: ProposeRequest) -> dict:
         if agent is None:
             raise ApiError(503, "agent_unavailable", _AGENT_OFF)
-        from .autotune_live import LiveError, load_config, propose_round  # the full install, only here
+        # the full install, only here
+        from .autotune_live import LiveError, load_config, propose_round, record_answer, replay_answer
 
         try:
-            return propose_round(load_config(agent), APP_DIR.parent, body.count,
-                                 **({} if agent_runner is None else {"runner": agent_runner}))
+            if replay is not None:
+                return replay_answer(replay, "propose", body.count)
+            answer = propose_round(load_config(agent), APP_DIR.parent, body.count,
+                                   **({} if agent_runner is None else {"runner": agent_runner}))
+            if record is not None:
+                record_answer(record, "propose", body.count, answer)
+            return answer
         except LiveError as exc:
             raise ApiError(exc.status, exc.code, exc.message) from exc
 
@@ -691,21 +703,38 @@ def create_app(mode: str, device: str, demo_dir: Path, runner: Runner | None = N
     def parse(body: ParseRequest) -> dict:
         if agent is None:
             raise ApiError(503, "agent_unavailable", _AGENT_OFF)
-        from .autotune_live import LiveError, load_config, parse_request
+        from .autotune_live import LiveError, load_config, parse_request, record_answer, replay_answer
 
         try:
-            return parse_request(load_config(agent), APP_DIR.parent, body.text,
-                                 **({} if agent_runner is None else {"runner": agent_runner}))
+            if replay is not None:
+                return replay_answer(replay, "parse", body.text)
+            answer = parse_request(load_config(agent), APP_DIR.parent, body.text,
+                                   **({} if agent_runner is None else {"runner": agent_runner}))
+            if record is not None:
+                record_answer(record, "parse", body.text, answer)
+            return answer
         except LiveError as exc:
             raise ApiError(exc.status, exc.code, exc.message) from exc
 
+    @app.get("/api/autotune/mode")
+    def autotune_mode() -> dict:
+        """What the parse / propose buttons do here (the presenter guide picks its lines by it): live calls,
+        recorded answers (with the recorded sentences) or nothing."""
+        if agent is None:
+            return {"agent": "off", "sentences": []}
+        if replay is None:
+            return {"agent": "live", "sentences": []}
+        from .autotune_live import recorded_keys
+
+        return {"agent": "replay", "sentences": recorded_keys(replay, "parse")}
+
     @app.post("/api/autotune/recipe")
     def recipe(body: RecipeRequest) -> dict:
-        from .autotune_recipe import RecipeError, grid_recipe, load_bundle, proposal_recipe
+        from .autotune_recipe import RecipeError, grid_recipe, load_bundle, proposal_recipe, transfer_recipe
 
         try:
             bundle = load_bundle(demo_dir / "autotune" / "bundle.json")
-            if body.proposal is not None:
+            if body.proposal is not None or body.transfer is not None:
                 if agent is None:
                     raise ApiError(503, "agent_unavailable", _PROPOSAL_RECIPE_OFF)
                 from .autotune_live import LiveError, load_config
@@ -714,6 +743,8 @@ def create_app(mode: str, device: str, demo_dir: Path, runner: Runner | None = N
                     session = APP_DIR.parent / load_config(agent)["session"]
                 except LiveError as exc:
                     raise ApiError(exc.status, exc.code, exc.message) from exc
+                if body.transfer is not None:
+                    return transfer_recipe(bundle, session, body.transfer)
                 return proposal_recipe(bundle, session, body.proposal)
             if body.grid is None:
                 raise ApiError(400, "invalid_request", "grid 또는 proposal 중 하나가 필요합니다.")
@@ -743,6 +774,11 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--resnet-checkpoint", type=Path, help="ResNet18 checkpoint, vision.classify (live)")
     parser.add_argument("--agent", type=Path, metavar="LOOP_JSON",
                         help="serve live tune-agent proposals for this session (needs the claude CLI)")
+    parser.add_argument("--record", type=Path, metavar="DIR",
+                        help="with --agent: also keep every live parse / propose answer in DIR (rehearsal)")
+    parser.add_argument("--replay", type=Path, metavar="DIR",
+                        help="with --agent: answer parse / propose from the answers kept in DIR, never "
+                             "calling claude (offline venue; the page badges them as recordings)")
     args = parser.parse_args(argv)
     if args.demo and not (args.demo_dir / "catalog.json").is_file():
         parser.error(f"no recorded bundle in {args.demo_dir} (make one with python -m app.demo)")
@@ -764,8 +800,14 @@ def main(argv: list[str] | None = None) -> None:
                     "src_sha256": source["src_sha256"]}
     if args.agent is not None and not args.agent.is_file():
         parser.error(f"--agent {args.agent}: no such loop.json")
+    if (args.record or args.replay) and args.agent is None:
+        parser.error("--record and --replay go with --agent <loop.json> (the session the answers belong to)")
+    if args.record and args.replay:
+        parser.error("--record and --replay exclude each other")
+    if args.replay and not any(args.replay.glob("*.json")):
+        parser.error(f"--replay {args.replay}: no recorded answers (record them with --record on a live run)")
     app = create_app(mode, "none" if args.demo else args.device, args.demo_dir, checkpoints=checkpoints,
-                     identity=identity, agent=args.agent)
+                     identity=identity, agent=args.agent, record=args.record, replay=args.replay)
     uvicorn.run(app, host=args.host, port=args.port)
 
 

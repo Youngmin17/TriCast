@@ -1,0 +1,35 @@
+{
+ "schema": "tricast.autotune.replay/1",
+ "kind": "parse",
+ "key": "레이어별로 알아서 최적화해줘",
+ "recorded_utc": "2026-11-09T02:05:10+00:00",
+ "answer": {
+  "mode": "live",
+  "text": "레이어별로 알아서 최적화해줘",
+  "request": {
+   "outcome": "needs_clarification",
+   "model": null,
+   "budget_bits": null,
+   "compute_budget": null,
+   "keep_bf16_blocks": [],
+   "exclude_methods": [],
+   "only_methods": null,
+   "questions": [
+    "어떤 모델을 양자화할까요? 현재 테이블이 있는 모델은 Qwen/Qwen3-0.6B입니다.",
+    "가중치 크기 예산(Linear 가중치당 평균 저장 비트 수, BF16 = 16)을 얼마로 할까요? 예: 4.0, 3.2"
+   ],
+   "reason": "The request asks for per-layer optimization, but it names neither a model nor a weight-size budget.",
+   "assumptions": [],
+   "checks": []
+  },
+  "llm": {
+   "started_utc": "2026-11-09T02:05:02+00:00",
+   "models": [
+    "claude-haiku-5-5",
+    "claude-opus-5-5"
+   ],
+   "cost_usd": 0.021115300000000004,
+   "duration_s": 6.49
+  }
+ }
+}

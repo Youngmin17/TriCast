@@ -5,11 +5,16 @@ takes away from the page.
   method, calibration, MMA and name rule, ``write_grid``), so the page hands over that exact file. When the
   grid is a recorded solution's, its name is that solution's and the file's SHA-256 is compared with the one
   the GPU measurement recorded (``export_autotune_demo.recipe_file_sha256``).
+- A uniform grid (one method on every layer) of a measured uniform recipe: that recipe, ``u_<method>``, built
+  as ``export_autotune_demo.baselines`` builds it, compared with the file the GPU measured.
 - A tune-session proposal (served with ``--agent``): the session's own ``proposals/<name>/recipe.yaml``,
   compared with the ``file_sha256`` its round's measurement (``rounds/<n>/kl.json``) recorded, with the
   bundle's measured values for that proposal.
+- An option transfer (served with ``--agent``): a recorded knapsack grid with a session proposal's options,
+  rebuilt as ``scripts/quantizer/autotune_xfer.py`` wrote it (``tune_agent._recipe``) and compared with the
+  file the GPU measured (the bundle's ``transfer[].recipe_file_sha256``).
 
-Pure stdlib plus ``app.autotune`` / ``app.quantizer_recipe``: no torch, no tricast, no LLM call.
+Stdlib plus ``app.autotune`` / ``app.quantizer_recipe`` (and ``app.tune_agent`` for a transfer): no LLM call.
 """
 
 from __future__ import annotations
@@ -64,29 +69,40 @@ def grid_recipe(bundle: dict[str, Any], grid: Any, budget_bits: str | None = Non
         raise RecipeError(422, "invalid_grid", f"표에 없는 방법입니다: {unknown}")
     recorded = next((row for row in bundle.get("solutions") or []
                      if row["grid"] == grid and (row.get("kv") or "none") == "none"), None)
-    if recorded is not None:
-        name = recorded["id"]
-    else:
-        try:
-            name = at.default_name(Fraction(budget_bits), "none") if budget_bits else "auto_grid"
-        except (ValueError, ZeroDivisionError) as exc:
-            raise RecipeError(422, "invalid_budget", f"크기 예산을 읽지 못했습니다: {budget_bits!r}") from exc
+    used = {method for row in grid for method in row}
+    uniform = None if recorded is not None or len(used) != 1 else next(
+        (row for row in bundle.get("baselines") or [] if row["method"] in used), None)
     meta = table["meta"]
-    calibration = meta.get("calibration") if any(method in qr.CALIBRATED_ALL for method in methods) else None
-    default = at.default_method([method for row in grid for method in row], methods)
+    if uniform is not None:  # the measured uniform recipe, as export_autotune_demo.baselines builds it
+        name, default = uniform["id"], uniform["method"]
+        calibrated = default in qr.CALIBRATED_ALL
+    else:
+        if recorded is not None:
+            name = recorded["id"]
+        else:
+            try:
+                name = at.default_name(Fraction(budget_bits), "none") if budget_bits else "auto_grid"
+            except (ValueError, ZeroDivisionError) as exc:
+                message = f"크기 예산을 읽지 못했습니다: {budget_bits!r}"
+                raise RecipeError(422, "invalid_budget", message) from exc
+        calibrated = any(method in qr.CALIBRATED_ALL for method in methods)
+        default = at.default_method([method for row in grid for method in row], methods)
+    calibration = meta.get("calibration") if calibrated else None
     try:
         recipe = qr.build(name, default, grid, "none", calibration=calibration, mma=meta.get("mma"))
     except (ValueError, AssertionError) as exc:
         raise RecipeError(422, "invalid_grid", f"레시피를 만들 수 없는 격자입니다: {exc}") from exc
     text = f"---\n{qr.to_yaml(recipe)}\n"  # as app.autotune.write_grid writes recipe.yaml
     sha = _sha256(text)
+    row = recorded or uniform
     budget = f" --budget-bits {budget_bits}" if budget_bits else ""
-    return {"kind": "knapsack", "name": name, "file": f"{name}.yaml", "yaml": text, "sha256": sha,
-            "default": default,
-            "measured": None if recorded is None
-            else _measured(recorded, sha, recorded.get("recipe_file_sha256")),
-            "command": f"python -m app.autotune solve --table {table['path']}{budget} --name {name} "
-                       f"--out runs/{name}"}
+    command = (f"tricast recipe-check {name}.yaml" if uniform is not None
+               else f"python -m app.autotune solve --table {table['path']}{budget} --name {name} "
+                    f"--out runs/{name}")
+    return {"kind": "uniform" if uniform is not None else "knapsack", "name": name, "file": f"{name}.yaml",
+            "yaml": text, "sha256": sha, "default": default,
+            "measured": None if row is None else _measured(row, sha, row.get("recipe_file_sha256")),
+            "command": command}
 
 
 def proposal_recipe(bundle: dict[str, Any], session: Path, name: str) -> dict[str, Any]:
@@ -109,3 +125,35 @@ def proposal_recipe(bundle: dict[str, Any], session: Path, name: str) -> dict[st
     return {"kind": "proposal", "name": name, "file": f"{name}.yaml", "yaml": text, "sha256": sha,
             "default": None, "measured": measured,
             "command": f"tricast recipe-check {session.name}/proposals/{name}/recipe.yaml"}
+
+
+def transfer_recipe(bundle: dict[str, Any], session: Path, ident: str) -> dict[str, Any]:
+    """The recipe of option transfer ``ident``: its knapsack grid with the options of the session proposal it
+    names (``options_from``), built the way the transfer script and the tune loop write a recipe."""
+    if not SAFE_NAME.fullmatch(ident):
+        raise RecipeError(400, "invalid_request", f"전이 이름이 올바르지 않습니다: {ident!r}")
+    row = next((item for item in bundle.get("transfer") or [] if item.get("id") == ident), None)
+    if row is None:
+        raise RecipeError(404, "not_found", f"번들에 그 옵션 전이가 없습니다: {ident}")
+    source = session / "proposals" / str(row.get("options_from")) / "grid.json"
+    if not source.is_file():
+        raise RecipeError(404, "not_found", f"세션에 옵션을 준 제안이 없습니다: {row.get('options_from')}")
+    from app import tune_agent as ta  # tricast's recipe builder: served with --agent (the full install)
+
+    table, meta = bundle["table"], bundle["table"]["meta"]
+    methods = table["methods"]
+    grid = row["grid"]
+    calibration = meta.get("calibration") if any(method in qr.CALIBRATED_ALL for method in methods) else None
+    spec = {"default": at.default_method([method for line in grid for method in line], methods), "grid": grid,
+            "kv": "none", "options": ta.load_grid(source)["options"], "calibration": calibration,
+            "kv_options": None, "mma": meta.get("mma")}
+    try:
+        text = qr.to_yaml(ta._recipe(ident, spec)) + "\n"
+    except ta.TuneError as exc:
+        raise RecipeError(422, "invalid_grid", f"레시피를 만들 수 없습니다: {exc}") from exc
+    sha = _sha256(text)
+    return {"kind": "transfer", "name": ident, "file": f"{ident}.yaml", "yaml": text, "sha256": sha,
+            "default": spec["default"], "options_from": row.get("options_from"), "base": row.get("base"),
+            "measured": _measured(row, sha, row.get("recipe_file_sha256")),
+            "command": f"python scripts/quantizer/autotune_xfer.py --ids {row.get('base')} "
+                       f"--options-from {session.name}/proposals/{row.get('options_from')} --out runs/xfer"}

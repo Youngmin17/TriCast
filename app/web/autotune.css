@@ -87,6 +87,7 @@ body { display: block; }
 .at-badge.bad { color: var(--at-bad); }
 .at-badge.best { color: var(--at-ai); }
 .at-badge.stored { color: var(--ink-2); }
+.at-badge.replay { color: var(--ink-2); border-style: dashed; }
 
 /* method code chip: the text identity every fill carries */
 .at-code { display: inline-grid; place-items: center; min-width: 28px; height: 18px; padding: 0 4px; border-radius: 4px;
@@ -316,3 +317,6 @@ table.at-table td.mono { font-family: var(--font-data); font-size: 11.5px; }
   .at-cards { grid-template-columns: minmax(0, 1fr); }
   .at-solve-time { margin-left: 0; }
 }
+
+/* the link to the tuning workspace (tune.html) */
+.at-tune { border-color: var(--ch-b); color: var(--ch-b); }

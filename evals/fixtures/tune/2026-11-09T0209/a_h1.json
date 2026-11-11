@@ -1,0 +1,368 @@
+{
+ "run_id": "2026-11-09T0209",
+ "case_id": "a_h1",
+ "calls": [
+  {
+   "role": "proposer",
+   "key": "round_1",
+   "returncode": 0,
+   "stdout": {
+    "duration_api_ms": 47814,
+    "stop_reason": "tool_use",
+    "session_id": "4974ba72-e371-47f7-a549-0092ff167e96",
+    "total_cost_usd": 0.23594199999999999,
+    "usage": {
+     "input_tokens": 2,
+     "cache_creation_input_tokens": 17084,
+     "cache_read_input_tokens": 1508,
+     "output_tokens": 4846,
+     "output_tokens_details": {
+      "thinking_tokens": 2424
+     },
+     "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+     },
+     "service_tier": "standard",
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 17084,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "inference_geo": "global",
+     "iterations": [
+      {
+       "input_tokens": 2,
+       "output_tokens": 4846,
+       "cache_read_input_tokens": 1508,
+       "cache_creation_input_tokens": 17084,
+       "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 17084
+       },
+       "type": "message"
+      }
+     ],
+     "speed": "standard",
+     "fallback_credit": null
+    },
+    "modelUsage": {
+     "claude-haiku-5-5": {
+      "inputTokens": 17319,
+      "outputTokens": 617,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.0020404000000000004,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 590,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 0,
+      "canonicalModel": "claude-haiku-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     },
+     "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 4846,
+      "cacheReadInputTokens": 1508,
+      "cacheCreationInputTokens": 17084,
+      "webSearchRequests": 0,
+      "costUSD": 0.2339016,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 2424,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 17084,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "subagent_stats": {
+     "spawned": 0,
+     "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+     },
+     "started_in_background": 0,
+     "max_depth": 0,
+     "spawned_by_subagents": 0,
+     "completed": 0,
+     "failed": 0,
+     "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+     },
+     "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+     },
+     "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 2,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "{\"analysis\":\"The budget is 403/128 = 3.1484 bits per weight. The best recipe, iso_3.15 (E514ab09c524e), already uses 3.14795 bits, so there are almost no spare bits. The loss is concentrated in MLP projections that sit at int3 or rht_gptq_int2. For these layers, one more bit is measured to cut single-layer KL by about 0.0035 to 0.0045: 14.down rht2 0.00633 → rht3 0.00181; 27.up gptq3 0.00572 → gptq4 0.00217; 27.gate rht3 0.00499 → rht4 0.00153; 3.up 0.00642 → gptq4 0.00238; 2.up 0.00642 → gptq4 0.00237; 1.up 0.00611 → rht4 0.00227.\\n\\nUpgrades have to be paid for. None of the retrieved records shows a cheap downgrade, so the only realistic funding is an option change: a coarser group_size of 256 lowers the scale overhead on every GPTQ-family layer. Changing act_order and damp costs no bits, so those can be tested on their own.\\n\\nThree grids:\\n1. act_order only.\\n2. act_order plus a higher damp.\\n3. group_size=256 with act_order, spending the freed bits on about 8 upgrades of the layers listed above.\",\"stop\":false,\"proposals\":[{\"name\":\"iso_actorder\",\"base\":\"iso_3.15\",\"changes\":[],\"options\":{\"gptq_int2\":{\"weight_algo.act_order\":true},\"gptq_int3\":{\"weight_algo.act_order\":true},\"gptq_int4\":{\"weight_algo.act_order\":true},\"rht_gptq_int2\":{\"weight_algo.act_order\":true},\"rht_gptq_int3\":{\"weight_algo.act_order\":true},\"rht_gptq_int4\":{\"weight_algo.act_order\":true}},\"rationale\":\"Uses the same bits as iso_3.15, measured at KL 0.43614 (E514ab09c524e). This turns on act_order=true for all GPTQ-family methods, which hold most of the layers. GPTQ-quantized layers dominate the loss, for example 27.up gptq_int3 0.00572 (Ef04d8aa7bded) and 14.down rht_gptq_int2 0.00633 (E4c3f9b73e065).\",\"cites\":[\"E514ab09c524e\",\"Ef04d8aa7bded\",\"E4c3f9b73e065\"]},{\"name\":\"iso_actorder_damp05\",\"base\":\"iso_3.15\",\"changes\":[],\"options\":{\"gptq_int2\":{\"weight_algo.act_order\":true,\"weight_algo.damp\":0.05},\"gptq_int3\":{\"weight_algo.act_order\":true,\"weight_algo.damp\":0.05},\"gptq_int4\":{\"weight_algo.act_order\":true,\"weight_algo.damp\":0.05},\"rht_gptq_int2\":{\"weight_algo.act_order\":true,\"weight_algo.damp\":0.05},\"rht_gptq_int3\":{\"weight_algo.act_order\":true,\"weight_algo.damp\":0.05},\"rht_gptq_int4\":{\"weight_algo.act_order\":true,\"weight_algo.damp\":0.05}},\"rationale\":\"Uses the same bits as iso_3.15 (KL 0.43614, E514ab09c524e). This sets act_order=true with damp=0.05 instead of the default damp=0.01. Activation kurtosis is high in the layers where loss concentrates: 1090.09 at block 27 (E24beed188b6a) and 241.283 at 3.up (Eb1b68d163774). Stronger damping may stabilise the Hessian there.\",\"cites\":[\"E514ab09c524e\",\"E24beed188b6a\",\"Eb1b68d163774\"]},{\"name\":\"g256_upgrade8\",\"base\":\"iso_3.15\",\"changes\":[{\"block\":14,\"kind\":\"down_proj\",\"method\":\"rht_gptq_int3\"},{\"block\":18,\"kind\":\"gate_proj\",\"method\":\"rht_gptq_int3\"},{\"block\":11,\"kind\":\"gate_proj\",\"method\":\"rht_gptq_int3\"},{\"block\":27,\"kind\":\"up_proj\",\"method\":\"gptq_int4\"},{\"block\":27,\"kind\":\"gate_proj\",\"method\":\"rht_gptq_int4\"},{\"block\":3,\"kind\":\"up_proj\",\"method\":\"gptq_int4\"},{\"block\":2,\"kind\":\"up_proj\",\"method\":\"gptq_int4\"},{\"block\":1,\"kind\":\"up_proj\",\"method\":\"rht_gptq_int4\"}],\"options\":{\"gptq_int2\":{\"weight.group_size\":256,\"weight_algo.act_order\":true},\"gptq_int3\":{\"weight.group_size\":256,\"weight_algo.act_order\":true},\"gptq_int4\":{\"weight.group_size\":256,\"weight_algo.act_order\":true},\"rht_gptq_int2\":{\"weight.group_size\":256,\"weight_algo.act_order\":true},\"rht_gptq_int3\":{\"weight.group_size\":256,\"weight_algo.act_order\":true},\"rht_gptq_int4\":{\"weight.group_size\":256,\"weight_algo.act_order\":true}},\"rationale\":\"Setting weight.group_size=256 halves the per-group scale overhead on the GPTQ-family layers. The freed bits pay for 1-bit upgrades of 8 MLP layers, each 3145728 params, where the measured single-layer KL gain is large. 14.down: rht2 0.00633 (E4c3f9b73e065) → rht3 0.00181 (E90bd4b2f3645). 27.up: gptq3 0.00572 (Ef04d8aa7bded) → gptq4 0.00217 (Efea8c18d2abc). 27.gate: rht3 0.00499 (Efa0bb391da67) → rht4 0.00153 (Ef428ac081334). 3.up: 0.00642 (E6f4f7ea296d5) → gptq4 0.00238 (Ef4ee8cb4969e). 2.up: 0.00642 (E9baa10763ebe) → gptq4 0.00237 (Ef3d9c7b4502c). 1.up: 0.00611 (E0564bc6ad1eb) → rht4 0.00227 (E779bc065b72e). 18.gate and 11.gate are at rht2 with excess KL of 0.00497 (Eb1dd74cd6447) and 0.00443 (E9c454f30c659). act_order=true is also set.\",\"cites\":[\"E4c3f9b73e065\",\"E90bd4b2f3645\",\"Ef04d8aa7bded\",\"Efea8c18d2abc\",\"Efa0bb391da67\",\"Ef428ac081334\",\"E6f4f7ea296d5\",\"Ef4ee8cb4969e\",\"E9baa10763ebe\",\"Ef3d9c7b4502c\",\"E0564bc6ad1eb\",\"E779bc065b72e\",\"Eb1dd74cd6447\",\"E9c454f30c659\"]}]}",
+    "structured_output": {
+     "analysis": "The budget is 403/128 = 3.1484 bits per weight. The best recipe, iso_3.15 (E514ab09c524e), already uses 3.14795 bits, so there are almost no spare bits. The loss is concentrated in MLP projections that sit at int3 or rht_gptq_int2. For these layers, one more bit is measured to cut single-layer KL by about 0.0035 to 0.0045: 14.down rht2 0.00633 → rht3 0.00181; 27.up gptq3 0.00572 → gptq4 0.00217; 27.gate rht3 0.00499 → rht4 0.00153; 3.up 0.00642 → gptq4 0.00238; 2.up 0.00642 → gptq4 0.00237; 1.up 0.00611 → rht4 0.00227.\n\nUpgrades have to be paid for. None of the retrieved records shows a cheap downgrade, so the only realistic funding is an option change: a coarser group_size of 256 lowers the scale overhead on every GPTQ-family layer. Changing act_order and damp costs no bits, so those can be tested on their own.\n\nThree grids:\n1. act_order only.\n2. act_order plus a higher damp.\n3. group_size=256 with act_order, spending the freed bits on about 8 upgrades of the layers listed above.",
+     "stop": false,
+     "proposals": [
+      {
+       "name": "iso_actorder",
+       "base": "iso_3.15",
+       "changes": [],
+       "options": {
+        "gptq_int2": {
+         "weight_algo.act_order": true
+        },
+        "gptq_int3": {
+         "weight_algo.act_order": true
+        },
+        "gptq_int4": {
+         "weight_algo.act_order": true
+        },
+        "rht_gptq_int2": {
+         "weight_algo.act_order": true
+        },
+        "rht_gptq_int3": {
+         "weight_algo.act_order": true
+        },
+        "rht_gptq_int4": {
+         "weight_algo.act_order": true
+        }
+       },
+       "rationale": "Uses the same bits as iso_3.15, measured at KL 0.43614 (E514ab09c524e). This turns on act_order=true for all GPTQ-family methods, which hold most of the layers. GPTQ-quantized layers dominate the loss, for example 27.up gptq_int3 0.00572 (Ef04d8aa7bded) and 14.down rht_gptq_int2 0.00633 (E4c3f9b73e065).",
+       "cites": [
+        "E514ab09c524e",
+        "Ef04d8aa7bded",
+        "E4c3f9b73e065"
+       ]
+      },
+      {
+       "name": "iso_actorder_damp05",
+       "base": "iso_3.15",
+       "changes": [],
+       "options": {
+        "gptq_int2": {
+         "weight_algo.act_order": true,
+         "weight_algo.damp": 0.05
+        },
+        "gptq_int3": {
+         "weight_algo.act_order": true,
+         "weight_algo.damp": 0.05
+        },
+        "gptq_int4": {
+         "weight_algo.act_order": true,
+         "weight_algo.damp": 0.05
+        },
+        "rht_gptq_int2": {
+         "weight_algo.act_order": true,
+         "weight_algo.damp": 0.05
+        },
+        "rht_gptq_int3": {
+         "weight_algo.act_order": true,
+         "weight_algo.damp": 0.05
+        },
+        "rht_gptq_int4": {
+         "weight_algo.act_order": true,
+         "weight_algo.damp": 0.05
+        }
+       },
+       "rationale": "Uses the same bits as iso_3.15 (KL 0.43614, E514ab09c524e). This sets act_order=true with damp=0.05 instead of the default damp=0.01. Activation kurtosis is high in the layers where loss concentrates: 1090.09 at block 27 (E24beed188b6a) and 241.283 at 3.up (Eb1b68d163774). Stronger damping may stabilise the Hessian there.",
+       "cites": [
+        "E514ab09c524e",
+        "E24beed188b6a",
+        "Eb1b68d163774"
+       ]
+      },
+      {
+       "name": "g256_upgrade8",
+       "base": "iso_3.15",
+       "changes": [
+        {
+         "block": 14,
+         "kind": "down_proj",
+         "method": "rht_gptq_int3"
+        },
+        {
+         "block": 18,
+         "kind": "gate_proj",
+         "method": "rht_gptq_int3"
+        },
+        {
+         "block": 11,
+         "kind": "gate_proj",
+         "method": "rht_gptq_int3"
+        },
+        {
+         "block": 27,
+         "kind": "up_proj",
+         "method": "gptq_int4"
+        },
+        {
+         "block": 27,
+         "kind": "gate_proj",
+         "method": "rht_gptq_int4"
+        },
+        {
+         "block": 3,
+         "kind": "up_proj",
+         "method": "gptq_int4"
+        },
+        {
+         "block": 2,
+         "kind": "up_proj",
+         "method": "gptq_int4"
+        },
+        {
+         "block": 1,
+         "kind": "up_proj",
+         "method": "rht_gptq_int4"
+        }
+       ],
+       "options": {
+        "gptq_int2": {
+         "weight.group_size": 256,
+         "weight_algo.act_order": true
+        },
+        "gptq_int3": {
+         "weight.group_size": 256,
+         "weight_algo.act_order": true
+        },
+        "gptq_int4": {
+         "weight.group_size": 256,
+         "weight_algo.act_order": true
+        },
+        "rht_gptq_int2": {
+         "weight.group_size": 256,
+         "weight_algo.act_order": true
+        },
+        "rht_gptq_int3": {
+         "weight.group_size": 256,
+         "weight_algo.act_order": true
+        },
+        "rht_gptq_int4": {
+         "weight.group_size": 256,
+         "weight_algo.act_order": true
+        }
+       },
+       "rationale": "Setting weight.group_size=256 halves the per-group scale overhead on the GPTQ-family layers. The freed bits pay for 1-bit upgrades of 8 MLP layers, each 3145728 params, where the measured single-layer KL gain is large. 14.down: rht2 0.00633 (E4c3f9b73e065) → rht3 0.00181 (E90bd4b2f3645). 27.up: gptq3 0.00572 (Ef04d8aa7bded) → gptq4 0.00217 (Efea8c18d2abc). 27.gate: rht3 0.00499 (Efa0bb391da67) → rht4 0.00153 (Ef428ac081334). 3.up: 0.00642 (E6f4f7ea296d5) → gptq4 0.00238 (Ef4ee8cb4969e). 2.up: 0.00642 (E9baa10763ebe) → gptq4 0.00237 (Ef3d9c7b4502c). 1.up: 0.00611 (E0564bc6ad1eb) → rht4 0.00227 (E779bc065b72e). 18.gate and 11.gate are at rht2 with excess KL of 0.00497 (Eb1dd74cd6447) and 0.00443 (E9c454f30c659). act_order=true is also set.",
+       "cites": [
+        "E4c3f9b73e065",
+        "E90bd4b2f3645",
+        "Ef04d8aa7bded",
+        "Efea8c18d2abc",
+        "Efa0bb391da67",
+        "Ef428ac081334",
+        "E6f4f7ea296d5",
+        "Ef4ee8cb4969e",
+        "E9baa10763ebe",
+        "Ef3d9c7b4502c",
+        "E0564bc6ad1eb",
+        "E779bc065b72e",
+        "Eb1dd74cd6447",
+        "E9c454f30c659"
+       ]
+      }
+     ]
+    },
+    "ttft_ms": 27478,
+    "type": "result",
+    "duration_ms": 45164,
+    "uuid": "22ec9a48-bd0c-4703-a51c-47489d666074",
+    "ttft_stream_ms": 2155,
+    "time_to_request_ms": 780,
+    "time_to_request_phases_ms": {
+     "other": 2,
+     "system_prompt": 0,
+     "resume_other": 1,
+     "process_user_input": 1,
+     "input_attachments": 19,
+     "input_hooks": 1,
+     "conversation_append": 0,
+     "tool_pool_refresh": 1,
+     "init_message": 3,
+     "init_frame_send": 1,
+     "engine_pickup": 1,
+     "loop_entry": 1,
+     "message_prep": 1,
+     "model_config_wait": 2,
+     "autocompact": 0,
+     "request_announcements": 4,
+     "query_setup": 0,
+     "model_gates": 733,
+     "tool_schema_build": 5,
+     "message_normalization": 0,
+     "client_creation": 3,
+     "request_build": 1
+    },
+    "turn_start_resume_kind": "none",
+    "process_turn_index": 0,
+    "time_to_request_loop_lag_ms": 12,
+    "time_to_request_cpu_ms": 194,
+    "time_to_request_major_faults": 0,
+    "input_attachments_detail": {
+     "slowest_producer": "session_settings",
+     "slowest_producer_ms": 14,
+     "cpu_ms": 30,
+     "major_faults": 0,
+     "setup_ms": 0,
+     "prompt_producers_ms": 0,
+     "ambient_start_ms": 2,
+     "ambient_wait_ms": 13,
+     "render_ms": 0,
+     "producers": 43,
+     "token_counts": 0
+    },
+    "tool_schema_build_detail": {
+     "betas_ms": 0,
+     "waits_ms": 1,
+     "placement_ms": 3,
+     "render_ms": 1,
+     "after_ms": 0,
+     "other_ms": 0,
+     "tools": 1,
+     "new_schemas": 1
+    },
+    "message_normalization_detail": {
+     "before_ms": 0,
+     "normalize_ms": 0,
+     "images_ms": 0,
+     "post_process_ms": 0,
+     "after_ms": 0,
+     "other_ms": 0,
+     "messages": 8,
+     "wire_messages": 2
+    },
+    "request_build_detail": {
+     "records_ms": 0,
+     "system_ms": 0,
+     "headers_ms": 0,
+     "cache_break_record_ms": 1,
+     "plans_ms": 0,
+     "retry_setup_ms": 0,
+     "sent_build_ms": 0,
+     "record_attempt_ms": 0,
+     "other_ms": 0,
+     "sent_build_safety_context_ms": 0,
+     "sent_build_cache_breakpoints_ms": 0,
+     "sent_build_surrogate_scan_ms": 0
+    },
+    "first_content_frame_ms": 2155,
+    "queued_turn_count": 0,
+    "result_index": 0,
+    "credential_expires_at": "2026-12-04T04:51:21.312Z"
+   },
+   "stderr": ""
+  }
+ ]
+}

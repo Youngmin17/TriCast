@@ -1,0 +1,219 @@
+{
+ "run_id": "2026-11-09T0214",
+ "case_id": "r_k1",
+ "calls": [
+  {
+   "role": "request",
+   "key": "request",
+   "returncode": 0,
+   "stdout": {
+    "duration_api_ms": 9679,
+    "stop_reason": "tool_use",
+    "session_id": "50e663b9-552b-4e9c-ad79-86feda0474ce",
+    "total_cost_usd": 0.0195085,
+    "usage": {
+     "input_tokens": 2,
+     "cache_creation_input_tokens": 643,
+     "cache_read_input_tokens": 2157,
+     "output_tokens": 679,
+     "output_tokens_details": {
+      "thinking_tokens": 110
+     },
+     "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+     },
+     "service_tier": "standard",
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 643,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "inference_geo": "global",
+     "iterations": [
+      {
+       "input_tokens": 2,
+       "output_tokens": 679,
+       "cache_read_input_tokens": 2157,
+       "cache_creation_input_tokens": 643,
+       "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 643
+       },
+       "type": "message"
+      }
+     ],
+     "speed": "standard",
+     "fallback_credit": null
+    },
+    "modelUsage": {
+     "claude-haiku-5-5": {
+      "inputTokens": 1651,
+      "outputTokens": 360,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.0003451,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 321,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 0,
+      "canonicalModel": "claude-haiku-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     },
+     "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 679,
+      "cacheReadInputTokens": 2157,
+      "cacheCreationInputTokens": 643,
+      "webSearchRequests": 0,
+      "costUSD": 0.0191634,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 110,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 643,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "subagent_stats": {
+     "spawned": 0,
+     "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+     },
+     "started_in_background": 0,
+     "max_depth": 0,
+     "spawned_by_subagents": 0,
+     "completed": 0,
+     "failed": 0,
+     "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+     },
+     "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+     },
+     "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 2,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "{\"outcome\":\"conflict\",\"model\":\"Qwen/Qwen3-0.6B\",\"budget_bits\":\"2\",\"compute_budget\":null,\"keep_bf16_blocks\":[],\"exclude_methods\":[],\"only_methods\":null,\"questions\":[],\"reason\":\"요청이 평균 2비트를 원하면서 동시에 모든 층을 4비트 이상으로 요구합니다. 모든 층이 최소 4비트이면 Linear 가중 평균도 최소 4비트이고(스케일 저장분까지 더하면 그보다 높음), 따라서 평균 2비트는 달성할 수 없습니다. (The request asks for a 2-bit average but also requires every layer to be at least 4 bits. If every layer is at least 4 bits, the average is at least 4 bits, so 2 bits is impossible.)\",\"assumptions\":[\"'모든 층은 4비트 이상' read as limiting methods to 4-bit-or-wider ones (gptq_int4, nf4, hqq_int4, awq_int4, rht_gptq_int4, awq_clip_int4, int8_w, bf16)\"]}",
+    "structured_output": {
+     "outcome": "conflict",
+     "model": "Qwen/Qwen3-0.6B",
+     "budget_bits": "2",
+     "compute_budget": null,
+     "keep_bf16_blocks": [],
+     "exclude_methods": [],
+     "only_methods": null,
+     "questions": [],
+     "reason": "요청이 평균 2비트를 원하면서 동시에 모든 층을 4비트 이상으로 요구합니다. 모든 층이 최소 4비트이면 Linear 가중 평균도 최소 4비트이고(스케일 저장분까지 더하면 그보다 높음), 따라서 평균 2비트는 달성할 수 없습니다. (The request asks for a 2-bit average but also requires every layer to be at least 4 bits. If every layer is at least 4 bits, the average is at least 4 bits, so 2 bits is impossible.)",
+     "assumptions": [
+      "'모든 층은 4비트 이상' read as limiting methods to 4-bit-or-wider ones (gptq_int4, nf4, hqq_int4, awq_int4, rht_gptq_int4, awq_clip_int4, int8_w, bf16)"
+     ]
+    },
+    "ttft_ms": 4052,
+    "type": "result",
+    "duration_ms": 8077,
+    "uuid": "45a3d088-8677-4488-b443-3769683401b4",
+    "ttft_stream_ms": 2843,
+    "time_to_request_ms": 812,
+    "time_to_request_phases_ms": {
+     "other": 1,
+     "system_prompt": 0,
+     "resume_other": 1,
+     "process_user_input": 1,
+     "input_attachments": 17,
+     "input_hooks": 1,
+     "conversation_append": 0,
+     "tool_pool_refresh": 1,
+     "init_message": 3,
+     "init_frame_send": 1,
+     "engine_pickup": 0,
+     "loop_entry": 2,
+     "message_prep": 0,
+     "model_config_wait": 2,
+     "autocompact": 1,
+     "request_announcements": 3,
+     "query_setup": 0,
+     "model_gates": 765,
+     "tool_schema_build": 7,
+     "message_normalization": 1,
+     "client_creation": 3,
+     "request_build": 2
+    },
+    "turn_start_resume_kind": "none",
+    "process_turn_index": 0,
+    "time_to_request_loop_lag_ms": 3,
+    "time_to_request_cpu_ms": 223,
+    "time_to_request_major_faults": 0,
+    "input_attachments_detail": {
+     "slowest_producer": "session_settings",
+     "slowest_producer_ms": 13,
+     "cpu_ms": 29,
+     "major_faults": 0,
+     "setup_ms": 0,
+     "prompt_producers_ms": 0,
+     "ambient_start_ms": 2,
+     "ambient_wait_ms": 13,
+     "render_ms": 0,
+     "producers": 43,
+     "token_counts": 0
+    },
+    "tool_schema_build_detail": {
+     "betas_ms": 0,
+     "waits_ms": 1,
+     "placement_ms": 5,
+     "render_ms": 1,
+     "after_ms": 0,
+     "other_ms": 0,
+     "tools": 1,
+     "new_schemas": 1
+    },
+    "message_normalization_detail": {
+     "before_ms": 0,
+     "normalize_ms": 1,
+     "images_ms": 0,
+     "post_process_ms": 0,
+     "after_ms": 0,
+     "other_ms": 0,
+     "messages": 8,
+     "wire_messages": 2
+    },
+    "request_build_detail": {
+     "records_ms": 0,
+     "system_ms": 0,
+     "headers_ms": 1,
+     "cache_break_record_ms": 0,
+     "plans_ms": 0,
+     "retry_setup_ms": 0,
+     "sent_build_ms": 1,
+     "record_attempt_ms": 0,
+     "other_ms": 0,
+     "sent_build_safety_context_ms": 0,
+     "sent_build_cache_breakpoints_ms": 0,
+     "sent_build_surrogate_scan_ms": 0
+    },
+    "first_content_frame_ms": 2843,
+    "queued_turn_count": 0,
+    "result_index": 0,
+    "credential_expires_at": "2026-12-04T04:51:21.312Z"
+   },
+   "stderr": ""
+  }
+ ]
+}

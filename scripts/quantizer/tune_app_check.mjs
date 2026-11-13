@@ -1,9 +1,10 @@
-// Checks for the one tool (app/web/tune.html: 1 model, 2 Auto-tune, 3 edit by hand, 4 evaluation) in headless Chrome,
+// Checks for the one tool (app/web/tune.html: 1 model, 2 Auto-tune, 3 edit by hand, 4 evaluation, 5 output) in headless Chrome,
 // beyond the demo rehearsal (demo_rehearsal.mjs). On a running server with --agent (python -m app.server --demo
 // --agent …):
 //    1 the knapsack runs in the worker: no main-thread stall over 100 ms during the solve (a timer heartbeat; a 150 ms
 //      busy loop must show up as the control);  2 measured budgets are warmed up: picking one answers within 150 ms;
-//    3 one system: four steps and nothing else — no menu to other pages, no chat, no chart, nothing typed;
+//    3 one system: five steps and nothing else — no menu to other pages, no chat, no chart, nothing typed, and the
+//      model pick offers exactly the recorded models (demo/autotune/models.json);
 //    4 the size buttons say the size and the measured PPL of the setup recommended there;  5 at every size the
 //      recommendation is the best measured setup (the AI's settings on top only where they measured better), said
 //      with how it was reached, and its recipe is the measured file;  6 the edit step offers only what was measured:
@@ -14,15 +15,16 @@
 //    9 the evaluation of a hand edit shows it against the recommendation, and "back to the recommendation" restores
 //      it;  10 the grid says a layer's method on hover and cannot be edited;  11 nothing overflows sideways at 1440
 //      and 390 px;  12 one screen: at 1440 × 900 and 1280 × 720 the evaluation's button is on screen once a size is
-//      picked and after an edit.
+//      picked and after an edit;  13 step 5 opens after the evaluation: the computed file size by part beside the
+//      recipe bundle download (no answer comparison).
 // On the live fixture (scripts/quantizer/tune_fixture_server.py: the real app on a FAKE GPU whose job runner returns
-// made-up numbers — the page's handling is what is checked, not a measurement): 13 the evaluation runs as a GPU job
-// (progress, PPL, the chosen lm-eval task); 14 a failing job says it failed and why.
+// made-up numbers — the page's handling is what is checked, not a measurement): 14 the evaluation runs as a GPU job
+// (progress, PPL, the chosen lm-eval task, then step 5 opens); 15 a failing job says it failed and why.
 //
 // usage: node scripts/quantizer/tune_app_check.mjs <out_dir> <python> [base=http://127.0.0.1:8765]
 // Prints PASS/FAIL per check and TUNE_APP_CHECKS <passed>/<total>; writes <out_dir>/tune_app_check.json and PNGs.
 import {spawn} from "node:child_process";
-import {mkdirSync, writeFileSync} from "node:fs";
+import {mkdirSync, readdirSync, writeFileSync} from "node:fs";
 import {dirname, resolve} from "node:path";
 import {fileURLToPath} from "node:url";
 
@@ -94,6 +96,8 @@ const blank = await b.evaluate(`({sections: [...document.querySelectorAll(".ta-s
   chat: document.querySelectorAll("#msgs, #sugg, .ta-ai, .ta-msg").length, chart: document.querySelectorAll("svg, #tradeoff").length,
   typed: document.querySelectorAll("input[type=text], input[type=range], input:not([type]), textarea, datalist").length,
   model: document.querySelector("#model").tagName, options: document.querySelectorAll("#model option").length})`);
+// the model pick offers exactly the recorded models (demo/autotune/models.json; one bundle without a list)
+const recordedModels = await b.evaluate(`fetch("demo/autotune/models.json").then((r) => (r.ok ? r.json() : {models: [0]})).then((d) => d.models.length)`);
 await b.evaluate(beat);
 await load();
 await pick("17/4");  // the first solve: the user's pick goes before the background warm-up
@@ -116,10 +120,10 @@ const ms = (await b.evaluate(`performance.now()`)) - t0;
 await b.waitFor(`!!document.querySelector("#recipe-file")`, 30000);
 check("2 a warmed-up measured budget answers at once", ms <= 150 && (await text("#solver-note")).includes("미리 계산"), `403/128 → 20% in ${ms.toFixed(0)} ms`);
 
-check("3 one system: four steps, no menu to other pages, no chat, no chart, nothing typed",
-  blank.sections.join(" | ") === "모델 | Auto-tune (대기) | 직접 편집 (대기) | 평가 (대기)" && blank.links.join() === "tune.html" && blank.nav === 0 &&
-  blank.chat === 0 && blank.chart === 0 && blank.typed === 0 && blank.model === "SELECT" && blank.options === 1,
-  `steps ${blank.sections.join(" → ")} · links ${blank.links.join(",")} · menus ${blank.nav} · chat ${blank.chat} · charts ${blank.chart} · typed inputs ${blank.typed}`);
+check("3 one system: five steps, no menu to other pages, no chat, no chart, nothing typed",
+  blank.sections.join(" | ") === "모델 | Auto-tune (대기) | 직접 편집 (대기) | 평가 (대기) | 결과물 (대기)" && blank.links.join() === "tune.html" && blank.nav === 0 &&
+  blank.chat === 0 && blank.chart === 0 && blank.typed === 0 && blank.model === "SELECT" && blank.options === recordedModels,
+  `steps ${blank.sections.join(" → ")} · links ${blank.links.join(",")} · menus ${blank.nav} · chat ${blank.chat} · charts ${blank.chart} · typed inputs ${blank.typed} · models ${blank.options}/${recordedModels}`);
 
 const presets = await b.evaluate(`[...document.querySelectorAll(".ta-preset[data-budget]")].map((x) => x.innerText.replace(/\\s+/g, " "))`);
 check("4 size buttons say the size and the recommended setup's measured PPL",
@@ -241,6 +245,36 @@ check("12 one screen: the evaluation's button is on screen once a size is picked
   firstScreen.evalButton && small.picked && small.edited,
   `1440 × 900 after the pick ${firstScreen.evalButton} · 1280 × 720 after the pick ${small.picked}, after an edit ${small.edited}`);
 
+// ---------- step 5: what the evaluated setup hands over ----------
+const downloads = `${out}/downloads`;
+mkdirSync(downloads, {recursive: true});
+await b.S("Browser.setDownloadBehavior", {behavior: "allow", downloadPath: downloads});
+await b.setup(1440, 900);
+await open(`${base}/tune.html`);
+await load();
+await pick("403/128");
+await b.waitFor(`document.querySelector("#recipe-file b")?.innerText === "act_damp05_r3.yaml"`, 30000);
+const shut = await b.evaluate(`document.getElementById("sec-out").hasAttribute("data-off")`);
+await click("#run-eval");
+await b.waitFor(`!document.getElementById("sec-out").hasAttribute("data-off") && !!document.querySelector("#size")`, 10000);
+const sizeText = await text("#size");
+const segments = await b.evaluate(`[...document.querySelectorAll("#size .track")].map((t) => [...t.children].map((i) => parseFloat(i.style.width)))`);
+await b.evaluate(`document.getElementById("sec-out").scrollIntoView({block: "start"})`);
+await b.pause(400);
+await b.shot(`${out}/out_1440.png`);
+await click("#export");
+let zipped = [];
+for (let i = 0; i < 50 && !(zipped = readdirSync(downloads).filter((f) => f.endsWith(".zip"))).length; i++) await b.pause(200);
+const listed = await text("#export-block");
+const hasAnswers = await b.evaluate(`!!document.querySelector("#answers")`);
+check("13 step 5 after the evaluation: the computed size by part beside the recipe bundle",
+  shut && sizeText.includes("1.50 GB → 0.80 GB (53%)") && sizeText.includes("원본의 20%") && sizeText.includes("계산값") &&
+  segments.length === 2 && segments[0].length === 2 && Math.abs(segments[0][0] + segments[0][1] - 100) < 0.1 &&
+  segments[1][0] < segments[0][0] / 4 && zipped.join() === "act_damp05_r3_tricast.zip" &&
+  listed.includes("act_damp05_r3.yaml · evaluation.json · size.json · README.md") && !hasAnswers,
+  `closed before the evaluation ${shut} · "${sizeText.slice(0, 60)}…" bars ${segments.map((s) => s.map((v) => v.toFixed(1)).join("+")).join(" | ")} · ` +
+  `download ${zipped.join()} · listed "${listed.slice(listed.indexOf("act_damp05"), listed.indexOf("README.md") + 9)}"`);
+
 // ---------- live fixture: a GPU job with made-up numbers ----------
 const fixture = spawn(python, [`${repo}/scripts/quantizer/tune_fixture_server.py`, "0"], {cwd: repo, stdio: ["ignore", "pipe", "pipe"],
   env: {...process.env, PYTHONPATH: `${repo}/src`}});
@@ -272,15 +306,18 @@ try {
   const progressed = await b.waitFor(`/중/.test(document.querySelector("#eval-state")?.innerText ?? "") && !!document.querySelector("#eval .ta-progress")`, 10000);
   await b.waitFor(`!!document.querySelector("#eval-result") || !!document.querySelector("#eval .ta-err")`, 30000);
   const ev = await text("#eval");
+  const opened = await b.waitFor(`!document.getElementById("sec-out").hasAttribute("data-off") && !!document.querySelector("#size")`, 5000);
   await b.shot(`${out}/live_job.png`);
-  check("13 a GPU job: progress, PPL, the lm-eval task (fixture numbers)",
-    label.includes("GPU 에서 평가 실행") && bar.includes("GPU 서버") && progressed && ev.includes("26.60") && ev.includes("arc_easy") && ev.includes("방금 측정"),
-    `button "${label}" · bar "${bar}" · progress shown ${progressed} · ${ev.includes("26.60") ? "PPL 26.60" : "no PPL"} · arc_easy ${ev.includes("arc_easy")}`);
+  check("14 a GPU job: progress, PPL, the lm-eval task, then step 5 opens (fixture numbers)",
+    label.includes("GPU 에서 평가 실행") && bar.includes("GPU 서버") && progressed && ev.includes("26.60") && ev.includes("arc_easy") && ev.includes("방금 측정") &&
+    opened,
+    `button "${label}" · bar "${bar}" · progress shown ${progressed} · ${ev.includes("26.60") ? "PPL 26.60" : "no PPL"} · arc_easy ${ev.includes("arc_easy")} · ` +
+    `step 5 opened ${opened}`);
   await b.evaluate(`[...document.querySelectorAll(".ta-tasks label")].find((l) => l.innerText.includes("HellaSwag")).querySelector("input").click()`);
   await click("#run-eval");
   await b.waitFor(`(document.querySelector("#eval .ta-err")?.innerText ?? "").includes("평가 실패")`, 30000);
   const err = await text("#eval .ta-err");
-  check("14 a failed GPU job says so and why", err.includes("평가 실패") && err.includes("hellaswag"), err);
+  check("15 a failed GPU job says so and why", err.includes("평가 실패") && err.includes("hellaswag"), err);
 } finally {
   fixture.kill("SIGTERM");
 }

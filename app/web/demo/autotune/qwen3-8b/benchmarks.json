@@ -1,0 +1,1289 @@
+{
+ "schema": "tricast.tune_bench/1",
+ "model": "Qwen/Qwen3-8B",
+ "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+ "lm_eval_version": "0.4.13",
+ "batch_size": {
+  "0shot_limit1000": {
+   "requested": 32,
+   "used": 32,
+   "reason": null
+  },
+  "0shot_limitNone": {
+   "requested": 32,
+   "used": 32,
+   "reason": null
+  },
+  "0shot_limit20": {
+   "requested": 32,
+   "used": 32,
+   "reason": null
+  }
+ },
+ "benchmarks": [
+  {
+   "id": "wikitext2",
+   "label": "WikiText-2",
+   "group": "언어 모델링",
+   "kind": "ppl",
+   "metric": null,
+   "num_fewshot": null,
+   "what": "위키백과 글의 다음 토큰 (test 전체, 2048 토큰 창)",
+   "n": 298862,
+   "n_total": null,
+   "limit": null
+  },
+  {
+   "id": "c4",
+   "label": "C4",
+   "group": "언어 모델링",
+   "kind": "ppl",
+   "metric": null,
+   "num_fewshot": null,
+   "what": "웹 문서의 다음 토큰 (validation 앞 1,100 문서, 2048 토큰 창 256개 — GPTQ 규칙)",
+   "n": 524032,
+   "n_total": null,
+   "limit": null
+  },
+  {
+   "id": "lambada_openai",
+   "label": "LAMBADA",
+   "group": "언어 모델링",
+   "kind": "acc",
+   "metric": "acc",
+   "num_fewshot": 0,
+   "what": "긴 문맥 끝의 마지막 단어 맞히기",
+   "n": 1000,
+   "n_total": 5153,
+   "limit": 1000
+  },
+  {
+   "id": "arc_easy",
+   "label": "ARC-Easy",
+   "group": "상식 · 추론",
+   "kind": "acc",
+   "metric": "acc_norm",
+   "num_fewshot": 0,
+   "what": "초등 과학 객관식",
+   "n": 1000,
+   "n_total": 2376,
+   "limit": 1000
+  },
+  {
+   "id": "arc_challenge",
+   "label": "ARC-Challenge",
+   "group": "상식 · 추론",
+   "kind": "acc",
+   "metric": "acc_norm",
+   "num_fewshot": 0,
+   "what": "어려운 초등 과학 객관식",
+   "n": 1172,
+   "n_total": 1172,
+   "limit": null
+  },
+  {
+   "id": "hellaswag",
+   "label": "HellaSwag",
+   "group": "상식 · 추론",
+   "kind": "acc",
+   "metric": "acc_norm",
+   "num_fewshot": 0,
+   "what": "이어질 장면 고르기 (4지선다)",
+   "n": 1000,
+   "n_total": 10042,
+   "limit": 1000
+  },
+  {
+   "id": "piqa",
+   "label": "PIQA",
+   "group": "상식 · 추론",
+   "kind": "acc",
+   "metric": "acc_norm",
+   "num_fewshot": 0,
+   "what": "물리 상식 (2지선다)",
+   "n": 1000,
+   "n_total": 1838,
+   "limit": 1000
+  },
+  {
+   "id": "winogrande",
+   "label": "WinoGrande",
+   "group": "상식 · 추론",
+   "kind": "acc",
+   "metric": "acc",
+   "num_fewshot": 0,
+   "what": "대명사가 가리키는 것 (2지선다)",
+   "n": 1267,
+   "n_total": 1267,
+   "limit": null
+  },
+  {
+   "id": "mmlu",
+   "label": "MMLU",
+   "group": "지식",
+   "kind": "acc",
+   "metric": "acc",
+   "num_fewshot": 0,
+   "what": "57개 분야 4지선다 (분야마다 앞 20문항)",
+   "n": 1140,
+   "n_total": 14042,
+   "limit": 20
+  }
+ ],
+ "native": {
+  "values": {
+   "wikitext2": 9.724540846416106,
+   "c4": 15.427064432381018,
+   "lambada_openai": 0.664,
+   "arc_easy": 0.805,
+   "arc_challenge": 0.5674061433447098,
+   "hellaswag": 0.638,
+   "piqa": 0.787,
+   "winogrande": 0.681136543014996,
+   "mmlu": 0.7614035087719299
+  },
+  "stderr": {
+   "wikitext2": null,
+   "c4": null,
+   "lambada_openai": 0.014944140233794895,
+   "arc_easy": 0.012535235623319256,
+   "arc_challenge": 0.014478005694182441,
+   "hellaswag": 0.015204840912919383,
+   "piqa": 0.01295371756673731,
+   "winogrande": 0.013097928420088795,
+   "mmlu": 0.012629251189319103
+  },
+  "env": {
+   "gpu_names": [
+    "NVIDIA H200 NVL"
+   ],
+   "git_sha": "00f99589835857bbdb3283de773d0001029a0cd3",
+   "git_dirty": true,
+   "model_sha": "b968826d9c46dd6066d109eabc6255188de91218",
+   "versions": {
+    "python": "3.12.14",
+    "torch": "2.8.0+cu128",
+    "triton": "3.4.0",
+    "transformers": "4.55.2",
+    "lm_eval": "0.4.13",
+    "datasets": "4.8.5"
+   },
+   "utc": "2026-11-11T23:47:42.450744+00:00",
+   "hostname": "berlin.ee.ucl.ac.uk"
+  }
+ },
+ "setups": {
+  "78ac0a4ed6ea8462332caeb86ec61cf13f50d2c559953ef7c2f661b2002f6415": {
+   "id": "auto_2.50",
+   "kind": "auto",
+   "bits": 2.499688632246377,
+   "values": {
+    "wikitext2": 19.78310661786508,
+    "c4": 37.728503490025325,
+    "lambada_openai": 0.087,
+    "arc_easy": 0.342,
+    "arc_challenge": 0.2551194539249147,
+    "hellaswag": 0.42,
+    "piqa": 0.58,
+    "winogrande": 0.5122336227308603,
+    "mmlu": 0.22631578947368422
+   },
+   "stderr": {
+    "wikitext2": null,
+    "c4": null,
+    "lambada_openai": 0.008916866630745942,
+    "arc_easy": 0.015008706182121802,
+    "arc_challenge": 0.01273903869520204,
+    "hellaswag": 0.015615500115072968,
+    "piqa": 0.015615500115072968,
+    "winogrande": 0.014048278820405729,
+    "mmlu": 0.012398736550539396
+   },
+   "patched_layers": 252,
+   "calibration": {
+    "dataset": "wikitext2",
+    "split": "train",
+    "samples": 128,
+    "seqlen": 2048,
+    "seed": 42,
+    "dataset_fingerprint": "471c498f3e79e3e7af85c37806156d8e5a126a074c850afb5a56f3e938efcc2c",
+    "hessian_max_bytes": 103079215104,
+    "cache_hits": 252
+   },
+   "seconds": 2961.9,
+   "env": {
+    "gpu_names": [
+     "NVIDIA H200 NVL"
+    ],
+    "git_sha": "00f99589835857bbdb3283de773d0001029a0cd3",
+    "git_dirty": true,
+    "model_sha": "b968826d9c46dd6066d109eabc6255188de91218",
+    "versions": {
+     "python": "3.12.14",
+     "torch": "2.8.0+cu128",
+     "triton": "3.4.0",
+     "transformers": "4.55.2",
+     "lm_eval": "0.4.13",
+     "datasets": "4.8.5"
+    },
+    "utc": "2026-11-12T04:16:19.010595+00:00",
+    "hostname": "berlin.ee.ucl.ac.uk"
+   }
+  },
+  "5f3ba6f18ee37da53ab300257ea8f775bf75244a576663bbccbb78d9178390bf": {
+   "id": "auto_2.75",
+   "kind": "auto",
+   "bits": 2.749816009963768,
+   "values": {
+    "wikitext2": 13.219033835613613,
+    "c4": 22.520408651455615,
+    "lambada_openai": 0.303,
+    "arc_easy": 0.513,
+    "arc_challenge": 0.32849829351535836,
+    "hellaswag": 0.556,
+    "piqa": 0.69,
+    "winogrande": 0.55327545382794,
+    "mmlu": 0.40614035087719297
+   },
+   "stderr": {
+    "wikitext2": null,
+    "c4": null,
+    "lambada_openai": 0.014539683710535193,
+    "arc_easy": 0.015813952101896636,
+    "arc_challenge": 0.013724978465537456,
+    "hellaswag": 0.015719768163402127,
+    "piqa": 0.014632638658632766,
+    "winogrande": 0.013972488371616779,
+    "mmlu": 0.01455184688689435
+   },
+   "patched_layers": 252,
+   "calibration": {
+    "dataset": "wikitext2",
+    "split": "train",
+    "samples": 128,
+    "seqlen": 2048,
+    "seed": 42,
+    "dataset_fingerprint": "471c498f3e79e3e7af85c37806156d8e5a126a074c850afb5a56f3e938efcc2c",
+    "hessian_max_bytes": 103079215104,
+    "cache_hits": 252
+   },
+   "seconds": 2938.0,
+   "env": {
+    "gpu_names": [
+     "NVIDIA H200 NVL"
+    ],
+    "git_sha": "00f99589835857bbdb3283de773d0001029a0cd3",
+    "git_dirty": true,
+    "model_sha": "b968826d9c46dd6066d109eabc6255188de91218",
+    "versions": {
+     "python": "3.12.14",
+     "torch": "2.8.0+cu128",
+     "triton": "3.4.0",
+     "transformers": "4.55.2",
+     "lm_eval": "0.4.13",
+     "datasets": "4.8.5"
+    },
+    "utc": "2026-11-12T06:20:46.608011+00:00",
+    "hostname": "berlin.ee.ucl.ac.uk"
+   }
+  },
+  "95ff9632b9ecf91cbf90756f814a60665d0ce13e9e0340de0f2abf21e09dbc0d": {
+   "id": "auto_2.88",
+   "kind": "auto",
+   "bits": 2.874575407608696,
+   "values": {
+    "wikitext2": 11.943149423283911,
+    "c4": 19.7703976911583,
+    "lambada_openai": 0.454,
+    "arc_easy": 0.601,
+    "arc_challenge": 0.40273037542662116,
+    "hellaswag": 0.577,
+    "piqa": 0.732,
+    "winogrande": 0.585635359116022,
+    "mmlu": 0.5894736842105263
+   },
+   "stderr": {
+    "wikitext2": null,
+    "c4": null,
+    "lambada_openai": 0.01575221038877186,
+    "arc_easy": 0.015493193313163012,
+    "arc_challenge": 0.014332236306790208,
+    "hellaswag": 0.015630589090476255,
+    "piqa": 0.01401329270272952,
+    "winogrande": 0.013844846232268452,
+    "mmlu": 0.014576083572796725
+   },
+   "patched_layers": 252,
+   "calibration": {
+    "dataset": "wikitext2",
+    "split": "train",
+    "samples": 128,
+    "seqlen": 2048,
+    "seed": 42,
+    "dataset_fingerprint": "471c498f3e79e3e7af85c37806156d8e5a126a074c850afb5a56f3e938efcc2c",
+    "hessian_max_bytes": 103079215104,
+    "cache_hits": 252
+   },
+   "seconds": 3022.3,
+   "env": {
+    "gpu_names": [
+     "NVIDIA H200 NVL"
+    ],
+    "git_sha": "00f99589835857bbdb3283de773d0001029a0cd3",
+    "git_dirty": true,
+    "model_sha": "b968826d9c46dd6066d109eabc6255188de91218",
+    "versions": {
+     "python": "3.12.14",
+     "torch": "2.8.0+cu128",
+     "triton": "3.4.0",
+     "transformers": "4.55.2",
+     "lm_eval": "0.4.13",
+     "datasets": "4.8.5"
+    },
+    "utc": "2026-11-13T01:26:22.400498+00:00",
+    "hostname": "berlin.ee.ucl.ac.uk"
+   }
+  },
+  "89307fc4562157363424401fae2abe64f00666b9425e3e165d27772df1842638": {
+   "id": "auto_3.00",
+   "kind": "auto",
+   "bits": 2.999943387681159,
+   "values": {
+    "wikitext2": 11.224197609462264,
+    "c4": 18.073190610680324,
+    "lambada_openai": 0.55,
+    "arc_easy": 0.68,
+    "arc_challenge": 0.45051194539249145,
+    "hellaswag": 0.6,
+    "piqa": 0.734,
+    "winogrande": 0.6448303078137332,
+    "mmlu": 0.6675438596491228
+   },
+   "stderr": {
+    "wikitext2": null,
+    "c4": null,
+    "lambada_openai": 0.015740004693383918,
+    "arc_easy": 0.014758652303574938,
+    "arc_challenge": 0.01453964609847157,
+    "hellaswag": 0.01549968516584257,
+    "piqa": 0.013979965645145179,
+    "winogrande": 0.013450047479569328,
+    "mmlu": 0.013958707922307642
+   },
+   "patched_layers": 252,
+   "calibration": {
+    "dataset": "wikitext2",
+    "split": "train",
+    "samples": 128,
+    "seqlen": 2048,
+    "seed": 42,
+    "dataset_fingerprint": "471c498f3e79e3e7af85c37806156d8e5a126a074c850afb5a56f3e938efcc2c",
+    "hessian_max_bytes": 103079215104,
+    "cache_hits": 252
+   },
+   "seconds": 2984.6,
+   "env": {
+    "gpu_names": [
+     "NVIDIA H200 NVL"
+    ],
+    "git_sha": "00f99589835857bbdb3283de773d0001029a0cd3",
+    "git_dirty": true,
+    "model_sha": "b968826d9c46dd6066d109eabc6255188de91218",
+    "versions": {
+     "python": "3.12.14",
+     "torch": "2.8.0+cu128",
+     "triton": "3.4.0",
+     "transformers": "4.55.2",
+     "lm_eval": "0.4.13",
+     "datasets": "4.8.5"
+    },
+    "utc": "2026-11-12T05:31:04.749885+00:00",
+    "hostname": "berlin.ee.ucl.ac.uk"
+   }
+  },
+  "c3aa8a5bfe127c4d5c49f52f3b7331d3af5d1e7e2d054cc28bbf25e3bd6ca707": {
+   "id": "auto_3.15",
+   "kind": "auto",
+   "bits": 3.148220486111111,
+   "values": {
+    "wikitext2": 10.924316775093565,
+    "c4": 17.39501413900685,
+    "lambada_openai": 0.599,
+    "arc_easy": 0.731,
+    "arc_challenge": 0.5017064846416383,
+    "hellaswag": 0.602,
+    "piqa": 0.743,
+    "winogrande": 0.659037095501184,
+    "mmlu": 0.6754385964912281
+   },
+   "stderr": {
+    "wikitext2": null,
+    "c4": null,
+    "lambada_openai": 0.015506109745498367,
+    "arc_easy": 0.014029819522568203,
+    "arc_challenge": 0.014611305705057078,
+    "hellaswag": 0.015486634102859014,
+    "piqa": 0.013825416526895028,
+    "winogrande": 0.01332268143593482,
+    "mmlu": 0.013873291488865224
+   },
+   "patched_layers": 252,
+   "calibration": {
+    "dataset": "wikitext2",
+    "split": "train",
+    "samples": 128,
+    "seqlen": 2048,
+    "seed": 42,
+    "dataset_fingerprint": "471c498f3e79e3e7af85c37806156d8e5a126a074c850afb5a56f3e938efcc2c",
+    "hessian_max_bytes": 103079215104,
+    "cache_hits": 161
+   },
+   "seconds": 3057.1,
+   "env": {
+    "gpu_names": [
+     "NVIDIA H200 NVL"
+    ],
+    "git_sha": "00f99589835857bbdb3283de773d0001029a0cd3",
+    "git_dirty": true,
+    "model_sha": "b968826d9c46dd6066d109eabc6255188de91218",
+    "versions": {
+     "python": "3.12.14",
+     "torch": "2.8.0+cu128",
+     "triton": "3.4.0",
+     "transformers": "4.55.2",
+     "lm_eval": "0.4.13",
+     "datasets": "4.8.5"
+    },
+    "utc": "2026-11-12T00:46:58.310372+00:00",
+    "hostname": "berlin.ee.ucl.ac.uk"
+   }
+  },
+  "0c0939b80cf6b94609a65db44e2e7a891d4140780fec2e9ab2697c7ce9bd1cdd": {
+   "id": "auto_4.16",
+   "kind": "auto",
+   "bits": 4.156084880736715,
+   "values": {
+    "wikitext2": 9.93360145378633,
+    "c4": 15.76091587326591,
+    "lambada_openai": 0.64,
+    "arc_easy": 0.792,
+    "arc_challenge": 0.5452218430034129,
+    "hellaswag": 0.634,
+    "piqa": 0.771,
+    "winogrande": 0.6945540647198106,
+    "mmlu": 0.7526315789473684
+   },
+   "stderr": {
+    "wikitext2": null,
+    "c4": null,
+    "lambada_openai": 0.015186527932039983,
+    "arc_easy": 0.012841374572097056,
+    "arc_challenge": 0.014551507060836234,
+    "hellaswag": 0.015240612726405598,
+    "piqa": 0.013294199326613684,
+    "winogrande": 0.012945038632551933,
+    "mmlu": 0.012785022147984713
+   },
+   "patched_layers": 252,
+   "calibration": {
+    "dataset": "wikitext2",
+    "split": "train",
+    "samples": 128,
+    "seqlen": 2048,
+    "seed": 42,
+    "dataset_fingerprint": "471c498f3e79e3e7af85c37806156d8e5a126a074c850afb5a56f3e938efcc2c",
+    "hessian_max_bytes": 103079215104,
+    "cache_hits": 202
+   },
+   "seconds": 2956.4,
+   "env": {
+    "gpu_names": [
+     "NVIDIA H200 NVL"
+    ],
+    "git_sha": "00f99589835857bbdb3283de773d0001029a0cd3",
+    "git_dirty": true,
+    "model_sha": "b968826d9c46dd6066d109eabc6255188de91218",
+    "versions": {
+     "python": "3.12.14",
+     "torch": "2.8.0+cu128",
+     "triton": "3.4.0",
+     "transformers": "4.55.2",
+     "lm_eval": "0.4.13",
+     "datasets": "4.8.5"
+    },
+    "utc": "2026-11-12T02:31:45.952375+00:00",
+    "hostname": "berlin.ee.ucl.ac.uk"
+   }
+  },
+  "85392373a498bac95e3d693de8739dd2c1d1f5e9b72d3b7ca2151d65db1c9a40": {
+   "id": "u_gptq_int2",
+   "kind": "uniform",
+   "bits": 2.140625,
+   "values": {
+    "wikitext2": 915.057943381468,
+    "c4": 4050.3428492748126,
+    "lambada_openai": 0.0,
+    "arc_easy": 0.256,
+    "arc_challenge": 0.26535836177474403,
+    "hellaswag": 0.257,
+    "piqa": 0.498,
+    "winogrande": 0.4909234411996843,
+    "mmlu": 0.24649122807017543
+   },
+   "stderr": {
+    "wikitext2": null,
+    "c4": null,
+    "lambada_openai": 0.0,
+    "arc_easy": 0.013807775152234143,
+    "arc_challenge": 0.012902554762313832,
+    "hellaswag": 0.013825416526895028,
+    "piqa": 0.01581917337430266,
+    "winogrande": 0.014050170094497655,
+    "mmlu": 0.012769768628653857
+   },
+   "patched_layers": 252,
+   "calibration": {
+    "dataset": "wikitext2",
+    "split": "train",
+    "samples": 128,
+    "seqlen": 2048,
+    "seed": 42,
+    "dataset_fingerprint": "471c498f3e79e3e7af85c37806156d8e5a126a074c850afb5a56f3e938efcc2c",
+    "hessian_max_bytes": 103079215104,
+    "cache_hits": 23
+   },
+   "seconds": 3316.5,
+   "env": {
+    "gpu_names": [
+     "NVIDIA H200 NVL"
+    ],
+    "git_sha": "00f99589835857bbdb3283de773d0001029a0cd3",
+    "git_dirty": true,
+    "model_sha": "b968826d9c46dd6066d109eabc6255188de91218",
+    "versions": {
+     "python": "3.12.14",
+     "torch": "2.8.0+cu128",
+     "triton": "3.4.0",
+     "transformers": "4.55.2",
+     "lm_eval": "0.4.13",
+     "datasets": "4.8.5"
+    },
+    "utc": "2026-11-12T03:21:02.407663+00:00",
+    "hostname": "berlin.ee.ucl.ac.uk"
+   }
+  },
+  "115245e99631306129763c9968280d56b0544bd1ce2e975a6f522340bc4c6d74": {
+   "id": "u_gptq_int3",
+   "kind": "uniform",
+   "bits": 3.1484375,
+   "values": {
+    "wikitext2": 11.154338990268823,
+    "c4": 17.654532312365582,
+    "lambada_openai": 0.541,
+    "arc_easy": 0.731,
+    "arc_challenge": 0.4616040955631399,
+    "hellaswag": 0.594,
+    "piqa": 0.749,
+    "winogrande": 0.6637726913970008,
+    "mmlu": 0.6745614035087719
+   },
+   "stderr": {
+    "wikitext2": null,
+    "c4": null,
+    "lambada_openai": 0.015766025737882314,
+    "arc_easy": 0.014029819522568203,
+    "arc_challenge": 0.014568245550296302,
+    "hellaswag": 0.015537226438634581,
+    "piqa": 0.013718133516888775,
+    "winogrande": 0.013277286593993463,
+    "mmlu": 0.013883002802615348
+   },
+   "patched_layers": 252,
+   "calibration": {
+    "dataset": "wikitext2",
+    "split": "train",
+    "samples": 128,
+    "seqlen": 2048,
+    "seed": 42,
+    "dataset_fingerprint": "471c498f3e79e3e7af85c37806156d8e5a126a074c850afb5a56f3e938efcc2c",
+    "hessian_max_bytes": 103079215104,
+    "cache_hits": 252
+   },
+   "seconds": 2964.2,
+   "env": {
+    "gpu_names": [
+     "NVIDIA H200 NVL"
+    ],
+    "git_sha": "00f99589835857bbdb3283de773d0001029a0cd3",
+    "git_dirty": true,
+    "model_sha": "b968826d9c46dd6066d109eabc6255188de91218",
+    "versions": {
+     "python": "3.12.14",
+     "torch": "2.8.0+cu128",
+     "triton": "3.4.0",
+     "transformers": "4.55.2",
+     "lm_eval": "0.4.13",
+     "datasets": "4.8.5"
+    },
+    "utc": "2026-11-11T23:57:34.134966+00:00",
+    "hostname": "berlin.ee.ucl.ac.uk"
+   }
+  },
+  "8ea93a35b3eadffdd809deb670564dc366f89290918b13cd01a4a0969268f7af": {
+   "id": "u_gptq_int4",
+   "kind": "uniform",
+   "bits": 4.15625,
+   "values": {
+    "wikitext2": 9.961091217746821,
+    "c4": 15.859435054590517,
+    "lambada_openai": 0.641,
+    "arc_easy": 0.784,
+    "arc_challenge": 0.5546075085324232,
+    "hellaswag": 0.636,
+    "piqa": 0.764,
+    "winogrande": 0.6842936069455406,
+    "mmlu": 0.7508771929824561
+   },
+   "stderr": {
+    "wikitext2": null,
+    "c4": null,
+    "lambada_openai": 0.01517726422479853,
+    "arc_easy": 0.01301973553930776,
+    "arc_challenge": 0.014523987638344072,
+    "hellaswag": 0.015222868840522003,
+    "piqa": 0.0134344514024386,
+    "winogrande": 0.013063094743000794,
+    "mmlu": 0.012815316575487968
+   },
+   "patched_layers": 252,
+   "calibration": {
+    "dataset": "wikitext2",
+    "split": "train",
+    "samples": 128,
+    "seqlen": 2048,
+    "seed": 42,
+    "dataset_fingerprint": "471c498f3e79e3e7af85c37806156d8e5a126a074c850afb5a56f3e938efcc2c",
+    "hessian_max_bytes": 103079215104,
+    "cache_hits": 66
+   },
+   "seconds": 3230.3,
+   "env": {
+    "gpu_names": [
+     "NVIDIA H200 NVL"
+    ],
+    "git_sha": "00f99589835857bbdb3283de773d0001029a0cd3",
+    "git_dirty": true,
+    "model_sha": "b968826d9c46dd6066d109eabc6255188de91218",
+    "versions": {
+     "python": "3.12.14",
+     "torch": "2.8.0+cu128",
+     "triton": "3.4.0",
+     "transformers": "4.55.2",
+     "lm_eval": "0.4.13",
+     "datasets": "4.8.5"
+    },
+    "utc": "2026-11-12T01:37:55.608823+00:00",
+    "hostname": "berlin.ee.ucl.ac.uk"
+   }
+  }
+ },
+ "compare": {
+  "78ac0a4ed6ea8462332caeb86ec61cf13f50d2c559953ef7c2f661b2002f6415": {
+   "id": "auto_2.50",
+   "budget_bits": "5/2",
+   "uniforms": [
+    "u_gptq_int2"
+   ],
+   "rows": [
+    {
+     "bench": "wikitext2",
+     "ours": 19.78310661786508,
+     "theirs": 915.057943381468,
+     "best": "u_gptq_int2",
+     "diff": -895.2748367636029,
+     "se": null,
+     "verdict": null
+    },
+    {
+     "bench": "c4",
+     "ours": 37.728503490025325,
+     "theirs": 4050.3428492748126,
+     "best": "u_gptq_int2",
+     "diff": -4012.6143457847875,
+     "se": null,
+     "verdict": null
+    },
+    {
+     "bench": "lambada_openai",
+     "ours": 0.087,
+     "theirs": 0.0,
+     "best": "u_gptq_int2",
+     "diff": 0.087,
+     "se": 0.008916866630745942,
+     "verdict": "better"
+    },
+    {
+     "bench": "arc_easy",
+     "ours": 0.342,
+     "theirs": 0.256,
+     "best": "u_gptq_int2",
+     "diff": 0.086,
+     "se": 0.01627479243704413,
+     "verdict": "better"
+    },
+    {
+     "bench": "arc_challenge",
+     "ours": 0.2551194539249147,
+     "theirs": 0.26535836177474403,
+     "best": "u_gptq_int2",
+     "diff": -0.010238907849829351,
+     "se": 0.01646104809175398,
+     "verdict": "same"
+    },
+    {
+     "bench": "hellaswag",
+     "ours": 0.42,
+     "theirs": 0.257,
+     "best": "u_gptq_int2",
+     "diff": 0.163,
+     "se": 0.019099628158574078,
+     "verdict": "better"
+    },
+    {
+     "bench": "piqa",
+     "ours": 0.58,
+     "theirs": 0.498,
+     "best": "u_gptq_int2",
+     "diff": 0.082,
+     "se": 0.019381735001068705,
+     "verdict": "better"
+    },
+    {
+     "bench": "winogrande",
+     "ours": 0.5122336227308603,
+     "theirs": 0.4909234411996843,
+     "best": "u_gptq_int2",
+     "diff": 0.021310181531176007,
+     "se": 0.019887713528642846,
+     "verdict": "same"
+    },
+    {
+     "bench": "mmlu",
+     "ours": 0.22631578947368422,
+     "theirs": 0.24649122807017543,
+     "best": "u_gptq_int2",
+     "diff": -0.02017543859649123,
+     "se": 0.01707415762703383,
+     "verdict": "same"
+    }
+   ],
+   "macro": {
+    "ours": 0.34609555230420846,
+    "theirs": 0.28768186157780057,
+    "best": "u_gptq_int2",
+    "diff": 0.05841369072640792,
+    "se": 0.006456828278013566,
+    "verdict": "better",
+    "tasks": 7
+   }
+  },
+  "5f3ba6f18ee37da53ab300257ea8f775bf75244a576663bbccbb78d9178390bf": {
+   "id": "auto_2.75",
+   "budget_bits": "11/4",
+   "uniforms": [
+    "u_gptq_int2"
+   ],
+   "rows": [
+    {
+     "bench": "wikitext2",
+     "ours": 13.219033835613613,
+     "theirs": 915.057943381468,
+     "best": "u_gptq_int2",
+     "diff": -901.8389095458544,
+     "se": null,
+     "verdict": null
+    },
+    {
+     "bench": "c4",
+     "ours": 22.520408651455615,
+     "theirs": 4050.3428492748126,
+     "best": "u_gptq_int2",
+     "diff": -4027.822440623357,
+     "se": null,
+     "verdict": null
+    },
+    {
+     "bench": "lambada_openai",
+     "ours": 0.303,
+     "theirs": 0.0,
+     "best": "u_gptq_int2",
+     "diff": 0.303,
+     "se": 0.014539683710535193,
+     "verdict": "better"
+    },
+    {
+     "bench": "arc_easy",
+     "ours": 0.513,
+     "theirs": 0.256,
+     "best": "u_gptq_int2",
+     "diff": 0.257,
+     "se": 0.0189554823286117,
+     "verdict": "better"
+    },
+    {
+     "bench": "arc_challenge",
+     "ours": 0.32849829351535836,
+     "theirs": 0.26535836177474403,
+     "best": "u_gptq_int2",
+     "diff": 0.06313993174061433,
+     "se": 0.01743798597155641,
+     "verdict": "better"
+    },
+    {
+     "bench": "hellaswag",
+     "ours": 0.556,
+     "theirs": 0.257,
+     "best": "u_gptq_int2",
+     "diff": 0.299,
+     "se": 0.019595483739448305,
+     "verdict": "better"
+    },
+    {
+     "bench": "piqa",
+     "ours": 0.69,
+     "theirs": 0.498,
+     "best": "u_gptq_int2",
+     "diff": 0.192,
+     "se": 0.019988385015691876,
+     "verdict": "better"
+    },
+    {
+     "bench": "winogrande",
+     "ours": 0.55327545382794,
+     "theirs": 0.4909234411996843,
+     "best": "u_gptq_int2",
+     "diff": 0.062352012628255724,
+     "se": 0.019913551741536643,
+     "verdict": "better"
+    },
+    {
+     "bench": "mmlu",
+     "ours": 0.40614035087719297,
+     "theirs": 0.24649122807017543,
+     "best": "u_gptq_int2",
+     "diff": 0.15964912280701754,
+     "se": 0.019405069857421416,
+     "verdict": "better"
+    }
+   ],
+   "macro": {
+    "ours": 0.47855915688864165,
+    "theirs": 0.28768186157780057,
+    "best": "u_gptq_int2",
+    "diff": 0.19087729531084108,
+    "se": 0.007044205702691429,
+    "verdict": "better",
+    "tasks": 7
+   }
+  },
+  "95ff9632b9ecf91cbf90756f814a60665d0ce13e9e0340de0f2abf21e09dbc0d": {
+   "id": "auto_2.88",
+   "budget_bits": "23/8",
+   "uniforms": [
+    "u_gptq_int2"
+   ],
+   "rows": [
+    {
+     "bench": "wikitext2",
+     "ours": 11.943149423283911,
+     "theirs": 915.057943381468,
+     "best": "u_gptq_int2",
+     "diff": -903.1147939581841,
+     "se": null,
+     "verdict": null
+    },
+    {
+     "bench": "c4",
+     "ours": 19.7703976911583,
+     "theirs": 4050.3428492748126,
+     "best": "u_gptq_int2",
+     "diff": -4030.572451583654,
+     "se": null,
+     "verdict": null
+    },
+    {
+     "bench": "lambada_openai",
+     "ours": 0.454,
+     "theirs": 0.0,
+     "best": "u_gptq_int2",
+     "diff": 0.454,
+     "se": 0.01575221038877186,
+     "verdict": "better"
+    },
+    {
+     "bench": "arc_easy",
+     "ours": 0.601,
+     "theirs": 0.256,
+     "best": "u_gptq_int2",
+     "diff": 0.345,
+     "se": 0.01860971040401546,
+     "verdict": "better"
+    },
+    {
+     "bench": "arc_challenge",
+     "ours": 0.40273037542662116,
+     "theirs": 0.26535836177474403,
+     "best": "u_gptq_int2",
+     "diff": 0.13737201365187712,
+     "se": 0.017923361957141108,
+     "verdict": "better"
+    },
+    {
+     "bench": "hellaswag",
+     "ours": 0.577,
+     "theirs": 0.257,
+     "best": "u_gptq_int2",
+     "diff": 0.32,
+     "se": 0.01913023695530105,
+     "verdict": "better"
+    },
+    {
+     "bench": "piqa",
+     "ours": 0.732,
+     "theirs": 0.498,
+     "best": "u_gptq_int2",
+     "diff": 0.234,
+     "se": 0.020090984237902523,
+     "verdict": "better"
+    },
+    {
+     "bench": "winogrande",
+     "ours": 0.585635359116022,
+     "theirs": 0.4909234411996843,
+     "best": "u_gptq_int2",
+     "diff": 0.0947119179163378,
+     "se": 0.019638663659226084,
+     "verdict": "better"
+    },
+    {
+     "bench": "mmlu",
+     "ours": 0.5894736842105263,
+     "theirs": 0.24649122807017543,
+     "best": "u_gptq_int2",
+     "diff": 0.3429824561403509,
+     "se": 0.01904351998319158,
+     "verdict": "better"
+    }
+   ],
+   "macro": {
+    "ours": 0.5631199169647385,
+    "theirs": 0.28768186157780057,
+    "best": "u_gptq_int2",
+    "diff": 0.27543805538693794,
+    "se": 0.007047429310711328,
+    "verdict": "better",
+    "tasks": 7
+   }
+  },
+  "89307fc4562157363424401fae2abe64f00666b9425e3e165d27772df1842638": {
+   "id": "auto_3.00",
+   "budget_bits": "3",
+   "uniforms": [
+    "u_gptq_int2"
+   ],
+   "rows": [
+    {
+     "bench": "wikitext2",
+     "ours": 11.224197609462264,
+     "theirs": 915.057943381468,
+     "best": "u_gptq_int2",
+     "diff": -903.8337457720057,
+     "se": null,
+     "verdict": null
+    },
+    {
+     "bench": "c4",
+     "ours": 18.073190610680324,
+     "theirs": 4050.3428492748126,
+     "best": "u_gptq_int2",
+     "diff": -4032.2696586641323,
+     "se": null,
+     "verdict": null
+    },
+    {
+     "bench": "lambada_openai",
+     "ours": 0.55,
+     "theirs": 0.0,
+     "best": "u_gptq_int2",
+     "diff": 0.55,
+     "se": 0.015740004693383918,
+     "verdict": "better"
+    },
+    {
+     "bench": "arc_easy",
+     "ours": 0.68,
+     "theirs": 0.256,
+     "best": "u_gptq_int2",
+     "diff": 0.424,
+     "se": 0.018070709741195852,
+     "verdict": "better"
+    },
+    {
+     "bench": "arc_challenge",
+     "ours": 0.45051194539249145,
+     "theirs": 0.26535836177474403,
+     "best": "u_gptq_int2",
+     "diff": 0.18515358361774745,
+     "se": 0.018443071574273155,
+     "verdict": "better"
+    },
+    {
+     "bench": "hellaswag",
+     "ours": 0.6,
+     "theirs": 0.257,
+     "best": "u_gptq_int2",
+     "diff": 0.343,
+     "se": 0.019280112103479137,
+     "verdict": "better"
+    },
+    {
+     "bench": "piqa",
+     "ours": 0.734,
+     "theirs": 0.498,
+     "best": "u_gptq_int2",
+     "diff": 0.236,
+     "se": 0.019613482319279476,
+     "verdict": "better"
+    },
+    {
+     "bench": "winogrande",
+     "ours": 0.6448303078137332,
+     "theirs": 0.4909234411996843,
+     "best": "u_gptq_int2",
+     "diff": 0.15390686661404893,
+     "se": 0.01935654306535952,
+     "verdict": "better"
+    },
+    {
+     "bench": "mmlu",
+     "ours": 0.6675438596491228,
+     "theirs": 0.24649122807017543,
+     "best": "u_gptq_int2",
+     "diff": 0.42105263157894735,
+     "se": 0.018531129258619623,
+     "verdict": "better"
+    }
+   ],
+   "macro": {
+    "ours": 0.6181265875507639,
+    "theirs": 0.28768186157780057,
+    "best": "u_gptq_int2",
+    "diff": 0.3304447259729634,
+    "se": 0.006982390547077959,
+    "verdict": "better",
+    "tasks": 7
+   }
+  },
+  "c3aa8a5bfe127c4d5c49f52f3b7331d3af5d1e7e2d054cc28bbf25e3bd6ca707": {
+   "id": "auto_3.15",
+   "budget_bits": "403/128",
+   "uniforms": [
+    "u_gptq_int2",
+    "u_gptq_int3"
+   ],
+   "rows": [
+    {
+     "bench": "wikitext2",
+     "ours": 10.924316775093565,
+     "theirs": 11.154338990268823,
+     "best": "u_gptq_int3",
+     "diff": -0.23002221517525712,
+     "se": null,
+     "verdict": null
+    },
+    {
+     "bench": "c4",
+     "ours": 17.39501413900685,
+     "theirs": 17.654532312365582,
+     "best": "u_gptq_int3",
+     "diff": -0.25951817335873173,
+     "se": null,
+     "verdict": null
+    },
+    {
+     "bench": "lambada_openai",
+     "ours": 0.599,
+     "theirs": 0.541,
+     "best": "u_gptq_int3",
+     "diff": 0.058,
+     "se": 0.0108974655197782,
+     "verdict": "better"
+    },
+    {
+     "bench": "arc_easy",
+     "ours": 0.731,
+     "theirs": 0.731,
+     "best": "u_gptq_int3",
+     "diff": 0.0,
+     "se": 0.011407459407340888,
+     "verdict": "same"
+    },
+    {
+     "bench": "arc_challenge",
+     "ours": 0.5017064846416383,
+     "theirs": 0.4616040955631399,
+     "best": "u_gptq_int3",
+     "diff": 0.04010238907849829,
+     "se": 0.011424151475775586,
+     "verdict": "better"
+    },
+    {
+     "bench": "hellaswag",
+     "ours": 0.602,
+     "theirs": 0.594,
+     "best": "u_gptq_int3",
+     "diff": 0.008,
+     "se": 0.009274805767347478,
+     "verdict": "same"
+    },
+    {
+     "bench": "piqa",
+     "ours": 0.743,
+     "theirs": 0.749,
+     "best": "u_gptq_int3",
+     "diff": -0.006,
+     "se": 0.009801023419013958,
+     "verdict": "same"
+    },
+    {
+     "bench": "winogrande",
+     "ours": 0.659037095501184,
+     "theirs": 0.6637726913970008,
+     "best": "u_gptq_int3",
+     "diff": -0.004735595895816891,
+     "se": 0.01344536393305346,
+     "verdict": "same"
+    },
+    {
+     "bench": "mmlu",
+     "ours": 0.6754385964912281,
+     "theirs": 0.6745614035087719,
+     "best": "u_gptq_int3",
+     "diff": 0.0008771929824561404,
+     "se": 0.010567406155766942,
+     "verdict": "same"
+    }
+   ],
+   "macro": {
+    "ours": 0.6444545966620072,
+    "theirs": 0.6307054557812732,
+    "best": "u_gptq_int3",
+    "diff": 0.013749140880733935,
+    "se": 0.004174573393972836,
+    "verdict": "better",
+    "tasks": 7
+   }
+  },
+  "0c0939b80cf6b94609a65db44e2e7a891d4140780fec2e9ab2697c7ce9bd1cdd": {
+   "id": "auto_4.16",
+   "budget_bits": "133/32",
+   "uniforms": [
+    "u_gptq_int2",
+    "u_gptq_int3",
+    "u_gptq_int4"
+   ],
+   "rows": [
+    {
+     "bench": "wikitext2",
+     "ours": 9.93360145378633,
+     "theirs": 9.961091217746821,
+     "best": "u_gptq_int4",
+     "diff": -0.02748976396049052,
+     "se": null,
+     "verdict": null
+    },
+    {
+     "bench": "c4",
+     "ours": 15.76091587326591,
+     "theirs": 15.859435054590517,
+     "best": "u_gptq_int4",
+     "diff": -0.09851918132460646,
+     "se": null,
+     "verdict": null
+    },
+    {
+     "bench": "lambada_openai",
+     "ours": 0.64,
+     "theirs": 0.641,
+     "best": "u_gptq_int4",
+     "diff": -0.001,
+     "se": 0.006406250076295808,
+     "verdict": "same"
+    },
+    {
+     "bench": "arc_easy",
+     "ours": 0.792,
+     "theirs": 0.784,
+     "best": "u_gptq_int4",
+     "diff": 0.008,
+     "se": 0.007070076801986382,
+     "verdict": "same"
+    },
+    {
+     "bench": "arc_challenge",
+     "ours": 0.5452218430034129,
+     "theirs": 0.5546075085324232,
+     "best": "u_gptq_int4",
+     "diff": -0.00938566552901024,
+     "se": 0.007485343948478755,
+     "verdict": "same"
+    },
+    {
+     "bench": "hellaswag",
+     "ours": 0.634,
+     "theirs": 0.636,
+     "best": "u_gptq_int4",
+     "diff": -0.002,
+     "se": 0.006483674732590928,
+     "verdict": "same"
+    },
+    {
+     "bench": "piqa",
+     "ours": 0.771,
+     "theirs": 0.764,
+     "best": "u_gptq_int4",
+     "diff": 0.007,
+     "se": 0.005743168462093376,
+     "verdict": "same"
+    },
+    {
+     "bench": "winogrande",
+     "ours": 0.6945540647198106,
+     "theirs": 0.6842936069455406,
+     "best": "u_gptq_int4",
+     "diff": 0.010260457774269928,
+     "se": 0.00889341409239677,
+     "verdict": "same"
+    },
+    {
+     "bench": "mmlu",
+     "ours": 0.7526315789473684,
+     "theirs": 0.7508771929824561,
+     "best": "u_gptq_int4",
+     "diff": 0.0017543859649122807,
+     "se": 0.006448645186642798,
+     "verdict": "same"
+    }
+   ],
+   "macro": {
+    "ours": 0.689915355238656,
+    "theirs": 0.687825472637203,
+    "best": "u_gptq_int4",
+    "diff": 0.0020898826014531385,
+    "se": 0.002644811096364275,
+    "verdict": "same",
+    "tasks": 7
+   }
+  }
+ }
+}

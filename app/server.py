@@ -51,7 +51,7 @@ from typing import Any
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from starlette.exceptions import HTTPException
@@ -133,12 +133,15 @@ class ParseRequest(BaseModel):
 
 class RecipeRequest(BaseModel):
     """``POST /api/autotune/recipe`` body: a knapsack ``grid`` (blocks × kinds of method ids) and the page's
-    ``budget_bits``, a session ``proposal`` name, or an option ``transfer`` id of the bundle."""
+    ``budget_bits``, a session ``proposal`` name, or an option ``transfer`` id of the bundle; ``model``: a
+    language model of the recorded model list (``autotune/models.json``), None = the default bundle."""
 
+    model: str | None = None
     grid: list[list[str]] | None = None
     budget_bits: str | None = None
     proposal: str | None = None
     transfer: str | None = None
+    job: str | None = None  # export only: a finished GPU job of this server on this recipe, put in the bundle
 
 
 class QuantizerJobRequest(BaseModel):
@@ -728,13 +731,39 @@ def create_app(mode: str, device: str, demo_dir: Path, runner: Runner | None = N
 
         return {"agent": "replay", "sentences": recorded_keys(replay, "parse")}
 
-    @app.post("/api/autotune/recipe")
-    def recipe(body: RecipeRequest) -> dict:
+    def bundle_path(model: str | None) -> Path:
+        """The recorded bundle of a language model the model list names (None: the default bundle; a folder
+        without a model list has only the default bundle, for its own model)."""
+        folder = demo_dir / "autotune"
+        default = folder / "bundle.json"
+        if model is None:
+            return default
+        index = folder / "models.json"
+        if not index.is_file():
+            from .autotune_recipe import load_bundle
+
+            if default.is_file() and load_bundle(default)["table"]["meta"].get("model_id") == model:
+                return default
+            entries: list = []
+        else:
+            entries = json.loads(index.read_text(encoding="utf-8")).get("models", [])
+        entry = next((m for m in entries if m.get("id") == model and m.get("kind") == "llm"), None)
+        path = None if entry is None else (folder / entry["bundle"]).resolve()
+        if path is None or not path.is_relative_to(folder.resolve()):
+            raise ApiError(404, "unknown_model", f"측정 기록이 있는 언어 모델이 아닙니다: {model[:80]!r}")
+        return path
+
+    def autotune_recipe(body: RecipeRequest) -> tuple[dict, dict]:
+        """The bundle and the recipe of ``body`` (a grid, a session proposal or an option transfer), with the
+        model's size under it (app/autotune_export.model_size, computed)."""
+        from .autotune_export import linear_bits, model_size
         from .autotune_recipe import RecipeError, grid_recipe, load_bundle, proposal_recipe, transfer_recipe
 
         try:
-            bundle = load_bundle(demo_dir / "autotune" / "bundle.json")
+            bundle = load_bundle(bundle_path(body.model))
             if body.proposal is not None or body.transfer is not None:
+                if bundle.get("session") is None:  # the session is of the model whose bundle carries it
+                    raise ApiError(404, "not_found", "이 모델에는 AI 튜닝 세션 기록이 없습니다.")
                 if agent is None:
                     raise ApiError(503, "agent_unavailable", _PROPOSAL_RECIPE_OFF)
                 from .autotune_live import LiveError, load_config
@@ -743,16 +772,47 @@ def create_app(mode: str, device: str, demo_dir: Path, runner: Runner | None = N
                     session = APP_DIR.parent / load_config(agent)["session"]
                 except LiveError as exc:
                     raise ApiError(exc.status, exc.code, exc.message) from exc
-                if body.transfer is not None:
-                    return transfer_recipe(bundle, session, body.transfer)
-                return proposal_recipe(bundle, session, body.proposal)
-            if body.grid is None:
+                found = (transfer_recipe(bundle, session, body.transfer) if body.transfer is not None
+                         else proposal_recipe(bundle, session, body.proposal))
+            elif body.grid is None:
                 raise ApiError(400, "invalid_request", "grid 또는 proposal 중 하나가 필요합니다.")
-            return grid_recipe(bundle, body.grid, body.budget_bits)
+            else:
+                found = grid_recipe(bundle, body.grid, body.budget_bits)
         except RecipeError as exc:
             raise ApiError(exc.status, exc.code, exc.message) from exc
         except ModuleNotFoundError as exc:  # qr.build checks the MMA preset in tricast (no torch needed)
             raise ApiError(503, "tricast_missing", _RECIPE_NEEDS_TRICAST) from exc
+        bits = linear_bits(bundle, found, body.grid)
+        found["size"] = None if bits is None else model_size(bundle["table"]["meta"]["model_id"], bits)
+        return bundle, found
+
+    @app.post("/api/autotune/recipe")
+    def recipe(body: RecipeRequest) -> dict:
+        return autotune_recipe(body)[1]
+
+    @app.post("/api/autotune/export")
+    def export(body: RecipeRequest) -> Response:
+        """The recipe bundle of a setup as a zip (app/autotune_export.bundle_zip)."""
+        from .autotune_export import bundle_zip
+
+        bundle, found = autotune_recipe(body)
+        live = None
+        if body.job is not None:  # this server's evaluation of this very recipe text, as the page saw it
+            if not isinstance(backend, LiveBackend):
+                raise ApiError(409, "live_mode_required", _LIVE_GPU_ONLY)
+            record = backend.get_quantizer_job(_safe_name(body.job))
+            model = bundle["table"]["meta"].get("model_id")  # a uniform recipe's text names no model
+            if (record["status"] != "done" or (record.get("recipe") or {}).get("yaml") != found["yaml"]
+                    or (record.get("env") or {}).get("model_id") != model):
+                raise ApiError(409, "job_mismatch",
+                               "그 평가 작업은 끝나지 않았거나 이 레시피 파일의 평가가 아닙니다.")
+            live = {"job": record["id"], "tasks": (record.get("request") or {}).get("tasks"),
+                    "results": record["results"], "env": record["env"]}
+        bits = None if found["size"] is None else found["size"]["setup"][0]["bits"]
+        data = bundle_zip(bundle, found, bits, live)
+        disposition = f'attachment; filename="{found["name"]}_tricast.zip"'
+        return Response(content=data, media_type="application/zip",
+                        headers={"Content-Disposition": disposition})
 
     @app.api_route("/api/{path:path}", methods=["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE"])
     def unknown_api(path: str) -> None:

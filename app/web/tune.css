@@ -175,6 +175,72 @@
 .ta-table tr:last-child td { border-bottom: 0; }
 .ta-table .num { text-align: right; font-family: var(--font-data); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .ta-table .mono { font-family: var(--font-data); overflow-wrap: anywhere; }
+/* benchmarks (4): one row each, the existing way's name under its value; the verdict is text with a series dot */
+.ta-bench-wrap { overflow-x: auto; }
+.ta-bench tbody th[scope="row"] { font: 500 var(--t-sm)/1.35 var(--font-ui); color: var(--ink); padding: 6px 8px; }
+.ta-bench small { display: block; font: var(--t-xs)/1.3 var(--font-ui); color: var(--muted); font-weight: 400; white-space: nowrap; }
+.ta-bench tbody th[scope="row"] small { white-space: normal; }
+.ta-bench thead th, .ta-bench thead th.num { font-family: var(--font-ui); white-space: normal; vertical-align: bottom; }
+.ta-bench thead .ta-sw { margin-right: 4px; }
+.ta-bench tbody tr:last-child th { border-bottom: 0; }
+.ta-bench tr.grp th { padding: 10px 8px 3px; font-weight: 600; border-bottom: 0; }
+.ta-bench tbody tr.total th, .ta-bench tbody tr.total td { border-top: 1px solid var(--ink-3); font-weight: 600; }
+.ta-bench small.ta-vd { display: flex; align-items: center; gap: 4px; justify-content: flex-end; color: var(--ink-2); }
+.ta-vd.better::before, .ta-vd.worse::before, .ta-vd.same::before { content: ""; width: 7px; height: 7px; border-radius: 50%;
+  background: var(--rule); flex: none; }
+.ta-vd.better::before { background: var(--c-heur); }
+.ta-vd.worse::before { background: var(--c-uni); }
+@container (max-width: 560px) {
+  .ta-bench th, .ta-bench td, .ta-bench tbody th[scope="row"] { padding: 5px 3px; }
+  .ta-bench { font-size: var(--t-xs); }
+  .ta-bench td small { white-space: normal; }
+}
+
+/* 5 what the evaluated setup hands over: the computed size on the left, the recipe bundle on the right */
+.ta-outgrid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px 28px; align-items: start; }
+@container (min-width: 760px) { .ta-outgrid { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); } }
+/* the file by part on one scale: the original's width is 100% */
+.ta-size { display: grid; grid-template-columns: max-content minmax(60px, 1fr) max-content; gap: 8px 12px; align-items: center;
+  font-size: var(--t-sm); }
+.ta-size > div { display: contents; }
+.ta-size .name { display: grid; color: var(--ink-2); }
+.ta-size .name small { font-size: var(--t-xs); color: var(--muted); }
+.ta-size .num { font-family: var(--font-data); font-variant-numeric: tabular-nums; text-align: right; color: var(--ink-2); }
+.ta-size .cur .name, .ta-size .cur .num { color: var(--ink); font-weight: 600; }
+.ta-size .track { display: flex; gap: 2px; height: 16px; }
+.ta-size .track i { display: block; height: 100%; min-width: 2px; transform-origin: left; animation: ta-grow 0.45s ease-out backwards; }
+.ta-size .track i:first-child { border-radius: 4px 0 0 4px; }
+.ta-size .track i:last-child { border-radius: 0 4px 4px 0; }
+.ta-size .linear, .ta-size-sw.linear { background: var(--ch-b); }
+.ta-size .orig .linear { background: var(--b3); }
+.ta-size .embedding, .ta-size-sw.embedding { background: var(--c-uni); }
+.ta-size-sw { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.ta .mono { font-family: var(--font-data); }
+
+/* 4 the detector's photos side by side through the original, the existing way and Auto-tune — the column of the
+   setup on screen is outlined; the swatches are the ladder's */
+.ta-thumbs { display: flex; flex-wrap: wrap; gap: 6px; }
+.ta-dets { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+@container (min-width: 700px) {
+  .ta-dets { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+.ta-det { border: 1px solid var(--rule); border-radius: 8px; padding: 10px 12px; display: grid; gap: 6px; align-content: start;
+  background: var(--panel); margin: 0; }
+.ta-det.cur { border-color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--ink-2); }
+.ta-det figcaption { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; font-size: var(--t-sm); }
+.ta-det figcaption small { color: var(--muted); font-size: var(--t-xs); }
+.ta-det figcaption .num { margin-left: auto; font-family: var(--font-data); font-variant-numeric: tabular-nums; color: var(--ink-2); }
+.ta-thumb { border: 2px solid transparent; border-radius: 6px; padding: 0; background: none; cursor: pointer; width: 64px; height: 44px; overflow: hidden; }
+.ta-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ta-thumb[aria-selected="true"] { border-color: var(--ch-b); }
+.ta-det { padding: 8px; }
+.ta-det-img { position: relative; line-height: 0; }
+.ta-det-img img { width: 100%; height: auto; border-radius: 4px; display: block; }
+.ta-det-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.ta-det-svg rect { fill: none; stroke: #ffd400; stroke-width: var(--sw); vector-effect: non-scaling-stroke; }
+.ta-det-svg text { fill: #ffd400; paint-order: stroke; stroke: #000; stroke-width: 3px; font-family: var(--font-data); }
+/* a detector's Conv layers in order, two rows, colored by bits as the language-model grid */
+.ta-strip { display: grid; grid-template-columns: repeat(44, minmax(4px, 1fr)); grid-auto-rows: 16px; gap: 2px; }
 
 /* buttons and chips */
 .ta-btn { border: 1px solid var(--rule); background: var(--panel); color: var(--ink); border-radius: 7px; padding: 7px 13px;
@@ -205,5 +271,5 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .ta-progress i { transition: none; }
-  .ta-ladder .track i { animation: none; }
+  .ta-ladder .track i, .ta-size .track i { animation: none; }
 }

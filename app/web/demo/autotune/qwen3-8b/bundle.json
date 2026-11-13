@@ -1,0 +1,9629 @@
+{
+ "baselines": [
+  {
+   "bits": 2.140625,
+   "bits_fraction": "137/64",
+   "id": "u_gptq_int2",
+   "kl": null,
+   "kl_record": null,
+   "method": "gptq_int2",
+   "ppl": 915.057943381468,
+   "ppl_record": {
+    "git_dirty": true,
+    "git_sha": "00f99589835857bbdb3283de773d0001029a0cd3",
+    "gpu": "NVIDIA H200 NVL",
+    "n_tokens": 298862,
+    "ppl": 915.057943381468,
+    "source": "records/u_gptq_int2.json"
+   },
+   "recipe_file_sha256": "85392373a498bac95e3d693de8739dd2c1d1f5e9b72d3b7ca2151d65db1c9a40",
+   "rejected": []
+  },
+  {
+   "bits": 3.1484375,
+   "bits_fraction": "403/128",
+   "id": "u_gptq_int3",
+   "kl": null,
+   "kl_record": null,
+   "method": "gptq_int3",
+   "ppl": 11.154338990268823,
+   "ppl_record": {
+    "git_dirty": true,
+    "git_sha": "00f99589835857bbdb3283de773d0001029a0cd3",
+    "gpu": "NVIDIA H200 NVL",
+    "n_tokens": 298862,
+    "ppl": 11.154338990268823,
+    "source": "records/u_gptq_int3.json"
+   },
+   "recipe_file_sha256": "115245e99631306129763c9968280d56b0544bd1ce2e975a6f522340bc4c6d74",
+   "rejected": []
+  },
+  {
+   "bits": 4.15625,
+   "bits_fraction": "133/32",
+   "id": "u_gptq_int4",
+   "kl": null,
+   "kl_record": null,
+   "method": "gptq_int4",
+   "ppl": 9.961091217746821,
+   "ppl_record": {
+    "git_dirty": true,
+    "git_sha": "00f99589835857bbdb3283de773d0001029a0cd3",
+    "gpu": "NVIDIA H200 NVL",
+    "n_tokens": 298862,
+    "ppl": 9.961091217746821,
+    "source": "records/u_gptq_int4.json"
+   },
+   "recipe_file_sha256": "8ea93a35b3eadffdd809deb670564dc366f89290918b13cd01a4a0969268f7af",
+   "rejected": []
+  },
+  {
+   "bits": 8.006453804347826,
+   "bits_fraction": "23571/2944",
+   "id": "u_int8_w",
+   "kl": null,
+   "kl_record": null,
+   "method": "int8_w",
+   "ppl": 9.710134112575505,
+   "ppl_record": {
+    "git_dirty": true,
+    "git_sha": "00f99589835857bbdb3283de773d0001029a0cd3",
+    "gpu": "NVIDIA H200 NVL",
+    "n_tokens": 298862,
+    "ppl": 9.710134112575505,
+    "source": "records/u_int8_w.json"
+   },
+   "recipe_file_sha256": "ee13392038868baaf4699d59f621959b81b0840e26dc6cfcbd90daa60b1d26e8",
+   "rejected": []
+  }
+ ],
+ "native": {
+  "git_dirty": true,
+  "git_sha": "00f99589835857bbdb3283de773d0001029a0cd3",
+  "gpu": "NVIDIA H200 NVL",
+  "n_tokens": 298862,
+  "ppl": 9.724540846416106,
+  "source": "records/native.json"
+ },
+ "schema": "tricast.autotune_demo/1",
+ "session": null,
+ "solutions": [
+  {
+   "bits": 2.499688632246377,
+   "budget_bits": "5/2",
+   "compute": null,
+   "dir": "auto_2.50",
+   "grid": [
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ]
+   ],
+   "id": "auto_2.50",
+   "kl": null,
+   "kl_record": null,
+   "kv": "none",
+   "method_counts": {
+    "gptq_int2": 145,
+    "gptq_int3": 92,
+    "gptq_int4": 15
+   },
+   "objective": "kl_minus_floor",
+   "ppl": 19.78310661786508,
+   "ppl_record": {
+    "git_dirty": true,
+    "git_sha": "00f99589835857bbdb3283de773d0001029a0cd3",
+    "gpu": "NVIDIA H200 NVL",
+    "n_tokens": 298862,
+    "ppl": 19.78310661786508,
+    "source": "records/auto_2.50.json"
+   },
+   "predicted_kl_sum": 0.9858337511979227,
+   "predicted_kl_sum_minus_floor": 0.8124082564573835,
+   "recipe_file_sha256": "78ac0a4ed6ea8462332caeb86ec61cf13f50d2c559953ef7c2f661b2002f6415",
+   "rejected": []
+  },
+  {
+   "bits": 2.749816009963768,
+   "budget_bits": "11/4",
+   "compute": null,
+   "dir": "auto_2.75",
+   "grid": [
+    [
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ]
+   ],
+   "id": "auto_2.75",
+   "kl": null,
+   "kl_record": null,
+   "kv": "none",
+   "method_counts": {
+    "gptq_int2": 100,
+    "gptq_int3": 121,
+    "gptq_int4": 31
+   },
+   "objective": "kl_minus_floor",
+   "ppl": 13.219033835613613,
+   "ppl_record": {
+    "git_dirty": true,
+    "git_sha": "00f99589835857bbdb3283de773d0001029a0cd3",
+    "gpu": "NVIDIA H200 NVL",
+    "n_tokens": 298862,
+    "ppl": 13.219033835613613,
+    "source": "records/auto_2.75.json"
+   },
+   "predicted_kl_sum": 0.6945337212047313,
+   "predicted_kl_sum_minus_floor": 0.5211082264641923,
+   "recipe_file_sha256": "5f3ba6f18ee37da53ab300257ea8f775bf75244a576663bbccbb78d9178390bf",
+   "rejected": []
+  },
+  {
+   "bits": 2.874575407608696,
+   "budget_bits": "23/8",
+   "compute": null,
+   "dir": "auto_2.88",
+   "grid": [
+    [
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ]
+   ],
+   "id": "auto_2.88",
+   "kl": null,
+   "kl_record": null,
+   "kv": "none",
+   "method_counts": {
+    "gptq_int2": 70,
+    "gptq_int3": 137,
+    "gptq_int4": 45
+   },
+   "objective": "kl_minus_floor",
+   "ppl": 11.943149423283911,
+   "ppl_record": {
+    "git_dirty": true,
+    "git_sha": "00f99589835857bbdb3283de773d0001029a0cd3",
+    "gpu": "NVIDIA H200 NVL",
+    "n_tokens": 298862,
+    "ppl": 11.943149423283911,
+    "source": "records/auto_2.88.json"
+   },
+   "predicted_kl_sum": 0.5962322859236955,
+   "predicted_kl_sum_minus_floor": 0.42280679118315617,
+   "recipe_file_sha256": "95ff9632b9ecf91cbf90756f814a60665d0ce13e9e0340de0f2abf21e09dbc0d",
+   "rejected": []
+  },
+  {
+   "bits": 2.999943387681159,
+   "budget_bits": "3",
+   "compute": null,
+   "dir": "auto_3.00",
+   "grid": [
+    [
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ]
+   ],
+   "id": "auto_3.00",
+   "kl": null,
+   "kl_record": null,
+   "kv": "none",
+   "method_counts": {
+    "gptq_int2": 46,
+    "gptq_int3": 152,
+    "gptq_int4": 54
+   },
+   "objective": "kl_minus_floor",
+   "ppl": 11.224197609462264,
+   "ppl_record": {
+    "git_dirty": true,
+    "git_sha": "00f99589835857bbdb3283de773d0001029a0cd3",
+    "gpu": "NVIDIA H200 NVL",
+    "n_tokens": 298862,
+    "ppl": 11.224197609462264,
+    "source": "records/auto_3.00.json"
+   },
+   "predicted_kl_sum": 0.5166796557745278,
+   "predicted_kl_sum_minus_floor": 0.3432541610339884,
+   "recipe_file_sha256": "89307fc4562157363424401fae2abe64f00666b9425e3e165d27772df1842638",
+   "rejected": []
+  },
+  {
+   "bits": 3.148220486111111,
+   "budget_bits": "403/128",
+   "compute": null,
+   "dir": "auto_3.15",
+   "grid": [
+    [
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int2",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int4"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int4"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int4"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int4"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int4"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "int8_w",
+     "gptq_int2",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "int8_w",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3"
+    ]
+   ],
+   "id": "auto_3.15",
+   "kl": null,
+   "kl_record": null,
+   "kv": "none",
+   "method_counts": {
+    "gptq_int2": 23,
+    "gptq_int3": 161,
+    "gptq_int4": 66,
+    "int8_w": 2
+   },
+   "objective": "kl_minus_floor",
+   "ppl": 10.924316775093565,
+   "ppl_record": {
+    "git_dirty": true,
+    "git_sha": "00f99589835857bbdb3283de773d0001029a0cd3",
+    "gpu": "NVIDIA H200 NVL",
+    "n_tokens": 298862,
+    "ppl": 10.924316775093565,
+    "source": "records/auto_3.15.json"
+   },
+   "predicted_kl_sum": 0.44872835870734595,
+   "predicted_kl_sum_minus_floor": 0.2753028639668067,
+   "recipe_file_sha256": "c3aa8a5bfe127c4d5c49f52f3b7331d3af5d1e7e2d054cc28bbf25e3bd6ca707",
+   "rejected": []
+  },
+  {
+   "bits": 4.156084880736715,
+   "budget_bits": "133/32",
+   "compute": null,
+   "dir": "auto_4.16",
+   "grid": [
+    [
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int4"
+    ],
+    [
+     "gptq_int2",
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int4"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int4"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int4"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4"
+    ],
+    [
+     "gptq_int4",
+     "gptq_int4",
+     "int8_w",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "int8_w",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4"
+    ],
+    [
+     "gptq_int3",
+     "int8_w",
+     "int8_w",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4"
+    ],
+    [
+     "gptq_int4",
+     "int8_w",
+     "int8_w",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4"
+    ],
+    [
+     "gptq_int4",
+     "int8_w",
+     "int8_w",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4"
+    ],
+    [
+     "gptq_int3",
+     "gptq_int4",
+     "int8_w",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4"
+    ],
+    [
+     "gptq_int4",
+     "int8_w",
+     "int8_w",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4"
+    ],
+    [
+     "gptq_int4",
+     "gptq_int4",
+     "int8_w",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4"
+    ],
+    [
+     "gptq_int4",
+     "gptq_int4",
+     "int8_w",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4"
+    ],
+    [
+     "gptq_int4",
+     "int8_w",
+     "int8_w",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4"
+    ],
+    [
+     "gptq_int4",
+     "int8_w",
+     "int8_w",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4"
+    ],
+    [
+     "gptq_int4",
+     "int8_w",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4"
+    ],
+    [
+     "gptq_int4",
+     "int8_w",
+     "int8_w",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4"
+    ],
+    [
+     "gptq_int4",
+     "int8_w",
+     "int8_w",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4"
+    ],
+    [
+     "gptq_int4",
+     "int8_w",
+     "int8_w",
+     "gptq_int4",
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4"
+    ],
+    [
+     "gptq_int4",
+     "int8_w",
+     "int8_w",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4"
+    ],
+    [
+     "gptq_int4",
+     "int8_w",
+     "int8_w",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4"
+    ],
+    [
+     "gptq_int4",
+     "int8_w",
+     "int8_w",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4"
+    ],
+    [
+     "gptq_int4",
+     "int8_w",
+     "int8_w",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4"
+    ],
+    [
+     "gptq_int4",
+     "int8_w",
+     "int8_w",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4"
+    ],
+    [
+     "gptq_int3",
+     "int8_w",
+     "int8_w",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4"
+    ],
+    [
+     "gptq_int4",
+     "int8_w",
+     "int8_w",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4"
+    ],
+    [
+     "gptq_int4",
+     "int8_w",
+     "int8_w",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4"
+    ],
+    [
+     "gptq_int3",
+     "int8_w",
+     "int8_w",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4"
+    ],
+    [
+     "gptq_int4",
+     "int8_w",
+     "int8_w",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4"
+    ],
+    [
+     "gptq_int4",
+     "int8_w",
+     "int8_w",
+     "gptq_int3",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4"
+    ],
+    [
+     "gptq_int4",
+     "int8_w",
+     "int8_w",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4"
+    ],
+    [
+     "gptq_int4",
+     "int8_w",
+     "int8_w",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4"
+    ],
+    [
+     "gptq_int3",
+     "int8_w",
+     "int8_w",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4",
+     "gptq_int4"
+    ]
+   ],
+   "id": "auto_4.16",
+   "kl": null,
+   "kl_record": null,
+   "kv": "none",
+   "method_counts": {
+    "gptq_int2": 1,
+    "gptq_int3": 28,
+    "gptq_int4": 171,
+    "int8_w": 52
+   },
+   "objective": "kl_minus_floor",
+   "ppl": 9.93360145378633,
+   "ppl_record": {
+    "git_dirty": true,
+    "git_sha": "00f99589835857bbdb3283de773d0001029a0cd3",
+    "gpu": "NVIDIA H200 NVL",
+    "n_tokens": 298862,
+    "ppl": 9.93360145378633,
+    "source": "records/auto_4.16.json"
+   },
+   "predicted_kl_sum": 0.2517048966370013,
+   "predicted_kl_sum_minus_floor": 0.07828212888563835,
+   "recipe_file_sha256": "0c0939b80cf6b94609a65db44e2e7a891d4140780fec2e9ab2697c7ce9bd1cdd",
+   "rejected": []
+  }
+ ],
+ "table": {
+  "blocks": 36,
+  "floor_rule": "max(0, kl - floor) for every non-BF16 method; BF16 is a skip (no patch): 0, no floor",
+  "kinds": [
+   "q_proj",
+   "k_proj",
+   "v_proj",
+   "o_proj",
+   "gate_proj",
+   "up_proj",
+   "down_proj"
+  ],
+  "layers": [
+   {
+    "block": 0,
+    "floor": 0.0009688724479603381,
+    "in_features": 4096,
+    "kind": "q_proj",
+    "kl": [
+     0.0,
+     0.001079222319114663,
+     0.0014369885541530092,
+     0.004308066325449037,
+     0.000957555036688823
+    ],
+    "name": "model.layers.0.self_attn.q_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00011034987115432493,
+     0.00046811610619267117,
+     0.0033391938774886987,
+     0.0
+    ]
+   },
+   {
+    "block": 0,
+    "floor": 0.0009806617045864299,
+    "in_features": 4096,
+    "kind": "k_proj",
+    "kl": [
+     0.0,
+     0.0011288510225419025,
+     0.0013292379220908132,
+     0.002781924673879264,
+     0.0009597574253811643
+    ],
+    "name": "model.layers.0.self_attn.k_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00014818931795547267,
+     0.0003485762175043834,
+     0.001801262969292834,
+     0.0
+    ]
+   },
+   {
+    "block": 0,
+    "floor": 0.0009772673320327663,
+    "in_features": 4096,
+    "kind": "v_proj",
+    "kl": [
+     0.0,
+     0.0011200088076791185,
+     0.0014202871280788146,
+     0.0038873161567644543,
+     0.0009557646496558723
+    ],
+    "name": "model.layers.0.self_attn.v_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00014274147564635221,
+     0.0004430197960460483,
+     0.002910048824731688,
+     0.0
+    ]
+   },
+   {
+    "block": 0,
+    "floor": 0.0009877118010727351,
+    "in_features": 4096,
+    "kind": "o_proj",
+    "kl": [
+     0.0,
+     0.001028424182419461,
+     0.0011970809533763832,
+     0.0027774585047190973,
+     0.0010341948946281808
+    ],
+    "name": "model.layers.0.self_attn.o_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     4.071238134672594e-05,
+     0.00020936915230364804,
+     0.0017897467036463621,
+     4.6483093555445667e-05
+    ]
+   },
+   {
+    "block": 0,
+    "floor": 0.0009666998964704598,
+    "in_features": 4096,
+    "kind": "gate_proj",
+    "kl": [
+     0.0,
+     0.001043589312312275,
+     0.0011512530009404561,
+     0.0017897000389364157,
+     0.0009548689449681675
+    ],
+    "name": "model.layers.0.mlp.gate_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     7.68894158418151e-05,
+     0.0001845531044699963,
+     0.0008230001424659559,
+     0.0
+    ]
+   },
+   {
+    "block": 0,
+    "floor": 0.0009419998261783577,
+    "in_features": 4096,
+    "kind": "up_proj",
+    "kl": [
+     0.0,
+     0.0010197931736178514,
+     0.001167380307362229,
+     0.002187114188711104,
+     0.0009872234501314373
+    ],
+    "name": "model.layers.0.mlp.up_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     7.779334743949367e-05,
+     0.00022538048118387125,
+     0.0012451143625327463,
+     4.5223623953079576e-05
+    ]
+   },
+   {
+    "block": 0,
+    "floor": 0.0009990116877723154,
+    "in_features": 12288,
+    "kind": "down_proj",
+    "kl": [
+     0.0,
+     0.001345322667883279,
+     0.0022856212413288907,
+     0.010282615545275419,
+     0.000966545999806876
+    ],
+    "name": "model.layers.0.mlp.down_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0003463109801109636,
+     0.0012866095535565753,
+     0.009283603857503103,
+     0.0
+    ]
+   },
+   {
+    "block": 1,
+    "floor": 0.0008968628572877582,
+    "in_features": 4096,
+    "kind": "q_proj",
+    "kl": [
+     0.0,
+     0.001018018154336676,
+     0.0009810879671591079,
+     0.001075911689113775,
+     0.000944430056420456
+    ],
+    "name": "model.layers.1.self_attn.q_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00012115529704891776,
+     8.42251098713497e-05,
+     0.00017904883182601693,
+     4.756719913269784e-05
+    ]
+   },
+   {
+    "block": 1,
+    "floor": 0.0009225089126163552,
+    "in_features": 4096,
+    "kind": "k_proj",
+    "kl": [
+     0.0,
+     0.0009701765655924911,
+     0.0010127751347914116,
+     0.001202866379415646,
+     0.000979998088776937
+    ],
+    "name": "model.layers.1.self_attn.k_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     4.766765297613599e-05,
+     9.026622217505643e-05,
+     0.0002803574667992908,
+     5.748917616058176e-05
+    ]
+   },
+   {
+    "block": 1,
+    "floor": 0.0009626347630699924,
+    "in_features": 4096,
+    "kind": "v_proj",
+    "kl": [
+     0.0,
+     0.0010437355582793972,
+     0.0011819628660327806,
+     0.0016532185828097637,
+     0.0010014989807319104
+    ],
+    "name": "model.layers.1.self_attn.v_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     8.11007952094048e-05,
+     0.00021932810296278822,
+     0.0006905838197397713,
+     3.8864217661918e-05
+    ]
+   },
+   {
+    "block": 1,
+    "floor": 0.0009646057938345621,
+    "in_features": 4096,
+    "kind": "o_proj",
+    "kl": [
+     0.0,
+     0.0010034133762604727,
+     0.001294509420907846,
+     0.0017497944720040533,
+     0.0009606740396615414
+    ],
+    "name": "model.layers.1.self_attn.o_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     3.880758242591064e-05,
+     0.0003299036270732839,
+     0.0007851886781694912,
+     0.0
+    ]
+   },
+   {
+    "block": 1,
+    "floor": 0.0009840750545230092,
+    "in_features": 4096,
+    "kind": "gate_proj",
+    "kl": [
+     0.0,
+     0.0010356799131279659,
+     0.001144230302495805,
+     0.0019445210856602483,
+     0.0009857492162821029
+    ],
+    "name": "model.layers.1.mlp.gate_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     5.160485860495668e-05,
+     0.00016015524797279588,
+     0.000960446031137239,
+     1.674161759093653e-06
+    ]
+   },
+   {
+    "block": 1,
+    "floor": 0.0009223116452332456,
+    "in_features": 4096,
+    "kind": "up_proj",
+    "kl": [
+     0.0,
+     0.0010257392160750163,
+     0.0012177563225933944,
+     0.001913042922858632,
+     0.0010297684573463525
+    ],
+    "name": "model.layers.1.mlp.up_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00010342757084177067,
+     0.00029544467736014883,
+     0.0009907312776253863,
+     0.00010745681211310693
+    ]
+   },
+   {
+    "block": 1,
+    "floor": 0.0009378977688446177,
+    "in_features": 12288,
+    "kind": "down_proj",
+    "kl": [
+     0.0,
+     0.001155335134250132,
+     0.0018847747131347306,
+     0.006988801115295054,
+     0.0009491870228952659
+    ],
+    "name": "model.layers.1.mlp.down_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00021743736540551434,
+     0.0009468769442901129,
+     0.006050903346450437,
+     1.1289254050648187e-05
+    ]
+   },
+   {
+    "block": 2,
+    "floor": 0.0009421680669860245,
+    "in_features": 4096,
+    "kind": "q_proj",
+    "kl": [
+     0.0,
+     0.0009964296190579246,
+     0.0010544215432612795,
+     0.001611907334555374,
+     0.0009574728674731165
+    ],
+    "name": "model.layers.2.self_attn.q_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     5.4261552071900023e-05,
+     0.000112253476275255,
+     0.0006697392675693494,
+     1.5304800487091924e-05
+    ]
+   },
+   {
+    "block": 2,
+    "floor": 0.0009903264619144014,
+    "in_features": 4096,
+    "kind": "k_proj",
+    "kl": [
+     0.0,
+     0.0010055270541336715,
+     0.0010726309290003816,
+     0.0013413182318824635,
+     0.0010057795237450894
+    ],
+    "name": "model.layers.2.self_attn.k_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     1.5200592219270087e-05,
+     8.23044670859802e-05,
+     0.0003509917699680621,
+     1.5453061830688047e-05
+    ]
+   },
+   {
+    "block": 2,
+    "floor": 0.0009592733523948135,
+    "in_features": 4096,
+    "kind": "v_proj",
+    "kl": [
+     0.0,
+     0.0010223833363347645,
+     0.0011359028525920276,
+     0.0017249460490870107,
+     0.0009240269611656555
+    ],
+    "name": "model.layers.2.self_attn.v_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     6.3109983939951e-05,
+     0.00017662950019721414,
+     0.0007656726966921972,
+     0.0
+    ]
+   },
+   {
+    "block": 2,
+    "floor": 0.0009616848532278128,
+    "in_features": 4096,
+    "kind": "o_proj",
+    "kl": [
+     0.0,
+     0.0010086689973679932,
+     0.0011495478336618515,
+     0.001711045187751111,
+     0.0009767350553045622
+    ],
+    "name": "model.layers.2.self_attn.o_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     4.698414414018039e-05,
+     0.00018786298043403865,
+     0.0007493603345232981,
+     1.505020207674939e-05
+    ]
+   },
+   {
+    "block": 2,
+    "floor": 0.0009393901855270757,
+    "in_features": 4096,
+    "kind": "gate_proj",
+    "kl": [
+     0.0,
+     0.0010213996550419552,
+     0.001186344095853445,
+     0.00240184112227239,
+     0.0010523087735048236
+    ],
+    "name": "model.layers.2.mlp.gate_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     8.200946951487952e-05,
+     0.00024695391032636925,
+     0.0014624509367453145,
+     0.00011291858797774792
+    ]
+   },
+   {
+    "block": 2,
+    "floor": 0.0009521868694387345,
+    "in_features": 4096,
+    "kind": "up_proj",
+    "kl": [
+     0.0,
+     0.0009945085332825011,
+     0.0012159324048641462,
+     0.0022062759350293904,
+     0.0009916095320144287
+    ],
+    "name": "model.layers.2.mlp.up_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     4.2321663843766636e-05,
+     0.0002637455354254117,
+     0.001254089065590656,
+     3.942266257569418e-05
+    ]
+   },
+   {
+    "block": 2,
+    "floor": 0.0009359152347605867,
+    "in_features": 12288,
+    "kind": "down_proj",
+    "kl": [
+     0.0,
+     0.0012112467776522655,
+     0.0018573883012703522,
+     0.006149528009256035,
+     0.000933694665916157
+    ],
+    "name": "model.layers.2.mlp.down_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00027533154289167885,
+     0.0009214730665097655,
+     0.005213612774495448,
+     0.0
+    ]
+   },
+   {
+    "block": 3,
+    "floor": 0.0009352747416210517,
+    "in_features": 4096,
+    "kind": "q_proj",
+    "kl": [
+     0.0,
+     0.0009494429580827831,
+     0.0010113098450357395,
+     0.0014055723013392226,
+     0.0009619382839007127
+    ],
+    "name": "model.layers.3.self_attn.q_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     1.416821646173141e-05,
+     7.603510341468774e-05,
+     0.00047029755971817085,
+     2.6663542279660966e-05
+    ]
+   },
+   {
+    "block": 3,
+    "floor": 0.0009304503287630096,
+    "in_features": 4096,
+    "kind": "k_proj",
+    "kl": [
+     0.0,
+     0.0009645943962403924,
+     0.0010409280127838805,
+     0.001474688864655282,
+     0.0009156822557408843
+    ],
+    "name": "model.layers.3.self_attn.k_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     3.414406747738279e-05,
+     0.00011047768402087086,
+     0.0005442385358922725,
+     0.0
+    ]
+   },
+   {
+    "block": 3,
+    "floor": 0.0009387129889855729,
+    "in_features": 4096,
+    "kind": "v_proj",
+    "kl": [
+     0.0,
+     0.0010495568992840583,
+     0.0011765451766054794,
+     0.0021113921504060775,
+     0.000971997538662273
+    ],
+    "name": "model.layers.3.self_attn.v_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00011084391029848547,
+     0.00023783218761990648,
+     0.0011726791614205046,
+     3.328454967670017e-05
+    ]
+   },
+   {
+    "block": 3,
+    "floor": 0.0009307214427155499,
+    "in_features": 4096,
+    "kind": "o_proj",
+    "kl": [
+     0.0,
+     0.0009926326343756113,
+     0.0013046379609610939,
+     0.002128599389776855,
+     0.0009301350978126208
+    ],
+    "name": "model.layers.3.self_attn.o_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     6.191119166006141e-05,
+     0.000373916518245544,
+     0.0011978779470613052,
+     0.0
+    ]
+   },
+   {
+    "block": 3,
+    "floor": 0.0009529970437149696,
+    "in_features": 4096,
+    "kind": "gate_proj",
+    "kl": [
+     0.0,
+     0.0010241717445505717,
+     0.001374748290925036,
+     0.002927130230229215,
+     0.0009513196072651739
+    ],
+    "name": "model.layers.3.mlp.gate_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     7.117470083560214e-05,
+     0.0004217512472100665,
+     0.0019741331865142453,
+     0.0
+    ]
+   },
+   {
+    "block": 3,
+    "floor": 0.0009197944837031453,
+    "in_features": 4096,
+    "kind": "up_proj",
+    "kl": [
+     0.0,
+     0.0012108370186567192,
+     0.0015429021877639303,
+     0.0034940533867751943,
+     0.0009530734877733994
+    ],
+    "name": "model.layers.3.mlp.up_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0002910425349535739,
+     0.0006231077040607851,
+     0.002574258903072049,
+     3.327900407025411e-05
+    ]
+   },
+   {
+    "block": 3,
+    "floor": 0.0009187965179826723,
+    "in_features": 12288,
+    "kind": "down_proj",
+    "kl": [
+     0.0,
+     0.0015024702946492084,
+     0.0029699950816238804,
+     0.012294472117072155,
+     0.0009705690998248853
+    ],
+    "name": "model.layers.3.mlp.down_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.000583673776666536,
+     0.002051198563641208,
+     0.011375675599089483,
+     5.177258184221303e-05
+    ]
+   },
+   {
+    "block": 4,
+    "floor": 0.0009135187511375825,
+    "in_features": 4096,
+    "kind": "q_proj",
+    "kl": [
+     0.0,
+     0.0009595367719979167,
+     0.0010759180856899045,
+     0.0017387274790543427,
+     0.0009825660422731713
+    ],
+    "name": "model.layers.4.self_attn.q_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     4.6018020860334285e-05,
+     0.00016239933455232207,
+     0.0008252087279167602,
+     6.904729113558887e-05
+    ]
+   },
+   {
+    "block": 4,
+    "floor": 0.0009373462653615621,
+    "in_features": 4096,
+    "kind": "k_proj",
+    "kl": [
+     0.0,
+     0.0009346192761854248,
+     0.001033738561015892,
+     0.0015703491446862289,
+     0.0009183313121413441
+    ],
+    "name": "model.layers.4.self_attn.k_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0,
+     9.639229565432984e-05,
+     0.0006330028793246668,
+     0.0
+    ]
+   },
+   {
+    "block": 4,
+    "floor": 0.0009453527313592087,
+    "in_features": 4096,
+    "kind": "v_proj",
+    "kl": [
+     0.0,
+     0.0010880236287624924,
+     0.0013389968996331003,
+     0.002401284974423765,
+     0.0010058887950721966
+    ],
+    "name": "model.layers.4.self_attn.v_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00014267089740328375,
+     0.00039364416827389163,
+     0.0014559322430645562,
+     6.0536063712987934e-05
+    ]
+   },
+   {
+    "block": 4,
+    "floor": 0.0009029708469325436,
+    "in_features": 4096,
+    "kind": "o_proj",
+    "kl": [
+     0.0,
+     0.001045305054939424,
+     0.0012488147705982263,
+     0.0024808385466616326,
+     0.0009225373540578455
+    ],
+    "name": "model.layers.4.self_attn.o_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0001423342080068803,
+     0.00034584392366568265,
+     0.001577867699729089,
+     1.956650712530187e-05
+    ]
+   },
+   {
+    "block": 4,
+    "floor": 0.0009135403846201967,
+    "in_features": 4096,
+    "kind": "gate_proj",
+    "kl": [
+     0.0,
+     0.0012321236167013871,
+     0.001730126529849931,
+     0.005672669847230731,
+     0.0009628664239710241
+    ],
+    "name": "model.layers.4.mlp.gate_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0003185832320811904,
+     0.0008165861452297344,
+     0.004759129462610534,
+     4.932603935082743e-05
+    ]
+   },
+   {
+    "block": 4,
+    "floor": 0.0009420571476593082,
+    "in_features": 4096,
+    "kind": "up_proj",
+    "kl": [
+     0.0,
+     0.0012141065042294472,
+     0.0020140511582730693,
+     0.006652713218988502,
+     0.0009651460000911775
+    ],
+    "name": "model.layers.4.mlp.up_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.000272049356570139,
+     0.0010719940106137611,
+     0.005710656071329194,
+     2.3088852431869225e-05
+    ]
+   },
+   {
+    "block": 4,
+    "floor": 0.000902745960832973,
+    "in_features": 12288,
+    "kind": "down_proj",
+    "kl": [
+     0.0,
+     0.001715832921307744,
+     0.004907072405923215,
+     0.02863185570577494,
+     0.0010230767757870786
+    ],
+    "name": "model.layers.4.mlp.down_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0008130869604747711,
+     0.004004326445090242,
+     0.027729109744941968,
+     0.00012033081495410559
+    ]
+   },
+   {
+    "block": 5,
+    "floor": 0.0009385956082624608,
+    "in_features": 4096,
+    "kind": "q_proj",
+    "kl": [
+     0.0,
+     0.0009873038035779478,
+     0.0010697202284147948,
+     0.002019594617315264,
+     0.0009411759804776328
+    ],
+    "name": "model.layers.5.self_attn.q_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     4.8708195315487045e-05,
+     0.00013112462015233404,
+     0.0010809990090528032,
+     2.5803722151720608e-06
+    ]
+   },
+   {
+    "block": 5,
+    "floor": 0.0008936992770754163,
+    "in_features": 4096,
+    "kind": "k_proj",
+    "kl": [
+     0.0,
+     0.0009376822236426376,
+     0.0010460131486337066,
+     0.002007722164453695,
+     0.0009728830077277014
+    ],
+    "name": "model.layers.5.self_attn.k_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     4.3982946567221333e-05,
+     0.00015231387155829033,
+     0.0011140228873782786,
+     7.918373065228513e-05
+    ]
+   },
+   {
+    "block": 5,
+    "floor": 0.0008807423852937099,
+    "in_features": 4096,
+    "kind": "v_proj",
+    "kl": [
+     0.0,
+     0.0010202972578878995,
+     0.0013343834233272634,
+     0.0024556958404102153,
+     0.0009183905262350908
+    ],
+    "name": "model.layers.5.self_attn.v_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00013955487259418957,
+     0.0004536410380335535,
+     0.0015749534551165053,
+     3.76481409413809e-05
+    ]
+   },
+   {
+    "block": 5,
+    "floor": 0.0009218248428044111,
+    "in_features": 4096,
+    "kind": "o_proj",
+    "kl": [
+     0.0,
+     0.0009938207219977592,
+     0.0012071559581664038,
+     0.002489126264942668,
+     0.000970515535731776
+    ],
+    "name": "model.layers.5.self_attn.o_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     7.199587919334805e-05,
+     0.00028533111536199263,
+     0.0015673014221382568,
+     4.86906929273649e-05
+    ]
+   },
+   {
+    "block": 5,
+    "floor": 0.0009010550746789804,
+    "in_features": 4096,
+    "kind": "gate_proj",
+    "kl": [
+     0.0,
+     0.0013545484533455917,
+     0.0021922312387045364,
+     0.00891195101896961,
+     0.0009483158808889403
+    ],
+    "name": "model.layers.5.mlp.gate_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0004534933786666112,
+     0.001291176164025556,
+     0.008010895944290629,
+     4.7260806209959826e-05
+    ]
+   },
+   {
+    "block": 5,
+    "floor": 0.0009069997522144879,
+    "in_features": 4096,
+    "kind": "up_proj",
+    "kl": [
+     0.0,
+     0.0014144057904012263,
+     0.002728882388024004,
+     0.010469320394946958,
+     0.0009870211757729952
+    ],
+    "name": "model.layers.5.mlp.up_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0005074060381867385,
+     0.0018218826358095163,
+     0.00956232064273247,
+     8.002142355850728e-05
+    ]
+   },
+   {
+    "block": 5,
+    "floor": 0.0008739789465809945,
+    "in_features": 12288,
+    "kind": "down_proj",
+    "kl": [
+     0.0,
+     0.0018505359760811661,
+     0.004978431979363163,
+     0.0255838503080451,
+     0.0009617312782104232
+    ],
+    "name": "model.layers.5.mlp.down_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0009765570295001716,
+     0.004104453032782169,
+     0.024709871361464106,
+     8.775233162942864e-05
+    ]
+   },
+   {
+    "block": 6,
+    "floor": 0.0008934338608591581,
+    "in_features": 4096,
+    "kind": "q_proj",
+    "kl": [
+     0.0,
+     0.0009671136192809746,
+     0.0011147752617907433,
+     0.0019711418477581554,
+     0.0008921372997219508
+    ],
+    "name": "model.layers.6.self_attn.q_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     7.367975842181656e-05,
+     0.00022134140093158525,
+     0.0010777079868989972,
+     0.0
+    ]
+   },
+   {
+    "block": 6,
+    "floor": 0.0008835958715009631,
+    "in_features": 4096,
+    "kind": "k_proj",
+    "kl": [
+     0.0,
+     0.0009891067085218645,
+     0.0010372100672059684,
+     0.0016860295518132992,
+     0.0009001744168464796
+    ],
+    "name": "model.layers.6.self_attn.k_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00010551083702090133,
+     0.0001536141957050053,
+     0.000802433680312336,
+     1.6578545345516523e-05
+    ]
+   },
+   {
+    "block": 6,
+    "floor": 0.0008869734263060778,
+    "in_features": 4096,
+    "kind": "v_proj",
+    "kl": [
+     0.0,
+     0.0010963959006602768,
+     0.001531422024787984,
+     0.004349104235957627,
+     0.0009638714119664464
+    ],
+    "name": "model.layers.6.self_attn.v_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00020942247435419906,
+     0.0006444485984819061,
+     0.0034621308096515493,
+     7.689798566036857e-05
+    ]
+   },
+   {
+    "block": 6,
+    "floor": 0.0008740289332308548,
+    "in_features": 4096,
+    "kind": "o_proj",
+    "kl": [
+     0.0,
+     0.001138440518877314,
+     0.0016690268854871952,
+     0.004650760593074265,
+     0.0009471644850729266
+    ],
+    "name": "model.layers.6.self_attn.o_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00026441158564645927,
+     0.0007949979522563404,
+     0.0037767316598434106,
+     7.313555184207182e-05
+    ]
+   },
+   {
+    "block": 6,
+    "floor": 0.0008987662665849096,
+    "in_features": 4096,
+    "kind": "gate_proj",
+    "kl": [
+     0.0,
+     0.0013900068020739624,
+     0.0034324913928385297,
+     0.013039835447467904,
+     0.000922703034174853
+    ],
+    "name": "model.layers.6.mlp.gate_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0004912405354890528,
+     0.00253372512625362,
+     0.012141069180882995,
+     2.393676758994344e-05
+    ]
+   },
+   {
+    "block": 6,
+    "floor": 0.000906065421863343,
+    "in_features": 4096,
+    "kind": "up_proj",
+    "kl": [
+     0.0,
+     0.0015239272105509359,
+     0.003258102400454986,
+     0.015166845786441912,
+     0.000924745304198052
+    ],
+    "name": "model.layers.6.mlp.up_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0006178617886875928,
+     0.002352036978591643,
+     0.01426078036457857,
+     1.8679882334708946e-05
+    ]
+   },
+   {
+    "block": 6,
+    "floor": 0.0008755273000142792,
+    "in_features": 12288,
+    "kind": "down_proj",
+    "kl": [
+     0.0,
+     0.0020176534119917245,
+     0.004984605563525295,
+     0.019809605742735412,
+     0.001820500312090207
+    ],
+    "name": "model.layers.6.mlp.down_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0011421261119774454,
+     0.0041090782635110155,
+     0.018934078442721134,
+     0.0009449730120759278
+    ]
+   },
+   {
+    "block": 7,
+    "floor": 0.0008679097505182204,
+    "in_features": 4096,
+    "kind": "q_proj",
+    "kl": [
+     0.0,
+     0.0009470742562107293,
+     0.0011353496789762796,
+     0.0019586441803915553,
+     0.0009075875731863339
+    ],
+    "name": "model.layers.7.self_attn.q_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     7.916450569250887e-05,
+     0.0002674399284580592,
+     0.0010907344298733347,
+     3.9677822668113434e-05
+    ]
+   },
+   {
+    "block": 7,
+    "floor": 0.000881797972022266,
+    "in_features": 4096,
+    "kind": "k_proj",
+    "kl": [
+     0.0,
+     0.0009985944268070886,
+     0.0013002716025170616,
+     0.0019898667876663005,
+     0.0009068285958308665
+    ],
+    "name": "model.layers.7.self_attn.k_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0001167964547848226,
+     0.00041847363049479563,
+     0.0011080688156440345,
+     2.5030623808600474e-05
+    ]
+   },
+   {
+    "block": 7,
+    "floor": 0.0008502714276578949,
+    "in_features": 4096,
+    "kind": "v_proj",
+    "kl": [
+     0.0,
+     0.0011269451298323424,
+     0.001537090494105218,
+     0.003613248427922145,
+     0.0009290247739894403
+    ],
+    "name": "model.layers.7.self_attn.v_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00027667370217444756,
+     0.0006868190664473231,
+     0.0027629770002642502,
+     7.875334633154546e-05
+    ]
+   },
+   {
+    "block": 7,
+    "floor": 0.0008567231949898949,
+    "in_features": 4096,
+    "kind": "o_proj",
+    "kl": [
+     0.0,
+     0.0009918366444095033,
+     0.0012553974166702856,
+     0.003160479398182747,
+     0.0008839869640869583
+    ],
+    "name": "model.layers.7.self_attn.o_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00013511344941960837,
+     0.00039867422168039074,
+     0.002303756203192852,
+     2.7263769097063406e-05
+    ]
+   },
+   {
+    "block": 7,
+    "floor": 0.0008732163320604619,
+    "in_features": 4096,
+    "kind": "gate_proj",
+    "kl": [
+     0.0,
+     0.0014485754621429057,
+     0.003469771308056564,
+     0.014452697367751823,
+     0.0009283052323520135
+    ],
+    "name": "model.layers.7.mlp.gate_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0005753591300824437,
+     0.002596554975996102,
+     0.01357948103569136,
+     5.508890029155161e-05
+    ]
+   },
+   {
+    "block": 7,
+    "floor": 0.0008403312042956196,
+    "in_features": 4096,
+    "kind": "up_proj",
+    "kl": [
+     0.0,
+     0.0014525850193810718,
+     0.0034561076844480546,
+     0.014077266394220304,
+     0.0009543576739834191
+    ],
+    "name": "model.layers.7.mlp.up_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0006122538150854521,
+     0.002615776480152435,
+     0.013236935189924684,
+     0.00011402646968779943
+    ]
+   },
+   {
+    "block": 7,
+    "floor": 0.0008872303876360603,
+    "in_features": 12288,
+    "kind": "down_proj",
+    "kl": [
+     0.0,
+     0.001739501949241997,
+     0.004192767346621759,
+     0.023663885675507507,
+     0.0009145916142571486
+    ],
+    "name": "model.layers.7.mlp.down_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0008522715616059366,
+     0.0033055369589856986,
+     0.022776655287871445,
+     2.7361226621088267e-05
+    ]
+   },
+   {
+    "block": 8,
+    "floor": 0.0008961891697067985,
+    "in_features": 4096,
+    "kind": "q_proj",
+    "kl": [
+     0.0,
+     0.000987231995428235,
+     0.001142835462209284,
+     0.002483047111035349,
+     0.0008731684967841351
+    ],
+    "name": "model.layers.8.self_attn.q_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     9.104282572143648e-05,
+     0.00024664629250248545,
+     0.0015868579413285504,
+     0.0
+    ]
+   },
+   {
+    "block": 8,
+    "floor": 0.0008524824419040873,
+    "in_features": 4096,
+    "kind": "k_proj",
+    "kl": [
+     0.0,
+     0.0010172480293776003,
+     0.0015290495510277035,
+     0.003668974317442368,
+     0.0009168074708633079
+    ],
+    "name": "model.layers.8.self_attn.k_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00016476558747351296,
+     0.0006765671091236162,
+     0.0028164918755382807,
+     6.43250289592206e-05
+    ]
+   },
+   {
+    "block": 8,
+    "floor": 0.0008721462186080537,
+    "in_features": 4096,
+    "kind": "v_proj",
+    "kl": [
+     0.0,
+     0.0010950355961676117,
+     0.001620066653990238,
+     0.0033880071001106253,
+     0.0008778409766328538
+    ],
+    "name": "model.layers.8.self_attn.v_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00022288937755955793,
+     0.0007479204353821842,
+     0.0025158608815025714,
+     5.694758024800037e-06
+    ]
+   },
+   {
+    "block": 8,
+    "floor": 0.0008557888975103875,
+    "in_features": 4096,
+    "kind": "o_proj",
+    "kl": [
+     0.0,
+     0.001033030472770204,
+     0.0013797295309911763,
+     0.0033453418948915905,
+     0.0008917839126575042
+    ],
+    "name": "model.layers.8.self_attn.o_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00017724157525981642,
+     0.0005239406334807887,
+     0.0024895529973812027,
+     3.599501514711667e-05
+    ]
+   },
+   {
+    "block": 8,
+    "floor": 0.0008411634958361618,
+    "in_features": 4096,
+    "kind": "gate_proj",
+    "kl": [
+     0.0,
+     0.0012963879835168352,
+     0.002829655222308125,
+     0.012371270019430069,
+     0.0008616801067670139
+    ],
+    "name": "model.layers.8.mlp.gate_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00045522448768067346,
+     0.001988491726471963,
+     0.011530106523593908,
+     2.0516610930852177e-05
+    ]
+   },
+   {
+    "block": 8,
+    "floor": 0.0008496023799955357,
+    "in_features": 4096,
+    "kind": "up_proj",
+    "kl": [
+     0.0,
+     0.0013917192043272394,
+     0.003551262375525572,
+     0.013686693151056792,
+     0.0008734962817747477
+    ],
+    "name": "model.layers.8.mlp.up_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0005421168243317037,
+     0.0027016599955300364,
+     0.012837090771061255,
+     2.389390177921205e-05
+    ]
+   },
+   {
+    "block": 8,
+    "floor": 0.0008503110299157417,
+    "in_features": 12288,
+    "kind": "down_proj",
+    "kl": [
+     0.0,
+     0.0015357933927431563,
+     0.004134197584640215,
+     0.018437067923034168,
+     0.0008806957575356035
+    ],
+    "name": "model.layers.8.mlp.down_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0006854823628274146,
+     0.003283886554724473,
+     0.017586756893118425,
+     3.0384727619861768e-05
+    ]
+   },
+   {
+    "block": 9,
+    "floor": 0.0008734733930551774,
+    "in_features": 4096,
+    "kind": "q_proj",
+    "kl": [
+     0.0,
+     0.000975578403435961,
+     0.001120413958599885,
+     0.0027004090790546486,
+     0.0008839410722145617
+    ],
+    "name": "model.layers.9.self_attn.q_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0001021050103807836,
+     0.0002469405655447076,
+     0.0018269356859994712,
+     1.0467679159384229e-05
+    ]
+   },
+   {
+    "block": 9,
+    "floor": 0.0008488465404300111,
+    "in_features": 4096,
+    "kind": "k_proj",
+    "kl": [
+     0.0,
+     0.0011772194236878523,
+     0.0016256819542194772,
+     0.0035910698530336824,
+     0.0008670515535307345
+    ],
+    "name": "model.layers.9.self_attn.k_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0003283728832578413,
+     0.0007768354137894662,
+     0.0027422233126036715,
+     1.8205013100723393e-05
+    ]
+   },
+   {
+    "block": 9,
+    "floor": 0.0008649526603082665,
+    "in_features": 4096,
+    "kind": "v_proj",
+    "kl": [
+     0.0,
+     0.001120706551293236,
+     0.001804549691552302,
+     0.004283645978297023,
+     0.0008768292757998833
+    ],
+    "name": "model.layers.9.self_attn.v_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00025575389098496956,
+     0.0009395970312440356,
+     0.003418693317988757,
+     1.187661549161684e-05
+    ]
+   },
+   {
+    "block": 9,
+    "floor": 0.0008276156009088254,
+    "in_features": 4096,
+    "kind": "o_proj",
+    "kl": [
+     0.0,
+     0.0010313335065078133,
+     0.0013465556852643558,
+     0.004031557387746661,
+     0.0008624539160813611
+    ],
+    "name": "model.layers.9.self_attn.o_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0002037179055989879,
+     0.0005189400843555304,
+     0.0032039417868378354,
+     3.4838315172535674e-05
+    ]
+   },
+   {
+    "block": 9,
+    "floor": 0.0008104447759273971,
+    "in_features": 4096,
+    "kind": "gate_proj",
+    "kl": [
+     0.0,
+     0.0013487223720340604,
+     0.00265477181410555,
+     0.01055620047296492,
+     0.0008962917206654374
+    ],
+    "name": "model.layers.9.mlp.gate_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0005382775961066633,
+     0.0018443270381781531,
+     0.009745755697037523,
+     8.584694473804028e-05
+    ]
+   },
+   {
+    "block": 9,
+    "floor": 0.0008408217250415805,
+    "in_features": 4096,
+    "kind": "up_proj",
+    "kl": [
+     0.0,
+     0.0015266834881482749,
+     0.003491890707116914,
+     0.015589686178278155,
+     0.0008639268024122916
+    ],
+    "name": "model.layers.9.mlp.up_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0006858617631066943,
+     0.0026510689820753337,
+     0.014748864453236574,
+     2.310507737071101e-05
+    ]
+   },
+   {
+    "block": 9,
+    "floor": 0.0008143110679168966,
+    "in_features": 12288,
+    "kind": "down_proj",
+    "kl": [
+     0.0,
+     0.001543033826845988,
+     0.00439404688585382,
+     0.01996674094181459,
+     0.0008776902157044259
+    ],
+    "name": "model.layers.9.mlp.down_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0007287227589290915,
+     0.0035797358179369236,
+     0.019152429873897692,
+     6.33791477875293e-05
+    ]
+   },
+   {
+    "block": 10,
+    "floor": 0.0008104624998353468,
+    "in_features": 4096,
+    "kind": "q_proj",
+    "kl": [
+     0.0,
+     0.0009227215437326902,
+     0.0012638736656960558,
+     0.003020314418039103,
+     0.0008594563230426072
+    ],
+    "name": "model.layers.10.self_attn.q_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00011225904389734341,
+     0.000453411165860709,
+     0.002209851918203756,
+     4.8993823207260385e-05
+    ]
+   },
+   {
+    "block": 10,
+    "floor": 0.0008220904028547964,
+    "in_features": 4096,
+    "kind": "k_proj",
+    "kl": [
+     0.0,
+     0.0011360397052668787,
+     0.00143615788946693,
+     0.0037823522856528353,
+     0.0008395707378097911
+    ],
+    "name": "model.layers.10.self_attn.k_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00031394930241208225,
+     0.0006140674866121336,
+     0.0029602618827980387,
+     1.7480334954994678e-05
+    ]
+   },
+   {
+    "block": 10,
+    "floor": 0.0008271748192098664,
+    "in_features": 4096,
+    "kind": "v_proj",
+    "kl": [
+     0.0,
+     0.0012299511876829557,
+     0.001961284751766547,
+     0.0051960359965417344,
+     0.0008639648117874706
+    ],
+    "name": "model.layers.10.self_attn.v_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00040277636847308937,
+     0.0011341099325566804,
+     0.004368861177331868,
+     3.678999257760427e-05
+    ]
+   },
+   {
+    "block": 10,
+    "floor": 0.0008206097694284007,
+    "in_features": 4096,
+    "kind": "o_proj",
+    "kl": [
+     0.0,
+     0.0010194136586082734,
+     0.0017219103462569926,
+     0.005243743619558418,
+     0.0008387054463746995
+    ],
+    "name": "model.layers.10.self_attn.o_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00019880388917987274,
+     0.0009013005768285919,
+     0.004423133850130018,
+     1.8095676946298803e-05
+    ]
+   },
+   {
+    "block": 10,
+    "floor": 0.0007915321759358572,
+    "in_features": 4096,
+    "kind": "gate_proj",
+    "kl": [
+     0.0,
+     0.0012485414255328988,
+     0.0026907903945674605,
+     0.011612959596163866,
+     0.0008555771398544658
+    ],
+    "name": "model.layers.10.mlp.gate_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0004570092495970416,
+     0.0018992582186316033,
+     0.010821427420228008,
+     6.404496391860864e-05
+    ]
+   },
+   {
+    "block": 10,
+    "floor": 0.0008357173349512608,
+    "in_features": 4096,
+    "kind": "up_proj",
+    "kl": [
+     0.0,
+     0.0014492838398645763,
+     0.003688939889478706,
+     0.014985532968955079,
+     0.0008679871801590442
+    ],
+    "name": "model.layers.10.mlp.up_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0006135665049133155,
+     0.002853222554527445,
+     0.014149815634003818,
+     3.2269845207783454e-05
+    ]
+   },
+   {
+    "block": 10,
+    "floor": 0.0008172091114439974,
+    "in_features": 12288,
+    "kind": "down_proj",
+    "kl": [
+     0.0,
+     0.001657507971808967,
+     0.004628155512694137,
+     0.020821700446609567,
+     0.0008673299401009429
+    ],
+    "name": "model.layers.10.mlp.down_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0008402988603649695,
+     0.00381094640125014,
+     0.020004491335165568,
+     5.012082865694543e-05
+    ]
+   },
+   {
+    "block": 11,
+    "floor": 0.0007936064958259521,
+    "in_features": 4096,
+    "kind": "q_proj",
+    "kl": [
+     0.0,
+     0.000941239900312591,
+     0.001196232730358866,
+     0.0027027041268667482,
+     0.0008168345723073174
+    ],
+    "name": "model.layers.11.self_attn.q_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00014763340448663894,
+     0.0004026262345329139,
+     0.0019090976310407962,
+     2.3228076481365324e-05
+    ]
+   },
+   {
+    "block": 11,
+    "floor": 0.0008122441114442207,
+    "in_features": 4096,
+    "kind": "k_proj",
+    "kl": [
+     0.0,
+     0.0011273133178698485,
+     0.0013817919344356814,
+     0.005172025357142656,
+     0.000854565476675381
+    ],
+    "name": "model.layers.11.self_attn.k_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00031506920642562785,
+     0.0005695478229914608,
+     0.004359781245698436,
+     4.2321365231160315e-05
+    ]
+   },
+   {
+    "block": 11,
+    "floor": 0.0008011748668025567,
+    "in_features": 4096,
+    "kind": "v_proj",
+    "kl": [
+     0.0,
+     0.001038088219905823,
+     0.0014265948202840154,
+     0.0034882719708440586,
+     0.0008367287520279158
+    ],
+    "name": "model.layers.11.self_attn.v_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0002369133531032664,
+     0.0006254199534814587,
+     0.002687097104041502,
+     3.555388522535907e-05
+    ]
+   },
+   {
+    "block": 11,
+    "floor": 0.0008246513306520214,
+    "in_features": 4096,
+    "kind": "o_proj",
+    "kl": [
+     0.0,
+     0.0009632408464720127,
+     0.001408371533157315,
+     0.003973165036385015,
+     0.0008289876649290109
+    ],
+    "name": "model.layers.11.self_attn.o_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00013858951581999126,
+     0.0005837202025052936,
+     0.0031485137057329932,
+     4.336334276989519e-06
+    ]
+   },
+   {
+    "block": 11,
+    "floor": 0.0007848584455481368,
+    "in_features": 4096,
+    "kind": "gate_proj",
+    "kl": [
+     0.0,
+     0.001215999582205723,
+     0.0027078972752886486,
+     0.01200797148150904,
+     0.0008284139237058614
+    ],
+    "name": "model.layers.11.mlp.gate_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0004311411366575862,
+     0.0019230388297405117,
+     0.011223113035960904,
+     4.3555478157724595e-05
+    ]
+   },
+   {
+    "block": 11,
+    "floor": 0.000789859650281226,
+    "in_features": 4096,
+    "kind": "up_proj",
+    "kl": [
+     0.0,
+     0.0014064311769605782,
+     0.0032456985936738757,
+     0.015590610571507062,
+     0.0008374153124753955
+    ],
+    "name": "model.layers.11.mlp.up_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0006165715266793523,
+     0.0024558389433926497,
+     0.014800750921225837,
+     4.755566219416952e-05
+    ]
+   },
+   {
+    "block": 11,
+    "floor": 0.0007906128486112339,
+    "in_features": 12288,
+    "kind": "down_proj",
+    "kl": [
+     0.0,
+     0.0015033740386303466,
+     0.0042301450443851946,
+     0.02119608275430608,
+     0.0008574650993769028
+    ],
+    "name": "model.layers.11.mlp.down_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0007127611900191127,
+     0.0034395321957739608,
+     0.020405469905694848,
+     6.685225076566892e-05
+    ]
+   },
+   {
+    "block": 12,
+    "floor": 0.0007959589337832519,
+    "in_features": 4096,
+    "kind": "q_proj",
+    "kl": [
+     0.0,
+     0.0008964565340447528,
+     0.0010613657194825168,
+     0.002282000708987531,
+     0.0007958282432811742
+    ],
+    "name": "model.layers.12.self_attn.q_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00010049760026150083,
+     0.0002654067856992649,
+     0.0014860417752042793,
+     0.0
+    ]
+   },
+   {
+    "block": 12,
+    "floor": 0.0007853002260456042,
+    "in_features": 4096,
+    "kind": "k_proj",
+    "kl": [
+     0.0,
+     0.0009761265602650753,
+     0.0015083817151966988,
+     0.0030323150722097168,
+     0.0008349778128493658
+    ],
+    "name": "model.layers.12.self_attn.k_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00019082633421947117,
+     0.0007230814891510946,
+     0.0022470148461641126,
+     4.967758680376165e-05
+    ]
+   },
+   {
+    "block": 12,
+    "floor": 0.0008013329336003114,
+    "in_features": 4096,
+    "kind": "v_proj",
+    "kl": [
+     0.0,
+     0.00110592410067556,
+     0.0017044395407934106,
+     0.004306253327559829,
+     0.0008430907254840627
+    ],
+    "name": "model.layers.12.self_attn.v_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0003045911670752486,
+     0.0009031066071930992,
+     0.003504920393959518,
+     4.1757791883751294e-05
+    ]
+   },
+   {
+    "block": 12,
+    "floor": 0.0007913608736018012,
+    "in_features": 4096,
+    "kind": "o_proj",
+    "kl": [
+     0.0,
+     0.0009509589036634448,
+     0.0014009423355167059,
+     0.004339689205590188,
+     0.0008372009801301078
+    ],
+    "name": "model.layers.12.self_attn.o_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00015959803006164355,
+     0.0006095814619149046,
+     0.0035483283319883868,
+     4.5840106528306584e-05
+    ]
+   },
+   {
+    "block": 12,
+    "floor": 0.0007816197138217345,
+    "in_features": 4096,
+    "kind": "gate_proj",
+    "kl": [
+     0.0,
+     0.0012921513298010368,
+     0.0026921455138595196,
+     0.011485261116282584,
+     0.0008204039765391828
+    ],
+    "name": "model.layers.12.mlp.gate_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0005105316159793023,
+     0.001910525800037785,
+     0.01070364140246085,
+     3.8784262717448314e-05
+    ]
+   },
+   {
+    "block": 12,
+    "floor": 0.0007904037107424825,
+    "in_features": 4096,
+    "kind": "up_proj",
+    "kl": [
+     0.0,
+     0.001297190631428072,
+     0.003239677504705106,
+     0.01629324768158588,
+     0.000815001195119348
+    ],
+    "name": "model.layers.12.mlp.up_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0005067869206855896,
+     0.0024492737939626236,
+     0.015502843970843396,
+     2.459748437686545e-05
+    ]
+   },
+   {
+    "block": 12,
+    "floor": 0.0007787873903970612,
+    "in_features": 12288,
+    "kind": "down_proj",
+    "kl": [
+     0.0,
+     0.0015001553405776741,
+     0.003687060830368754,
+     0.017129580417959516,
+     0.0008020405997089284
+    ],
+    "name": "model.layers.12.mlp.down_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0007213679501806129,
+     0.002908273439971693,
+     0.016350793027562455,
+     2.3253209311867198e-05
+    ]
+   },
+   {
+    "block": 13,
+    "floor": 0.0007554114092982832,
+    "in_features": 4096,
+    "kind": "q_proj",
+    "kl": [
+     0.0,
+     0.0009693021753907032,
+     0.0013455040812396985,
+     0.0035292045231520167,
+     0.0008012497760165553
+    ],
+    "name": "model.layers.13.self_attn.q_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00021389076609241997,
+     0.0005900926719414153,
+     0.0027737931138537334,
+     4.5838366718272154e-05
+    ]
+   },
+   {
+    "block": 13,
+    "floor": 0.0007571164596707953,
+    "in_features": 4096,
+    "kind": "k_proj",
+    "kl": [
+     0.0,
+     0.001004330428828485,
+     0.001372823245797483,
+     0.003962154757438546,
+     0.0007849872661486536
+    ],
+    "name": "model.layers.13.self_attn.k_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0002472139691576897,
+     0.0006157067861266878,
+     0.0032050382977677505,
+     2.787080647785828e-05
+    ]
+   },
+   {
+    "block": 13,
+    "floor": 0.0007844950739597832,
+    "in_features": 4096,
+    "kind": "v_proj",
+    "kl": [
+     0.0,
+     0.0010155295084752262,
+     0.0013705224839506396,
+     0.0030046179745953842,
+     0.0007936182035553734
+    ],
+    "name": "model.layers.13.self_attn.v_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0002310344345154429,
+     0.0005860274099908564,
+     0.002220122900635601,
+     9.123129595590106e-06
+    ]
+   },
+   {
+    "block": 13,
+    "floor": 0.0007799372503863294,
+    "in_features": 4096,
+    "kind": "o_proj",
+    "kl": [
+     0.0,
+     0.0009300312849964677,
+     0.001242734780445396,
+     0.003065745145300175,
+     0.0007889371502995103
+    ],
+    "name": "model.layers.13.self_attn.o_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00015009403461013835,
+     0.00046279753005906655,
+     0.0022858078949138457,
+     8.999899913180961e-06
+    ]
+   },
+   {
+    "block": 13,
+    "floor": 0.000801521099318153,
+    "in_features": 4096,
+    "kind": "gate_proj",
+    "kl": [
+     0.0,
+     0.0012942326970794534,
+     0.0024767641689811075,
+     0.00986840741303743,
+     0.000789248199312378
+    ],
+    "name": "model.layers.13.mlp.gate_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0004927115977613004,
+     0.0016752430696629545,
+     0.009066886313719276,
+     0.0
+    ]
+   },
+   {
+    "block": 13,
+    "floor": 0.0007827957114884662,
+    "in_features": 4096,
+    "kind": "up_proj",
+    "kl": [
+     0.0,
+     0.0013459059936177273,
+     0.0030747812382897373,
+     0.013282960665554207,
+     0.0007871150999919483
+    ],
+    "name": "model.layers.13.mlp.up_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0005631102821292611,
+     0.002291985526801271,
+     0.01250016495406574,
+     4.319388503482122e-06
+    ]
+   },
+   {
+    "block": 13,
+    "floor": 0.0007688134044348922,
+    "in_features": 12288,
+    "kind": "down_proj",
+    "kl": [
+     0.0,
+     0.001334447566754101,
+     0.003442432410562302,
+     0.01655023476051118,
+     0.0008060360981235713
+    ],
+    "name": "model.layers.13.mlp.down_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0005656341623192088,
+     0.0026736190061274097,
+     0.015781421356076287,
+     3.722269368867915e-05
+    ]
+   },
+   {
+    "block": 14,
+    "floor": 0.0007542037322041707,
+    "in_features": 4096,
+    "kind": "q_proj",
+    "kl": [
+     0.0,
+     0.0009113915288796852,
+     0.001325009387853321,
+     0.003273621892542706,
+     0.0007883759153513301
+    ],
+    "name": "model.layers.14.self_attn.q_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00015718779667551444,
+     0.0005708056556491502,
+     0.0025194181603385352,
+     3.4172183147159396e-05
+    ]
+   },
+   {
+    "block": 14,
+    "floor": 0.0007659639955037531,
+    "in_features": 4096,
+    "kind": "k_proj",
+    "kl": [
+     0.0,
+     0.0009445712046748329,
+     0.0012743852489320838,
+     0.0034350757274185387,
+     0.0007700762432201436
+    ],
+    "name": "model.layers.14.self_attn.k_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00017860720917107977,
+     0.0005084212534283306,
+     0.0026691117319147858,
+     4.112247716390495e-06
+    ]
+   },
+   {
+    "block": 14,
+    "floor": 0.0007798654813567822,
+    "in_features": 4096,
+    "kind": "v_proj",
+    "kl": [
+     0.0,
+     0.001065673421189208,
+     0.0015482017555919585,
+     0.004241517629112906,
+     0.0007980867627264633
+    ],
+    "name": "model.layers.14.self_attn.v_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00028580793983242576,
+     0.0007683362742351763,
+     0.003461652147756124,
+     1.822128136968115e-05
+    ]
+   },
+   {
+    "block": 14,
+    "floor": 0.0007667995170199907,
+    "in_features": 4096,
+    "kind": "o_proj",
+    "kl": [
+     0.0,
+     0.0009566874910884117,
+     0.0016004099088022872,
+     0.006197276855978603,
+     0.0007788993840414355
+    ],
+    "name": "model.layers.14.self_attn.o_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.000189887974068421,
+     0.0008336103917822965,
+     0.0054304773389586124,
+     1.2099867021444772e-05
+    ]
+   },
+   {
+    "block": 14,
+    "floor": 0.0007546050732271301,
+    "in_features": 4096,
+    "kind": "gate_proj",
+    "kl": [
+     0.0,
+     0.0010653386976661094,
+     0.0020978731575654907,
+     0.007772520063358593,
+     0.0008040690372524194
+    ],
+    "name": "model.layers.14.mlp.gate_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00031073362443897936,
+     0.0013432680843383606,
+     0.007017914990131463,
+     4.946396402528931e-05
+    ]
+   },
+   {
+    "block": 14,
+    "floor": 0.0007697251595306014,
+    "in_features": 4096,
+    "kind": "up_proj",
+    "kl": [
+     0.0,
+     0.0012485767361427962,
+     0.0026998934774746636,
+     0.0118773519975158,
+     0.0008095162183903081
+    ],
+    "name": "model.layers.14.mlp.up_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0004788515766121948,
+     0.0019301683179440623,
+     0.0111076268379852,
+     3.979105885970678e-05
+    ]
+   },
+   {
+    "block": 14,
+    "floor": 0.000754947773955225,
+    "in_features": 12288,
+    "kind": "down_proj",
+    "kl": [
+     0.0,
+     0.0012786850760342409,
+     0.003088707146371358,
+     0.013295029656686858,
+     0.0007896921740291631
+    ],
+    "name": "model.layers.14.mlp.down_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0005237373020790159,
+     0.002333759372416133,
+     0.012540081882731632,
+     3.4744400073938135e-05
+    ]
+   },
+   {
+    "block": 15,
+    "floor": 0.0007465153777019125,
+    "in_features": 4096,
+    "kind": "q_proj",
+    "kl": [
+     0.0,
+     0.0009225169916993801,
+     0.0012194644827765331,
+     0.0034893945584981564,
+     0.0007890755244352468
+    ],
+    "name": "model.layers.15.self_attn.q_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00017600161399746763,
+     0.0004729491050746206,
+     0.002742879180796244,
+     4.256014673333433e-05
+    ]
+   },
+   {
+    "block": 15,
+    "floor": 0.0007543668493817058,
+    "in_features": 4096,
+    "kind": "k_proj",
+    "kl": [
+     0.0,
+     0.0009313527202837403,
+     0.0013903448369791997,
+     0.0032418413888353433,
+     0.000763070157922439
+    ],
+    "name": "model.layers.15.self_attn.k_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00017698587090203446,
+     0.0006359779875974938,
+     0.0024874745394536375,
+     8.703308540733206e-06
+    ]
+   },
+   {
+    "block": 15,
+    "floor": 0.0007431973633611768,
+    "in_features": 4096,
+    "kind": "v_proj",
+    "kl": [
+     0.0,
+     0.0010028704102038818,
+     0.001431072943099978,
+     0.0037370159902227243,
+     0.0007800710267268445
+    ],
+    "name": "model.layers.15.self_attn.v_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00025967304684270504,
+     0.0006878755797388011,
+     0.0029938186268615476,
+     3.687366336566772e-05
+    ]
+   },
+   {
+    "block": 15,
+    "floor": 0.0007537552500085336,
+    "in_features": 4096,
+    "kind": "o_proj",
+    "kl": [
+     0.0,
+     0.0009538772106098597,
+     0.0013769315589001983,
+     0.0038887206748737476,
+     0.0007656151274038755
+    ],
+    "name": "model.layers.15.self_attn.o_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00020012196060132618,
+     0.0006231763088916648,
+     0.003134965424865214,
+     1.185987739534195e-05
+    ]
+   },
+   {
+    "block": 15,
+    "floor": 0.0007486455842911295,
+    "in_features": 4096,
+    "kind": "gate_proj",
+    "kl": [
+     0.0,
+     0.0010183140744976754,
+     0.0019076228720314933,
+     0.006420838181253197,
+     0.0007537306951145624
+    ],
+    "name": "model.layers.15.mlp.gate_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00026966849020654585,
+     0.001158977287740364,
+     0.005672192596962068,
+     5.085110823432838e-06
+    ]
+   },
+   {
+    "block": 15,
+    "floor": 0.0007267572600054764,
+    "in_features": 4096,
+    "kind": "up_proj",
+    "kl": [
+     0.0,
+     0.0011408434497347615,
+     0.0024570049657372866,
+     0.009173232612230443,
+     0.0007575790353593415
+    ],
+    "name": "model.layers.15.mlp.up_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00041408618972928505,
+     0.00173024770573181,
+     0.008446475352224966,
+     3.082177535386509e-05
+    ]
+   },
+   {
+    "block": 15,
+    "floor": 0.0007495124745737966,
+    "in_features": 12288,
+    "kind": "down_proj",
+    "kl": [
+     0.0,
+     0.0012258259612617666,
+     0.0026190660452642582,
+     0.010963670322675981,
+     0.0007717501921529343
+    ],
+    "name": "model.layers.15.mlp.down_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00047631348668797,
+     0.0018695535706904616,
+     0.010214157848102185,
+     2.223771757913764e-05
+    ]
+   },
+   {
+    "block": 16,
+    "floor": 0.0007391913961074014,
+    "in_features": 4096,
+    "kind": "q_proj",
+    "kl": [
+     0.0,
+     0.0008284285705614173,
+     0.00116810958541598,
+     0.0029630466204780717,
+     0.0007581727952492276
+    ],
+    "name": "model.layers.16.self_attn.q_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     8.923717445401594e-05,
+     0.0004289181893085787,
+     0.0022238552243706703,
+     1.89813991418262e-05
+    ]
+   },
+   {
+    "block": 16,
+    "floor": 0.0007470285432879554,
+    "in_features": 4096,
+    "kind": "k_proj",
+    "kl": [
+     0.0,
+     0.0009452448162416778,
+     0.0015731563089123781,
+     0.004119448908909219,
+     0.0007512806966070462
+    ],
+    "name": "model.layers.16.self_attn.k_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00019821627295372242,
+     0.0008261277656244228,
+     0.003372420365621264,
+     4.252153319090875e-06
+    ]
+   },
+   {
+    "block": 16,
+    "floor": 0.0007304792552977273,
+    "in_features": 4096,
+    "kind": "v_proj",
+    "kl": [
+     0.0,
+     0.0010302937167692597,
+     0.001599595805192235,
+     0.0037390991229035763,
+     0.0007667722553201243
+    ],
+    "name": "model.layers.16.self_attn.v_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00029981446147153235,
+     0.0008691165498945077,
+     0.003008619867605849,
+     3.6293000022396974e-05
+    ]
+   },
+   {
+    "block": 16,
+    "floor": 0.0007335702308961787,
+    "in_features": 4096,
+    "kind": "o_proj",
+    "kl": [
+     0.0,
+     0.0009402938980936989,
+     0.0015078696467110122,
+     0.00443890399233176,
+     0.0007411468694204746
+    ],
+    "name": "model.layers.16.self_attn.o_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00020672366719752023,
+     0.0007742994158148335,
+     0.0037053337614355816,
+     7.5766385242958525e-06
+    ]
+   },
+   {
+    "block": 16,
+    "floor": 0.0007224886215901342,
+    "in_features": 4096,
+    "kind": "gate_proj",
+    "kl": [
+     0.0,
+     0.0009996612550354541,
+     0.0017026878395284693,
+     0.006242085130715124,
+     0.0007511119210612572
+    ],
+    "name": "model.layers.16.mlp.gate_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00027717263344531997,
+     0.000980199217938335,
+     0.00551959650912499,
+     2.8623299471123003e-05
+    ]
+   },
+   {
+    "block": 16,
+    "floor": 0.0007200751554192811,
+    "in_features": 4096,
+    "kind": "up_proj",
+    "kl": [
+     0.0,
+     0.0011393091531343286,
+     0.0024174992076526477,
+     0.008682551301824878,
+     0.0007509237484470651
+    ],
+    "name": "model.layers.16.mlp.up_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0004192339977150475,
+     0.0016974240522333666,
+     0.007962476146405597,
+     3.0848593027783984e-05
+    ]
+   },
+   {
+    "block": 16,
+    "floor": 0.0007325596106098819,
+    "in_features": 12288,
+    "kind": "down_proj",
+    "kl": [
+     0.0,
+     0.0012015657888521985,
+     0.002386776394160621,
+     0.00971565011592926,
+     0.0007786003453429916
+    ],
+    "name": "model.layers.16.mlp.down_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00046900617824231663,
+     0.001654216783550739,
+     0.00898309050531938,
+     4.604073473310965e-05
+    ]
+   },
+   {
+    "block": 17,
+    "floor": 0.0007250176218450388,
+    "in_features": 4096,
+    "kind": "q_proj",
+    "kl": [
+     0.0,
+     0.0008981432087975082,
+     0.0012516731995777922,
+     0.0031222644766139137,
+     0.0007613640995429831
+    ],
+    "name": "model.layers.17.self_attn.q_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00017312558695246937,
+     0.0005266555777327535,
+     0.002397246854768875,
+     3.634647769794428e-05
+    ]
+   },
+   {
+    "block": 17,
+    "floor": 0.0007328851406315189,
+    "in_features": 4096,
+    "kind": "k_proj",
+    "kl": [
+     0.0,
+     0.0009453309965348677,
+     0.0014218727256895495,
+     0.004142884033157358,
+     0.000743094665028835
+    ],
+    "name": "model.layers.17.self_attn.k_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00021244585590334886,
+     0.0006889875850580306,
+     0.0034099988925258393,
+     1.0209524397316108e-05
+    ]
+   },
+   {
+    "block": 17,
+    "floor": 0.0007160373148169348,
+    "in_features": 4096,
+    "kind": "v_proj",
+    "kl": [
+     0.0,
+     0.0009736245226602354,
+     0.0014628597334064223,
+     0.003809439925955882,
+     0.0007706852515737087
+    ],
+    "name": "model.layers.17.self_attn.v_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0002575872078433006,
+     0.0007468224185894876,
+     0.003093402611138947,
+     5.464793675677394e-05
+    ]
+   },
+   {
+    "block": 17,
+    "floor": 0.0007226587915361658,
+    "in_features": 4096,
+    "kind": "o_proj",
+    "kl": [
+     0.0,
+     0.0008924557586657951,
+     0.0013208481628076535,
+     0.003921727870392832,
+     0.0007601501183024021
+    ],
+    "name": "model.layers.17.self_attn.o_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00016979696712962936,
+     0.0005981893712714878,
+     0.0031990690788566666,
+     3.749132676623631e-05
+    ]
+   },
+   {
+    "block": 17,
+    "floor": 0.0007294289004887242,
+    "in_features": 4096,
+    "kind": "gate_proj",
+    "kl": [
+     0.0,
+     0.0009596765679012191,
+     0.001659198849139924,
+     0.005759084830170667,
+     0.000767301606044482
+    ],
+    "name": "model.layers.17.mlp.gate_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0002302476674124949,
+     0.0009297699486511997,
+     0.005029655929681943,
+     3.78727055557578e-05
+    ]
+   },
+   {
+    "block": 17,
+    "floor": 0.0007167066578187986,
+    "in_features": 4096,
+    "kind": "up_proj",
+    "kl": [
+     0.0,
+     0.001064483701158569,
+     0.002176213210622866,
+     0.007612652387055198,
+     0.0007513826519681415
+    ],
+    "name": "model.layers.17.mlp.up_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00034777704333977053,
+     0.0014595065528040675,
+     0.006895945729236399,
+     3.467599414934289e-05
+    ]
+   },
+   {
+    "block": 17,
+    "floor": 0.0007338539795570571,
+    "in_features": 12288,
+    "kind": "down_proj",
+    "kl": [
+     0.0,
+     0.0010915073530805568,
+     0.002218635488097486,
+     0.008970593072897055,
+     0.0007453607097515725
+    ],
+    "name": "model.layers.17.mlp.down_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00035765337352349966,
+     0.001484781508540429,
+     0.008236739093339999,
+     1.1506730194515416e-05
+    ]
+   },
+   {
+    "block": 18,
+    "floor": 0.0007166814271083715,
+    "in_features": 4096,
+    "kind": "q_proj",
+    "kl": [
+     0.0,
+     0.0008645463138749725,
+     0.0012044062676272811,
+     0.0031367754491045405,
+     0.0007416704748172161
+    ],
+    "name": "model.layers.18.self_attn.q_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00014786488676660095,
+     0.0004877248405189096,
+     0.002420094021996169,
+     2.498904770884458e-05
+    ]
+   },
+   {
+    "block": 18,
+    "floor": 0.000719551832201375,
+    "in_features": 4096,
+    "kind": "k_proj",
+    "kl": [
+     0.0,
+     0.0009874747085518198,
+     0.001589455264991508,
+     0.004425214200652738,
+     0.0007398081083636441
+    ],
+    "name": "model.layers.18.self_attn.k_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00026792287635044477,
+     0.0008699034327901329,
+     0.0037056623684513625,
+     2.0256276162269123e-05
+    ]
+   },
+   {
+    "block": 18,
+    "floor": 0.0007026486762905524,
+    "in_features": 4096,
+    "kind": "v_proj",
+    "kl": [
+     0.0,
+     0.0008973151883588846,
+     0.0012959335227504922,
+     0.003143045516694199,
+     0.0007582450079506802
+    ],
+    "name": "model.layers.18.self_attn.v_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0001946665120683322,
+     0.0005932848464599398,
+     0.0024403968404036465,
+     5.559633166012784e-05
+    ]
+   },
+   {
+    "block": 18,
+    "floor": 0.0007271366661184174,
+    "in_features": 4096,
+    "kind": "o_proj",
+    "kl": [
+     0.0,
+     0.0008759930663893338,
+     0.0012817658542033487,
+     0.004037663901193156,
+     0.0007187826226847007
+    ],
+    "name": "model.layers.18.self_attn.o_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0001488564002709164,
+     0.0005546291880849313,
+     0.0033105272350747385,
+     0.0
+    ]
+   },
+   {
+    "block": 18,
+    "floor": 0.0007151989746523434,
+    "in_features": 4096,
+    "kind": "gate_proj",
+    "kl": [
+     0.0,
+     0.0009450367329262273,
+     0.0015909866067221627,
+     0.005178393716266729,
+     0.0007287003127004554
+    ],
+    "name": "model.layers.18.mlp.gate_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00022983775827388388,
+     0.0008757876320698193,
+     0.0044631947416143855,
+     1.3501338048111928e-05
+    ]
+   },
+   {
+    "block": 18,
+    "floor": 0.0007293143948282626,
+    "in_features": 4096,
+    "kind": "up_proj",
+    "kl": [
+     0.0,
+     0.0010316871083425887,
+     0.0019803712709542177,
+     0.007049945064469168,
+     0.0007458883358070836
+    ],
+    "name": "model.layers.18.mlp.up_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00030237271351432604,
+     0.0012510568761259552,
+     0.006320630669640905,
+     1.657394097882099e-05
+    ]
+   },
+   {
+    "block": 18,
+    "floor": 0.0006909791947518904,
+    "in_features": 12288,
+    "kind": "down_proj",
+    "kl": [
+     0.0,
+     0.0010649639979110623,
+     0.002150118528437817,
+     0.008836375349347619,
+     0.0007341813143419722
+    ],
+    "name": "model.layers.18.mlp.down_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00037398480315917193,
+     0.0014591393336859265,
+     0.008145396154595728,
+     4.320211959008187e-05
+    ]
+   },
+   {
+    "block": 19,
+    "floor": 0.0007081283795745721,
+    "in_features": 4096,
+    "kind": "q_proj",
+    "kl": [
+     0.0,
+     0.0008292516420333782,
+     0.001112814798082909,
+     0.0028533765500499526,
+     0.0007177917865839135
+    ],
+    "name": "model.layers.19.self_attn.q_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0001211232624588061,
+     0.00040468641850833684,
+     0.0021452481704753805,
+     9.66340700934141e-06
+    ]
+   },
+   {
+    "block": 19,
+    "floor": 0.0007107096221463289,
+    "in_features": 4096,
+    "kind": "k_proj",
+    "kl": [
+     0.0,
+     0.0009802784062367441,
+     0.0015586491457381304,
+     0.004436285344944803,
+     0.0007168022464057283
+    ],
+    "name": "model.layers.19.self_attn.k_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0002695687840904152,
+     0.0008479395235918015,
+     0.003725575722798474,
+     6.09262425939935e-06
+    ]
+   },
+   {
+    "block": 19,
+    "floor": 0.0007253360209162957,
+    "in_features": 4096,
+    "kind": "v_proj",
+    "kl": [
+     0.0,
+     0.0009978707138520108,
+     0.0014108629918171487,
+     0.0036411272175906023,
+     0.0007301304540241648
+    ],
+    "name": "model.layers.19.self_attn.v_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00027253469293571505,
+     0.000685526970900853,
+     0.0029157911966743067,
+     4.794433107869036e-06
+    ]
+   },
+   {
+    "block": 19,
+    "floor": 0.0006949418046762713,
+    "in_features": 4096,
+    "kind": "o_proj",
+    "kl": [
+     0.0,
+     0.0008639358423067054,
+     0.0012259353287022291,
+     0.0034081341200103365,
+     0.0007230461884810743
+    ],
+    "name": "model.layers.19.self_attn.o_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00016899403763043414,
+     0.0005309935240259578,
+     0.002713192315334065,
+     2.8104383804802976e-05
+    ]
+   },
+   {
+    "block": 19,
+    "floor": 0.0007012487883237952,
+    "in_features": 4096,
+    "kind": "gate_proj",
+    "kl": [
+     0.0,
+     0.0009271276659459029,
+     0.0015374196057300602,
+     0.004587540883562863,
+     0.0007163413282407639
+    ],
+    "name": "model.layers.19.mlp.gate_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0002258788776221078,
+     0.0008361708174062651,
+     0.003886292095239068,
+     1.5092539916968743e-05
+    ]
+   },
+   {
+    "block": 19,
+    "floor": 0.0006955033297538969,
+    "in_features": 4096,
+    "kind": "up_proj",
+    "kl": [
+     0.0,
+     0.0010325492968039016,
+     0.0019536446194795072,
+     0.007071876076620988,
+     0.0007496698859450103
+    ],
+    "name": "model.layers.19.mlp.up_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00033704596705000465,
+     0.0012581412897256102,
+     0.006376372746867091,
+     5.416655619111337e-05
+    ]
+   },
+   {
+    "block": 19,
+    "floor": 0.0006975729037896214,
+    "in_features": 12288,
+    "kind": "down_proj",
+    "kl": [
+     0.0,
+     0.0010379046859503266,
+     0.0021635413958863035,
+     0.007565284121186495,
+     0.0007266586302516648
+    ],
+    "name": "model.layers.19.mlp.down_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00034033178216070516,
+     0.0014659684920966822,
+     0.006867711217396873,
+     2.908572646204339e-05
+    ]
+   },
+   {
+    "block": 20,
+    "floor": 0.0006921277679148986,
+    "in_features": 4096,
+    "kind": "q_proj",
+    "kl": [
+     0.0,
+     0.0008046824038215087,
+     0.0011287094365075411,
+     0.0031387826725605686,
+     0.0007064313181516992
+    ],
+    "name": "model.layers.20.self_attn.q_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00011255463590661009,
+     0.0004365816685926425,
+     0.00244665490464567,
+     1.4303550236800583e-05
+    ]
+   },
+   {
+    "block": 20,
+    "floor": 0.0007104158104213764,
+    "in_features": 4096,
+    "kind": "k_proj",
+    "kl": [
+     0.0,
+     0.0009125670705640663,
+     0.0018292903718762333,
+     0.005841866375337382,
+     0.0007122218977189938
+    ],
+    "name": "model.layers.20.self_attn.k_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00020215126014268986,
+     0.0011188745614548567,
+     0.0051314505649160055,
+     1.806087297617407e-06
+    ]
+   },
+   {
+    "block": 20,
+    "floor": 0.0006865392077621644,
+    "in_features": 4096,
+    "kind": "v_proj",
+    "kl": [
+     0.0,
+     0.000977019871660379,
+     0.0013146454273580133,
+     0.0030736606317023764,
+     0.0007224375143455539
+    ],
+    "name": "model.layers.20.self_attn.v_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0002904806638982147,
+     0.0006281062195958489,
+     0.002387121423940212,
+     3.589830658338956e-05
+    ]
+   },
+   {
+    "block": 20,
+    "floor": 0.0006744099542549591,
+    "in_features": 4096,
+    "kind": "o_proj",
+    "kl": [
+     0.0,
+     0.0008000035623550675,
+     0.0011169240610122604,
+     0.0032098329855812665,
+     0.0006911755624938298
+    ],
+    "name": "model.layers.20.self_attn.o_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00012559360810010848,
+     0.0004425141067573013,
+     0.002535423031326307,
+     1.6765608238870694e-05
+    ]
+   },
+   {
+    "block": 20,
+    "floor": 0.0007002592165841111,
+    "in_features": 4096,
+    "kind": "gate_proj",
+    "kl": [
+     0.0,
+     0.0008715180505260729,
+     0.0014036774023129515,
+     0.004482312519153501,
+     0.000694606838128637
+    ],
+    "name": "model.layers.20.mlp.gate_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0001712588339419618,
+     0.0007034181857288404,
+     0.00378205330256939,
+     0.0
+    ]
+   },
+   {
+    "block": 20,
+    "floor": 0.000706366632025018,
+    "in_features": 4096,
+    "kind": "up_proj",
+    "kl": [
+     0.0,
+     0.0009457140982032511,
+     0.0017262058694165465,
+     0.006267347203553998,
+     0.0007030443509246526
+    ],
+    "name": "model.layers.20.mlp.up_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00023934746617823317,
+     0.0010198392373915286,
+     0.00556098057152898,
+     0.0
+    ]
+   },
+   {
+    "block": 20,
+    "floor": 0.0006890986384667206,
+    "in_features": 12288,
+    "kind": "down_proj",
+    "kl": [
+     0.0,
+     0.000973598229150404,
+     0.001848870959624127,
+     0.007615384275334359,
+     0.0007212566937322079
+    ],
+    "name": "model.layers.20.mlp.down_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0002844995906836834,
+     0.0011597723211574063,
+     0.006926285636867638,
+     3.2158055265487295e-05
+    ]
+   },
+   {
+    "block": 21,
+    "floor": 0.0006609828509303783,
+    "in_features": 4096,
+    "kind": "q_proj",
+    "kl": [
+     0.0,
+     0.0008331982326225596,
+     0.0011694888758961403,
+     0.0031884308816237414,
+     0.00069811363047186
+    ],
+    "name": "model.layers.21.self_attn.q_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0001722153816921813,
+     0.000508506024965762,
+     0.002527448030693363,
+     3.713077954148173e-05
+    ]
+   },
+   {
+    "block": 21,
+    "floor": 0.0006828825263537907,
+    "in_features": 4096,
+    "kind": "k_proj",
+    "kl": [
+     0.0,
+     0.001177704667837575,
+     0.0024361742692204824,
+     0.006314533399275853,
+     0.0007141788286882775
+    ],
+    "name": "model.layers.21.self_attn.k_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0004948221414837843,
+     0.0017532917428666917,
+     0.005631650872922062,
+     3.129630233448676e-05
+    ]
+   },
+   {
+    "block": 21,
+    "floor": 0.0006699932474600241,
+    "in_features": 4096,
+    "kind": "v_proj",
+    "kl": [
+     0.0,
+     0.0012340294490365178,
+     0.0015742550499506102,
+     0.0034100129953754566,
+     0.0007123286296307634
+    ],
+    "name": "model.layers.21.self_attn.v_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0005640362015764937,
+     0.0009042618024905861,
+     0.0027400197479154325,
+     4.233538217073929e-05
+    ]
+   },
+   {
+    "block": 21,
+    "floor": 0.0006833747283468937,
+    "in_features": 4096,
+    "kind": "o_proj",
+    "kl": [
+     0.0,
+     0.0008080049314680047,
+     0.001079677336367557,
+     0.002764651561496925,
+     0.0006920623380122874
+    ],
+    "name": "model.layers.21.self_attn.o_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.000124630203121111,
+     0.0003963026080206634,
+     0.002081276833150031,
+     8.687609665393751e-06
+    ]
+   },
+   {
+    "block": 21,
+    "floor": 0.0006621303968585431,
+    "in_features": 4096,
+    "kind": "gate_proj",
+    "kl": [
+     0.0,
+     0.0008969908553080567,
+     0.0014198651194393952,
+     0.004667676570348538,
+     0.0006859595989889769
+    ],
+    "name": "model.layers.21.mlp.gate_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00023486045844951352,
+     0.0007577347225808521,
+     0.004005546173489995,
+     2.382920213043376e-05
+    ]
+   },
+   {
+    "block": 21,
+    "floor": 0.0007019566764766301,
+    "in_features": 4096,
+    "kind": "up_proj",
+    "kl": [
+     0.0,
+     0.0009405977819384173,
+     0.0017084960958627582,
+     0.0063477336894174055,
+     0.0006930769474046907
+    ],
+    "name": "model.layers.21.mlp.up_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00023864110546178714,
+     0.0010065394193861281,
+     0.0056457770129407754,
+     0.0
+    ]
+   },
+   {
+    "block": 21,
+    "floor": 0.0006656148389186415,
+    "in_features": 12288,
+    "kind": "down_proj",
+    "kl": [
+     0.0,
+     0.0009780528417408008,
+     0.0019550558583498858,
+     0.007259658194443835,
+     0.0007029027926388966
+    ],
+    "name": "model.layers.21.mlp.down_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00031243800282215934,
+     0.0012894410194312443,
+     0.0065940433555251934,
+     3.728795372025511e-05
+    ]
+   },
+   {
+    "block": 22,
+    "floor": 0.0006793689861186631,
+    "in_features": 4096,
+    "kind": "q_proj",
+    "kl": [
+     0.0,
+     0.000770280242393619,
+     0.0010201764960989096,
+     0.002530340725676333,
+     0.0006860569978242724
+    ],
+    "name": "model.layers.22.self_attn.q_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     9.091125627495584e-05,
+     0.00034080750998024645,
+     0.00185097173955767,
+     6.688011705609275e-06
+    ]
+   },
+   {
+    "block": 22,
+    "floor": 0.0006627250245947596,
+    "in_features": 4096,
+    "kind": "k_proj",
+    "kl": [
+     0.0,
+     0.0009720414882591446,
+     0.0016693878141360032,
+     0.006001140374988486,
+     0.0006872601655544592
+    ],
+    "name": "model.layers.22.self_attn.k_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.000309316463664385,
+     0.0010066627895412438,
+     0.005338415350393726,
+     2.453514095969965e-05
+    ]
+   },
+   {
+    "block": 22,
+    "floor": 0.0006680537553536927,
+    "in_features": 4096,
+    "kind": "v_proj",
+    "kl": [
+     0.0,
+     0.001103054880525324,
+     0.0019003603897966644,
+     0.004795693289994268,
+     0.0007201684135780371
+    ],
+    "name": "model.layers.22.self_attn.v_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00043500112517163116,
+     0.0012323066344429715,
+     0.0041276395346405755,
+     5.211465822434441e-05
+    ]
+   },
+   {
+    "block": 22,
+    "floor": 0.0006485754473810827,
+    "in_features": 4096,
+    "kind": "o_proj",
+    "kl": [
+     0.0,
+     0.0007908175772220272,
+     0.0011731889132668252,
+     0.0033435225085242173,
+     0.0006937886078478181
+    ],
+    "name": "model.layers.22.self_attn.o_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00014224212984094453,
+     0.0005246134658857425,
+     0.0026949470611431344,
+     4.521316046673539e-05
+    ]
+   },
+   {
+    "block": 22,
+    "floor": 0.000655686737272373,
+    "in_features": 4096,
+    "kind": "gate_proj",
+    "kl": [
+     0.0,
+     0.0008930293706152674,
+     0.001471565945523049,
+     0.004972380610626449,
+     0.0006939360708708269
+    ],
+    "name": "model.layers.22.mlp.gate_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00023734263334289438,
+     0.000815879208250676,
+     0.004316693873354076,
+     3.824933359845395e-05
+    ]
+   },
+   {
+    "block": 22,
+    "floor": 0.0006659135621980958,
+    "in_features": 4096,
+    "kind": "up_proj",
+    "kl": [
+     0.0,
+     0.000979857742809087,
+     0.0018050153171386791,
+     0.006928587757091045,
+     0.0006789714396157084
+    ],
+    "name": "model.layers.22.mlp.up_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00031394418061099125,
+     0.0011391017549405834,
+     0.006262674194892949,
+     1.3057877417612654e-05
+    ]
+   },
+   {
+    "block": 22,
+    "floor": 0.0006390278879996744,
+    "in_features": 12288,
+    "kind": "down_proj",
+    "kl": [
+     0.0,
+     0.0011210713542168047,
+     0.00250600523049256,
+     0.009906306772101098,
+     0.00070122472173988
+    ],
+    "name": "model.layers.22.mlp.down_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00048204346621713036,
+     0.0018669773424928855,
+     0.009267278884101424,
+     6.21968337402056e-05
+    ]
+   },
+   {
+    "block": 23,
+    "floor": 0.000668166761703639,
+    "in_features": 4096,
+    "kind": "q_proj",
+    "kl": [
+     0.0,
+     0.000777441133328441,
+     0.0011212155140762432,
+     0.0027396723832360994,
+     0.0006534389747647353
+    ],
+    "name": "model.layers.23.self_attn.q_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00010927437162480203,
+     0.00045304875237260427,
+     0.0020715056215324604,
+     0.0
+    ]
+   },
+   {
+    "block": 23,
+    "floor": 0.0006538907378821849,
+    "in_features": 4096,
+    "kind": "k_proj",
+    "kl": [
+     0.0,
+     0.0008752275800595741,
+     0.0013428049677408375,
+     0.005315368743368659,
+     0.0006843859491098797
+    ],
+    "name": "model.layers.23.self_attn.k_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00022133684217738917,
+     0.0006889142298586526,
+     0.004661478005486474,
+     3.0495211227694798e-05
+    ]
+   },
+   {
+    "block": 23,
+    "floor": 0.0006357323769857304,
+    "in_features": 4096,
+    "kind": "v_proj",
+    "kl": [
+     0.0,
+     0.0010202926480894618,
+     0.0015560623485377332,
+     0.0044983439711006575,
+     0.000687795043550611
+    ],
+    "name": "model.layers.23.self_attn.v_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0003845602711037314,
+     0.0009203299715520028,
+     0.003862611594114927,
+     5.206266656488062e-05
+    ]
+   },
+   {
+    "block": 23,
+    "floor": 0.000636453267448359,
+    "in_features": 4096,
+    "kind": "o_proj",
+    "kl": [
+     0.0,
+     0.0008197242385597514,
+     0.001290601302347445,
+     0.0037628743069580833,
+     0.0006698870500940196
+    ],
+    "name": "model.layers.23.self_attn.o_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0001832709711113924,
+     0.000654148034899086,
+     0.0031264210395097244,
+     3.343378264566066e-05
+    ]
+   },
+   {
+    "block": 23,
+    "floor": 0.0006383531505464918,
+    "in_features": 4096,
+    "kind": "gate_proj",
+    "kl": [
+     0.0,
+     0.000864006698664338,
+     0.0015143668975884624,
+     0.005046233162780375,
+     0.0006568045942792648
+    ],
+    "name": "model.layers.23.mlp.gate_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00022565354811784628,
+     0.0008760137470419706,
+     0.0044078800122338835,
+     1.8451443732773022e-05
+    ]
+   },
+   {
+    "block": 23,
+    "floor": 0.000648896178900276,
+    "in_features": 4096,
+    "kind": "up_proj",
+    "kl": [
+     0.0,
+     0.0009308578953586671,
+     0.0017267466461377355,
+     0.006309107818580099,
+     0.0006704144841496421
+    ],
+    "name": "model.layers.23.mlp.up_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00028196171645839105,
+     0.0010778504672374594,
+     0.005660211639679823,
+     2.1518305249366033e-05
+    ]
+   },
+   {
+    "block": 23,
+    "floor": 0.0006352294684509725,
+    "in_features": 12288,
+    "kind": "down_proj",
+    "kl": [
+     0.0,
+     0.0012027269790127607,
+     0.003136752298001918,
+     0.013458005952780464,
+     0.0006681217147752712
+    ],
+    "name": "model.layers.23.mlp.down_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0005674975105617882,
+     0.0025015228295509452,
+     0.012822776484329492,
+     3.289224632429871e-05
+    ]
+   },
+   {
+    "block": 24,
+    "floor": 0.000610610536104667,
+    "in_features": 4096,
+    "kind": "q_proj",
+    "kl": [
+     0.0,
+     0.0007896306341531423,
+     0.001181816626156497,
+     0.0034552015403116645,
+     0.0006592286941617588
+    ],
+    "name": "model.layers.24.self_attn.q_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00017902009804847527,
+     0.0005712060900518299,
+     0.0028445910042069976,
+     4.8618158057091776e-05
+    ]
+   },
+   {
+    "block": 24,
+    "floor": 0.0006245287541686043,
+    "in_features": 4096,
+    "kind": "k_proj",
+    "kl": [
+     0.0,
+     0.0010382877965600269,
+     0.0018600265842902014,
+     0.008289788815653818,
+     0.0006532369623545674
+    ],
+    "name": "model.layers.24.self_attn.k_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0004137590423914226,
+     0.0012354978301215972,
+     0.007665260061485214,
+     2.8708208185963162e-05
+    ]
+   },
+   {
+    "block": 24,
+    "floor": 0.000632129707077,
+    "in_features": 4096,
+    "kind": "v_proj",
+    "kl": [
+     0.0,
+     0.0010902862921644192,
+     0.0018425239707025884,
+     0.004799626655349252,
+     0.0006722730816465339
+    ],
+    "name": "model.layers.24.self_attn.v_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0004581565850874192,
+     0.0012103942636255884,
+     0.004167496948272252,
+     4.014337456953389e-05
+    ]
+   },
+   {
+    "block": 24,
+    "floor": 0.0006120373912612209,
+    "in_features": 4096,
+    "kind": "o_proj",
+    "kl": [
+     0.0,
+     0.0008185283018054546,
+     0.0014129898796540828,
+     0.004330623809410835,
+     0.0006690149657918602
+    ],
+    "name": "model.layers.24.self_attn.o_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0002064909105442337,
+     0.0008009524883928619,
+     0.003718586418149614,
+     5.6977574530639365e-05
+    ]
+   },
+   {
+    "block": 24,
+    "floor": 0.0006171391422651275,
+    "in_features": 4096,
+    "kind": "gate_proj",
+    "kl": [
+     0.0,
+     0.0008557510175597011,
+     0.0016467593504832089,
+     0.005708395482175575,
+     0.0006359716744194796
+    ],
+    "name": "model.layers.24.mlp.gate_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0002386118752945736,
+     0.0010296202082180814,
+     0.005091256339910448,
+     1.8832532154352145e-05
+    ]
+   },
+   {
+    "block": 24,
+    "floor": 0.0006291087566526817,
+    "in_features": 4096,
+    "kind": "up_proj",
+    "kl": [
+     0.0,
+     0.0009226980957852763,
+     0.0018176065330113476,
+     0.006976021334425679,
+     0.0006401743021865832
+    ],
+    "name": "model.layers.24.mlp.up_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00029358933913259464,
+     0.0011884977763586659,
+     0.0063469125777729975,
+     1.1065545533901571e-05
+    ]
+   },
+   {
+    "block": 24,
+    "floor": 0.0006155586773411388,
+    "in_features": 12288,
+    "kind": "down_proj",
+    "kl": [
+     0.0,
+     0.0013316917818106157,
+     0.003194115673711419,
+     0.017853154274294028,
+     0.0006636418391401778
+    ],
+    "name": "model.layers.24.mlp.down_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0007161331044694769,
+     0.00257855699637028,
+     0.017237595596952888,
+     4.808316179903899e-05
+    ]
+   },
+   {
+    "block": 25,
+    "floor": 0.0006169420501880557,
+    "in_features": 4096,
+    "kind": "q_proj",
+    "kl": [
+     0.0,
+     0.0007215937684611786,
+     0.000905065340988742,
+     0.0020664498260065294,
+     0.0006242168412117471
+    ],
+    "name": "model.layers.25.self_attn.q_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00010465171827312282,
+     0.0002881232908006863,
+     0.0014495077758184738,
+     7.274791023691358e-06
+    ]
+   },
+   {
+    "block": 25,
+    "floor": 0.0006187674626532321,
+    "in_features": 4096,
+    "kind": "k_proj",
+    "kl": [
+     0.0,
+     0.0008443169295093989,
+     0.0013451651537393142,
+     0.009080963109017057,
+     0.0006273364457075794
+    ],
+    "name": "model.layers.25.self_attn.k_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0002255494668561668,
+     0.0007263976910860821,
+     0.008462195646363824,
+     8.568983054347266e-06
+    ]
+   },
+   {
+    "block": 25,
+    "floor": 0.0006111064321488197,
+    "in_features": 4096,
+    "kind": "v_proj",
+    "kl": [
+     0.0,
+     0.001075488459000451,
+     0.001513981585755865,
+     0.0027840594359315233,
+     0.0006411849717448722
+    ],
+    "name": "model.layers.25.self_attn.v_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0004643820268516313,
+     0.0009028751536070453,
+     0.0021729530037827034,
+     3.0078539596052525e-05
+    ]
+   },
+   {
+    "block": 25,
+    "floor": 0.0006166500394593786,
+    "in_features": 4096,
+    "kind": "o_proj",
+    "kl": [
+     0.0,
+     0.0007008479757876238,
+     0.0009221532203535347,
+     0.002277325340647273,
+     0.0006247547462017479
+    ],
+    "name": "model.layers.25.self_attn.o_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     8.419793632824513e-05,
+     0.00030550318089415604,
+     0.0016606753011878944,
+     8.10470674236926e-06
+    ]
+   },
+   {
+    "block": 25,
+    "floor": 0.0006156332619305397,
+    "in_features": 4096,
+    "kind": "gate_proj",
+    "kl": [
+     0.0,
+     0.0008544496800099023,
+     0.0017963079966194226,
+     0.006643312363370484,
+     0.0006427549746252348
+    ],
+    "name": "model.layers.25.mlp.gate_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00023881641807936256,
+     0.001180674734688883,
+     0.006027679101439944,
+     2.7121712694695103e-05
+    ]
+   },
+   {
+    "block": 25,
+    "floor": 0.0006003294031748399,
+    "in_features": 4096,
+    "kind": "up_proj",
+    "kl": [
+     0.0,
+     0.0009761645734130676,
+     0.0018080513144884275,
+     0.008104116051879247,
+     0.0006413878490313507
+    ],
+    "name": "model.layers.25.mlp.up_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00037583517023822774,
+     0.0012077219113135877,
+     0.007503786648704407,
+     4.105844585651085e-05
+    ]
+   },
+   {
+    "block": 25,
+    "floor": 0.0006125959092719975,
+    "in_features": 12288,
+    "kind": "down_proj",
+    "kl": [
+     0.0,
+     0.0012849838631194654,
+     0.0038279985213208996,
+     0.01687838109622432,
+     0.0006455759595859715
+    ],
+    "name": "model.layers.25.mlp.down_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0006723879538474679,
+     0.003215402612048902,
+     0.016265785186952323,
+     3.298005031397396e-05
+    ]
+   },
+   {
+    "block": 26,
+    "floor": 0.0005921589257626622,
+    "in_features": 4096,
+    "kind": "q_proj",
+    "kl": [
+     0.0,
+     0.0006893389382306107,
+     0.0009081264406380509,
+     0.0020909419926387024,
+     0.0006290724851884638
+    ],
+    "name": "model.layers.26.self_attn.q_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     9.718001246794843e-05,
+     0.00031596751487538864,
+     0.0014987830668760401,
+     3.6913559425801544e-05
+    ]
+   },
+   {
+    "block": 26,
+    "floor": 0.0005992323355633193,
+    "in_features": 4096,
+    "kind": "k_proj",
+    "kl": [
+     0.0,
+     0.0008050913226033548,
+     0.001367471796844906,
+     0.009254367792416576,
+     0.0006218700960352018
+    ],
+    "name": "model.layers.26.self_attn.k_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00020585898704003549,
+     0.0007682394612815866,
+     0.008655135456853256,
+     2.2637760471882454e-05
+    ]
+   },
+   {
+    "block": 26,
+    "floor": 0.0005900434616715584,
+    "in_features": 4096,
+    "kind": "v_proj",
+    "kl": [
+     0.0,
+     0.001099847074669061,
+     0.0016699116061321105,
+     0.0037544286832021188,
+     0.0006430651336731996
+    ],
+    "name": "model.layers.26.self_attn.v_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0005098036129975027,
+     0.0010798681444605521,
+     0.0031643852215305604,
+     5.302167200164128e-05
+    ]
+   },
+   {
+    "block": 26,
+    "floor": 0.0005944625764042477,
+    "in_features": 4096,
+    "kind": "o_proj",
+    "kl": [
+     0.0,
+     0.0007223192031982536,
+     0.001036477232091831,
+     0.0027409646089655753,
+     0.0006227537857573517
+    ],
+    "name": "model.layers.26.self_attn.o_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0001278566267940059,
+     0.00044201465568758334,
+     0.0021465020325613276,
+     2.829120935310403e-05
+    ]
+   },
+   {
+    "block": 26,
+    "floor": 0.0005828663137102236,
+    "in_features": 4096,
+    "kind": "gate_proj",
+    "kl": [
+     0.0,
+     0.0009491999795550154,
+     0.0018214865122338558,
+     0.00948938976880834,
+     0.0006017511833471103
+    ],
+    "name": "model.layers.26.mlp.gate_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0003663336658447918,
+     0.0012386201985236322,
+     0.008906523455098117,
+     1.8884869636886636e-05
+    ]
+   },
+   {
+    "block": 26,
+    "floor": 0.0005946350943041185,
+    "in_features": 4096,
+    "kind": "up_proj",
+    "kl": [
+     0.0,
+     0.0010494532859636782,
+     0.002130364241360985,
+     0.010959606862553619,
+     0.0006221633311268391
+    ],
+    "name": "model.layers.26.mlp.up_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0004548181916595597,
+     0.0015357291470568667,
+     0.010364971768249501,
+     2.7528236822720585e-05
+    ]
+   },
+   {
+    "block": 26,
+    "floor": 0.0005815826294830915,
+    "in_features": 12288,
+    "kind": "down_proj",
+    "kl": [
+     0.0,
+     0.0012905457416726956,
+     0.0037261485641417124,
+     0.019671856119743078,
+     0.0006355623991793305
+    ],
+    "name": "model.layers.26.mlp.down_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0007089631121896041,
+     0.0031445659346586207,
+     0.019090273490259987,
+     5.397976969623904e-05
+    ]
+   },
+   {
+    "block": 27,
+    "floor": 0.0005584984618383592,
+    "in_features": 4096,
+    "kind": "q_proj",
+    "kl": [
+     0.0,
+     0.0006868401202623936,
+     0.0008615985735858034,
+     0.0022760902176665607,
+     0.0005948257236105664
+    ],
+    "name": "model.layers.27.self_attn.q_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0001283416584240344,
+     0.00030310011174744425,
+     0.0017175917558282015,
+     3.632726177220727e-05
+    ]
+   },
+   {
+    "block": 27,
+    "floor": 0.0005809359786898047,
+    "in_features": 4096,
+    "kind": "k_proj",
+    "kl": [
+     0.0,
+     0.0008759283788952479,
+     0.002258877929671079,
+     0.013464376332326953,
+     0.0005960123638405508
+    ],
+    "name": "model.layers.27.self_attn.k_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0002949924002054431,
+     0.0016779419509812743,
+     0.012883440353637149,
+     1.5076385150746083e-05
+    ]
+   },
+   {
+    "block": 27,
+    "floor": 0.0005755481584640799,
+    "in_features": 4096,
+    "kind": "v_proj",
+    "kl": [
+     0.0,
+     0.0010832478641082317,
+     0.0017541856755740293,
+     0.0028281231212441025,
+     0.0006187023430867583
+    ],
+    "name": "model.layers.27.self_attn.v_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0005076997056441517,
+     0.0011786375171099494,
+     0.0022525749627800226,
+     4.3154184622678365e-05
+    ]
+   },
+   {
+    "block": 27,
+    "floor": 0.0005636682624907007,
+    "in_features": 4096,
+    "kind": "o_proj",
+    "kl": [
+     0.0,
+     0.0006749294647804197,
+     0.0008557555495470182,
+     0.0017798007853558272,
+     0.0006151847487394072
+    ],
+    "name": "model.layers.27.self_attn.o_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00011126120228971892,
+     0.0002920872870563174,
+     0.0012161325228651266,
+     5.151648624870649e-05
+    ]
+   },
+   {
+    "block": 27,
+    "floor": 0.0005816360425072488,
+    "in_features": 4096,
+    "kind": "gate_proj",
+    "kl": [
+     0.0,
+     0.0009832843673650356,
+     0.002305379869225168,
+     0.012209309086766162,
+     0.0006035123829067686
+    ],
+    "name": "model.layers.27.mlp.gate_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00040164832485778683,
+     0.0017237438267179194,
+     0.011627673044258912,
+     2.187634039951987e-05
+    ]
+   },
+   {
+    "block": 27,
+    "floor": 0.0005604741869010284,
+    "in_features": 4096,
+    "kind": "up_proj",
+    "kl": [
+     0.0,
+     0.0010145649198890134,
+     0.0024064184254469663,
+     0.0113941088257578,
+     0.0005997714804074754
+    ],
+    "name": "model.layers.27.mlp.up_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00045409073298798496,
+     0.0018459442385459377,
+     0.010833634638856773,
+     3.9297293506447e-05
+    ]
+   },
+   {
+    "block": 27,
+    "floor": 0.0005695974097536304,
+    "in_features": 12288,
+    "kind": "down_proj",
+    "kl": [
+     0.0,
+     0.001367649646782732,
+     0.00459255860520787,
+     0.021159476783388927,
+     0.0006297119200693838
+    ],
+    "name": "model.layers.27.mlp.down_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0007980522370291017,
+     0.00402296119545424,
+     0.020589879373635295,
+     6.0114510315753414e-05
+    ]
+   },
+   {
+    "block": 28,
+    "floor": 0.0005566544886996196,
+    "in_features": 4096,
+    "kind": "q_proj",
+    "kl": [
+     0.0,
+     0.0006773112280357213,
+     0.0008730003508424945,
+     0.0020492519454885284,
+     0.0005840927510805402
+    ],
+    "name": "model.layers.28.self_attn.q_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00012065673933610169,
+     0.0003163458621428749,
+     0.0014925974567889088,
+     2.7438262380920665e-05
+    ]
+   },
+   {
+    "block": 28,
+    "floor": 0.0005620468910075912,
+    "in_features": 4096,
+    "kind": "k_proj",
+    "kl": [
+     0.0,
+     0.0009129353056322543,
+     0.002547252356201652,
+     0.010624623511178414,
+     0.0005929986965588579
+    ],
+    "name": "model.layers.28.self_attn.k_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0003508884146246631,
+     0.0019852054651940607,
+     0.010062576620170823,
+     3.0951805551266624e-05
+    ]
+   },
+   {
+    "block": 28,
+    "floor": 0.000539237873365396,
+    "in_features": 4096,
+    "kind": "v_proj",
+    "kl": [
+     0.0,
+     0.0011144115933683196,
+     0.001772819321875001,
+     0.0031455666876385084,
+     0.0006061389344113569
+    ],
+    "name": "model.layers.28.self_attn.v_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0005751737200029236,
+     0.001233581448509605,
+     0.0026063288142731122,
+     6.690106104596089e-05
+    ]
+   },
+   {
+    "block": 28,
+    "floor": 0.0005366743515989066,
+    "in_features": 4096,
+    "kind": "o_proj",
+    "kl": [
+     0.0,
+     0.000679992988339881,
+     0.0008858028411469565,
+     0.0018317845942373311,
+     0.0005809282995569364
+    ],
+    "name": "model.layers.28.self_attn.o_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00014331863674097443,
+     0.00034912848954805,
+     0.0012951102426384245,
+     4.425394795802985e-05
+    ]
+   },
+   {
+    "block": 28,
+    "floor": 0.0005427923453264856,
+    "in_features": 4096,
+    "kind": "gate_proj",
+    "kl": [
+     0.0,
+     0.0010945881720956386,
+     0.0020176711520717306,
+     0.010877826251426321,
+     0.0005741285365524251
+    ],
+    "name": "model.layers.28.mlp.gate_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.000551795826769153,
+     0.001474878806745245,
+     0.010335033906099834,
+     3.133619122593957e-05
+    ]
+   },
+   {
+    "block": 28,
+    "floor": 0.0005374564683969085,
+    "in_features": 4096,
+    "kind": "up_proj",
+    "kl": [
+     0.0,
+     0.0010934465737885673,
+     0.002255770464578886,
+     0.011667381768838782,
+     0.0005953979205899497
+    ],
+    "name": "model.layers.28.mlp.up_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0005559901053916589,
+     0.0017183139961819776,
+     0.011129925300441873,
+     5.79414521930412e-05
+    ]
+   },
+   {
+    "block": 28,
+    "floor": 0.0005493533022738378,
+    "in_features": 12288,
+    "kind": "down_proj",
+    "kl": [
+     0.0,
+     0.001281913108500437,
+     0.003686542335068596,
+     0.019855933967231256,
+     0.0005921396890293959
+    ],
+    "name": "model.layers.28.mlp.down_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0007325598062265991,
+     0.003137189032794758,
+     0.01930658066495742,
+     4.278638675555809e-05
+    ]
+   },
+   {
+    "block": 29,
+    "floor": 0.0005302311389288573,
+    "in_features": 4096,
+    "kind": "q_proj",
+    "kl": [
+     0.0,
+     0.0006378870262864066,
+     0.0008603236438804819,
+     0.0021382004765322536,
+     0.0005550924532681891
+    ],
+    "name": "model.layers.29.self_attn.q_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00010765588735754932,
+     0.0003300925049516246,
+     0.0016079693376033963,
+     2.4861314339331845e-05
+    ]
+   },
+   {
+    "block": 29,
+    "floor": 0.0005397183233881812,
+    "in_features": 4096,
+    "kind": "k_proj",
+    "kl": [
+     0.0,
+     0.0007497842905780864,
+     0.002404663732297729,
+     0.016953862471171626,
+     0.0005669568516758938
+    ],
+    "name": "model.layers.29.self_attn.k_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00021006596718990526,
+     0.001864945408909548,
+     0.016414144147783444,
+     2.7238528287712688e-05
+    ]
+   },
+   {
+    "block": 29,
+    "floor": 0.0005302043203144975,
+    "in_features": 4096,
+    "kind": "v_proj",
+    "kl": [
+     0.0,
+     0.0012595661531220497,
+     0.0028848372150897385,
+     0.005062597723403859,
+     0.0005978434870309766
+    ],
+    "name": "model.layers.29.self_attn.v_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0007293618328075522,
+     0.002354632894775241,
+     0.004532393403089361,
+     6.763916671647904e-05
+    ]
+   },
+   {
+    "block": 29,
+    "floor": 0.0005277482359886374,
+    "in_features": 4096,
+    "kind": "o_proj",
+    "kl": [
+     0.0,
+     0.0006499474435872263,
+     0.0009069278344121443,
+     0.0021152238598317235,
+     0.0005359370366957128
+    ],
+    "name": "model.layers.29.self_attn.o_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00012219920759858895,
+     0.0003791795984235069,
+     0.0015874756238430862,
+     8.188800707075415e-06
+    ]
+   },
+   {
+    "block": 29,
+    "floor": 0.0005257925935458251,
+    "in_features": 4096,
+    "kind": "gate_proj",
+    "kl": [
+     0.0,
+     0.0010360162988590886,
+     0.0031484043760980464,
+     0.01159151091290627,
+     0.0005727324791547549
+    ],
+    "name": "model.layers.29.mlp.gate_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0005102237053132635,
+     0.0026226117825522213,
+     0.011065718319360447,
+     4.69398856089298e-05
+    ]
+   },
+   {
+    "block": 29,
+    "floor": 0.0005219994369632271,
+    "in_features": 4096,
+    "kind": "up_proj",
+    "kl": [
+     0.0,
+     0.0009849487869881862,
+     0.0024801286528382416,
+     0.012470376155312213,
+     0.0005826346067437319
+    ],
+    "name": "model.layers.29.mlp.up_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00046294935002495915,
+     0.0019581292158750143,
+     0.011948376718348986,
+     6.063516978050483e-05
+    ]
+   },
+   {
+    "block": 29,
+    "floor": 0.0005139979016645585,
+    "in_features": 12288,
+    "kind": "down_proj",
+    "kl": [
+     0.0,
+     0.001499226248314069,
+     0.004741115653761611,
+     0.027188622596691643,
+     0.0005860656695597582
+    ],
+    "name": "model.layers.29.mlp.down_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0009852283466495104,
+     0.004227117752097053,
+     0.026674624695027085,
+     7.206776789519967e-05
+    ]
+   },
+   {
+    "block": 30,
+    "floor": 0.0004977526344598878,
+    "in_features": 4096,
+    "kind": "q_proj",
+    "kl": [
+     0.0,
+     0.000629858082651288,
+     0.0007666172143305204,
+     0.0018608818381821018,
+     0.0005250058274950621
+    ],
+    "name": "model.layers.30.self_attn.q_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0001321054481914002,
+     0.0002688645798706326,
+     0.001363129203722214,
+     2.7253193035174303e-05
+    ]
+   },
+   {
+    "block": 30,
+    "floor": 0.0005030640629612673,
+    "in_features": 4096,
+    "kind": "k_proj",
+    "kl": [
+     0.0,
+     0.0008425555832757632,
+     0.0023406774217232863,
+     0.01701657745333316,
+     0.0005420822255538969
+    ],
+    "name": "model.layers.30.self_attn.k_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00033949152031449595,
+     0.0018376133587620189,
+     0.016513513390371895,
+     3.901816259262961e-05
+    ]
+   },
+   {
+    "block": 30,
+    "floor": 0.000499610394987472,
+    "in_features": 4096,
+    "kind": "v_proj",
+    "kl": [
+     0.0,
+     0.0015003083353879198,
+     0.0024489487786984255,
+     0.0036192311587754885,
+     0.0005625477675501478
+    ],
+    "name": "model.layers.30.self_attn.v_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0010006979404004477,
+     0.0019493383837109533,
+     0.0031196207637880164,
+     6.29373725626758e-05
+    ]
+   },
+   {
+    "block": 30,
+    "floor": 0.0004860048524339883,
+    "in_features": 4096,
+    "kind": "o_proj",
+    "kl": [
+     0.0,
+     0.0006435876303047776,
+     0.0009235889495818762,
+     0.0020437502827616062,
+     0.0005412190055579016
+    ],
+    "name": "model.layers.30.self_attn.o_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0001575827778707893,
+     0.00043758409714788786,
+     0.0015577454303276179,
+     5.521415312391328e-05
+    ]
+   },
+   {
+    "block": 30,
+    "floor": 0.0004889752788888652,
+    "in_features": 4096,
+    "kind": "gate_proj",
+    "kl": [
+     0.0,
+     0.0010882942911003203,
+     0.003284582379596342,
+     0.014442675626640204,
+     0.000533069163253875
+    ],
+    "name": "model.layers.30.mlp.gate_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0005993190122114551,
+     0.002795607100707477,
+     0.013953700347751338,
+     4.409388436500976e-05
+    ]
+   },
+   {
+    "block": 30,
+    "floor": 0.000496706659647129,
+    "in_features": 4096,
+    "kind": "up_proj",
+    "kl": [
+     0.0,
+     0.0010537961126300649,
+     0.0029429083468742994,
+     0.014276344210446754,
+     0.0005490588144291853
+    ],
+    "name": "model.layers.30.mlp.up_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0005570894529829359,
+     0.0024462016872271704,
+     0.013779637550799625,
+     5.235215478205629e-05
+    ]
+   },
+   {
+    "block": 30,
+    "floor": 0.00047940062817366206,
+    "in_features": 12288,
+    "kind": "down_proj",
+    "kl": [
+     0.0,
+     0.0016192609961153154,
+     0.00446687469437459,
+     0.021967895136433914,
+     0.0005708652988670493
+    ],
+    "name": "model.layers.30.mlp.down_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0011398603679416534,
+     0.003987474066200928,
+     0.02148849450826025,
+     9.146467069338725e-05
+    ]
+   },
+   {
+    "block": 31,
+    "floor": 0.00047612980774566923,
+    "in_features": 4096,
+    "kind": "q_proj",
+    "kl": [
+     0.0,
+     0.0006107415970659602,
+     0.0008160610416369012,
+     0.0017873672703520626,
+     0.0005143205967790564
+    ],
+    "name": "model.layers.31.self_attn.q_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00013461178932029096,
+     0.0003399312338912319,
+     0.0013112374626063933,
+     3.819078903338714e-05
+    ]
+   },
+   {
+    "block": 31,
+    "floor": 0.00047553009293547274,
+    "in_features": 4096,
+    "kind": "k_proj",
+    "kl": [
+     0.0,
+     0.0008448908779944642,
+     0.0020800514081497426,
+     0.016931276115726566,
+     0.000502295184951341
+    ],
+    "name": "model.layers.31.self_attn.k_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00036936078505899145,
+     0.0016045213152142699,
+     0.016455746022791092,
+     2.6765092015868224e-05
+    ]
+   },
+   {
+    "block": 31,
+    "floor": 0.00048322955097823206,
+    "in_features": 4096,
+    "kind": "v_proj",
+    "kl": [
+     0.0,
+     0.0013067763029904482,
+     0.002320341789387872,
+     0.0032377828939033565,
+     0.0005483873987392618
+    ],
+    "name": "model.layers.31.self_attn.v_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0008235467520122161,
+     0.0018371122384096398,
+     0.0027545533429251244,
+     6.515784776102971e-05
+    ]
+   },
+   {
+    "block": 31,
+    "floor": 0.00045523480385517454,
+    "in_features": 4096,
+    "kind": "o_proj",
+    "kl": [
+     0.0,
+     0.000627812441356027,
+     0.0008514075235956444,
+     0.0019488278216361187,
+     0.0005007556864494906
+    ],
+    "name": "model.layers.31.self_attn.o_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00017257763750085244,
+     0.00039617271974046983,
+     0.0014935930177809441,
+     4.552088259431611e-05
+    ]
+   },
+   {
+    "block": 31,
+    "floor": 0.00046091053850589225,
+    "in_features": 4096,
+    "kind": "gate_proj",
+    "kl": [
+     0.0,
+     0.0011869674916192622,
+     0.002941595785006126,
+     0.019324182121540287,
+     0.0005190330139452359
+    ],
+    "name": "model.layers.31.mlp.gate_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0007260569531133699,
+     0.0024806852465002337,
+     0.018863271583034396,
+     5.812247543934368e-05
+    ]
+   },
+   {
+    "block": 31,
+    "floor": 0.0004594642800509861,
+    "in_features": 4096,
+    "kind": "up_proj",
+    "kl": [
+     0.0,
+     0.0011317676657488244,
+     0.0027829611325161704,
+     0.01441752608264947,
+     0.000542254795738988
+    ],
+    "name": "model.layers.31.mlp.up_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0006723033856978383,
+     0.0023234968524651844,
+     0.013958061802598485,
+     8.279051568800186e-05
+    ]
+   },
+   {
+    "block": 31,
+    "floor": 0.0004571041325191679,
+    "in_features": 12288,
+    "kind": "down_proj",
+    "kl": [
+     0.0,
+     0.0015126340063188488,
+     0.004512314554135991,
+     0.025388182514463828,
+     0.0005399689438013683
+    ],
+    "name": "model.layers.31.mlp.down_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.001055529873799681,
+     0.004055210421616823,
+     0.02493107838194466,
+     8.286481128220037e-05
+    ]
+   },
+   {
+    "block": 32,
+    "floor": 0.00044389190589920116,
+    "in_features": 4096,
+    "kind": "q_proj",
+    "kl": [
+     0.0,
+     0.0005894377593261649,
+     0.0008933957533971394,
+     0.0025319984316544476,
+     0.00048640404866424355
+    ],
+    "name": "model.layers.32.self_attn.q_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00014554585342696377,
+     0.0004495038474979383,
+     0.0020881065257552464,
+     4.2512142765042385e-05
+    ]
+   },
+   {
+    "block": 32,
+    "floor": 0.0004333991550985635,
+    "in_features": 4096,
+    "kind": "k_proj",
+    "kl": [
+     0.0,
+     0.0009689537225237375,
+     0.0029428410339817114,
+     0.024028372764189503,
+     0.0004960470488328793
+    ],
+    "name": "model.layers.32.self_attn.k_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0005355545674251741,
+     0.002509441878883148,
+     0.02359497360909094,
+     6.264789373431576e-05
+    ]
+   },
+   {
+    "block": 32,
+    "floor": 0.0004298851281866554,
+    "in_features": 4096,
+    "kind": "v_proj",
+    "kl": [
+     0.0,
+     0.0016632382091928632,
+     0.0036451456234208417,
+     0.004317812106620505,
+     0.000529622089282389
+    ],
+    "name": "model.layers.32.self_attn.v_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0012333530810062078,
+     0.0032152604952341863,
+     0.0038879269784338494,
+     9.97369610957336e-05
+    ]
+   },
+   {
+    "block": 32,
+    "floor": 0.00041316899747331147,
+    "in_features": 4096,
+    "kind": "o_proj",
+    "kl": [
+     0.0,
+     0.0005845291218814036,
+     0.0007331620882674981,
+     0.0015330656862722752,
+     0.0004851613055547324
+    ],
+    "name": "model.layers.32.self_attn.o_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00017136012440809213,
+     0.00031999309079418665,
+     0.0011198966887989638,
+     7.199230808142094e-05
+    ]
+   },
+   {
+    "block": 32,
+    "floor": 0.0004110027216301996,
+    "in_features": 4096,
+    "kind": "gate_proj",
+    "kl": [
+     0.0,
+     0.001209365482626405,
+     0.004211988328199071,
+     0.020353408441782277,
+     0.0004893745369691818
+    ],
+    "name": "model.layers.32.mlp.gate_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0007983627609962054,
+     0.0038009856065688713,
+     0.019942405720152077,
+     7.837181533898219e-05
+    ]
+   },
+   {
+    "block": 32,
+    "floor": 0.0004185973222181656,
+    "in_features": 4096,
+    "kind": "up_proj",
+    "kl": [
+     0.0,
+     0.0012224670685467497,
+     0.0033154790000103234,
+     0.01664756848674223,
+     0.00050804496034608
+    ],
+    "name": "model.layers.32.mlp.up_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0008038697463285841,
+     0.002896881677792158,
+     0.016228971164524066,
+     8.944763812791443e-05
+    ]
+   },
+   {
+    "block": 32,
+    "floor": 0.0004099286081428856,
+    "in_features": 12288,
+    "kind": "down_proj",
+    "kl": [
+     0.0,
+     0.0013411895086137041,
+     0.004072779657225229,
+     0.020872280109183298,
+     0.0005253191181243731
+    ],
+    "name": "model.layers.32.mlp.down_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0009312609004708185,
+     0.003662851049082344,
+     0.02046235150104041,
+     0.00011539050998148753
+    ]
+   },
+   {
+    "block": 33,
+    "floor": 0.0003696506637462445,
+    "in_features": 4096,
+    "kind": "q_proj",
+    "kl": [
+     0.0,
+     0.0006144407039644476,
+     0.0010097950549382891,
+     0.003243562652276392,
+     0.00046608622655216965
+    ],
+    "name": "model.layers.33.self_attn.q_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00024479004021820305,
+     0.0006401443911920446,
+     0.0028739119885301473,
+     9.643556280592515e-05
+    ]
+   },
+   {
+    "block": 33,
+    "floor": 0.00038923992873111826,
+    "in_features": 4096,
+    "kind": "k_proj",
+    "kl": [
+     0.0,
+     0.0009087508151301201,
+     0.003518875444583217,
+     0.016589433059132987,
+     0.0004690374426098983
+    ],
+    "name": "model.layers.33.self_attn.k_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0005195108863990019,
+     0.0031296355158520984,
+     0.016200193130401868,
+     7.979751387878002e-05
+    ]
+   },
+   {
+    "block": 33,
+    "floor": 0.0003700963925059034,
+    "in_features": 4096,
+    "kind": "v_proj",
+    "kl": [
+     0.0,
+     0.0014577286146758644,
+     0.00300330138664912,
+     0.005480944842548952,
+     0.0005077284884283926
+    ],
+    "name": "model.layers.33.self_attn.v_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.001087632222169961,
+     0.0026332049941432166,
+     0.005110848450043049,
+     0.0001376320959224892
+    ]
+   },
+   {
+    "block": 33,
+    "floor": 0.0003403186681905939,
+    "in_features": 4096,
+    "kind": "o_proj",
+    "kl": [
+     0.0,
+     0.0005858652818888731,
+     0.0008443354453575925,
+     0.001949402249761412,
+     0.0004347498413815762
+    ],
+    "name": "model.layers.33.self_attn.o_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00024554661369827923,
+     0.0005040167771669987,
+     0.001609083581570818,
+     9.44311731909823e-05
+    ]
+   },
+   {
+    "block": 33,
+    "floor": 0.00032034307249161867,
+    "in_features": 4096,
+    "kind": "gate_proj",
+    "kl": [
+     0.0,
+     0.0011640443557768018,
+     0.003627892298146382,
+     0.018098967820823327,
+     0.0004704700903453403
+    ],
+    "name": "model.layers.33.mlp.gate_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0008437012832851832,
+     0.003307549225654763,
+     0.01777862474833171,
+     0.00015012701785372166
+    ]
+   },
+   {
+    "block": 33,
+    "floor": 0.000331642685790615,
+    "in_features": 4096,
+    "kind": "up_proj",
+    "kl": [
+     0.0,
+     0.001235238388515446,
+     0.003452365808378568,
+     0.017468956370117656,
+     0.0005509162771586501
+    ],
+    "name": "model.layers.33.mlp.up_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.000903595702724831,
+     0.003120723122587953,
+     0.01713731368432704,
+     0.00021927359136803513
+    ]
+   },
+   {
+    "block": 33,
+    "floor": 0.00031229529270269723,
+    "in_features": 12288,
+    "kind": "down_proj",
+    "kl": [
+     0.0,
+     0.0012740077470167006,
+     0.004113959890504813,
+     0.01951649513339884,
+     0.0004936530404728118
+    ],
+    "name": "model.layers.33.mlp.down_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0009617124543140034,
+     0.0038016645978021153,
+     0.019204199840696143,
+     0.00018135774777011454
+    ]
+   },
+   {
+    "block": 34,
+    "floor": 0.00024375183335142056,
+    "in_features": 4096,
+    "kind": "q_proj",
+    "kl": [
+     0.0,
+     0.0006148893652260086,
+     0.000975533672308949,
+     0.002627436661530237,
+     0.0004412225077009161
+    ],
+    "name": "model.layers.34.self_attn.q_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.000371137531874588,
+     0.0007317818389575284,
+     0.002383684828178817,
+     0.00019747067434949553
+    ]
+   },
+   {
+    "block": 34,
+    "floor": 0.0002706703949436899,
+    "in_features": 4096,
+    "kind": "k_proj",
+    "kl": [
+     0.0,
+     0.001025521529818442,
+     0.003195004204145503,
+     0.016831976057019766,
+     0.00042404861142584924
+    ],
+    "name": "model.layers.34.self_attn.k_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0007548511348747522,
+     0.002924333809201813,
+     0.016561305662076076,
+     0.00015337821648215937
+    ]
+   },
+   {
+    "block": 34,
+    "floor": 0.00023120515819769825,
+    "in_features": 4096,
+    "kind": "v_proj",
+    "kl": [
+     0.0,
+     0.0013369467520240764,
+     0.0021776378827173867,
+     0.006103983981541005,
+     0.000477695645879495
+    ],
+    "name": "model.layers.34.self_attn.v_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0011057415938263782,
+     0.0019464327245196885,
+     0.005872778823343307,
+     0.0002464904876817968
+    ]
+   },
+   {
+    "block": 34,
+    "floor": 0.00018807092449674956,
+    "in_features": 4096,
+    "kind": "o_proj",
+    "kl": [
+     0.0,
+     0.0005800253611410257,
+     0.000910227987932821,
+     0.002692371225618651,
+     0.00038733826608447274
+    ],
+    "name": "model.layers.34.self_attn.o_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0003919544366442761,
+     0.0007221570634360715,
+     0.002504300301121902,
+     0.00019926734158772318
+    ]
+   },
+   {
+    "block": 34,
+    "floor": 0.0001759934543288607,
+    "in_features": 4096,
+    "kind": "gate_proj",
+    "kl": [
+     0.0,
+     0.001217558280219321,
+     0.003487739012020966,
+     0.015570574608206223,
+     0.000397398926113086
+    ],
+    "name": "model.layers.34.mlp.gate_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0010415648258904602,
+     0.0033117455576921052,
+     0.015394581153877363,
+     0.00022140547178422528
+    ]
+   },
+   {
+    "block": 34,
+    "floor": 0.00017765465860275734,
+    "in_features": 4096,
+    "kind": "up_proj",
+    "kl": [
+     0.0,
+     0.001112588023713244,
+     0.0031677306314902556,
+     0.015644441342359823,
+     0.0005017345817764809
+    ],
+    "name": "model.layers.34.mlp.up_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0009349333651104865,
+     0.0029900759728874985,
+     0.015466786683757066,
+     0.00032407992317372357
+    ]
+   },
+   {
+    "block": 34,
+    "floor": 0.0001714812856723781,
+    "in_features": 12288,
+    "kind": "down_proj",
+    "kl": [
+     0.0,
+     0.0011078775130744084,
+     0.003177481883264791,
+     0.01545239379569806,
+     0.00046339141599571927
+    ],
+    "name": "model.layers.34.mlp.down_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0009363962274020303,
+     0.003006000597592413,
+     0.015280912510025682,
+     0.00029191013032334114
+    ]
+   },
+   {
+    "block": 35,
+    "floor": 7.961123039086494e-05,
+    "in_features": 4096,
+    "kind": "q_proj",
+    "kl": [
+     0.0,
+     0.0005251485270479968,
+     0.0006952295514630031,
+     0.001411786203655155,
+     0.0003209240824201149
+    ],
+    "name": "model.layers.35.self_attn.q_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0004455372966571319,
+     0.0006156183210721381,
+     0.0013321749732642901,
+     0.00024131285202924995
+    ]
+   },
+   {
+    "block": 35,
+    "floor": 0.00010422325606871316,
+    "in_features": 4096,
+    "kind": "k_proj",
+    "kl": [
+     0.0,
+     0.0005365701136183725,
+     0.0006895736853496278,
+     0.0012345731496697717,
+     0.0002947818828305243
+    ],
+    "name": "model.layers.35.self_attn.k_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.00043234685754965933,
+     0.0005853504292809146,
+     0.0011303498936010585,
+     0.00019055862676181117
+    ]
+   },
+   {
+    "block": 35,
+    "floor": 7.26069274225979e-05,
+    "in_features": 4096,
+    "kind": "v_proj",
+    "kl": [
+     0.0,
+     0.0007430478888134134,
+     0.0011937450105051711,
+     0.0032753919510818946,
+     0.00042661061454440095
+    ],
+    "name": "model.layers.35.self_attn.v_proj",
+    "params": 4194304,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0006704409613908155,
+     0.0011211380830825732,
+     0.003202785023659297,
+     0.00035400368712180306
+    ]
+   },
+   {
+    "block": 35,
+    "floor": 1.8562193905528074e-05,
+    "in_features": 4096,
+    "kind": "o_proj",
+    "kl": [
+     0.0,
+     0.0005213389850193995,
+     0.0008344172763656483,
+     0.002281535209435952,
+     0.00025637044814033296
+    ],
+    "name": "model.layers.35.self_attn.o_proj",
+    "params": 16777216,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0005027767911138714,
+     0.0008158550824601202,
+     0.002262973015530424,
+     0.0002378082542348049
+    ]
+   },
+   {
+    "block": 35,
+    "floor": 1.316618282197762e-05,
+    "in_features": 4096,
+    "kind": "gate_proj",
+    "kl": [
+     0.0,
+     0.0018237419935346522,
+     0.004819016666879279,
+     0.019549879719723964,
+     0.0003064999197544468
+    ],
+    "name": "model.layers.35.mlp.gate_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0018105758107126745,
+     0.004805850484057302,
+     0.019536713536901985,
+     0.0002933337369324692
+    ]
+   },
+   {
+    "block": 35,
+    "floor": 1.2487318835630484e-05,
+    "in_features": 4096,
+    "kind": "up_proj",
+    "kl": [
+     0.0,
+     0.0013194736414174292,
+     0.0034982833936661566,
+     0.01651903843624454,
+     0.00034400611212098367
+    ],
+    "name": "model.layers.35.mlp.up_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.0013069863225817987,
+     0.003485796074830526,
+     0.01650655111740891,
+     0.0003315187932853532
+    ]
+   },
+   {
+    "block": 35,
+    "floor": 7.105827068543288e-06,
+    "in_features": 12288,
+    "kind": "down_proj",
+    "kl": [
+     0.0,
+     0.0011413228646869314,
+     0.0032968829661764397,
+     0.020541029358454393,
+     0.0005270231694701792
+    ],
+    "name": "model.layers.35.mlp.down_proj",
+    "params": 50331648,
+    "report": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "value": [
+     0.0,
+     0.001134217037618388,
+     0.0032897771391078964,
+     0.02053392353138585,
+     0.0005199173424016359
+    ]
+   }
+  ],
+  "meta": {
+   "calibration": {
+    "dataset": "wikitext2",
+    "samples": 128,
+    "seed": 42,
+    "seqlen": 2048,
+    "sequential": false
+   },
+   "dataset_fingerprint": "4ed096fe9fe1652e167063ef56cc8a73c15c8d078870f35cb847cafa57dd57e0",
+   "device": "cuda",
+   "dtype": "bfloat16",
+   "git_dirty": false,
+   "git_sha": "00f99589835857bbdb3283de773d0001029a0cd3",
+   "gpu_names": [
+    "NVIDIA H200 NVL"
+   ],
+   "methods": [
+    "bf16",
+    "gptq_int4",
+    "gptq_int3",
+    "gptq_int2",
+    "int8_w"
+   ],
+   "mma": "fp32_fma",
+   "model_id": "Qwen/Qwen3-8B",
+   "model_sha": "b968826d9c46dd6066d109eabc6255188de91218",
+   "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+   "seed": 42,
+   "seqlen": 512,
+   "source": {
+    "dataset": "wikitext2",
+    "split": "validation"
+   },
+   "windows": 8
+  },
+  "methods": [
+   "bf16",
+   "gptq_int4",
+   "gptq_int3",
+   "gptq_int2",
+   "int8_w"
+  ],
+  "objective": "kl_minus_floor",
+  "path": "runs/20261111_q8b/table/table.json",
+  "reports": {
+   "methods": {},
+   "metrics": [
+    "weight.mse",
+    "output.sqnr_db",
+    "output.cosine"
+   ]
+  },
+  "schema": "tricast.autotune.table/2",
+  "sha256": "ad9703610bf64e289d2dceafd3304505a7f90897bfcaddaf82ea899c849c4296",
+  "weight_bits": {
+   "bf16": [
+    16,
+    0,
+    1
+   ],
+   "gptq_int2": [
+    2,
+    18,
+    128
+   ],
+   "gptq_int3": [
+    3,
+    19,
+    128
+   ],
+   "gptq_int4": [
+    4,
+    20,
+    128
+   ],
+   "int8_w": [
+    8,
+    32,
+    null
+   ]
+  }
+ },
+ "transfer": []
+}

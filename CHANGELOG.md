@@ -5,7 +5,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 ## [Unreleased]
 
 ### Added
-- The one tool `app/web/tune.html`: a single column of four steps and nothing else (no menu to other pages, no
+- The one tool `app/web/tune.html`: a single column of steps and nothing else (no menu to other pages, no
   chat, no chart) — 1 put a model in (the ones with a sensitivity table); 2 Auto-tune recommends its setup for a
   target size (the exact knapsack in a module worker, `js/mckp_worker.js`, plus the option settings the AI tune
   session measured as better, said with how it was reached); 3 edit it by hand; 4 evaluate (the recipe run on the
@@ -17,6 +17,50 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   methods by name; the address keeps the job. One screen at 1440 × 900. Checks:
   `scripts/quantizer/tune_app_check.mjs` with a fake-GPU live fixture (`scripts/quantizer/tune_fixture_server.py`,
   made-up job numbers); the analysis, Quantizer and layer-map pages stay at their addresses, off this page.
+- Step 5 of the tool ("결과물", after the evaluation): the model file's size under the setup by part (computed
+  from the original checkpoint's safetensors header and the setup's Linear bits; embedding, output layer and
+  norms stay BF16 — 1.50 GB → 0.80 GB at 20%) and the recipe bundle `POST /api/autotune/export` (zip: the
+  measured recipe file, its measurement, the size, a README with the commands). `app/autotune_export.py`; the
+  recipe route says the size too.
+- Several models on the tool: `app/web/demo/autotune/models.json` lists them (`kind` llm | detector; only the
+  `live` one, the model the job runner loads, gets the GPU path). `POST /api/autotune/recipe {model}` picks that
+  model's bundle (unknown ids, detector entries and paths outside the folder: 404); a bundle without an AI session
+  shows the per-layer assignment alone and refuses session recipes. Step 4 sets the same-size existing way (one
+  method on every layer, or the common rule) beside Auto-tune: detection boxes on three COCO photos for a
+  detector (tabs by arrow keys); a language model shows numbers only (no generated answers).
+- YOLO11n data (`scripts/quantizer/yolo_tune.py` → `app/web/demo/autotune/yolo11n.json`): weight-only fake-quant
+  of the 87 convs (per-output-channel absmax, FP16 scale, RNE; activations FP32), per-layer distortion on 128
+  calibration images, the exact knapsack at the size of INT4 uniform and of the INT8-edge rule, COCO mAP50-95 on
+  the 4,872 other val2017 images (CPU): Auto-tune 23.8 / 24.4 vs INT4 uniform 1.1 / INT8-edge + INT4 1.4
+  (FP16 39.5).
+- Qwen3-8B data (`app/web/demo/autotune/qwen3-8b/`): the per-layer KL table (252 Linear × BF16 / GPTQ 4·3·2 /
+  INT8, H200, 4.3 h), knapsack solutions at 2.50 / 3.15 / 4.16 bits and, per recipe, WikiText-2 test PPL with
+  greedy answers to five prompts: Auto-tune 10.92 vs GPTQ-3 uniform 11.15 at 3.15 bits, 9.93 vs GPTQ-4 9.96 at
+  4.16 bits (BF16 9.72) — the drift from BF16 16% and 12% smaller. Size 16.38 GB → 5.22 GB at 3.15 bits
+  (computed). `MODEL_FILES` entry and a calibration note (GPTQ on every layer at once needs ~58 GB of Hessians).
+- `scripts/quantizer/tune_outputs.py`: the uniform recipe files through the page's own route, then per recipe on
+  a fresh model the WikiText-2 test PPL (greedy answers kept in the records as evidence, not shown);
+  `app.export_autotune_demo --outputs` takes a grid's PPL from those records when it has no KL measurement
+  (records of another model, of another loaded commit, or smoke runs are refused).
+- Benchmarks beyond WikiText-2 on the tool (step 4, "같은 크기, 여러 벤치마크"): `scripts/quantizer/tune_bench.py`
+  records, per page recipe file (SHA-256-checked against the bundle), WikiText-2 and C4 PPL and lm-eval 0-shot
+  LAMBADA / ARC-E / ARC-C / HellaSwag / PIQA / WinoGrande / MMLU with every document's result, on a model
+  prepared as `tune_outputs.py` prepares it; the export sets each Auto-tune size against, per benchmark, the
+  best one-method setup within the size, with the paired difference, its standard error and a 2-SE verdict.
+  Documents are capped (first 1,000; MMLU 20 per subject) — the patched 8B runs ~620 tokens/s on H200.
+  Qwen3-0.6B (H100, 19 setups): at 19% the only uniform that fits is 2-bit and collapses (LAMBADA 0.0 →
+  15.7, accuracy mean 30.2 → 36.6, +6.3 ± 0.7); at 22% +4.7 ± 0.5; at the uniform sizes 20% / 26% PPL is
+  lower but most tasks show no difference and one task each favors the uniform. Qwen3-8B (H200; WikiText-2
+  PPL bit-identical to the 11-11 answer records): +1.4 ± 0.4 at 20%, +0.2 ± 0.3 at 26%. YOLO11n's step 4 shows
+  COCOeval's AP75 and small / medium / large AP of the same run. Check: `scripts/quantizer/tune_models_check.mjs`.
+- Qwen3-8B sizes 17% and 19% (2.75 / 3.00 bits, knapsack on the same table): the only uniform within them is
+  GPTQ 2-bit (13%, PPL 915, garbled answers in the records); Auto-tune at 19% has PPL 11.22 (GPTQ-3 at 20%:
+  11.15) and accuracy mean 61.8 vs 28.8 (+33.0 ± 0.7, all seven tasks); at 17% PPL 13.22, mean 47.9, but four
+  of five recorded answers loop. The step-4 gain sentence shows one decimal near 100% (99.8%, not 100%).
+- The 8B demo offers only the sizes where the existing way collapses and ours holds (`models.json` `sizes`:
+  18% and 19%; 18% newly measured — PPL 11.94, accuracy mean 28.8 → 56.3, +27.5 ± 0.7); the data files keep
+  every size. Language models no longer show generated answers (removed with their page file and export);
+  only YOLO11n shows outputs (boxes).
 - `POST /api/autotune/recipe` with a uniform grid (one method on every layer) answers with the measured uniform
   recipe `u_<method>` (SHA equals the measured file's).
 - `POST /api/autotune/recipe {"transfer": id}` (with `--agent`): an option transfer's recipe rebuilt byte for byte
@@ -154,6 +198,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   animated), rendered from the v3 deck PDF, followed by a short Korean text section.
 
 ### Fixed
+- The recipe route's `measured.gpu` / `git_sha` come from the PPL record when a row has no KL record (they were
+  empty for setups measured for PPL only); the tool's "한 방법 최선" says how many uniform recipes it was picked
+  from.
+- `tricast.eval.lmeval.evaluate(bootstrap_iters=…)`: passed on to lm-eval when given (0 turns its standard
+  errors off). lm-eval's bootstrap forks one process per CPU and failed with ENOMEM on strict-overcommit GPU
+  hosts holding a model; without the argument the call is unchanged.
 - A live Claude round on the Auto-tune page is numbered after every recorded round (LLM and measured), so
   it no longer shares a number with the replan round.
 - A tune request whose compute budget is below the least MAC weight the constraints allow (any budget

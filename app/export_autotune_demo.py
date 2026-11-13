@@ -6,7 +6,8 @@ Pure stdlib plus ``app.autotune`` / ``app.quantizer_recipe`` / ``app.export_quan
 ``app.tune_agent`` / ``app.ledger`` for a session): no torch, no tricast.
 
     python -m app.export_autotune_demo --table <run>/table.json --out app/web/demo/autotune \\
-        [--measured <run> [--transfer <dir>]] [--session <session> --ledger runs/ledger.jsonl]
+        [--measured <run> [--transfer <dir>] [--outputs <records>]] \\
+        [--session <session> --ledger runs/ledger.jsonl]
 
 Writes ``<out>/bundle.json`` (indent=1, sorted keys, UTF-8; byte-identical for the same inputs).
 
@@ -15,7 +16,9 @@ table has floors), with each method's ``WEIGHT_BITS`` so the page's solver (``ap
 layers exactly as ``app.autotune.solve`` does. A measured number is attached to a grid only when the measured
 recipe file is the YAML the generator writes for that grid (its SHA-256 equals the record's ``file_sha256``)
 and a test PPL only when the PPL record's ``recipe_hash`` is that measurement's ``recipe_sha256``; otherwise
-the field stays null with the reason. With ``--measured`` and a ledger, each layer also gets the per-layer
+the field stays null with the reason. With ``--outputs`` (``scripts/quantizer/tune_outputs.py record``
+records), a grid with no KL measurement takes the test PPL recorded with its answers, matched by the same
+recipe-file SHA-256 (the KL stays null). With ``--measured`` and a ledger, each layer also gets the per-layer
 ``tricast report`` errors of every method's measured uniform recipe (``layer_reports``, same recipe hash).
 """
 
@@ -125,10 +128,37 @@ def measurements(root: Path) -> tuple[Records, Records, dict[str, Any] | None]:
     return kl, ppl, native
 
 
+def output_records(root: Path, meta: dict[str, Any]) -> tuple[Records, dict[str, Any] | None]:
+    """``scripts/quantizer/tune_outputs.py record`` results (one JSON per recipe file): the test PPL measured
+    with the answers, by recipe-file SHA-256, and the unquantized model's (``native.json``). Every record
+    must be of the table's model and revision (a uniform recipe's file names neither, so its SHA-256 is the
+    same for every model) and a full measurement (not ``--smoke``)."""
+    by_file: Records = {}
+    native = None
+    for path in sorted(root.glob("*.json")):
+        row = json.loads(path.read_text(encoding="utf-8"))
+        if row.get("smoke"):
+            raise ValueError(f"{path}: a --smoke record (2 PPL windows), not a measurement")
+        loaded = (row.get("env") or {}).get("model_sha")  # the commit the record loaded, not the asked ref
+        if row.get("model") != meta.get("model_id") or loaded is None or loaded != meta.get("model_sha"):
+            raise ValueError(f"{path}: a record of {row.get('model')}@{loaded}, not of the table's "
+                             f"{meta.get('model_id')}@{meta.get('model_sha')}")
+        env = row.get("env") or {}
+        view = {"ppl": row["ppl"]["ppl"], "n_tokens": row["ppl"]["n_tokens"],
+                "source": f"{root.name}/{path.name}", "gpu": (env.get("gpu_names") or [None])[0],
+                "git_sha": env.get("git_sha"), "git_dirty": env.get("git_dirty")}
+        if row.get("name") == "native":
+            native = view
+        else:
+            by_file[row["file_sha256"]] = view
+    return by_file, native
+
+
 def attach(row: dict[str, Any], spec: dict[str, Any], kl: Records, ppl: Records,
-           digest: str | None = None) -> dict[str, Any]:
+           digest: str | None = None, outputs: Records | None = None) -> dict[str, Any]:
     """``row`` with the measured KL of the grid's exact recipe file (``digest``, by default the file
-    ``recipe_file_sha256`` names) and that recipe's PPL, or null + why."""
+    ``recipe_file_sha256`` names) and that recipe's PPL, or without a KL measurement the PPL recorded with
+    the file's answers (``outputs``), or null + why."""
     digest = digest or recipe_file_sha256(spec)
     measured = kl.get(digest)
     row["recipe_file_sha256"] = digest
@@ -138,6 +168,10 @@ def attach(row: dict[str, Any], spec: dict[str, Any], kl: Records, ppl: Records,
     row["ppl_record"] = None
     row["rejected"] = []
     if measured is None:
+        recorded = (outputs or {}).get(digest)
+        if recorded is not None:
+            row["ppl"], row["ppl_record"] = recorded["ppl"], recorded
+            return row
         row["rejected"].append("측정 기록 없음: 이 격자의 레시피 파일 해시와 같은 KL 기록이 없습니다")
         return row
     record = ppl.get(measured["recipe_sha256"])
@@ -149,7 +183,7 @@ def attach(row: dict[str, Any], spec: dict[str, Any], kl: Records, ppl: Records,
 
 
 def baselines(table: dict[str, Any], kl: Records, ppl: Records,
-              layers: list[at.Layer]) -> list[dict[str, Any]]:
+              layers: list[at.Layer], outputs: Records | None = None) -> list[dict[str, Any]]:
     """Every uniform recipe (one method on every Linear, named u_<method> as the uniform runs name them) whose
     measured KL is in the run, smallest bits first."""
     meta = table["meta"]
@@ -163,8 +197,8 @@ def baselines(table: dict[str, Any], kl: Records, ppl: Records,
                 "mma": meta.get("mma")}
         bits = at.avg_bits(layers, [method] * len(layers))
         row = attach({"id": spec["name"], "method": method, "bits": float(bits), "bits_fraction": str(bits)},
-                     spec, kl, ppl)
-        if row["kl"] is not None:
+                     spec, kl, ppl, outputs=outputs)
+        if row["kl"] is not None or row["ppl"] is not None:
             out.append(row)
     return sorted(out, key=lambda row: (row["bits"], row["id"]))
 
@@ -205,7 +239,8 @@ def layer_reports(table: dict[str, Any], rows: list[dict[str, Any]], ledger: Pat
     return {"metrics": order, "methods": dict(sorted(sources.items()))}
 
 
-def solutions(root: Path, kl: Records, ppl: Records, table_sha: str) -> list[dict[str, Any]]:
+def solutions(root: Path, kl: Records, ppl: Records, table_sha: str,
+              outputs: Records | None = None) -> list[dict[str, Any]]:
     """The knapsack solutions of the run (``*/solution.json`` + ``grid.json`` solved on this table)."""
     out = []
     for path in sorted(root.glob("*/solution.json")):
@@ -220,7 +255,7 @@ def solutions(root: Path, kl: Records, ppl: Records, table_sha: str) -> list[dic
                "predicted_kl_sum_minus_floor": solution["predicted_kl_sum_minus_floor"],
                "method_counts": solution["method_counts"], "grid": spec["grid"], "kv": spec.get("kv", "none"),
                "compute": solution.get("compute")}
-        out.append(attach(row, spec, kl, ppl))
+        out.append(attach(row, spec, kl, ppl, outputs=outputs))
     return sorted(out, key=lambda row: (row["bits"], row["id"]))
 
 
@@ -376,6 +411,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--transfer", type=Path,
                         help="option-transfer grids and their measurements "
                              "(scripts/quantizer/autotune_xfer.py); needs --measured")
+    parser.add_argument("--outputs", type=Path,
+                        help="scripts/quantizer/tune_outputs.py records (PPL with answers); needs --measured")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args(argv)
     try:
@@ -384,11 +421,16 @@ def main(argv: Sequence[str] | None = None) -> int:
                                    "solutions": [], "transfer": [], "session": None}
         if args.transfer is not None and args.measured is None:
             raise ValueError("--transfer needs --measured (the solutions it applies options to)")
+        if args.outputs is not None and args.measured is None:
+            raise ValueError("--outputs needs --measured (the solutions they are matched to)")
         if args.measured is not None:
             kl, ppl, native = measurements(args.measured)
+            outputs, outputs_native = (output_records(args.outputs, table["meta"]) if args.outputs is not None
+                                       else (None, None))
             _, _, layers, _ = at.load_table(args.table)
-            payload.update(native=native, baselines=baselines(table, kl, ppl, layers),
-                           solutions=solutions(args.measured, kl, ppl, table["sha256"]))
+            payload.update(native=native or outputs_native,
+                           baselines=baselines(table, kl, ppl, layers, outputs),
+                           solutions=solutions(args.measured, kl, ppl, table["sha256"], outputs))
             if args.ledger.is_file():
                 table["reports"] = layer_reports(table, payload["baselines"], args.ledger)
             if args.transfer is not None:

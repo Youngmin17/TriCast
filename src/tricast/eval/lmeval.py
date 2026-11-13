@@ -136,8 +136,13 @@ def evaluate(
     limit: int | float | None = None,
     batch_size: int = 8,
     log_samples: bool = False,
+    bootstrap_iters: int | None = None,
 ) -> dict:
-    """Evaluate a preloaded model; tasks may include offline lm-eval Task objects."""
+    """Evaluate a preloaded model; tasks may include offline lm-eval Task objects.
+
+    ``bootstrap_iters`` (None: lm-eval's default) is passed on as given: 0 turns off lm-eval's standard
+    errors, whose bootstrap forks one process per CPU (``mp.Pool(cpu_count())``) — refused as ENOMEM on a
+    strict-overcommit host holding a model, and every core of a shared node besides."""
     modes = [(module, module.training) for module in model.modules()]
     try:
         seed = torch.initial_seed() % 2**32
@@ -159,6 +164,7 @@ def evaluate(
             numpy_random_seed=seed,
             torch_random_seed=seed,
             fewshot_random_seed=seed,
+            **({} if bootstrap_iters is None else {"bootstrap_iters": bootstrap_iters}),
         )
         if result is None:
             raise RuntimeError("lm-eval returned no results on this process")

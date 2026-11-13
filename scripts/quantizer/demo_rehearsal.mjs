@@ -1,14 +1,15 @@
 // Rehearse the demo on a running server the way the presenter runs it, in the one tool (app/web/tune.html): put the
 // model in, let Auto-tune recommend its setup for the demo size (the AI's measured settings on top), edit it by hand
-// to one method on every layer, evaluate the edit, then return to the recommendation and evaluate that. Each step
+// to one method on every layer, evaluate the edit, return to the recommendation and evaluate that, then take what it
+// hands over (step 5: the computed file size and the recipe bundle). Each step
 // checks what the audience sees (numbers, "the file the GPU measured", where a result came from), times itself and
 // keeps a screenshot. On a wide screen (over 760 px) the next thing to press must already be on screen.
 // Meant for a server started with --agent (the AI-measured settings' recipe files come from the session folder);
 // without --agent the page still shows every number and says those files need --agent.
 //
 // usage: node scripts/quantizer/demo_rehearsal.mjs <out_dir> [base_url=http://127.0.0.1:8765] [width=1440]
-// Prints one STEP line per step and REHEARSAL_DONE <passed>/5; writes <out_dir>/rehearsal.json and step*.png.
-import {mkdirSync, writeFileSync} from "node:fs";
+// Prints one STEP line per step and REHEARSAL_DONE <passed>/6; writes <out_dir>/rehearsal.json and step*.png.
+import {mkdirSync, readdirSync, writeFileSync} from "node:fs";
 import {resolve} from "node:path";
 
 import {connect} from "./cdp_lib.mjs";
@@ -34,7 +35,7 @@ const b = await connect(out);
 await b.setup(Number(widthArg), 900);
 const started = Date.now();
 const steps = [];
-const NAMES = ["모델 불러오기", "Auto-tune · AI 추천", "직접 편집", "편집한 셋업 평가", "추천으로 되돌려 평가"];
+const NAMES = ["모델 불러오기", "Auto-tune · AI 추천", "직접 편집", "편집한 셋업 평가", "추천으로 되돌려 평가", "결과물 · 내보내기"];
 const text = (selector) => b.evaluate(`(document.querySelector(${JSON.stringify(selector)})?.innerText ?? "").replace(/\\s+/g, " ")`);
 const click = (selector) => b.evaluate(`(() => { const el = document.querySelector(${JSON.stringify(selector)}); if (!el) return false; el.click(); return true; })()`);
 const isOff = (id) => b.evaluate(`document.getElementById(${JSON.stringify(id)}).hasAttribute("data-off")`);
@@ -136,6 +137,23 @@ await step(5, async () => {
   const fileOk = off ? got.error.includes("--agent") : got.file.includes("act_damp05_r3.yaml");
   return [!lack.length && fileOk, lack.length ? `없음: ${lack}` : `추천으로 되돌림 · PPL 26.51 · 원본 20.97 · 한 방법 33.31 · Auto-tune 27.04 · AI 설정 26.82 / 26.51` +
     `${off ? "" : " · 레시피 SHA 일치"}`];
+});
+
+await step(6, async () => {
+  // the size (computed) and the recipe bundle
+  const downloads = `${out}/downloads`;
+  mkdirSync(downloads, {recursive: true});
+  await b.S("Browser.setDownloadBehavior", {behavior: "allow", downloadPath: downloads});
+  await b.waitFor(`!document.getElementById("sec-out").hasAttribute("data-off") && !!document.querySelector("#size")`, 10000);
+  await b.evaluate(`document.getElementById("sec-out").scrollIntoView({block: "start"})`);
+  const size = await text("#size");
+  await click("#export");
+  let zipped = [];
+  for (let i = 0; i < 50 && !(zipped = readdirSync(downloads).filter((f) => f.endsWith(".zip"))).length; i++) await b.pause(200);
+  const lack = missing(size, ["1.50 GB → 0.80 GB (53%)", "계산값"]);
+  const fileOk = off || zipped.join() === "act_damp05_r3_tricast.zip";
+  return [!lack.length && fileOk, lack.length ? `없음: ${lack}` : `파일 1.50 GB → 0.80 GB (53%, 계산값) · ` +
+    `${off ? "묶음은 --agent 서버에서" : `묶음 ${zipped.join()}`}`];
 });
 
 const errors = b.events.filter((e) => e.method === "Runtime.exceptionThrown").length;

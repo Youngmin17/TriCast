@@ -30,6 +30,9 @@ from app import autotune as at
 from app import quantizer_recipe as qr
 
 SAFE_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
+# a size budget as the pages write it ("403/128", "3", "4.25"): short digits only, so no exponent or huge
+# number reaches Fraction (a "1e1000000000" would build a billion-digit integer)
+BUDGET = re.compile(r"\d{1,4}(?:\.\d{1,6})?(?:/\d{1,6})?")
 
 
 class RecipeError(ValueError):
@@ -51,7 +54,7 @@ def _sha256(text: str) -> str:
 
 
 def _measured(row: dict[str, Any], sha: str, file_sha: str | None) -> dict[str, Any]:
-    record = row.get("kl_record") or {}
+    record = row.get("kl_record") or row.get("ppl_record") or {}  # a row measured for its PPL only
     return {"id": row.get("id") or row.get("name"), "same_file": file_sha is not None and sha == file_sha,
             "recorded_sha256": file_sha, "kl": row.get("kl"), "ppl": row.get("ppl"),
             "gpu": record.get("gpu"), "git_sha": record.get("git_sha")}
@@ -67,6 +70,14 @@ def grid_recipe(bundle: dict[str, Any], grid: Any, budget_bits: str | None = Non
     unknown = sorted({method for row in grid for method in row if method not in methods})
     if unknown:
         raise RecipeError(422, "invalid_grid", f"표에 없는 방법입니다: {unknown}")
+    if budget_bits is not None:  # checked on every path: it is also echoed into ``command``
+        try:
+            # short digits first, so Fraction never builds a huge number
+            if not BUDGET.fullmatch(budget_bits) or Fraction(budget_bits) <= 0:
+                raise ValueError(budget_bits)
+        except (ValueError, ZeroDivisionError) as exc:
+            message = f"크기 예산을 읽지 못했습니다: {budget_bits[:40]!r}"
+            raise RecipeError(422, "invalid_budget", message) from exc
     recorded = next((row for row in bundle.get("solutions") or []
                      if row["grid"] == grid and (row.get("kv") or "none") == "none"), None)
     used = {method for row in grid for method in row}

@@ -10,12 +10,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   evaluate / export; record `app/web/demo/autotune/zimage.json`). At the same size Auto-tune stays closer to the
   original images than INT3 uniform (20%, SSIM 0.588 -> 0.614, 18 of 24 prompts, Holm p 0.026) and the common rule
   (27%, 0.679 -> 0.707, p 0.049); against INT4 uniform (26%) the difference is not significant (p 0.060).
+  Two between-step sizes added after those results (rule written before they were measured): at 19% and 16% the only
+  existing way that fits is INT2 uniform (SSIM 0.194, noise); Auto-tune keeps 0.575 and 0.373 (24 of 24 prompts each).
   275 Linears × BF16 · INT8 · INT4 · INT3 · INT2 (RTN, exact FP32 dequantization); the table replays the unquantized
   8-forward generation; the knapsack is solved as an integer program (HiGHS) with the cost re-checked exactly;
   setups are scored by SSIM and PSNR against the original model's images on 24 prompts, the verdict by a paired
-  exact sign-flip test against the size reference fixed before the measurement (Holm). A run fingerprint binds
-  table rows, merge, evaluations and export. The page's detector views take a `KINDS` config and show the
-  generated images (original / existing way / Auto-tune).
+  exact sign-flip test against the pair fixed before each setup was measured (Holm within each family of sizes).
+  A run fingerprint binds table rows, merge, evaluations and export. The page's detector views take a `KINDS`
+  config and show the generated images (original / existing way / Auto-tune).
 - Low-bit model packages (`python -m tricast.pack build|run`, `src/tricast/pack.py`): a recipe applied to a Hugging Face
   causal LM is written as integer codes bit-packed into `model.safetensors` (2/3/4/8 bits, scales, zero points; NF4
   codes + absmax; a Hadamard transform's diagonal) with `quant_config.json` (recipe text and SHA-256) and the

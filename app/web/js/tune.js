@@ -1296,15 +1296,21 @@ function detMetricsView() {
     isGen() && auto.paired ? pairedView(auto) : null);
 }
 
-// the image generator's verdict, fixed before the measurement (scripts/quantizer/zimage_tune.py compare): Auto-tune
-// against the existing way whose size it was given, per-prompt SSIM, exact sign-flip test, Holm over the sizes
+// the image generator's verdict, fixed before the setups were measured (scripts/quantizer/zimage_tune.py compare):
+// Auto-tune against its pair, per-prompt SSIM, exact sign-flip test, Holm within the pair's family of sizes. The
+// between-step sizes were added after the first results — the page says so
 const VERDICT_TEXT = {ours: "우리 우세", same: "차이 없음", theirs: "기존 우세"};
 function pairedView(auto) {
   const p = auto.paired;
   const ref = st.det.setups.find((row) => row.id === p.vs);
   const pText = (v) => (v < 0.001 ? "< 0.001" : v.toFixed(3));
+  const later = !String(p.fixed ?? "").startsWith("before");
+  const pair = later
+    ? `첫 결과를 본 뒤 더한 크기 — 짝: ${ref?.label ?? p.vs}, 이 크기 안의 유일한 기존 방법. 규칙은 재기 전에 정함`
+    : `측정 전에 정한 짝: ${ref?.label ?? p.vs}`;
+  const family = p.family?.length ?? st.det.setups.filter((row) => row.kind === "auto").length;
   return h("p", {class: "ta-gain", id: "paired"},
-    `판정 (측정 전에 정한 짝: ${ref?.label ?? p.vs}) — 프롬프트 ${p.n}개 중 ${p.wins}개에서 원본에 더 가깝고 ${p.losses}개에서 멀었습니다. SSIM 평균 차이 ${signed(100 * p.mean_diff, 1)}, sign-flip p ${pText(p.p_sign_flip)} (크기 ${st.det.setups.filter((row) => row.kind === "auto").length}개 Holm 보정 ${pText(p.p_holm)}) → `,
+    `판정 (${pair}) — 프롬프트 ${p.n}개 중 ${p.wins}개에서 원본에 더 가깝고 ${p.losses}개에서 멀었습니다. SSIM 평균 차이 ${signed(100 * p.mean_diff, 1)}, sign-flip p ${pText(p.p_sign_flip)} (크기 ${family}개 Holm 보정 ${pText(p.p_holm)}) → `,
     h("b", null, VERDICT_TEXT[p.verdict] ?? p.verdict), ".");
 }
 

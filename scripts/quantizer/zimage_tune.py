@@ -1,10 +1,11 @@
 """Z-Image-Turbo per-layer weight bit-widths: the offline demo dataset of the tuning page (text to image).
 
 "기존 방법" = one weight quantization on every Linear of the diffusion transformer (uniform INT8 / INT4 /
-INT3) or a common rule (INT8 on the embedders, the adaLN modulations and the final layer, INT4 elsewhere);
-"우리 방법" = TriCast Auto-tune: a method per Linear chosen by the exact multiple-choice knapsack
-(app.autotune.solve_mckp) over a measured per-layer table, at exactly the average bits of the setup it is
-compared with.
+INT3 / INT2) or a common rule (INT8 on the embedders, the adaLN modulations and the final layer, INT4
+elsewhere); "우리 방법" = TriCast Auto-tune: a method per Linear chosen by the multiple-choice knapsack,
+solved as an integer program over a measured per-layer table, at exactly the average bits of the setup it is
+compared with (``AUTO``, fixed before the measurement) or at a budget between the uniform steps, against the
+only existing way that fits it (``BETWEEN``, added after the first results; evidence §5).
 
 Stages (each ends with one log marker: ZT_<STAGE>_DONE, or ZT_FAIL stage=<stage>):
   refs      text embeddings of every prompt (the Qwen3 text encoder in FP32), and the transformer inputs of
@@ -13,7 +14,7 @@ Stages (each ends with one log marker: ZT_<STAGE>_DONE, or ZT_FAIL stage=<stage>
             table_<k>of<n>.jsonl (--shard k/n splits the layers over GPUs; a rerun skips the layers already
             written)
   merge     the shards -> table.json
-  solve     knapsack at the reference setups' average bits -> solutions.json
+  solve     knapsack at each Auto-tune setup's budget (``auto_budget``) -> solutions.json
   evaluate  per setup: the 8-forward generation of every evaluation prompt, PSNR / SSIM of the decoded
             image against the unquantized model's, and the measured D -> eval_<setup>.json, images/<setup>/
   export    app/web/demo/autotune/zimage.json + app/web/demo/media/zimage/
@@ -63,18 +64,27 @@ GROUP = 128
 # 521 tensors checked 2026-11-14; load_transformer checks again), so it costs 16 bits and changes nothing
 METHODS = {"bf16": 16, "int8": 8, "int4": 4, "int3": 3, "int2": 2}
 QUANT_METHODS = ("int8", "int4", "int3", "int2")
-UNIFORM = {"u_int8": "int8", "u_int4": "int4", "u_int3": "int3"}
+UNIFORM = {"u_int8": "int8", "u_int4": "int4", "u_int3": "int3", "u_int2": "int2"}
 HEURISTIC = "heur_8_4"
+# fixed before the measurement (evidence §1.5): budget = the size reference's size, verdict against it
 AUTO = {"auto_iso_u4": "u_int4", "auto_iso_h84": HEURISTIC, "auto_iso_u3": "u_int3"}  # auto -> size reference
-SETUPS = ("native", *UNIFORM, HEURISTIC, *AUTO)
+# added after the first results (evidence §5, written before these were measured): a budget between the
+# uniform steps, against the only existing way that fits it (INT2 uniform) — auto -> (average bits, pair)
+BETWEEN = {"auto_b300": (Fraction(3), "u_int2"), "auto_b250": (Fraction(5, 2), "u_int2")}
+PAIR = {**AUTO, **{auto: pair for auto, (_, pair) in BETWEEN.items()}}
+FAMILIES = (tuple(AUTO), tuple(BETWEEN))  # Holm runs within each family
+SETUPS = ("native", *UNIFORM, HEURISTIC, *AUTO, *BETWEEN)
 LABELS = {
     "u_int8": "INT8 균일",
     "u_int4": "INT4 균일",
     "u_int3": "INT3 균일",
+    "u_int2": "INT2 균일",
     HEURISTIC: "INT8 임베더·adaLN·마지막 층 + INT4",
     "auto_iso_u4": "Auto-tune · INT4 균일 크기",
     "auto_iso_h84": "Auto-tune · INT8/4 경험칙 크기",
     "auto_iso_u3": "Auto-tune · INT3 균일 크기",
+    "auto_b300": "Auto-tune · 평균 3비트",
+    "auto_b250": "Auto-tune · 평균 2.5비트",
 }
 # the common rule's INT8 layers: what a diffusion transformer's quantizer usually keeps wider
 HEURISTIC_PATTERNS = ("t_embedder.", "cap_embedder.", "adaLN_modulation.", "all_final_layer.")
@@ -215,6 +225,13 @@ def baseline_assignment(setup: str, layers: Sequence[Layer]) -> dict[str, str]:
     require(setup == HEURISTIC, f"{setup} is not a uniform/heuristic setup")
     keep = set(heuristic_names(layers))
     return {layer.name: "int8" if layer.name in keep else "int4" for layer in layers}
+
+
+def auto_budget(auto: str, layers: Sequence[Layer]) -> Fraction:
+    """An Auto-tune setup's average-bit budget: its size reference's size or the fixed between-step one."""
+    if auto in BETWEEN:
+        return BETWEEN[auto][0]
+    return avg_bits(layers, baseline_assignment(AUTO[auto], layers))
 
 
 def predicted_d(assignment: Mapping[str, str], table: Mapping[str, Mapping[str, float]]) -> float:
@@ -836,8 +853,8 @@ def stage_solve(args: argparse.Namespace) -> None:
     require(heuristic_names(layers) == table["heuristic_int8"], "the heuristic layers changed")
     params = sum(layer.params for layer in layers)
     solutions = {}
-    for auto, reference in AUTO.items():
-        target = avg_bits(layers, baseline_assignment(reference, layers))
+    for auto, reference in PAIR.items():
+        target = auto_budget(auto, layers)
         assignment, solution = solve(layers, d, target * params)
         bits = avg_bits(layers, assignment)
         require(bits <= target, f"{auto}: {bits} bits exceed the budget {target}")
@@ -901,7 +918,7 @@ def stage_evaluate(args: argparse.Namespace) -> None:
             )
             print(f"ZT_EVAL_SKIP {setup} (exists)", flush=True)
             continue
-        if setup in AUTO:
+        if setup in PAIR:
             require(setup in solutions, f"{setup}: run solve first")
             assignment = solutions[setup]["methods"]
         else:
@@ -969,14 +986,15 @@ def stage_evaluate(args: argparse.Namespace) -> None:
 
 
 def compare(setups: Sequence[dict[str, Any]]) -> None:
-    """The verdict, fixed before any evaluation (docs/evidence/2026-11-14_zimage_turbo.md §1.5): each
-    Auto-tune setup against the existing way whose size it was given, on per-prompt SSIM, exact sign-flip
-    test, Holm over the Auto-tune setups. Adds ``paired`` to every auto setup."""
+    """The verdict, fixed before the setups were evaluated (docs/evidence/2026-11-14_zimage_turbo.md §1.5,
+    and §5 for the between-step sizes): each Auto-tune setup against its pair (``PAIR``), on per-prompt SSIM,
+    exact sign-flip test, Holm within each family of ``FAMILIES``. Adds ``paired`` to every auto setup."""
     by_id = {e["id"]: e for e in setups}
     autos = [e for e in setups if e["kind"] == "auto"]
     for entry in autos:
-        ref = by_id[AUTO[entry["id"]]]
+        ref = by_id[PAIR[entry["id"]]]
         diffs = [a - b for a, b in zip(entry["per_prompt"]["ssim"], ref["per_prompt"]["ssim"], strict=True)]
+        family = next(f for f in FAMILIES if entry["id"] in f)
         entry["paired"] = {
             "vs": ref["id"],
             "metric": "ssim",
@@ -985,11 +1003,15 @@ def compare(setups: Sequence[dict[str, Any]]) -> None:
             "losses": sum(x < 0 for x in diffs),
             "mean_diff": sum(diffs) / len(diffs),
             "p_sign_flip": sign_flip_p(diffs),
+            "family": [e["id"] for e in autos if e["id"] in family],
+            "fixed": "before the first results" if entry["id"] in AUTO else "after the first results (§5)",
         }
-    for entry, adjusted in zip(autos, holm([e["paired"]["p_sign_flip"] for e in autos]), strict=True):
-        paired = entry["paired"]
-        paired["p_holm"] = adjusted
-        paired["verdict"] = verdict(adjusted, paired["mean_diff"])
+    for family in FAMILIES:
+        members = [e for e in autos if e["id"] in family]
+        for entry, adjusted in zip(members, holm([e["paired"]["p_sign_flip"] for e in members]), strict=True):
+            paired = entry["paired"]
+            paired["p_holm"] = adjusted
+            paired["verdict"] = verdict(adjusted, paired["mean_diff"])
 
 
 def verdict(p_holm: float, mean_diff: float) -> str:
@@ -1034,7 +1056,7 @@ def stage_export(args: argparse.Namespace) -> None:
         bits = avg_bits(layers, assignment)
         entry = {
             "id": setup,
-            "kind": "auto" if setup in AUTO else "uniform" if setup in UNIFORM else "heuristic",
+            "kind": "auto" if setup in PAIR else "uniform" if setup in UNIFORM else "heuristic",
             "label": LABELS[setup],
             "bits": float(bits),
             "bits_fraction": fraction_text(bits),
@@ -1050,7 +1072,7 @@ def stage_export(args: argparse.Namespace) -> None:
             "ssim": [x["ssim"] for x in result["per_prompt"]],
             "psnr": [x["psnr"] for x in result["per_prompt"]],
         }
-        if setup in AUTO:
+        if setup in PAIR:
             require(solved["solutions"][setup]["methods"] == assignment, f"{setup}: evaluated methods differ")
             entry["budget_bits"] = solved["solutions"][setup]["budget_fraction"]
         setups.append(entry)
@@ -1176,6 +1198,8 @@ def validate(data: Mapping[str, Any]) -> list[str]:
         ):
             problems.append(f"{row['name']}: table row")
     by_id = {s["id"]: s for s in data["setups"]}
+    if len(by_id) != len(data["setups"]):
+        problems.append("duplicate setup ids")
     if sorted(by_id) != sorted(SETUPS[1:]):
         problems.append(f"setups {sorted(by_id)}")
     for s in data["setups"]:
@@ -1192,9 +1216,14 @@ def validate(data: Mapping[str, Any]) -> list[str]:
         if s["kind"] == "auto":
             if bits > parse_fraction(s["budget_bits"]):
                 problems.append(f"{s['id']}: over budget")
-            ref = by_id.get(AUTO[s["id"]])
-            if ref is None or parse_fraction(s["budget_bits"]) != avg_bits(layers, ref["methods"]):
-                problems.append(f"{s['id']}: budget is not its reference's size")
+            ref = by_id.get(PAIR.get(s["id"], ""))
+            if ref is None or parse_fraction(s["budget_bits"]) != auto_budget(s["id"], layers):
+                problems.append(f"{s['id']}: budget is not its rule's")
+            elif s["id"] in BETWEEN and [
+                x["id"] for x in data["setups"]
+                if x["kind"] != "auto" and avg_bits(layers, x["methods"]) <= parse_fraction(s["budget_bits"])
+            ] != [ref["id"]]:
+                problems.append(f"{s['id']}: its pair is not the only existing way within the budget")
         want = predicted_d(s["methods"], {r["name"]: r["d"] for r in data["layers"]})
         if not (math.isfinite(s["predicted_d"]) and abs(s["predicted_d"] - want) <= 1e-12 * max(1.0, want)):
             problems.append(f"{s['id']}: predicted_d")
@@ -1207,7 +1236,7 @@ def validate(data: Mapping[str, Any]) -> list[str]:
         problems += _metric_problems(s, data["evaluation"]["prompts"])
         if s["kind"] == "auto":
             paired = s.get("paired") or {}
-            if paired.get("vs") != AUTO[s["id"]] or not 0 <= paired.get("p_holm", -1) <= 1:
+            if paired.get("vs") != PAIR.get(s["id"]) or not 0 <= paired.get("p_holm", -1) <= 1:
                 problems.append(f"{s['id']}: paired comparison")
             elif paired["verdict"] != verdict(paired["p_holm"], paired["mean_diff"]):
                 problems.append(f"{s['id']}: verdict")

@@ -205,8 +205,8 @@ def _dataset(prompts: int = 6) -> dict:
     params = sum(x.params for x in layers)
     setups = []
     for setup in ZT.SETUPS[1:]:
-        if setup in ZT.AUTO:
-            budget = ZT.avg_bits(layers, ZT.baseline_assignment(ZT.AUTO[setup], layers)) * params
+        if setup in ZT.PAIR:
+            budget = ZT.auto_budget(setup, layers) * params
             methods, _ = ZT.solve(layers, table, budget)
         else:
             methods = ZT.baseline_assignment(setup, layers)
@@ -215,7 +215,7 @@ def _dataset(prompts: int = 6) -> dict:
         psnr = [rng.uniform(15, 35) for _ in range(prompts)]
         entry = {
             "id": setup,
-            "kind": "auto" if setup in ZT.AUTO else "uniform" if setup in ZT.UNIFORM else "heuristic",
+            "kind": "auto" if setup in ZT.PAIR else "uniform" if setup in ZT.UNIFORM else "heuristic",
             "bits_fraction": ZT.fraction_text(bits),
             "bytes": ZT.model_bytes(layers, methods, 100),
             "methods": methods,
@@ -224,7 +224,7 @@ def _dataset(prompts: int = 6) -> dict:
             "metrics": {"ssim": sum(ssim) / prompts, "psnr": sum(psnr) / prompts, "identical": 0},
             "per_prompt": {"ssim": ssim, "psnr": psnr},
         }
-        if setup in ZT.AUTO:
+        if setup in ZT.PAIR:
             entry["budget_bits"] = ZT.fraction_text(budget / params)
         setups.append(entry)
     ZT.compare(setups)
@@ -250,7 +250,7 @@ def test_the_validator_accepts_a_consistent_dataset_and_catches_each_break() -> 
     data = _dataset()
     assert ZT.validate(data) == []
     paired = {s["id"]: s["paired"] for s in data["setups"] if s["kind"] == "auto"}
-    assert {p["vs"] for p in paired.values()} == set(ZT.AUTO.values())  # the size reference, fixed in advance
+    assert {i: p["vs"] for i, p in paired.items()} == ZT.PAIR  # fixed before the setups were measured
     for break_it, message in (
         (lambda d: d["setups"][0].__setitem__("measured_d", float("nan")), "measured_d"),
         (lambda d: d["native"].pop("metrics"), "native metrics"),
@@ -268,6 +268,50 @@ def test_the_validator_accepts_a_consistent_dataset_and_catches_each_break() -> 
         broken = json.loads(json.dumps(data))
         break_it(broken)
         assert any(message in problem for problem in ZT.validate(broken)), message
+
+
+def test_holm_runs_within_each_family_of_sizes() -> None:
+    pytest.importorskip("scipy")
+    paired = {s["id"]: s["paired"] for s in _dataset()["setups"] if s["kind"] == "auto"}
+    for family in ZT.FAMILIES:
+        raw = [paired[i]["p_sign_flip"] for i in family]
+        assert [paired[i]["p_holm"] for i in family] == pytest.approx(ZT.holm(raw))
+        assert all(paired[i]["family"] == list(family) for i in family)
+    # the between-step sizes were added after the first results, and say so
+    assert all(paired[i]["fixed"].startswith("before") for i in ZT.AUTO)
+    assert not any(paired[i]["fixed"].startswith("before") for i in ZT.BETWEEN)
+
+
+def test_holm_corrects_within_a_family_only() -> None:
+    # every Auto-tune setup ahead of its pair on all 6 prompts: the same exact p, 2 / 2^6, for all five
+    n = 6
+    setups = [
+        {"id": s, "kind": "uniform" if s in ZT.UNIFORM else "heuristic", "per_prompt": {"ssim": [0.5] * n}}
+        for s in (*ZT.UNIFORM, ZT.HEURISTIC)
+    ]
+    setups += [{"id": a, "kind": "auto", "per_prompt": {"ssim": [0.6] * n}} for a in ZT.PAIR]
+    ZT.compare(setups)
+    paired = {s["id"]: s["paired"] for s in setups if s["kind"] == "auto"}
+    one = 2 / 2**n
+    assert all(paired[a]["p_sign_flip"] == pytest.approx(one) for a in ZT.PAIR)
+    # Holm over 3 and over 2 — not over all 5 (that would be 5 * one)
+    assert [paired[a]["p_holm"] for a in ZT.AUTO] == pytest.approx([3 * one] * 3)
+    assert [paired[a]["p_holm"] for a in ZT.BETWEEN] == pytest.approx([2 * one] * 2)
+
+
+def test_duplicate_setups_are_refused() -> None:
+    pytest.importorskip("scipy")
+    data = _dataset()
+    data["setups"].append(json.loads(json.dumps(data["setups"][-1])))
+    assert "duplicate setup ids" in ZT.validate(data)
+
+
+def test_a_between_step_budget_leaves_its_pair_the_only_existing_way(monkeypatch: pytest.MonkeyPatch) -> None:
+    pytest.importorskip("scipy")
+    assert ZT.validate(_dataset()) == []
+    # a budget above INT3 uniform (3 + 19/128 bits) lets INT3 uniform fit too, so INT2 is not the only one
+    monkeypatch.setitem(ZT.BETWEEN, "auto_b300", (Fraction(13, 4), "u_int2"))
+    assert any("only existing way" in problem for problem in ZT.validate(_dataset()))
 
 
 @pytest.mark.skipif(not EXPORT.exists(), reason="the Z-Image-Turbo dataset is not exported yet")

@@ -1,5 +1,6 @@
 {"models": [
  {"id": "Qwen/Qwen3-0.6B", "label": "Qwen3-0.6B · 언어 모델", "kind": "llm", "bundle": "bundle.json", "live": true, "benchmarks": "benchmarks.json"},
  {"id": "Qwen/Qwen3-8B", "label": "Qwen3-8B · 언어 모델", "kind": "llm", "bundle": "qwen3-8b/bundle.json", "benchmarks": "qwen3-8b/benchmarks.json", "sizes": ["auto_2.88", "auto_3.00"]},
- {"id": "yolo11n", "label": "YOLO11n · 물체 검출", "kind": "detector", "data": "yolo11n.json"}
+ {"id": "yolo11n", "label": "YOLO11n · 물체 검출", "kind": "detector", "data": "yolo11n.json"},
+ {"id": "z-image-turbo", "label": "Z-Image-Turbo · 이미지 생성", "kind": "image", "data": "zimage.json"}
 ]}

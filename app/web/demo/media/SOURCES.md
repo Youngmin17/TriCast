@@ -10,3 +10,11 @@ Flickr on 2026-10-07.
 | coco_000000005001.jpg | 5001 | Ribbon cutting at LA's First Bike Parking Corral | Umberto Brayj (ubrayj02) | https://www.flickr.com/photos/ubrayj02/5457068434 | [Attribution License (CC BY 2.0)](http://creativecommons.org/licenses/by/2.0/) |
 | coco_000000001000.jpg | 1000 | летние теннисные сборы | Oleg Klementiev | https://www.flickr.com/photos/impuls-f/4906536419 | [Attribution License (CC BY 2.0)](http://creativecommons.org/licenses/by/2.0/) |
 | coco_000000008021.jpg | 8021 | (unknown) | not available (the Flickr photo page has been removed) | original file: http://farm7.staticflickr.com/6117/6240308255_77782d0723_z.jpg | [Attribution License (CC BY 2.0)](http://creativecommons.org/licenses/by/2.0/) |
+
+## Generated images (`zimage/`)
+
+Made for this repository by `scripts/quantizer/zimage_tune.py` (evaluate stage) with Tongyi-MAI/Z-Image-Turbo
+(Apache-2.0, revision f332072aa78be7aecdf3ee76d5c247082da564a6): the first three evaluation prompts written for
+the dataset (no person, brand or work is named; the poster prompt spells this project's own name, TriCast),
+seeds 1042–1044, 512 px, resized to 384 px JPEG. One file per setup (`<setup>_<k>.jpg`): the unquantized
+model and each quantized setup from the same prompt and starting noise.

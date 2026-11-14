@@ -6,12 +6,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 ### Added
 - An image generator on the tool: Tongyi-MAI/Z-Image-Turbo (6B diffusion transformer, revision f332072,
-  Apache-2.0), being measured on V100s in FP32 (`scripts/quantizer/zimage_tune.py`: refs / table / merge / solve /
-  evaluate / export); the page lists the model once its dataset is exported. 275 Linears × BF16 · INT8 · INT4 · INT3 · INT2 (RTN, exact FP32 dequantization); the table replays the
-  unquantized 8-forward generation; the knapsack is solved as an integer program (HiGHS) with the cost re-checked
-  exactly; setups are scored by SSIM and PSNR against the original model's images on 24 prompts, the verdict by a
-  paired exact sign-flip test against the size reference fixed before the measurement (Holm). A run fingerprint
-  binds table rows, merge, evaluations and export. The page's detector views take a `KINDS` config and show the
+  Apache-2.0), measured on a V100 in FP32 at 512 px (`scripts/quantizer/zimage_tune.py`: refs / table / merge / solve /
+  evaluate / export; record `app/web/demo/autotune/zimage.json`). At the same size Auto-tune stays closer to the
+  original images than INT3 uniform (20%, SSIM 0.588 -> 0.614, 18 of 24 prompts, Holm p 0.026) and the common rule
+  (27%, 0.679 -> 0.707, p 0.049); against INT4 uniform (26%) the difference is not significant (p 0.060).
+  275 Linears × BF16 · INT8 · INT4 · INT3 · INT2 (RTN, exact FP32 dequantization); the table replays the unquantized
+  8-forward generation; the knapsack is solved as an integer program (HiGHS) with the cost re-checked exactly;
+  setups are scored by SSIM and PSNR against the original model's images on 24 prompts, the verdict by a paired
+  exact sign-flip test against the size reference fixed before the measurement (Holm). A run fingerprint binds
+  table rows, merge, evaluations and export. The page's detector views take a `KINDS` config and show the
   generated images (original / existing way / Auto-tune).
 - Low-bit model packages (`python -m tricast.pack build|run`, `src/tricast/pack.py`): a recipe applied to a Hugging Face
   causal LM is written as integer codes bit-packed into `model.safetensors` (2/3/4/8 bits, scales, zero points; NF4
@@ -43,7 +46,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   norms stay BF16 — 1.50 GB → 0.80 GB at 20%) and the recipe bundle `POST /api/autotune/export` (zip: the
   measured recipe file, its measurement, the size, a README with the commands). `app/autotune_export.py`; the
   recipe route says the size too.
-- Several models on the tool: `app/web/demo/autotune/models.json` lists them (`kind` llm | detector; only the
+- Several models on the tool: `app/web/demo/autotune/models.json` lists them (`kind` llm | detector | image; only the
   `live` one, the model the job runner loads, gets the GPU path). `POST /api/autotune/recipe {model}` picks that
   model's bundle (unknown ids, detector entries and paths outside the folder: 404); a bundle without an AI session
   shows the per-layer assignment alone and refuses session recipes. Step 4 sets the same-size existing way (one
@@ -81,7 +84,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 - The 8B demo offers only the sizes where the existing way collapses and ours holds (`models.json` `sizes`:
   18% and 19%; 18% newly measured — PPL 11.94, accuracy mean 28.8 → 56.3, +27.5 ± 0.7); the data files keep
   every size. Language models no longer show generated answers (removed with their page file and export);
-  only YOLO11n shows outputs (boxes).
+  only YOLO11n (boxes) and Z-Image-Turbo (images) show outputs.
 - `POST /api/autotune/recipe` with a uniform grid (one method on every layer) answers with the measured uniform
   recipe `u_<method>` (SHA equals the measured file's).
 - `POST /api/autotune/recipe {"transfer": id}` (with `--agent`): an option transfer's recipe rebuilt byte for byte

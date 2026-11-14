@@ -1,0 +1,53 @@
+{
+ "run_id": "2026-11-08T0104",
+ "labels": 21,
+ "judgments": 47,
+ "overall": 0.7659574468085106,
+ "target": 0.8,
+ "met": false,
+ "criteria": {
+  "q1": {
+   "n": 3,
+   "agree": 2,
+   "lenient": 0,
+   "strict": 1,
+   "rate": 0.6666666666666666
+  },
+  "q2": {
+   "n": 11,
+   "agree": 11,
+   "lenient": 0,
+   "strict": 0,
+   "rate": 1.0
+  },
+  "c1": {
+   "n": 10,
+   "agree": 6,
+   "lenient": 0,
+   "strict": 4,
+   "rate": 0.6
+  },
+  "c2": {
+   "n": 10,
+   "agree": 9,
+   "lenient": 0,
+   "strict": 1,
+   "rate": 0.9
+  },
+  "c3": {
+   "n": 10,
+   "agree": 8,
+   "lenient": 0,
+   "strict": 2,
+   "rate": 0.8
+  },
+  "c4": {
+   "n": 3,
+   "agree": 0,
+   "lenient": 0,
+   "strict": 3,
+   "rate": 0.0
+  }
+ },
+ "unmatched": []
+}

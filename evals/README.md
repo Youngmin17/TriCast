@@ -9,7 +9,7 @@
 | 3 judge 프롬프트 | [`tune_judge_prompt.md`](./tune_judge_prompt.md) | `judge_prompt.md` (러너가 부르지 않는 참고 루브릭) |
 | 4 러너 위임 | [`../docs/prompts/delegation_evals.md`](../docs/prompts/delegation_evals.md) | — |
 | 5 러너 · 결과 | [`run_tune_evals.py`](./run_tune_evals.py), [`results/history.csv`](./results/history.csv), `results/2026-11-0*` | `run_evals.py`, `results/2026-10-01.json` |
-| 6 judge 라벨 | `judge_labels.jsonl` — 사람이 매긴다 ([설계서 §3 · §7](./EVAL_DESIGN.md)) | — |
+| 6 judge 라벨 | `judge_labels.jsonl` — 사람 라벨 (2026-11-14, 21 단위 · 47 판정). judge 일치율 0.766 → [`results/2026-11-08T0104_agreement.json`](./results/2026-11-08T0104_agreement.json), 목표 0.80 미달. 불일치 재판정 후 0.979 (참고값, `judge_labels_adjudicated.jsonl`) ([설계서 §3 · §7](./EVAL_DESIGN.md)) | — |
 | (결정 층) 골든 | [`../tests/harness/golden_tune.yaml`](../tests/harness/golden_tune.yaml) — AC24 제안 검사 · AC28 요청 검사, 데모 자료 위 | `tests/harness/golden_cases.yaml` (AC6) |
 
 평가 세트 · 합격선 · judge 기준 · 사람 라벨 · 러너 · 저장 응답은 골든 데이터처럼 보호한다 — 바꾸려면 사람이 승인한다 ([AGENTS.md §4](../AGENTS.md)).

@@ -1,0 +1,21 @@
+{"run_id": "2026-11-08T0104", "id": "r_c1", "unit": "request", "labeler": "Youngmin17 (재판정 2026-11-14 — judge 이유 · AI 권고를 본 뒤 불일치만)", "q2": true}
+{"run_id": "2026-11-08T0104", "id": "r_c2", "unit": "request", "labeler": "Youngmin17 (재판정 2026-11-14 — judge 이유 · AI 권고를 본 뒤 불일치만)", "q2": true}
+{"run_id": "2026-11-08T0104", "id": "r_c3", "unit": "request", "labeler": "Youngmin17 (재판정 2026-11-14 — judge 이유 · AI 권고를 본 뒤 불일치만)", "q2": true}
+{"run_id": "2026-11-08T0104", "id": "r_c4", "unit": "request", "labeler": "Youngmin17 (재판정 2026-11-14 — judge 이유 · AI 권고를 본 뒤 불일치만)", "q2": true}
+{"run_id": "2026-11-08T0104", "id": "r_c5", "unit": "request", "labeler": "Youngmin17 (재판정 2026-11-14 — judge 이유 · AI 권고를 본 뒤 불일치만)", "q2": true}
+{"run_id": "2026-11-08T0104", "id": "r_c6", "unit": "request", "labeler": "Youngmin17 (재판정 2026-11-14 — judge 이유 · AI 권고를 본 뒤 불일치만)", "q2": true}
+{"run_id": "2026-11-08T0104", "id": "r_c7", "unit": "request", "labeler": "Youngmin17 (재판정 2026-11-14 — judge 이유 · AI 권고를 본 뒤 불일치만)", "q2": true}
+{"run_id": "2026-11-08T0104", "id": "r_c8", "unit": "request", "labeler": "Youngmin17 (재판정 2026-11-14 — judge 이유 · AI 권고를 본 뒤 불일치만)", "q2": true}
+{"run_id": "2026-11-08T0104", "id": "r_q1", "unit": "request", "labeler": "Youngmin17 (재판정 2026-11-14 — judge 이유 · AI 권고를 본 뒤 불일치만)", "q1": true, "q2": true}
+{"run_id": "2026-11-08T0104", "id": "r_q2", "unit": "request", "labeler": "Youngmin17 (재판정 2026-11-14 — judge 이유 · AI 권고를 본 뒤 불일치만)", "q1": false, "q2": true, "adjudicated": ["q1"]}
+{"run_id": "2026-11-08T0104", "id": "r_q3", "unit": "request", "labeler": "Youngmin17 (재판정 2026-11-14 — judge 이유 · AI 권고를 본 뒤 불일치만)", "q1": true, "q2": true}
+{"run_id": "2026-11-08T0104", "id": "a_c1", "unit": "iso_3.15_actorder", "labeler": "Youngmin17 (재판정 2026-11-14 — judge 이유 · AI 권고를 본 뒤 불일치만)", "c1": true, "c2": true, "c3": true}
+{"run_id": "2026-11-08T0104", "id": "a_c2", "unit": "opt_act_order_r2", "labeler": "Youngmin17 (재판정 2026-11-14 — judge 이유 · AI 권고를 본 뒤 불일치만)", "c1": false, "c2": true, "c3": true, "adjudicated": ["c1"]}
+{"run_id": "2026-11-08T0104", "id": "a_c2", "unit": "opt_damp_0.05_r2", "labeler": "Youngmin17 (재판정 2026-11-14 — judge 이유 · AI 권고를 본 뒤 불일치만)", "c1": false, "c2": true, "c3": false, "adjudicated": ["c1", "c3"]}
+{"run_id": "2026-11-08T0104", "id": "a_c2", "unit": "g256_rht3_int2_upgrades_r2", "labeler": "Youngmin17 (재판정 2026-11-14 — judge 이유 · AI 권고를 본 뒤 불일치만)", "c1": true, "c2": true, "c3": false, "adjudicated": ["c3"]}
+{"run_id": "2026-11-08T0104", "id": "a_c2", "unit": "act_order_damp_0.005_r2", "labeler": "Youngmin17 (재판정 2026-11-14 — judge 이유 · AI 권고를 본 뒤 불일치만)", "c1": false, "c2": true, "c3": true, "adjudicated": ["c1"]}
+{"run_id": "2026-11-08T0104", "id": "a_i1", "unit": "iso_3.15_actorder", "labeler": "Youngmin17 (재판정 2026-11-14 — judge 이유 · AI 권고를 본 뒤 불일치만)", "c1": true, "c2": true, "c3": true}
+{"run_id": "2026-11-08T0104", "id": "a_i2", "unit": "iso_3.15_actorder", "labeler": "Youngmin17 (재판정 2026-11-14 — judge 이유 · AI 권고를 본 뒤 불일치만)", "c1": false, "c2": true, "c3": true, "adjudicated": ["c1"]}
+{"run_id": "2026-11-08T0104", "id": "a_k1", "unit": "iso315_actorder", "labeler": "Youngmin17 (재판정 2026-11-14 — judge 이유 · AI 권고를 본 뒤 불일치만)", "c1": true, "c2": true, "c3": true, "c4": false, "adjudicated": ["c4"]}
+{"run_id": "2026-11-08T0104", "id": "a_k1", "unit": "iso315_actorder_damp003", "labeler": "Youngmin17 (재판정 2026-11-14 — judge 이유 · AI 권고를 본 뒤 불일치만)", "c1": true, "c2": true, "c3": true, "c4": false, "adjudicated": ["c4"]}
+{"run_id": "2026-11-08T0104", "id": "a_k1", "unit": "iso315_blk64", "labeler": "Youngmin17 (재판정 2026-11-14 — judge 이유 · AI 권고를 본 뒤 불일치만)", "c1": true, "c2": true, "c3": true, "c4": false, "adjudicated": ["c4"]}

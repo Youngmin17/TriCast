@@ -1,0 +1,54 @@
+{
+ "run_id": "2026-11-08T0104",
+ "labels": 21,
+ "judgments": 47,
+ "overall": 0.9787234042553191,
+ "target": 0.8,
+ "met": true,
+ "criteria": {
+  "q1": {
+   "n": 3,
+   "agree": 3,
+   "lenient": 0,
+   "strict": 0,
+   "rate": 1.0
+  },
+  "q2": {
+   "n": 11,
+   "agree": 11,
+   "lenient": 0,
+   "strict": 0,
+   "rate": 1.0
+  },
+  "c1": {
+   "n": 10,
+   "agree": 10,
+   "lenient": 0,
+   "strict": 0,
+   "rate": 1.0
+  },
+  "c2": {
+   "n": 10,
+   "agree": 9,
+   "lenient": 0,
+   "strict": 1,
+   "rate": 0.9
+  },
+  "c3": {
+   "n": 10,
+   "agree": 10,
+   "lenient": 0,
+   "strict": 0,
+   "rate": 1.0
+  },
+  "c4": {
+   "n": 3,
+   "agree": 3,
+   "lenient": 0,
+   "strict": 0,
+   "rate": 1.0
+  }
+ },
+ "unmatched": [],
+ "note": "labels from evals/judge_labels_adjudicated.jsonl: the 11 disagreements of the blind labels re-decided by the same labeler after seeing the judge's verdicts and reasons and an AI recommendation (all 11 final decisions equal the recommendation). Reference value; the blind agreement in 2026-11-08T0104_agreement.json stays the validation result."
+}

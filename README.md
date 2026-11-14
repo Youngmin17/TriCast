@@ -69,7 +69,7 @@ make check                              # ruff + CPU 테스트
   2. **Auto-tune (AI 추천)**: 목표 크기만 고르면 층마다 방법을 골라 주고, AI 가 GPU 로 재서 찾은 세부 설정을 더한다
   3. **직접 편집**: 추천을 사람이 바꿔 본다
   4. **평가**: 그 셋업의 품질을 원본 · 다른 방법과 비교한다
-  5. **결과물**: 최종 모델의 압축 크기(원본 대비, 계산값)와 레시피 묶음(zip) 내보내기
+  5. **결과물**: 최종 모델의 압축 크기(원본 대비, 계산값), 레시피 묶음(zip) 내보내기, 그리고 실제로 만든 저비트 모델 파일 — 언어 모델은 정수 코드를 담은 safetensors 패키지, YOLO11n 은 INT4 · INT8 가중치 ONNX 파일
 
 ### 실행 및 접속 방법
 
@@ -98,7 +98,7 @@ PYTHONPATH=src python -m app.server --demo --agent evals/fixtures/tune_inputs/s3
 | ④ 평가 | **평가 결과 불러오기** | PPL **33.31** 과 비교 막대. "Auto-tune 추천(PPL 26.51)은 이 편집보다 … 55% 작습니다" |
 | 되돌리기 | ③ 의 **추천으로 되돌리기** → ④ **평가 결과 불러오기** | PPL **26.51**. 막대: 한 방법 최선 33.31 · Auto-tune 배정 27.04 · AI 세부 설정 26.82 / 26.51 |
 | 여러 벤치마크 | ④ 아래 **같은 크기, 여러 벤치마크** 표 | PPL 2개(WikiText-2 · C4)와 정확도 7과제(LAMBADA · ARC-E · ARC-C · HellaSwag · PIQA · WinoGrande · MMLU)마다 원본 / 기존 방법(그 과제에서 이 크기 안 한 방법 최선) / 우리 방법과 차이 ± 표준오차. 20% 에서는 PPL 이 34.06 → 27.12 로 낮지만 정확도는 우리 우세 0 · 차이 없음 6 · 기존 우세 1 (MMLU). ② 에서 **19%** 를 고르면 맞는 한 방법이 2비트(13%)뿐이라 기존이 무너진다: LAMBADA 0.0 → 15.7, 정확도 평균 30.2 → 36.6 (+6.3 ± 0.7) |
-| ⑤ 결과물 | 평가가 나오면 열린다. **레시피 묶음 받기 (.zip)** | 압축 크기 막대: 파일 전체 1.50 GB → 0.80 GB (53%, Linear 가중치만 20% 로 줄고 임베딩 · 출력층은 그대로). `act_damp05_r3_tricast.zip` 이 받아진다 |
+| ⑤ 결과물 | 평가가 나오면 열린다. **레시피 묶음 받기 (.zip)** | 압축 크기 막대: 파일 전체 1.50 GB → 0.80 GB (53%, Linear 가중치만 20% 로 줄고 임베딩 · 출력층은 그대로). `act_damp05_r3_tricast.zip` 이 받아진다. 아래 **모델 패키지**: 이 레시피로 실제로 만든 파일 0.51 GB (출력층이 임베딩과 묶여 한 번만 저장돼 계산값보다 작다) · 196층 모두 TriCast 가 곱하는 가중치와 비트 단위로 같음 · PPL TriCast 26.446 / 패키지 26.441 (−0.02%) · 코드만 GPU 에 올리면 0.49 GB |
 
 ### 다른 모델 — 같은 크기에서 기존 방법과 우리 방법 (기록 재생)
 
@@ -106,13 +106,13 @@ PYTHONPATH=src python -m app.server --demo --agent evals/fixtures/tune_inputs/s3
 
 | 모델 | 누를 것 | 보이는 것 |
 |---|---|---|
-| Qwen3-8B · 언어 모델 | 목록에서 `Qwen3-8B · 언어 모델` → **불러오기** → ② 크기 **19%** (또는 **18%**) → ④ **평가 결과 불러오기** | **기존 방법이 무너지고 우리 방법은 남는 크기만** 고를 수 있게 했다 (`models.json` 의 `sizes`). 한 방법은 2 · 3 · 4비트 계단뿐이라 18% · 19% 안에 맞는 것은 GPTQ 2비트(13%)이고 PPL 915 다. Auto-tune 은 19% PPL 11.22 · 18% PPL 11.94 (원본 9.72; 20% 의 GPTQ 3비트는 11.15). 아래 여러 벤치마크 표: 19% 정확도 평균 28.8 → 61.8 (+33.0 ± 0.7), 18% 28.8 → 56.3 (+27.5 ± 0.7), 7과제 모두 우리 우세. 언어 모델은 생성한 답을 화면에 보이지 않는다 (숫자만). 다른 크기(16% · 17% · 20% · 26%)의 측정은 데이터와 근거 문서에 그대로 있다 |
-| YOLO11n · 물체 검출 | 목록에서 `YOLO11n · 물체 검출` → **불러오기** → ② 크기 **26%** → ④ **평가 결과 불러오기** | Conv 87층 줄과 COCO mAP50-95 막대: 원본 39.5 · INT8 가장자리 + INT4 (흔한 규칙) 1.4 · INT4 균일 1.1 · **Auto-tune 24.4**. 그 아래 **COCO 세부 지표** 표 — 같은 평가를 IoU 기준(AP50 · AP75)과 물체 크기(작은 · 중간 · 큰)로 나눠 원본 / 기존 방법(지표마다 이 크기 안 최선) / 우리 방법: 26% 에서 AP75 1.3 → 26.4, 작은 물체 0.9 → 11.6 (원본 42.8 · 20.0). 아래에 같은 사진 3장의 검출 상자 — 원본 / 기존 방법 / 우리 방법 ("원본 상자 12/19 유지" 처럼 원본이 찾은 물체를 몇 개 다시 찾았는지). 크기 25% 에서는 INT4 균일 1.1 · Auto-tune 23.8 |
+| Qwen3-8B · 언어 모델 | 목록에서 `Qwen3-8B · 언어 모델` → **불러오기** → ② 크기 **19%** (또는 **18%**) → ④ **평가 결과 불러오기** | 19% 의 ⑤ 에 모델 패키지 5.11 GB (원본 16.38 GB) — 252층 비트 일치, 빌드할 때 잰 TriCast PPL 이 ④ 의 기록과 비트 단위로 같고 패키지 PPL 은 +0.03%. **기존 방법이 무너지고 우리 방법은 남는 크기만** 고를 수 있게 했다 (`models.json` 의 `sizes`). 한 방법은 2 · 3 · 4비트 계단뿐이라 18% · 19% 안에 맞는 것은 GPTQ 2비트(13%)이고 PPL 915 다. Auto-tune 은 19% PPL 11.22 · 18% PPL 11.94 (원본 9.72; 20% 의 GPTQ 3비트는 11.15). 아래 여러 벤치마크 표: 19% 정확도 평균 28.8 → 61.8 (+33.0 ± 0.7), 18% 28.8 → 56.3 (+27.5 ± 0.7), 7과제 모두 우리 우세. 언어 모델은 생성한 답을 화면에 보이지 않는다 (숫자만). 다른 크기(16% · 17% · 20% · 26%)의 측정은 데이터와 근거 문서에 그대로 있다 |
+| YOLO11n · 물체 검출 | 목록에서 `YOLO11n · 물체 검출` → **불러오기** → ② 크기 **26%** → ④ **평가 결과 불러오기** | Conv 87층 줄과 COCO mAP50-95 막대: 원본 39.5 · INT8 가장자리 + INT4 (흔한 규칙) 1.4 · INT4 균일 1.1 · **Auto-tune 24.4**. 그 아래 **COCO 세부 지표** 표 — 같은 평가를 IoU 기준(AP50 · AP75)과 물체 크기(작은 · 중간 · 큰)로 나눠 원본 / 기존 방법(지표마다 이 크기 안 최선) / 우리 방법: 26% 에서 AP75 1.3 → 26.4, 작은 물체 0.9 → 11.6 (원본 42.8 · 20.0). 아래에 같은 사진 3장의 검출 상자 — 원본 / 기존 방법 / 우리 방법 ("원본 상자 12/19 유지" 처럼 원본이 찾은 물체를 몇 개 다시 찾았는지). 크기 25% 에서는 INT4 균일 1.1 · Auto-tune 23.8. ⑤ 에서 셋업마다 **ONNX 파일을 내려받는다** — 가중치가 INT4 · INT8 정수로 들어 있고 onnxruntime 으로 바로 돈다 (26% Auto-tune 1.66 MB, onnxruntime 으로 잰 mAP 가 PyTorch 기록과 10⁻⁷ 안에서 같다) |
 
 ### 기대 결과 및 확인 방법
 
 - **정상 실행**: ④ 에 큰 숫자(PPL)와 막대가 나오고, 제목 줄에 "기록된 GPU 측정 · A100 …" 과 "레시피 파일 SHA 일치" 칩이 붙는다. ③ 의 레시피 파일 카드에는 "✓ GPU 가 측정한 바로 그 파일" 이 보인다.
-- **결과물**: ⑤ 의 **레시피 묶음 받기** 로 받는 zip — 레시피 파일(YAML, GPU 가 측정한 바로 그 파일), `evaluation.json`(측정 기록), `size.json`(압축 크기 계산), 적용 명령이 든 `README.md`. 레시피 파일 하나로 같은 셋업을 다시 적용한다 (코드 수정 없음). 모델 가중치 파일은 넣지 않는다.
+- **결과물**: ⑤ 의 **레시피 묶음 받기** 로 받는 zip — 레시피 파일(YAML, GPU 가 측정한 바로 그 파일), `evaluation.json`(측정 기록), `size.json`(압축 크기 계산), 적용 명령이 든 `README.md`. 레시피 파일 하나로 같은 셋업을 다시 적용한다 (코드 수정 없음). zip 에는 모델 가중치를 넣지 않는다. 저비트 모델 파일은 ⑤ 의 **모델 패키지** 에 따로 나온다 — 언어 모델 패키지(수백 MB ~ 수 GB)는 GPU 클러스터에 있고 화면에는 파일 목록 · 크기 · 검사 결과와 만드는 명령이, YOLO11n 의 ONNX 파일(1.5 MB 안팎)은 바로 내려받기가 있다.
 - **다른 입력으로 다시**: ② 에서 다른 목표 크기(16% · 19% · 22% · 26% · 27%)를 고르거나, ③ 에서 다른 "한 방법" · 다른 세부 설정을 고른 뒤 ④ 를 다시 누른다. 고를 때마다 평가는 지워지고 새로 불러온다. 주소창의 주소를 복사해 두면 같은 셋업으로 다시 열린다.
 - **자동 확인 (선택, Node 22 이상 + Chrome)**: `node scripts/quantizer/demo_rehearsal.mjs /tmp/rehearsal` → `REHEARSAL_DONE 6/6` 가 나오면 위 순서가 그대로 동작한 것이다.
 
@@ -129,7 +129,7 @@ PYTHONPATH=src python -m app.server --demo --agent evals/fixtures/tune_inputs/s3
   - YOLO11n 은 **가중치만** 양자화한 fake-quant 다 (출력 채널마다 대칭 absmax · FP16 스케일, 활성값 FP32) — 칩 산술이 아니다. 26% 크기의 Auto-tune 도 원본보다 mAP 가 15.0 낮다. mAP 는 CPU 에서 쟀다 (보정 128장과 겹치지 않는 COCO val2017 4,872장).
   - 직접 편집은 GPU 로 재 둔 조합만 고를 수 있다 (전체를 한 방법으로 · 세부 설정, 6개 크기에 모두 57개). **층 하나씩 바꾸는 편집은 아직 없다.**
   - GPU 에서 바로 평가하는 버튼은 GPU 서버(`--live`, CUDA)에서만 나온다. 이 경로는 가짜 GPU 로 화면 처리만 확인했다.
-  - ⑤ 의 압축 크기는 **계산값**이다 (원본 파일의 텐서 수 × 고른 비트). 그 크기의 저비트 모델 파일은 아직 만들지 않고, 내보내기는 레시피 묶음이다.
+  - ⑤ 의 압축 크기는 **계산값**이다 (원본 파일의 텐서 수 × 고른 비트). 실제로 만든 모델 패키지는 두 셋업뿐이다 — 0.6B 20% AI 추천(`act_damp05_r3`)과 8B 19% (`auto_3.00`). 다른 셋업은 ⑤ 에 만드는 명령만 나온다. 패키지는 정수 코드를 풀어 PyTorch 의 BF16 행렬곱으로 계산하므로 **원본보다 빠르지 않다** (저비트 커널 없음, 줄어드는 것은 파일 · 메모리). HQQ 층은 공식 라이브러리가 정수 코드를 남기지 않아 BF16 으로 저장한다 (0.6B 에서 4층). ONNX 는 YOLO11n 만이다.
   - 글꼴은 인터넷이 있을 때 내려받는다 (없으면 기본 글꼴로 보인다).
 - **알려진 오류와 해결**:
   - `python3` 가 3.9 이하 → 3.10 이상을 설치해 `python3.12 -m venv .venv` 처럼 만든다.
@@ -183,6 +183,31 @@ python -m app.export_autotune_demo --table t/table.json --measured t --profile t
     --session runs/<세션> [--transfer t/xfer] --out app/web/demo/autotune                    # 화면 데이터
 ```
 
+### 모델 패키지 만들기 · 불러 쓰기 (GPU 노드)
+
+레시피 파일 하나로 저비트 모델 파일을 만든다. 보정하면서 층마다 정수 코드를 기록하고, 모든 층을 풀었을 때 TriCast 가
+곱하는 가중치와 비트 단위로 같은지 확인한 뒤에만 쓴다 (다르면 실패).
+
+```bash
+# 언어 모델: model.safetensors (2·3·4·8비트 코드 묶음 + 스케일 · 영점) · quant_config.json (레시피 원문 · SHA-256) · 토크나이저
+python -m tricast.pack build --model Qwen/Qwen3-0.6B --revision <sha> --recipe recipe.yaml --out pkg --ppl
+python -m tricast.pack run --package pkg --prompt "양자화를 한 문장으로 설명해 줘"     # 불러서 생성
+python -m tricast.pack run --package pkg --mode codes --ppl --out pkg.run.json          # 코드만 GPU 에 두고 PPL · 메모리
+```
+
+```python
+from tricast import pack
+model, tokenizer = pack.load("pkg", device="cuda")          # transformers 모델, Linear 자리에 PackedLinear
+```
+
+```bash
+# 검출 모델: 셋업마다 INT4 · INT8 가중치 ONNX + onnxruntime 으로 COCO mAP (CPU)
+python scripts/quantizer/yolo_tune.py onnx --work <작업 폴더> --setups native,u_int4,auto_iso_u4 --threads 16
+# 화면 ⑤ 의 목록 (언어 모델은 다시 잰 PPL 이 TriCast 와 0.1% 안일 때만 실린다)
+python scripts/quantizer/pack_index.py --out app/web/demo/autotune/packages.json \
+    --llm <패키지 폴더> --onnx yolo11n=<작업 폴더>/onnx --onnx-copy app/web/demo/autotune/packages/yolo11n
+```
+
 ### 검사
 
 ```bash
@@ -200,15 +225,16 @@ python evals/run_tune_evals.py --table evals/fixtures/tune_inputs/table.json \
 | 무엇 | 경로 |
 |---|---|
 | 왜 만드는가 — 문제 정의서 | [`docs/PROBLEM.md`](docs/PROBLEM.md) |
-| 무엇을 만드는가 — 제품 스펙과 수용 기준 (AC1–AC28) | [`docs/SPEC.md`](docs/SPEC.md) |
+| 무엇을 만드는가 — 제품 스펙과 수용 기준 (AC1–AC31) | [`docs/SPEC.md`](docs/SPEC.md) |
 | 기술 타당성 스파이크 — 비트 정확 에뮬레이션과 속도 · 레이어 국소 지표 · Auto-tune | [`cuda_core_bit_exact_emulation.md`](docs/spikes/cuda_core_bit_exact_emulation.md) · [`2026-10-13_layer_sqnr_proxy.md`](docs/spikes/2026-10-13_layer_sqnr_proxy.md) · [`2026-10-13_autotune_mckp.md`](docs/spikes/2026-10-13_autotune_mckp.md) |
 | Quantizer 측정 기록 (실행 · 해시) | [`docs/evidence/2026-10-13_quantizer_runs.md`](docs/evidence/2026-10-13_quantizer_runs.md) |
+| 같은 크기 여러 벤치마크 · 모델 패키지 기록 | [`docs/evidence/2026-11-12_tune_benchmarks.md`](docs/evidence/2026-11-12_tune_benchmarks.md) · [`docs/evidence/2026-11-13_model_packages.md`](docs/evidence/2026-11-13_model_packages.md) |
 | 인터뷰 · 관찰 · Job Story | [`docs/research/interviews.md`](docs/research/interviews.md) |
 | 도메인 온톨로지 (정본 YAML / 분석) | [`docs/ontology.yaml`](docs/ontology.yaml) · [`docs/ontology.md`](docs/ontology.md) |
 | 코딩 에이전트 규칙 · 용어집 | [`AGENTS.md`](AGENTS.md) (Claude Code 는 [`CLAUDE.md`](CLAUDE.md) 가 import) |
 | 구조화 출력 스키마 · 파싱 프롬프트 | [`src/tricast/schemas/`](src/tricast/schemas/) · [`src/tricast/prompts/parse_query.md`](src/tricast/prompts/parse_query.md) |
 | 골든 케이스 · 골든 테스트 | [`tests/harness/golden_cases.yaml`](tests/harness/golden_cases.yaml) · [`tests/test_golden.py`](tests/test_golden.py) · [`tests/harness/golden_compare.yaml`](tests/harness/golden_compare.yaml) · [`tests/test_compare_golden.py`](tests/test_compare_golden.py) |
-| 위임 프롬프트 원본 · 검증 루프 기록 | [`docs/prompts/delegation_compare.md`](docs/prompts/delegation_compare.md) (AC13, 지침 순서 한 사이클) · [`docs/prompts/delegation_examples.md`](docs/prompts/delegation_examples.md) · [`docs/prompts/wave1/`](docs/prompts/wave1/) |
+| 위임 프롬프트 원본 · 검증 루프 기록 | [`docs/prompts/delegation_compare.md`](docs/prompts/delegation_compare.md) (AC13, 지침 순서 한 사이클) · [`docs/prompts/delegation_examples.md`](docs/prompts/delegation_examples.md) · [`docs/prompts/wave1/`](docs/prompts/wave1/) · [`docs/prompts/delegation_pack.md`](docs/prompts/delegation_pack.md) (AC30 · AC31, 교차 검토 포함) |
 | 골든 하니스 결함 주입 검사 · 용어집 작동 확인 | [`docs/prompts/delegation_golden_harness.md`](docs/prompts/delegation_golden_harness.md) · [`docs/prompts/glossary_check.md`](docs/prompts/glossary_check.md) |
 | RAG 설정 · evals 안내 | [`config/rag.yaml`](config/rag.yaml) · [`evals/README.md`](evals/README.md) (v2 = 지금 제품, v1 = 10월 요청 파싱) |
 | 웹 앱 (TriCast Studio · Quantizer · 레이어 지도 · Auto-tune) | [`app/README.md`](app/README.md) · [`app/web/autotune.html`](app/web/autotune.html) |

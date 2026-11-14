@@ -112,6 +112,8 @@ dequant(fake-quant) 경로와 scaled + MMA 에뮬레이터 경로의 차이, 각
 | 화면 번들 | `app/export_layers.py` → `app/web/demo/layers/` · `app/export_quantizer_demo.py` (`PINS` · `WEIGHT_BITS` · `check_recipe`) → `app/web/demo/quantizer/presets.json` |
 | 근거 · 검색 | `app/ledger.py` (`ingest` · `verify` · `documents`) → `runs/ledger.jsonl` · `src/tricast/rag.py` (`search`: 계약 문서, `search_evidence`: ledger 문서 + 방법 카탈로그 `docs/research/methods_catalog.yaml`, BM25, 설정 `config/rag.yaml`) |
 | 튜닝 | `app/autotune.py` (`table` · `solve` · `predict` · `measure` · `random`) · `app/tune_agent.py` (제안 검사 · 라운드 스크립트) · `app/tune_loop.py` (자율 루프) |
+| 패키지 | `src/tricast/pack.py` (`build` · `write` · `load` · `run`, 정수 코드 safetensors) · `scripts/quantizer/yolo_tune.py onnx` (검출 모델 ONNX 정수 가중치) · `scripts/quantizer/pack_index.py` (화면 ⑤ 목록) |
+| 다른 모델의 측정 기록 | `scripts/quantizer/yolo_tune.py` (YOLO11n, Conv · COCO mAP) · `scripts/quantizer/zimage_tune.py` (Z-Image-Turbo, Linear · 원본 이미지와의 SSIM/PSNR) → `app/web/demo/autotune/yolo11n.json` · `zimage.json` (화면이 읽는 측정 기록, LLM 의 번들과 다른 형식) |
 | 입력 → 출력 | 실행 기록 JSON · `report.json` · `table.json` · `kl.json` → 번들 JSON · ledger 레코드 · `grid.json` · `recipe.yaml` · `solution.json` |
 
 | 불변식 | 구현 위치 | 판정 |
@@ -123,6 +125,10 @@ dequant(fake-quant) 경로와 scaled + MMA 에뮬레이터 경로의 차이, 각
 | 계약 검색 `tricast.rag.search` 의 결과는 ledger 와 무관하다 (AC23) | `rag.py` `search` · `search_evidence` 분리 | `app/tests/test_ledger.py::test_contract_search_ignores_the_ledgers_and_bad_ledger_lines_are_refused` |
 | 풀이는 예산 안에서 KL 합이 최소인 배정을 정확히 찾고, 불가능한 예산은 거부한다 (AC22) | `autotune.py` `solve_mckp` · `solve_mckp2` | `app/tests/test_autotune.py::test_solver_equals_brute_force_on_random_instances` · `test_infeasible_budgets_are_refused` · `app/tests/test_autotune_compute.py::test_two_constraint_solver_equals_brute_force_on_random_instances` |
 | 제안은 AC24 검사를 모두 통과해야 기록되고, 측정은 세션에 고정한 검증 창으로만 묶는다 (AC24) | `tune_agent.py` `propose` · `evaluate` · `_session` · `MEASURE_DEFAULTS` | `app/tests/test_tune_agent.py::test_bad_proposals_are_refused` · `test_round_measures_on_validation_windows_and_state_joins_by_recipe_hash` |
+| 패키지의 모든 레이어는 풀었을 때 에뮬레이션이 곱하는 가중치와 비트 단위로 같고 (0 의 부호 제외), 하나라도 다르면 패키지를 쓰지 않는다. 활성값 · KV · 희소화 · 이상치 · 다른 출력 형식은 거부한다 (AC30) | `pack.py` `Capture` · `decode` · `same_bits` · `build` | `tests/test_pack.py::test_every_layer_decodes_to_the_weight_tricast_multiplies_with` · `test_what_a_package_cannot_run_is_refused` |
+| 화면 ⑤ 는 다시 불러 잰 PPL 이 TriCast 와 0.1% 안인 패키지, 기록과 SHA-256 이 같은 ONNX 파일만 싣는다 (AC30 · AC31) | `pack_index.py` `llm_entry` · `onnx_entries` | `app/tests/test_pack_index.py` |
+| ONNX 의 정수 × 스케일은 내보낸 FP32 가중치와 비트 단위로 같다 (AC31) | `yolo_tune.py` `int_weights_onnx` | `app/tests/test_yolo_onnx.py` |
+| 이미지 생성 기록의 표 · 해 · 평가는 같은 실행 지문(refs 해시 · 정밀도 · 해상도 · 방법 명세 · 배치)에서 나와야 합쳐지고, 판정은 측정 전에 정한 짝과의 짝 비교로만 낸다 (AC32) | `zimage_tune.py` `fingerprint` · `compare` · `validate` | `app/tests/test_zimage_tune.py` |
 
 `EvalRun` 의 필드와 각 근거 항목이 필요한 이유는 SPEC §5-5 에 있다.
 
@@ -235,6 +241,41 @@ flowchart LR
 
 - 번들(`app/export_autotune_demo.py`)은 측정값을 격자에 붙이기 전에, 생성기가 그 격자로 쓰는 레시피 파일의 SHA-256 이 측정 기록의 `file_sha256` 과 같은지, PPL 기록의 `recipe_hash` 가 그 측정의 `recipe_sha256` 과 같은지 확인한다. 다르면 "기록 없음"과 사유를 남긴다 (`app/tests/test_autotune_demo.py`). 옵션 전이 행(`--transfer`, `scripts/quantizer/autotune_xfer.py`)은 튜닝 루프가 쓰는 제안 레시피 파일의 SHA-256 으로 같은 사슬을 거치고, 칸이 기준 배낭 해와 다르면 같은 크기가 아니므로 거부된다. LLM 응답 파일이 없는 라운드(`replan`)의 칸 변경은 기록된 격자와 부모 격자의 차이로 계산한다 (`app/tests/test_autotune_replan_bundle.py`). 칸 툴팁의 층별 리포트 오차(가중치 MSE · 층 출력 SQNR · 코사인)는 그 방법의 균일 레시피 `tricast report` 에서만 오고, 리포트의 `recipe_hash` 가 그 균일 KL 기록의 `recipe_sha256` 과 같을 때만 붙는다 (`layer_reports`, `app/tests/test_autotune_reports.py`). 레이어 카드 전체(`app.layer_cards`, Qwen3-0.6B 에서 6 MB)는 화면에 싣지 않고 실행 디렉터리에 만든다.
 - 녹화 모드(`--demo`)는 compute 모듈을 import 하지 않는다. 실시간 AI 경로는 `--agent <loop.json>` 을 줄 때만 열리고, 없으면 두 API 가 503 과 띄우는 방법을 돌려준다. 화면은 응답마다 "실시간 Claude 응답" 또는 "저장된 응답 · 날짜" 배지를 단다.
+
+### 3-5. 모델 패키지 — 고른 레시피를 파일로
+
+```mermaid
+flowchart LR
+    R["recipe.yaml<br/>(화면 ④ 의 Auto-tune 배정)"] --> B["python -m tricast.pack build<br/>patch_model → 보정 (캐시 없음)"]
+    B --> C["Capture: 레이어마다 양자화 결과<br/>정수 코드 · 스케일 · 영점 (NF4 absmax)"]
+    C --> D{"풀어낸 가중치 =<br/>에뮬레이션 가중치?<br/>(모든 레이어, 비트 단위)"}
+    D -->|"다름"| X["실패 — 쓰지 않음"]
+    D -->|"같음"| W["model.safetensors (2·3·4·8비트 묶음)<br/>quant_config.json (레시피 원문 · SHA-256)<br/>config · tokenizer · manifest.json"]
+    W --> L["tricast.pack load / run<br/>PackedLinear: load = BF16 로 풀어 둠<br/>codes = 코드만 두고 층마다 풀기"]
+    L --> P["PPL 대조 (0.1%) · GPU 메모리"]
+    P --> I["pack_index.py → demo/autotune/packages.json<br/>화면 ⑤ (레시피 SHA-256 으로 연결)"]
+    Y["yolo_tune.py onnx<br/>conv 정수 코드 + DequantizeLinear"] --> O["onnx/&lt;setup&gt;.onnx<br/>onnxruntime COCO mAP"] --> I
+```
+
+- 패키지는 TriCast 의 양자화 코드(`QTensor.mma_operand`, `nf4_dequantize`)로 가중치를 다시 만든다. 그래서 풀어낸 가중치는 에뮬레이션과 비트 단위로 같다 — 0 의 부호만 예외로, TriCast 는 작은 음수 가중치를 −0 으로 두지만 정수 코드에는 부호 있는 0 이 없어 +0 이 된다 (+0 에서 시작하는 합에는 영향 없음). 가중치만 양자화한 레시피(이 경로가 받는 유일한 종류)에서 남는 차이는 행렬곱의 합산 순서다 (TriCast 의 FMA 사슬 대 PyTorch matmul). 출력은 TriCast 처럼 MMA 명세의 출력 형식(BF16)으로 반올림한다.
+- 패키지에 담기지 않는 것: TriCast 의 MMA 산술(칩 축 — CoFDA 같은 좁은 누산은 재현하지 않는다), 활성값 양자화 · KV 캐시 · 희소화 · 이상치 (거부), HQQ 의 정수 코드 (공식 라이브러리가 코드를 남기지 않아 그 레이어는 TriCast 가 곱하는 가중치 그대로 저장하고 `fallback_layers` 에 사유를 적는다).
+- 패키지 파일은 수백 MB ~ 수 GB 라 저장소에 넣지 않는다. 화면은 `manifest.json` 의 크기 · 해시 · 검사 결과만 싣고, 검출 모델의 ONNX 파일(수 MB)은 화면 옆에 두어 내려받게 한다.
+
+### 3-6. 다른 모델 — 측정 기록 (검출 · 이미지 생성)
+
+LLM 은 GPU 서버에서 바로 재는 경로와 번들을 쓰고, 검출(YOLO11n)과 이미지 생성(Z-Image-Turbo)은 클러스터에서 미리 잰 측정 기록
+하나를 화면이 읽는다 (같은 화면 코드, `tune.js` 의 `KINDS`). 기록을 만드는 단계는 둘이 같다.
+
+```mermaid
+flowchart LR
+    R["refs (이미지 생성만)<br/>프롬프트 임베딩 · 원본 생성의 transformer 입력"] --> T["table<br/>층 하나만 양자화 → 출력 오차 D<br/>GPU 여러 장에 나눔 · 실행 지문"]
+    T --> M["merge → table.json"] --> S["solve<br/>기존 셋업의 크기로 배낭<br/>(검출: 정확 DP · 이미지: 정수계획)"]
+    S --> E["evaluate<br/>셋업마다 끝까지 실행: COCO mAP / 원본 이미지와 SSIM · PSNR"]
+    E --> X["export → demo/autotune/*.json + 이미지<br/>validate (크기 · 해 · 지표 · 판정)"]
+```
+
+- 이미지 생성은 V100 에서 FP32 로 잰다 (체크포인트의 FP32 텐서는 모두 BF16 값이고, V100 의 FP16 은 값 범위를 넘는다). 표 ·
+  평가 수치는 [근거 문서](./evidence/2026-11-14_zimage_turbo.md) 에 있다.
 
 ## 4. 실행 모드
 

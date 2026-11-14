@@ -10,6 +10,8 @@ Stages (each ends with one log marker: YOLO_<STAGE>_DONE, or YOLO_FAIL stage=<st
   solve     knapsack at u_int4 / heur_8_4 / u_int3 average bits -> solutions.json
   evaluate  per setup: COCO bbox AP (4872 evaluation images), measured D, demo detections -> eval_<setup>.json
   export    app/web/demo/autotune/yolo11n.json
+  onnx      per setup: an ONNX file whose quantized conv weights are INT8 / INT4 codes decoded by
+            DequantizeLinear, run by onnxruntime on the demo photos and the evaluation images -> onnx/
 
 Numerics: weight-only fake-quant. Each conv weight is viewed as [out, in/groups*kh*kw] (EmuConv2d's K order)
 and replaced by tricast.quant.api.fake_quant (reference backend): symmetric intN (k in [-(2^(N-1)-1),
@@ -732,6 +734,232 @@ def stage_evaluate(args: argparse.Namespace) -> None:
     print(f"YOLO_EVAL_DONE setups={','.join(setups)} seconds={time.monotonic() - started:.0f}", flush=True)
 
 
+class OrtDetector:
+    """An onnxruntime session called like the PyTorch detector: ``model(batch)`` -> the decoded head
+    output."""
+
+    def __init__(self, path: Path, threads: int) -> None:
+        import onnxruntime as ort
+
+        options = ort.SessionOptions()
+        options.intra_op_num_threads = threads
+        options.inter_op_num_threads = 1
+        self.session = ort.InferenceSession(str(path), options, providers=["CPUExecutionProvider"])
+
+    def __call__(self, batch: Any) -> Any:
+        import torch
+
+        out = self.session.run(None, {"images": batch.detach().cpu().numpy()})[0]
+        return torch.from_numpy(out)
+
+
+def int_weights_onnx(
+    source: Path, target: Path, weights: Mapping[str, tuple[Any, Any, int]]
+) -> dict[str, Any]:
+    """Rewrite an exported ONNX graph so each quantized conv weight is stored as integer codes (INT8, or INT4
+    for 3- and 4-bit codes) with one FP32 scale per output channel, decoded by DequantizeLinear (opset 21,
+    axis 0) into the initializer name the Conv reads. ``weights``: conv weight initializer name ->
+    (codes [out, ...] int, scale [out] fp32, bits)."""
+    import ml_dtypes
+    import numpy as np
+    import onnx
+    from onnx import helper, numpy_helper
+
+    model = onnx.load(str(source))
+    initializers = {init.name: init for init in model.graph.initializer}
+    missing = sorted(set(weights) - set(initializers))
+    require(not missing, f"no ONNX initializer for {missing[:3]}")
+    nodes = []
+    stored = {}
+    for name, (codes, scale, bits) in weights.items():
+        original = numpy_helper.to_array(initializers[name])
+        dtype = np.int8 if bits > 4 else ml_dtypes.int4
+        limit = 1 << (7 if bits > 4 else 3)
+        require(
+            codes.dtype.kind in "iu" and int(codes.min()) >= -limit and int(codes.max()) < limit,
+            f"{name}: codes do not fit {np.dtype(dtype).name}",
+        )
+        q = numpy_helper.from_array(codes.astype(dtype), f"{name}__q")
+        # what DequantizeLinear computes from the stored integers; the sign of a zero aside (codes have none)
+        stored_codes = numpy_helper.to_array(q).astype(np.float32)
+        decoded = (stored_codes * scale.astype(np.float32).reshape(-1, *([1] * (codes.ndim - 1)))).astype(
+            np.float32
+        )
+        require(
+            decoded.shape == original.shape
+            and np.array_equal((decoded + 0.0).view(np.int32), (original + 0.0).view(np.int32)),
+            f"{name}: codes x scale is not the exported weight",
+        )
+        zero = numpy_helper.from_array(np.zeros(codes.shape[0], dtype=dtype), f"{name}__zero")
+        s = numpy_helper.from_array(scale.astype(np.float32), f"{name}__scale")
+        model.graph.initializer.remove(initializers[name])
+        model.graph.initializer.extend([q, s, zero])
+        nodes.append(
+            helper.make_node(
+                "DequantizeLinear", [q.name, s.name, zero.name], [name], axis=0, name=f"{name}__dequant"
+            )
+        )
+        stored[name] = {"bits": bits, "dtype": "int8" if bits > 4 else "int4", "params": int(codes.size)}
+    for node in reversed(nodes):
+        model.graph.node.insert(0, node)
+    for opset in model.opset_import:
+        if opset.domain in ("", "ai.onnx"):
+            # opset 21 adds the INT4 type to DequantizeLinear; the ops this graph uses keep their semantics
+            opset.version = max(opset.version, 21)
+    model.ir_version = max(model.ir_version, 10)  # INT4 tensors need IR version 10
+    onnx.checker.check_model(model)
+    onnx.save(model, str(target))
+    return stored
+
+
+def stage_onnx(args: argparse.Namespace) -> None:
+    """ONNX files of the setups with integer weights, run by onnxruntime: raw head outputs on the demo photos
+    and COCO mAP on the evaluation images, against the PyTorch fake-quant model (eval_<setup>.json)."""
+    import torch
+    from app.runners.vision import _detections, _network_input
+    from torch.utils.data import DataLoader
+
+    from tricast.quant.api import quantize
+
+    setup_torch(args.threads)
+    setups = [s.strip() for s in args.setups.split(",") if s.strip()]
+    require(setups and set(setups) <= set(SETUPS), f"setups must be among {SETUPS}")
+    out = args.work / "onnx"
+    out.mkdir(parents=True, exist_ok=True)
+    model, names = load_model(args.checkpoint)
+    layers, modules, int8, _ = conv_layers(model)
+    stride = int(model.stride.max().item())
+    detect = model.model[-1]
+    detect.export, detect.format, detect.dynamic = True, "onnx", True  # one decoded tensor, any input size
+    plans = {}
+    if any(setup in AUTO for setup in setups):
+        solutions = json.loads((args.work / "solutions.json").read_text())["solutions"]
+        plans = {setup: solutions[setup]["methods"] for setup in setups if setup in AUTO}
+    annotations = args.coco / "annotations" / "instances_val2017.json"
+    all_ids = annotation_ids(annotations)
+    eval_ids = evaluation_ids(all_ids, calibration_ids(all_ids))
+    evaluator = load_evaluator()
+    dataset = evaluator.COCOValidation(
+        args.coco / "val2017", annotations, args.work, EVAL["batch"], IMGSZ, stride, None
+    )
+    env = run_env()
+    import onnx
+    import onnxruntime
+
+    env.update(onnx=onnx.__version__, onnxruntime=onnxruntime.__version__)
+    print(f"YOLO_ONNX_START setups={','.join(setups)} threads={args.threads}", flush=True)
+    for setup in setups:
+        tick = time.monotonic()
+        assignment = plans[setup] if setup in AUTO else baseline_assignment(setup, layers, int8)
+        original = {name: modules[name].weight.detach().clone() for name in modules}
+        weights = {}
+        for name, method in assignment.items():
+            if method == "fp16":
+                continue
+            rows = original[name].reshape(original[name].shape[0], -1)
+            qt = quantize(rows, weight_spec(method), backend="reference")
+            codes = qt.values.to(torch.int64).reshape(original[name].shape).numpy()
+            weights[f"{name}.weight"] = (codes, qt.scale.reshape(-1).float().numpy(), METHODS[method])
+        float_path, int_path = out / f"{setup}.float.onnx", out / f"{setup}.onnx"
+        with quantized(modules, assignment):
+            torch.onnx.export(
+                model,
+                torch.zeros(1, 3, IMGSZ, IMGSZ),
+                str(float_path),
+                opset_version=20,
+                input_names=["images"],
+                output_names=["output0"],
+                do_constant_folding=True,
+                dynamic_axes={
+                    "images": {0: "batch", 2: "height", 3: "width"},
+                    "output0": {0: "batch", 2: "anchors"},
+                },
+                dynamo=False,
+            )
+            stored = int_weights_onnx(float_path, int_path, weights)
+            session = OrtDetector(int_path, args.threads)
+            parity, kept = [], {}
+            for image_id in DEMO_IDS:
+                source = image_file(args.coco, image_id)
+                batch, plan = _network_input(source.read_bytes(), IMGSZ, stride)
+                x = batch.float() / 255
+                with torch.no_grad():
+                    reference = model(x)
+                reference = reference[0] if isinstance(reference, tuple) else reference
+                ort_out = session(x)
+                parity.append(float((ort_out - reference).abs().max()))
+                ours = _detections(session, x, plan, names, DRAW["conf"], DRAW["iou"], DRAW["max_det"])
+                theirs = _detections(model, x, plan, names, DRAW["conf"], DRAW["iou"], DRAW["max_det"])
+                kept[str(image_id)] = {
+                    "onnx": len(ours),
+                    "pytorch": len(theirs),
+                    "same_classes": sorted(b["cls_id"] for b in ours) == sorted(b["cls_id"] for b in theirs),
+                }
+        predictions = []
+        loader = DataLoader(
+            dataset,
+            batch_size=EVAL["batch"],
+            shuffle=False,
+            num_workers=args.workers,
+            drop_last=False,
+            collate_fn=evaluator.coco_collate,
+            generator=torch.Generator().manual_seed(SEED),
+        )
+        for inputs, metadata in loader:
+            x = inputs.float() / 255
+            predictions.extend(
+                evaluator.serialize_predictions(
+                    session(x),
+                    metadata,
+                    tuple(x.shape),
+                    dataset.category_map,
+                    EVAL["conf"],
+                    EVAL["iou"],
+                    EVAL["max_det"],
+                )
+            )
+        log = io.StringIO()
+        with contextlib.redirect_stdout(log):
+            metrics = evaluator.evaluate_coco(annotations, predictions, eval_ids, out / f"pred_{setup}.json")
+        record = next(
+            (
+                d / f"eval_{setup}.json"
+                for d in (args.work, *args.more)
+                if (d / f"eval_{setup}.json").exists()
+            ),
+            None,
+        )
+        # the PyTorch evaluation it is compared with must be of this very assignment
+        require(record is not None, f"{setup}: no eval_{setup}.json to compare with (run evaluate first)")
+        evaluated = json.loads(record.read_text())
+        require(evaluated.get("methods") == assignment, f"{record}: evaluated another assignment")
+        recorded = eval_metrics(setup, evaluated)
+        result = {
+            "setup": setup,
+            "file": int_path.name,
+            "bytes": int_path.stat().st_size,
+            "sha256": sha256_file(int_path),
+            "float_bytes": float_path.stat().st_size,
+            "stored": stored,
+            "raw_max_abs_diff": parity,
+            "demo_boxes": kept,
+            "metrics": {k: metrics[k] for k in METRIC_KEYS},
+            "pytorch_metrics": recorded,
+            "evaluation_images": len(eval_ids),
+            "seconds": round(time.monotonic() - tick, 1),
+            "env": {**env, "stage": "onnx"},
+        }
+        write_json(out / f"onnx_{setup}.json", result)
+        float_path.unlink()
+        delta = None if recorded is None else metrics["AP_50_95"] - recorded["AP_50_95"]
+        print(
+            f"YOLO_ONNX_SETUP {setup} bytes={result['bytes']} AP_50_95={metrics['AP_50_95']:.4f} "
+            f"vs_pytorch={delta} raw_diff_max={max(parity):.3g} t={result['seconds']:.0f}s",
+            flush=True,
+        )
+    print("YOLO_ONNX_DONE", flush=True)
+
+
 def eval_metrics(setup: str, result: Mapping[str, Any]) -> dict[str, float]:
     """METRIC_KEYS of an evaluation record: an older record keeps AP50-95 / AP50 in ``metrics`` and the rest
     of the same COCOeval run in ``metrics_detail``; both must agree where they overlap."""
@@ -983,18 +1211,23 @@ def main(argv: Sequence[str] | None = None) -> int:
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
     sub = parser.add_subparsers(dest="stage", required=True)
-    for name in ("table", "solve", "evaluate", "export"):
+    for name in ("table", "solve", "evaluate", "export", "onnx"):
         stage = sub.add_parser(name)
         stage.add_argument(
             "--work", type=Path, required=True, help="directory of the intermediate JSON files"
         )
-        if name in ("table", "evaluate"):
+        if name in ("table", "evaluate", "onnx"):
             stage.add_argument("--checkpoint", type=Path, default=CHECKPOINT)
             stage.add_argument("--coco", type=Path, default=COCO, help="holds val2017/ and annotations/")
             stage.add_argument("--threads", type=int, default=16)
-        if name == "evaluate":
+        if name in ("evaluate", "onnx"):
             stage.add_argument("--setups", required=True, help=f"comma list of {','.join(SETUPS)}")
             stage.add_argument("--workers", type=int, default=2)
+        if name == "onnx":
+            stage.add_argument(
+                "--more", type=Path, nargs="*", default=[], help="other work dirs with eval_*.json"
+            )
+        if name == "evaluate":
             stage.add_argument("--media", type=Path, default=ROOT / "app" / "web" / "demo" / "media")
         if name == "export":
             stage.add_argument(
@@ -1005,7 +1238,13 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
     args = parser.parse_args(argv)
     args.work.mkdir(parents=True, exist_ok=True)
-    stages = {"table": stage_table, "solve": stage_solve, "evaluate": stage_evaluate, "export": stage_export}
+    stages = {
+        "table": stage_table,
+        "solve": stage_solve,
+        "evaluate": stage_evaluate,
+        "export": stage_export,
+        "onnx": stage_onnx,
+    }
     try:
         stages[args.stage](args)
     except Exception as error:

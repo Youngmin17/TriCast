@@ -42,7 +42,7 @@
 
 ## 3. 핵심 기능 (한 문장)
 
-> **레이어별 방법 고르기** (웹 격자 · YAML · Python) → **레시피 한 장** (SHA-256) → **레이어 오차 지도 + PPL · lm-eval 과제별 점수** (같은 실행 환경 기록) → **Auto-tune** (크기 예산 → 층별 방법, v1) — 칩의 누산 · 반올림 규칙은 같은 레시피의 선택 축
+> **레이어별 방법 고르기** (웹 격자 · YAML · Python) → **레시피 한 장** (SHA-256) → **레이어 오차 지도 + PPL · lm-eval 과제별 점수** (같은 실행 환경 기록) → **Auto-tune** (크기 예산 → 층별 방법) → **모델 패키지** (정수 코드 safetensors · ONNX, 다시 불러 추론) — 칩의 누산 · 반올림 규칙은 같은 레시피의 선택 축
 
 ## 4. 범위
 
@@ -54,8 +54,9 @@
 | 수 형식 정의 (float / int / pow2, 사용자 정의 ExMy·intN) | 활성함수 표(LUT) 근사 (로그 08 — 다음 버전 후보) |
 | 칩 산술 축 (선택) — MMA 누산 에뮬레이션 (CoFDA·GDFS·FP32 FMA·FP64·정수), **Tensor Core가 아닌 CUDA core에서** | Tensor Core 네이티브 실행 경로 |
 | 하드웨어 프리셋 (출처·검증 상태 필수) | 출처 없는 하드웨어 수치 (모르면 "미검증") |
-| 평가 — 레이어별 MSE · SQNR · 코사인 · logits KL, PPL, lm-eval 과제별 점수 · 표본 수, 검출 + 실행 환경 기록 | 칩 컴파일러·배포 |
+| 평가 — 레이어별 MSE · SQNR · 코사인 · logits KL, PPL, lm-eval 과제별 점수 · 표본 수, 검출, 이미지 생성(원본 이미지와의 SSIM · PSNR) + 실행 환경 기록 | 칩 컴파일러·배포 |
 | 인터페이스 — 웹 (Quantizer · 레이어 지도 · Studio), CLI, Python API, lm-eval 어댑터, 자연어 레시피 에이전트 | 모델 학습 파이프라인 (QAT는 STE 수준만) |
+| 모델 패키지 출력 — 고른 레시피의 가중치를 정수 코드로 저장 (언어 모델: safetensors + `quant_config.json`, 검출: ONNX INT4 · INT8 + DequantizeLinear) 하고 다시 불러 추론 (AC30 · AC31) | 칩 컴파일러·배포 중 칩 · 저비트 커널로 옮기는 단계 — 패키지는 정수 코드를 풀어 PyTorch · onnxruntime 의 일반 행렬곱으로 계산한다 (속도는 위 "칩 속도" 항목처럼 재지 않는다) |
 
 > **Auto-tune** 은 v2 까지 구현됐다 (v1: 보정 없는 방법 7가지 · 가중치 비트 예산, [스파이크](./spikes/2026-10-13_autotune_mckp.md) 채택; v2: 보정 방법 · KV 항 · 패치 바닥, [스파이크](./spikes/2026-11-03_autotune_v2.md) 채택). 2026-11-04 에 트랙 M 저비트 방법 16종 표, 트랙 C 연산 예산, 레이어 프로파일과 레이어 카드 검색, 자연어 요청 해석(AC28), Auto-tune 화면(`app/web/autotune.html`)이 더해졌다.
 >
@@ -420,7 +421,7 @@ calibration: {seed: 42}
 
 ## 6. 수용 기준
 
-각 기준은 EARS 문형 "[조건]일 때, TriCast는 [동작]한다"로 쓰고, 조건 유형을 [ ]에 표시했습니다. **모든 기준은 테스트나 측정으로 판정합니다.** AC1–AC14 는 v1.0 그대로이고, AC15–AC28 이 Quantizer 개편의 기준입니다 (판정 테스트는 `app/tests/` 와 `scripts/quantizer/`).
+각 기준은 EARS 문형 "[조건]일 때, TriCast는 [동작]한다"로 쓰고, 조건 유형을 [ ]에 표시했습니다. **모든 기준은 테스트나 측정으로 판정합니다.** AC1–AC14 는 v1.0 그대로이고, AC15–AC28 이 Quantizer 개편의 기준입니다 (판정 테스트는 `app/tests/` 와 `scripts/quantizer/`). AC29–AC31 은 2026-11-12~13 에 더한 여러 벤치마크 비교와 모델 패키지 출력의 기준이고, AC32 는 2026-11-14 에 더한 이미지 생성 모델 예시의 기준입니다.
 
 | AC | 유형 | 수용 기준 (EARS) | 판정 방법 (테스트 · 측정) | 현재 결과 | 인터뷰 |
 |:-:|:-:|---|---|---|:-:|
@@ -452,12 +453,16 @@ calibration: {seed: 42}
 | **AC26** | 선택 기능 | 레시피에 `official_gptq` 가 지정된 경우, TriCast는 고정 커밋의 공식 GPTQ (`llama_sequential`) 를 소스 수정 없이 호출해 모든 디코더 Linear 를 한 번씩 양자화하고 (그룹 크기 준수), 가지치기 뒤 · 양자화 패치 전에 적용하며, TriCast 의 `weight_algo: gptq` 나 가중치 명세와 함께 쓰면 거부하고, `tricast run` 의 `hessian_max_bytes` 는 실행 식별자를 바꾸지 않고 보정까지 전달한다. | `tests/test_official_gptq.py::test_official_gptq_quantizes_every_decoder_linear_once` · `test_groupsize_gives_each_group_its_own_grid` · `test_default_data_is_official_get_loaders` · `test_official_gptq_recipe_block` · `test_runner_prunes_then_quantizes_then_patches_and_reloads` · `tests/test_runner_hessian_budget.py::test_the_budget_reaches_calibrate_and_not_the_run_identity` · `test_the_budget_is_enforced_by_calibrate` · `test_a_bad_budget_is_refused` | ✅ CPU 통과 (tiny Llama · Qwen3) · ✅ GPU 게이트 (Llama-2-7B W4 g128, H200: 어댑터 5.6570 vs 구 환경 공식 5.6712, 공식 llama_eval 5.6714 vs 앵커 5.69 — `docs/evidence/2026-11-03_v2_agent_runs.md`) | 07 10 |
 | **AC27** | 이벤트 기반 | 자율 튜닝 루프를 실행하면, TriCast는 라운드마다 ledger 와 표에서 층별 근거 분석(현재 최선 · 측정 이력과 부모 대비 효과 · 손실이 몰린 층과 대안 · 예측 대 실측 · 옵션 공간 · 방법 카드 · 손실이 몰린 층의 ledger 문서 검색(RAG: 방법별 KL · 레이어 리포트 · 분포 · 희소화), 근거 레코드 id 포함)을 만들어 제안 엔진(Claude Code headless: 도구 없음 · 스키마 강제 · 비용 상한, 또는 자동 탐색)에 넘기고, 모든 제안을 AC24 검사로 거르고 거부 사유를 다음 라운드에 되먹이며, 통과한 제안만 GPU 에서 측정 · 수집하고, 2라운드 연속 개선이 없거나 제안 엔진이 멈추면 정지하며, 제안 엔진의 입력과 응답을 라운드마다 남긴다. | `app/tests/test_tune_loop.py::test_the_analysis_cites_the_records_behind_its_numbers` · `test_the_loop_measures_accepted_proposals_feeds_back_refusals_and_stops` · `test_claude_code_runs_without_tools_under_the_schema_and_is_logged` · `test_the_remote_measurement_syncs_launches_waits_and_fetches` · `test_auto_greedy_proposes_unmeasured_neighbours_of_the_best` · RAG: `app/tests/test_layer_cards.py::test_the_analysis_retrieves_the_loss_layers_documents_unless_masked` | ✅ CPU 통과 · 스파이크 채택 (사람 개입 없이 2라운드, 검증 KL 0.05967 → 0.05538, docs/spikes/2026-11-03_tune_loop.md) | 07 09 10 13 |
 | **AC28** | 이벤트 기반 | 자연어 튜닝 요청이 오면, TriCast는 그 문장을 모델 · 크기 예산 · 연산 예산 · BF16 유지 블록 · 제외 · 허용 방법으로 구조화하고, 요청에 없는 모델 · 예산은 지어내지 않고 되묻으며(`needs_clarification`), 범위 밖 요청(속도 · 전력 · 면적 예측, 학습, 커널 작성)은 실행하지 않고 안내하고(`out_of_scope`), 제약 아래 가장 싼 배정보다 작은 예산은 코드가 계산해 충돌로 알리며(`conflict`), 표에 없는 방법 · 모델 · 블록을 담은 해석은 쓰지 않고 거부한다. 해석이 `tune` 이면 그 제약 안에서 배낭(AC22)을 푼다. | `app/tests/test_tune_request.py::test_the_code_checks_what_it_can_and_the_constraints_hold` · `test_the_parser_is_asked_headless_with_the_catalog_and_the_request_as_data` · `app/tests/test_autotune_demo.py` (서버 경로) · 골든 `tests/harness/golden_tune.yaml` (코드가 계산하는 충돌 · 되묻기 · 거부, 제약 아래 배낭) · 통계 층: `evals/` (튜닝 평가 세트) | 🟡 CPU 통과 · 골든 통과 · evals 기준선 3회 (2026-11-09, 35 케이스): A1–A7 100% · 지어낸 값 · 인젝션 0건 (`evals/EVAL_DESIGN.md` §9). 연산 예산이 표의 가장 싼 연산보다 작으면 코드가 충돌로 계산한다 (기준선이 찾은 빈틈, 2026-11-09). judge 지표는 사람 라벨 전 | 07 09 10 13 |
+| **AC29** | 이벤트 기반 | Auto-tune 화면에서 크기를 고르면, TriCast는 그 크기의 Auto-tune 배정과, 같은 크기 이하의 한 방법(모든 층에 같은 방법) 중 벤치마크마다 가장 좋은 것을 WikiText-2 · C4 PPL 과 lm-eval 7과제로 나란히 보이고, 정확도 차이는 같은 문항끼리 짝지은 차이의 평균과 표준오차로 내어 차이가 2 SE 를 넘을 때만 우열을 표시하며, 화면 번들이 PPL 을 잰 레시피 파일과 바이트가 다르거나 과제 설정 · 문항 수가 다른 기록은 붙이지 않고 거부한다. | `app/tests/test_tune_bench.py::test_recipes_are_the_files_the_bundle_measured` · `test_recipes_refuses_a_file_the_bundle_did_not_measure` · `test_paired_difference_and_its_standard_error` · `test_verdict_is_two_standard_errors_and_only_for_accuracy` · `test_export_compares_each_size_with_the_best_one_method_setup_per_benchmark` · `test_export_refuses_records_that_do_not_compare` · `test_shipped_benchmark_files_belong_to_their_bundles` · `scripts/quantizer/tune_models_check.mjs` | ✅ CPU 통과 · GPU 기록 (0.6B H100 · 8B H200): 8B 19% 크기에서 정확도 평균 GPTQ 2비트 28.8 → Auto-tune 61.8 (+33.0 ± 0.7, 7과제 모두 우세) — [기록](./evidence/2026-11-12_tune_benchmarks.md) | 05 12 13 21 |
+| **AC30** | 이벤트 기반 | 고른 레시피로 모델 패키지를 만들면 (`python -m tricast.pack build`), TriCast는 양자화한 Linear 마다 정수 코드(2 · 3 · 4 · 8비트로 묶음) · 스케일 · 영점(NF4 는 블록 absmax, 입력 변환은 대각)을 safetensors 한 파일에 담고 레시피 원문 · SHA-256 · 모델 revision 을 함께 적으며, 풀어낸 가중치가 에뮬레이션이 곱하는 가중치와 레이어 하나라도 비트 단위로 다르면 (0 의 부호만 예외 — 정수 코드에는 −0 이 없다) 쓰지 않고, 가중치만 담으므로 활성값 양자화 · KV 캐시 명세 · 희소화 · 이상치 · BF16 · FP16 · FP32 밖의 MMA 출력 형식 · 두 이름에 공유된 Linear 는 거부하며, 정수 코드를 남기지 않는 방법(HQQ)의 레이어는 TriCast 가 곱하는 가중치 그대로 두고 사유를 남긴다. 화면(Auto-tune ⑤)은 두 PPL 로 다시 계산한 차이가 0.1% 안이고 파일끼리(레시피 원문 · 해시 · 검사한 층 수) 맞는 패키지만, 그 모델 · 레시피 파일의 셋업에만 싣는다. | `tests/test_pack.py::test_codes_pack_into_bits_and_come_back` · `test_every_layer_decodes_to_the_weight_tricast_multiplies_with` · `test_a_written_package_loads_and_gives_tricasts_outputs` · `test_the_package_is_smaller_than_its_bf16_weights` · `test_sparsity_is_refused` · `test_a_weight_rounded_to_negative_zero_decodes_to_positive_zero_and_nothing_else_moves` · `test_what_a_package_cannot_run_is_refused` · `test_a_stored_recipe_with_a_kv_spec_does_not_load` · `test_a_new_package_does_not_inherit_old_checks` · `test_a_dense_weight_is_kept_exactly_and_a_bias_survives_a_dtype_change` · `app/tests/test_pack_index.py::test_a_checked_package_is_listed_with_its_model_and_recipe` · `test_a_package_that_fails_a_check_is_not_listed` · `test_files_that_disagree_with_each_other_are_not_listed` | ✅ CPU 통과 · GPU: Qwen3-0.6B (H100, 196/196 레이어 비트 일치 (0 의 부호 제외), PPL 26.4458 → 26.4412 (−0.017%), 507 MB / 원본 1.50 GB) · Qwen3-8B 19% (H200, 252/252, 11.2242 → 11.2281 (+0.034%), 5.11 GB / 16.4 GB) — [기록](./evidence/2026-11-13_model_packages.md) · [위임 기록](./prompts/delegation_pack.md) | — (팀 요구, 2026-11-13) |
+| **AC31** | 이벤트 기반 | 검출 모델(YOLO11n)의 ONNX 파일을 만들면 (`scripts/quantizer/yolo_tune.py onnx`), TriCast는 양자화한 conv 가중치를 INT8 · INT4(3비트 코드 포함) 정수와 출력 채널별 FP32 스케일로 저장해 DequantizeLinear(opset 21)로 풀고, 정수 × 스케일이 내보낸 가중치와 비트 단위로 같지 않으면 파일을 쓰지 않으며, onnxruntime 으로 잰 COCO mAP 와 시연 사진의 출력 차이를 PyTorch fake-quant 기록과 함께 남긴다. 화면은 기록과 SHA-256 이 같은 파일만 내려받기로 건다. | `app/tests/test_yolo_onnx.py::test_integer_weights_give_the_float_graphs_outputs` · `test_codes_that_do_not_rebuild_the_weight_are_refused` · `app/tests/test_pack_index.py::test_an_onnx_file_is_copied_and_listed_with_its_record` · `test_an_onnx_file_that_differs_from_its_record_is_refused` | ✅ CPU 통과 (onnxruntime 1.23.2) · YOLO11n 4셋업 (CPU): 정수 가중치 ONNX 1.50~1.66 MB (FP32 원본 10.57 MB), onnxruntime 으로 잰 COCO mAP50-95 가 PyTorch fake-quant 기록과 10⁻⁷ 안에서 같음 (Auto-tune 26% 24.4 · INT4 균일 1.1), 시연 사진 3장의 상자 수 · 클래스 모두 같음 — [기록](./evidence/2026-11-13_model_packages.md) | — (팀 요구, 2026-11-13) |
+| **AC32** | 선택 기능 | 이미지 생성 모델(Z-Image-Turbo)이 선택된 경우, TriCast는 확산 트랜스포머의 Linear 마다 방법(BF16 유지 · INT8 · INT4 · INT3 · INT2)을 층 하나만 바꿔 잰 생성 출력 오차 표 위에서 기존 방법과 같은 크기로 배정하고 (정수계획, 비용은 정수로 다시 확인), 같은 프롬프트 · 같은 초기 잡음으로 만든 이미지를 원본 이미지와 SSIM · PSNR 로 비교해 기존 방법 · 우리 방법의 이미지와 함께 보이며, 판정은 측정 전에 정한 짝(같은 크기를 정한 기존 셋업)과의 프롬프트별 짝 비교(정확 sign-flip, Holm)로만 내고, 표 · 해 · 평가가 같은 실행 지문(refs · 정밀도 · 방법 명세)에서 나오지 않은 기록은 합치지 않는다. | `app/tests/test_zimage_tune.py::test_stored_bits_and_bytes` · `test_the_knapsack_finds_the_brute_force_minimum` · `test_the_knapsack_takes_a_real_sized_budget` · `test_each_method_dequantizes_to_fp32_exactly` · `test_the_sign_flip_p_is_the_share_of_sign_patterns_at_least_as_extreme` · `test_holm_adjusts_in_the_input_order` · `test_the_validator_accepts_a_consistent_dataset_and_catches_each_break` · `test_the_fingerprint_changes_with_everything_a_table_row_depends_on` · `test_the_exported_dataset_is_consistent_and_its_images_exist` · `scripts/quantizer/tune_models_check.mjs` | 🟡 구현 · CPU 테스트 통과 (`app/tests/test_zimage_tune.py` 18건, 가짜 기록으로 화면 검사 11/11) · V100 FP32 측정 진행 중 — 측정 전에 정한 프로토콜: [근거 문서 §1](./evidence/2026-11-14_zimage_turbo.md) | — (팀 요구, 2026-11-14) |
 
 ```mermaid
 pie showData
-    title 수용 기준 28개의 현재 판정
-    "✅ 통과" : 26
-    "🟡 구현 (CPU 테스트)" : 1
+    title 수용 기준 32개의 현재 판정
+    "✅ 통과" : 29
+    "🟡 구현 (CPU 테스트)" : 2
     "⬜ 예정" : 1
 ```
 
@@ -524,12 +529,15 @@ pie showData
 | 결과 · 튜닝 | 실행 환경 기록 · JSON/Markdown | 🟡 | AC3 |
 | | Auto-tune v1 (층 하나 KL 표 + 다중 선택 배낭, 보정 없는 방법 7가지) | 🟡 | `app/tests/test_autotune.py` · 스파이크 채택 (C1 · C2 · C3), C4 미달 |
 | | Auto-tune v2 · 트랙 M 16방법 · 트랙 C 연산 예산 · 레이어 카드 RAG · 자연어 요청 · Auto-tune 화면 | 🟡 | `app/tests/test_autotune_v2.py` · `test_autotune_compute.py` · `test_tune_compute.py` · `test_layer_profile.py` · `test_layer_cards.py` · `test_tune_request.py` · `test_autotune_demo.py` · `scripts/quantizer/autotune_check.mjs` (JS 배낭 = Python 배낭) |
+| | 같은 크기 여러 벤치마크 비교 (WikiText-2 · C4 · lm-eval 7과제, 짝 표준오차) | ✅ | AC29 · `app/tests/test_tune_bench.py` · GPU 기록 0.6B · 8B |
+| | 모델 패키지 (safetensors 정수 코드 · ONNX 정수 가중치) | ✅ | AC30 · AC31 · `tests/test_pack.py` · `app/tests/test_yolo_onnx.py` · GPU 2모델 비트 일치 |
+| | 이미지 생성 모델 예시 (Z-Image-Turbo, 층별 배정 · SSIM/PSNR · 이미지 비교) | 🟡 | AC32 · `scripts/quantizer/zimage_tune.py` · `app/tests/test_zimage_tune.py` · V100 FP32 측정 진행 중 |
 
 ```mermaid
 pie showData
-    title 구성요소 36개의 구현 상태
-    "✅ 검증됨" : 12
-    "🟡 구현됨" : 18
+    title 구성요소 39개의 구현 상태
+    "✅ 검증됨" : 14
+    "🟡 구현됨" : 19
     "🟠 부분" : 2
     "⬜ 예정·보류" : 4
 ```

@@ -122,7 +122,15 @@ class _DiagonalObserverStats:
 
 
 class EmuLinear(nn.Module):
-    """A cached weight operand, dynamic activations, and an STE backward."""
+    """A cached weight operand, dynamic activations, and an STE backward.
+
+    ``on_quantized`` (None by default): a callable ``(layer, weight, result)`` run after every requantize
+    with the weight that was quantized (after the transform, structure and clip) and what it became — a
+    ``QTensor`` (integer codes, scales, zero points), the replacement tensor of a ``WEIGHT_METHODS``
+    algorithm, or the weight itself when the layer has no weight format. ``tricast.pack`` sets it to keep
+    the integer codes, which the cached operand no longer carries."""
+
+    on_quantized = None
 
     def __init__(self, linear: nn.Linear, spec: LinearSpec, name: str = "", backend: str = "auto"):
         super().__init__()
@@ -192,19 +200,20 @@ class EmuLinear(nn.Module):
             weight = apply_clip(weight, self._clip)
         self._weight_noise = self._noise(weight, self.spec.weight)
         if self.spec.weight_algo.kind in WEIGHT_METHODS:
-            operand = as_operand(replace_weight(weight, self.spec.weight_algo), compact=True)
+            result = replace_weight(weight, self.spec.weight_algo)
         elif self.spec.weight is None:
-            operand = as_operand(weight, compact=True)
+            result = weight
         elif self.spec.weight_algo.kind == "gptq":
             if hessian is None:
                 self._calibrated = False
                 raise RuntimeError(f"{self.name}: GPTQ weights changed; call tricast.calibrate(...)")
-            qweight = quantize_weight(weight, self.spec.weight, self.spec.weight_algo,
-                                      hessian=hessian, backend=self.backend)
-            operand = as_operand(qweight, compact=True)
+            result = quantize_weight(weight, self.spec.weight, self.spec.weight_algo,
+                                     hessian=hessian, backend=self.backend)
         else:
-            qweight = quantize(weight, self.spec.weight, backend=self.backend, noise=self._weight_noise)
-            operand = as_operand(qweight, compact=True)
+            result = quantize(weight, self.spec.weight, backend=self.backend, noise=self._weight_noise)
+        if self.on_quantized is not None:
+            self.on_quantized(self, weight, result)
+        operand = as_operand(result, compact=True)
         if zeros is not None:
             # Exact zeros even where 0 does not dequantize to 0 (float zero points).
             operand = replace(operand, values=operand.values.masked_fill(zeros, 0))

@@ -121,6 +121,11 @@ HardwarePreset 수치는 `provenance` 에 적힌 출처까지만 믿는다. Eval
 - Auto-tune: `python -m app.autotune table --model Qwen/Qwen3-0.6B --revision … --out table.json` →
   `solve --table table.json --budget-bits 9/2 --name … --out DIR` → `measure` / `predict` (검증) — 판정 분석은
   `scripts/quantizer/autotune_c2.py`
+- 모델 패키지: `python -m tricast.pack build --model … --revision … --recipe … --out DIR --ppl` → `python -m tricast.pack run
+  --package DIR` (정수 코드 safetensors, 모든 층이 TriCast 가중치와 비트 일치해야 쓴다) · 검출 모델 ONNX
+  `scripts/quantizer/yolo_tune.py onnx` · 화면 목록 `scripts/quantizer/pack_index.py`
+- 다른 모델의 측정 기록: 검출 `scripts/quantizer/yolo_tune.py` · 이미지 생성 `scripts/quantizer/zimage_tune.py`
+  (refs → table → merge → solve → evaluate → export, GPU 는 gpu_cap 경유)
 
 디렉터리
 - `src/tricast/` — 명세(`formats`, `rounding`, `quant/spec`, `mma/spec`), 레퍼런스(`reference/`), 커널

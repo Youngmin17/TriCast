@@ -2,7 +2,8 @@
 // server: every model loads, a size recommends (only the entry's `sizes` when it lists them), step 4 shows the
 // benchmarks table where the model has one (one row per benchmark, every cell a number, verdicts from the fixed set),
 // the detector its boxes on three photos while a language model shows no generated answers, step 5 opens, an
-// existing way can be picked by hand, the photo tabs move by keyboard, and nothing overflows sideways. Headless
+// existing way can be picked by hand, the model package under step 5 matches packages.json (or says how to build
+// one), the photo tabs move by keyboard, and nothing overflows sideways. Headless
 // Chrome through cdp_lib.mjs, outside pytest.
 //   node scripts/quantizer/tune_models_check.mjs <out dir> <url> [width]   → TUNE_MODELS_CHECKS <passed>/<total>
 import {connect} from "./cdp_lib.mjs";
@@ -36,10 +37,11 @@ async function evalNow() {
   return b.waitFor(`!!document.getElementById("eval-result")`);
 }
 // the benchmarks table: [rows, cells per row, cells that are not numbers, verdict labels outside the set]
-const benchTable = () => b.evaluate(`(() => {
+const benchTable = (words = false) => b.evaluate(`(() => {
   const rows = [...document.querySelectorAll("#bench-table tbody tr:not(.grp)")];
   const cells = rows.map((r) => [...r.querySelectorAll("td")].map((td) => td.firstChild?.textContent?.trim() ?? ""));
-  const bad = cells.flat().filter((t) => !/^[+−-]?[0-9][0-9,.]*%?( ± [0-9.]+)?$/.test(t));
+  // a number; for the image generator also its PSNR words: "기준" (the original), "같음" (the same image), "—" (no finite difference)
+  const bad = cells.flat().filter((t) => !/^[+−-]?[0-9][0-9,.]*%?( ± [0-9.]+)?$/.test(t) && !(${words} && ["기준", "같음", "—"].includes(t)));
   const verdicts = [...document.querySelectorAll("#bench-table .ta-vd")].map((v) => v.textContent.split(" · ").pop()).filter((v) => !v.startsWith("±"));
   const wrap = document.querySelector(".ta-bench-wrap");
   return {rows: rows.length, widths: [...new Set(cells.map((c) => c.length))], bad, verdicts, inside: !!wrap && wrap.scrollWidth <= wrap.clientWidth + 1,
@@ -58,16 +60,39 @@ for (const [i, entry] of listed.entries()) {
   check(`${id}: evaluation`, await evalNow());
   const answers = await b.evaluate(`document.querySelectorAll("#answers").length`);
   const dets = await b.evaluate(`document.querySelectorAll("#detections .ta-det").length`);
-  check(`${id}: outputs`, entry.kind === "detector" ? dets === 3 : answers === 0 && dets === 0, `answers=${answers} detections=${dets}`);
+  const measured = entry.kind === "detector" || entry.kind === "image";  // a file of measured setups with 3 outputs
+  check(`${id}: outputs`, measured ? dets === 3 && answers === 0 : answers === 0 && dets === 0, `answers=${answers} detections=${dets}`);
   if (entry.sizes) check(`${id}: sizes offered = the entry's sizes`, sizes === entry.sizes.length, `${sizes} / ${entry.sizes.length}`);
-  if (entry.benchmarks || entry.kind === "detector") {
-    const t = await benchTable();
-    const expected = entry.kind === "detector" ? 6 : (await b.evaluate(`fetch("demo/autotune/${entry.benchmarks}").then((r) => r.json()).then((d) => d.benchmarks.length + 1)`));
+  if (entry.benchmarks || measured) {
+    const t = await benchTable(entry.kind === "image");
+    const expected = entry.kind === "detector" ? 6 : entry.kind === "image" ? 2 : (await b.evaluate(`fetch("demo/autotune/${entry.benchmarks}").then((r) => r.json()).then((d) => d.benchmarks.length + 1)`));
     check(`${id}: benchmarks table`, t.rows === expected && t.widths.length === 1 && t.widths[0] === 4 && t.bad.length === 0 && t.odd.length === 0 && t.inside,
       `${t.rows}/${expected} rows · cells ${t.widths} · non-numbers ${JSON.stringify(t.bad.slice(0, 3))} · verdicts ${t.verdicts.length} · fits ${t.inside}`);
-    if (entry.kind !== "detector") check(`${id}: benchmarks summary`, /우리 우세 \d+ · 차이 없음 \d+ · 기존 우세 \d+/.test(t.sum), t.sum.slice(0, 60));
+    if (!measured) check(`${id}: benchmarks summary`, /우리 우세 \d+ · 차이 없음 \d+ · 기존 우세 \d+/.test(t.sum), t.sum.slice(0, 60));
   }
   check(`${id}: step 5`, await b.waitFor(`!document.querySelector("#sec-out").hasAttribute("data-off") && !!document.getElementById("size")`, 8000));
+  // the model package under step 5: a recorded package shows its files and checks as packages.json has them (an ONNX
+  // file downloads with the recorded size), a setup without one shows how to build it
+  const pk = await b.evaluate(`(async () => {
+    const block = document.getElementById("package");
+    if (!block) return {block: false};
+    const index = await fetch("demo/autotune/packages.json").then((r) => r.json());
+    const link = document.getElementById("onnx-download");
+    if (link) {
+      const entry = Object.values(index.onnx?.yolo11n ?? {}).find((e) => link.getAttribute("href") === "demo/autotune/" + e.file);
+      const bytes = (await (await fetch(link.getAttribute("href"))).arrayBuffer()).byteLength;
+      return {block: true, kind: "onnx", ok: !!entry && bytes === entry.bytes, detail: (entry?.file ?? "no entry") + " " + bytes};
+    }
+    const cmd = block.querySelector(".ta-cmd")?.textContent ?? "";
+    if (!cmd) return {block: true, kind: "none", ok: block.textContent.includes("아직"), detail: block.textContent.slice(0, 30)};
+    const entry = (index.llm ?? []).find((e) => cmd.includes("--package " + e.dir));
+    if (!entry) return {block: true, kind: "build", ok: cmd.includes("python -m tricast.pack build"), detail: cmd.slice(0, 40)};
+    const rows = document.querySelectorAll("#package-files tr").length;
+    const checks = document.getElementById("package-checks")?.textContent ?? "";
+    return {block: true, kind: "package", ok: rows === entry.files.length && checks.includes(entry.decoded_equal.layers + "개 층 모두")
+      && checks.includes(entry.ppl_package.toFixed(3)), detail: entry.dir + " rows " + rows + "/" + entry.files.length};
+  })()`);
+  check(`${id}: model package`, pk.block && pk.ok, `${pk.kind ?? "no block"} ${pk.detail ?? ""}`);
   // the edit: the first existing way in the select, then the comparison again
   const opts = await b.evaluate(`[...document.querySelectorAll("#assign option")].map(o => o.value).filter(Boolean)`);
   if (opts.length) {

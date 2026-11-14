@@ -5,6 +5,27 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 ## [Unreleased]
 
 ### Added
+- An image generator on the tool: Tongyi-MAI/Z-Image-Turbo (6B diffusion transformer, revision f332072,
+  Apache-2.0), being measured on V100s in FP32 (`scripts/quantizer/zimage_tune.py`: refs / table / merge / solve /
+  evaluate / export); the page lists the model once its dataset is exported. 275 Linears × BF16 · INT8 · INT4 · INT3 · INT2 (RTN, exact FP32 dequantization); the table replays the
+  unquantized 8-forward generation; the knapsack is solved as an integer program (HiGHS) with the cost re-checked
+  exactly; setups are scored by SSIM and PSNR against the original model's images on 24 prompts, the verdict by a
+  paired exact sign-flip test against the size reference fixed before the measurement (Holm). A run fingerprint
+  binds table rows, merge, evaluations and export. The page's detector views take a `KINDS` config and show the
+  generated images (original / existing way / Auto-tune).
+- Low-bit model packages (`python -m tricast.pack build|run`, `src/tricast/pack.py`): a recipe applied to a Hugging Face
+  causal LM is written as integer codes bit-packed into `model.safetensors` (2/3/4/8 bits, scales, zero points; NF4
+  codes + absmax; a Hadamard transform's diagonal) with `quant_config.json` (recipe text and SHA-256) and the
+  checkpoint's config and tokenizer, and loads back as `PackedLinear` layers (`load` keeps the decoded weight, `codes`
+  keeps only the codes on the GPU). Every layer must decode to the weight TriCast's emulation multiplies with, bit for
+  bit (the sign of a zero aside), or nothing is written; activation quantization, KV specs, sparsity, outliers and other
+  MMA output formats are refused. `EmuLinear.on_quantized` reports each quantization result. Qwen3-0.6B 20%: 0.51 GB,
+  PPL 26.446 → 26.441; Qwen3-8B 19%: 5.11 GB, 11.224 → 11.228 (`docs/evidence/2026-11-13_model_packages.md`).
+- YOLO11n ONNX files with integer weights (`scripts/quantizer/yolo_tune.py onnx`): INT8/INT4 codes with per-channel
+  scales decoded by `DequantizeLinear` (opset 21, IR 10), run by onnxruntime; COCO mAP equals the PyTorch records.
+- Step 5 of the tool shows the package built from the setup's own recipe file (files, checks, the low-memory run) or
+  the command that builds one; the detector gets an ONNX download. `scripts/quantizer/pack_index.py` writes
+  `app/web/demo/autotune/packages.json` and refuses packages whose checks or files disagree.
 - The one tool `app/web/tune.html`: a single column of steps and nothing else (no menu to other pages, no
   chat, no chart) — 1 put a model in (the ones with a sensitivity table); 2 Auto-tune recommends its setup for a
   target size (the exact knapsack in a module worker, `js/mckp_worker.js`, plus the option settings the AI tune

@@ -13,7 +13,8 @@
 // (methodLabel), their id in the tooltip.
 // The models come from demo/autotune/models.json: a language model has a bundle (and may have `benchmarks`, its
 // benchmark file, and `sizes`, the sizes offered), a detector (YOLO11n) its own file of per-layer bit-width setups
-// with COCO mAP and the boxes they drew. Only a model marked "live" runs on a GPU server.
+// with COCO mAP and the boxes they drew, an image generator (Z-Image-Turbo) the same with its images and their SSIM to
+// the unquantized model's. Only a model marked "live" runs on a GPU server.
 import {parseBits, solve, summary} from "./mckp.js";
 import {h, s, withTip} from "./ui.js";
 
@@ -75,8 +76,10 @@ function methodLabel(id) {
 const st = {health: null, bundle: null, model: null, budget: null, plan: null, planError: null, computing: false, planTicket: 0,
   uniform: null, option: null, recipe: null, recipeError: null, recipeSeq: 0, lm: new Set(), limit: 200, evaluation: null,
   exporting: false, exportError: null, models: [], entry: null, benchmarks: null, det: null, pick: null, image: 0,
+  packages: null,
   loading: false, loadError: null};
-const isDet = () => st.entry?.kind === "detector";
+const isDet = () => ["detector", "image"].includes(st.entry?.kind);  // a file of measured setups, not a bundle
+const isGen = () => st.entry?.kind === "image";
 const serverGpu = () => st.health?.mode === "live" && st.health?.device === "cuda";
 // the live job runner applies recipes to the one model it loads (app/runners/quantizer.MODEL_ID): the entry says so
 const gpuLive = () => serverGpu() && st.entry?.live === true;
@@ -353,11 +356,12 @@ async function loadModel(id = $("model").value) {
   drawModel();
   try {
     const dir = "demo/autotune/";
-    const [data, benchmarks] = await Promise.all([getJSON(dir + (entry.kind === "detector" ? entry.data : entry.bundle)),
+    const measured = ["detector", "image"].includes(entry.kind);
+    const [data, benchmarks] = await Promise.all([getJSON(dir + (measured ? entry.data : entry.bundle)),
       entry.benchmarks ? getJSON(dir + entry.benchmarks) : null]);
     st.planTicket += 1;
     resetSolver();
-    Object.assign(st, {entry, model: entry.id, bundle: entry.kind === "detector" ? null : data, det: entry.kind === "detector" ? data : null,
+    Object.assign(st, {entry, model: entry.id, bundle: measured ? null : data, det: measured ? data : null,
       benchmarks, budget: null, plan: null, planError: null, computing: false, uniform: null, option: null, pick: null, recipe: null,
       recipeError: null, evaluation: null, exportError: null, image: 0});
   } catch (error) {
@@ -512,11 +516,12 @@ function drawModel() {
     $("model-info").replaceChildren(h("p", {class: "ta-err"}, `측정 기록을 읽지 못했습니다: ${st.loadError}`));
   } else if (st.model && isDet()) {
     const d = st.det;
-    $("model-info").replaceChildren(h("dl", {class: "ta-facts", title: `${d.model.label} · 체크포인트 SHA-256 ${d.model.checkpoint_sha256} · ${DET_QUANT}`},
-      fact("모델", "물체 검출"),
-      fact("Conv", `${d.layers.length}개`),
-      fact("방법", `${d.methods.length + 1}종`),
-      fact("평가", `COCO ${d.evaluation.images.toLocaleString("en-US")}장`)));
+    const k = KD();
+    $("model-info").replaceChildren(h("dl", {class: "ta-facts", title: `${d.model.label} · ${d.model.revision ? `revision ${d.model.revision}` : `체크포인트 SHA-256 ${d.model.checkpoint_sha256}`} · ${k.quant}`},
+      fact("모델", k.what),
+      fact(k.unit, `${d.layers.length}개`),
+      fact("방법", `${d.methods.length + (isGen() ? 0 : 1)}종`),
+      fact("평가", k.evalText(d))));
   } else if (st.model) {
     const meta = table().meta;
     $("model-info").replaceChildren(h("dl", {class: "ta-facts", title: `revision ${meta.revision} · 민감도 표: ${gpuName()} · ${meta.source?.dataset ?? ""} ${meta.windows}창`},
@@ -914,7 +919,45 @@ function sizeView(size) {
       part === "linear" ? "Linear 가중치 (양자화)" : "임베딩 · 출력층 · 정규화 (BF16 유지)"))),
     h("p", {class: "ta-gain", id: "size-note"}, "파일 전체 ", h("b", null, `${GB(size.original_bytes)} → ${GB(size.setup_bytes)} (${fmt(100 * size.ratio, 0)}%)`),
       `. Linear 가중치는 원본의 ${fmt(100 * size.linear_ratio, 0)}% 로 줄고, 임베딩 · 출력층 ${GB(size.original[1].bytes)} 은 BF16 그대로입니다.`),
-    h("p", {class: "ta-muted"}, "저비트로 저장할 때의 크기입니다. 지금 TriCast 는 레시피를 적용한 BF16 모델(fake-quant)로 평가하고, 이 크기의 파일은 아직 쓰지 않습니다."));
+    h("p", {class: "ta-muted"}, "저비트로 저장할 때의 크기를 계산한 값입니다. 실제로 만든 파일은 옆의 모델 패키지에 있습니다 (기록이 있는 셋업만)."));
+}
+
+// the low-bit package written for this very recipe file (scripts/quantizer/pack_index.py): its files as measured,
+// the checks run when it was written and how to build and run it
+const KIND_TEXT = {affine: "정수 코드 + 스케일 · 영점", nf4: "NF4 코드 + 블록 absmax", dense: "가중치 그대로 (코드를 꺼낼 수 없는 방법)"};
+function packageView(pkg) {
+  const r = st.recipe;
+  if (!pkg) {
+    return h("div", {class: "ta-block", id: "package"},
+      blockHead("모델 패키지", h("span", null, "이 셋업은 아직 만든 파일이 없습니다")),
+      h("pre", {class: "ta-cmd"}, `python -m tricast.pack build --model ${st.model} --revision ${table().meta.revision ?? "<rev>"} \\\n  --recipe ${r.file} --out pkg --ppl`),
+      h("p", {class: "ta-muted"}, "GPU 에서 레시피를 적용 · 보정하며 정수 코드를 기록해, 저비트 safetensors 패키지와 읽어 들이는 설정을 씁니다."));
+  }
+  const orig = pkg.original_bytes;
+  const bar = (label, sub, bytes, cls) => h("div", {class: cls}, h("span", {class: "name"}, label, h("small", null, sub)),
+    h("span", {class: "track"}, h("i", {class: "linear", style: `width: ${(100 * bytes / orig).toFixed(2)}%`, title: GB(bytes)})),
+    h("span", {class: "num"}, GB(bytes)));
+  const delta = pkg.ppl_package / pkg.ppl_tricast - 1;
+  const kinds = Object.entries(pkg.kinds).map(([k, n]) => `${KIND_TEXT[k] ?? k} ${n}층`).join(" · ");
+  const seen = current()?.ppl;  // step 4's recorded PPL of this recipe file
+  const same = seen != null && seen === pkg.ppl_tricast;
+  const memory = pkg.gpu_memory_loaded_bytes != null && pkg.ppl_codes != null;
+  return h("div", {class: "ta-block", id: "package"},
+    blockHead("모델 패키지", help("모델 패키지 (실제 파일)", "레시피를 적용 · 보정하면서 정수 코드와 스케일을 기록해 쓴 저비트 파일입니다 (python -m tricast.pack). 읽을 때 레시피로 각 층을 해석해 TriCast 와 같은 가중치로 되돌리고, PyTorch 행렬곱으로 추론합니다."),
+      chip(`실제 파일 · ${String(pkg.gpu ?? "").replace("NVIDIA ", "")}`, "ok")),
+    h("div", {class: "ta-size"}, bar("원본", "체크포인트", orig, "orig"), bar("패키지", "safetensors · 설정 · 토크나이저", pkg.bytes, "cur")),
+    h("table", {class: "ta-table", id: "package-files"}, h("tbody", null, pkg.files.map((f) => h("tr", null,
+      h("td", {class: "mono"}, f.name), h("td", {class: "num"}, f.bytes >= 1e8 ? GB(f.bytes) : f.bytes >= 1e6 ? `${(f.bytes / 1e6).toFixed(1)} MB` : `${(f.bytes / 1e3).toFixed(1)} KB`))))),
+    h("ul", {class: "ta-checks", id: "package-checks"},
+      h("li", null, `${pkg.decoded_equal.layers}개 층 모두 TriCast 가 곱하는 가중치와 비트 단위로 같음 (0 의 부호만 예외: 정수 코드에는 −0 이 없음)`),
+      h("li", null, `WikiText-2 PPL: TriCast ${fmt(pkg.ppl_tricast, 3)} · 패키지 ${fmt(pkg.ppl_package, 3)} (${signed(100 * delta, 2)}%, 같은 GPU)`,
+        seen == null ? null : h("span", {class: "ta-muted"}, same ? " — ④ 의 기록과 비트 단위로 같음"
+          : ` — ④ 의 기록(${fmt(seen, 2)})은 따로 보정 · 측정한 실행의 값 (같은 레시피 파일)`)),
+      memory ? h("li", null, `코드만 올려 두고 층마다 풀어 쓰면 GPU 메모리 ${GB(pkg.gpu_memory_loaded_bytes)} (BF16 원본 ${GB(orig)}) · PPL ${fmt(pkg.ppl_codes, 3)}`) : null,
+      h("li", null, kinds),
+      pkg.tied.length ? h("li", null, "출력층은 임베딩과 묶여(tied) 한 번만 저장 — 원본 체크포인트는 두 번 저장해 계산값보다 작음") : null),
+    h("pre", {class: "ta-cmd"}, `python -m tricast.pack run --package ${pkg.dir} --prompt "…"`),
+    h("p", {class: "ta-muted"}, `파일은 GPU 클러스터에 있습니다 (${GB(pkg.bytes)} — 저장소에는 넣지 않음). 위 명령으로 같은 레시피에서 다시 만들 수 있습니다.`));
 }
 
 function exportView() {
@@ -942,7 +985,8 @@ function drawOut() {
     return;
   }
   $("out-state").replaceChildren(st.recipe.size ? chip(`파일 ${GB(st.recipe.size.setup_bytes)} · 원본의 ${fmt(100 * st.recipe.size.ratio, 0)}%`, "plain") : "");
-  $("out").replaceChildren(h("div", {class: "ta-outgrid"}, sizeView(st.recipe.size), exportView()));
+  $("out").replaceChildren(h("div", {class: "ta-outgrid"}, sizeView(st.recipe.size), exportView()),
+    packageView((st.packages?.llm ?? []).find((p) => p.model === st.model && p.recipe_sha256 === st.recipe.sha256) ?? null));
 }
 
 // ---------- a detector (YOLO11n): a bit-width per Conv layer, scored by COCO mAP ----------
@@ -952,24 +996,53 @@ function drawOut() {
 const AP = (v) => (v == null ? "—" : (100 * v).toFixed(1));
 const AP_UNIT = {head: "원본에서 떨어진 정도 (mAP 감소)", col: "감소", name: "mAP", gap: (v, base) => base - v,
   delta: (g) => signed(-100 * g, 1), text: (v) => AP(v)};
-const detLabel = (method) => (method === "fp16" ? "FP16 (원본 그대로)" : method.toUpperCase());
+const KEEP = new Set(["fp16", "bf16"]);  // the weight as it is: FP16 for the detector, BF16 for the image generator
+const detLabel = (method) => (KEEP.has(method) ? `${method.toUpperCase()} (원본 그대로)` : method.toUpperCase());
 const detBits = (method) => (method === "fp16" ? 16 : Number(/\d+/.exec(method)?.[0] ?? 16));
 const MB = (bytes) => `${(bytes / 1e6).toFixed(2)} MB`;
 // the detector file's quantization (scripts/quantizer/yolo_tune.py) in the page's words; the file's own text in the tooltip
 const DET_QUANT = "가중치만 양자화 (fake-quant: 출력 채널마다 대칭 absmax 스케일 FP16, RNE) · 활성값은 FP32";
+const GEN_QUANT = "가중치만 양자화 (fake-quant, RTN: INT8 은 출력 채널마다, INT4 · 3 · 2 는 입력 128개마다 FP16 스케일 + 영점) · 활성값 · 텍스트 인코더 · VAE 는 그대로";
+const dB = (v) => (v == null ? "—" : `${v.toFixed(1)} dB`);
+// what the page says and ranks by for each kind of measured-dataset model: the detector's COCO mAP; the image
+// generator's SSIM to the unquantized model's image (×100: 100 = the same image), PSNR beside it
+const KINDS = {
+  detector: {key: "AP_50_95", short: "mAP", name: "COCO mAP50-95", unit: "Conv", what: "물체 검출", origin: "FP16", out: "검출 출력",
+    toward: "입력 쪽 → 검출 헤드", quant: DET_QUANT, scale: "출력 채널마다 FP16 스케일 포함",
+    evalText: (d) => `COCO ${d.evaluation.images.toLocaleString("en-US")}장`,
+    explain: (v) => `검출 상자가 정답 상자와 얼마나 잘 맞는지를 IoU 0.5–0.95 에 걸쳐 평균한 값으로, 높을수록 좋습니다. 원본(FP16)은 ${AP(v)} 입니다.`,
+    extra: (m) => `mAP50 ${AP(m.AP_50)}`,
+    evalNote: (d) => `mAP 는 층별 오차 표에 쓰지 않은 COCO val2017 ${d.evaluation.images.toLocaleString("en-US")}장으로 쟀습니다 (pycocotools). ${DET_QUANT}.`,
+    evalIntro: "측정해 둔 COCO mAP 과, 같은 사진에서 원본 · 기존 방법 · Auto-tune 이 찾은 상자를 보여 줍니다.",
+    metricsTitle: "같은 크기, COCO 세부 지표", metricsUnit: "AP × 100 · pycocotools",
+    metricsHelp: (d, within) => `같은 평가 한 번(${d.evaluation.images.toLocaleString("en-US")}장)을 IoU 기준과 물체 크기별로 나눠 본 값입니다. '기존 방법' 칸은 지표마다 이 크기 안 기존 방법 ${within.length}가지(${within.map((row) => row.label).join(", ")}) 가운데 가장 좋은 것입니다. 한 번 잰 값이라 표준오차는 없습니다.`,
+    metricsNote: "다른 데이터셋이 아니라 같은 COCO 평가를 나눠 본 값입니다. 차이는 AP 포인트입니다."},
+  image: {key: "ssim", short: "SSIM", name: "원본 이미지와의 SSIM", unit: "Linear", what: "이미지 생성", origin: "BF16", out: "생성 출력(속도장)",
+    toward: "입력 쪽 → 마지막 층", quant: GEN_QUANT, scale: "스케일 · 영점 포함",
+    evalText: (d) => `프롬프트 ${d.evaluation.prompts}개`,
+    explain: () => "같은 프롬프트 · 같은 초기 잡음으로 만든 이미지가 원본 모델의 이미지와 구조적으로 얼마나 같은지(SSIM × 100)입니다. 100 이면 원본과 같은 이미지이고, 높을수록 좋습니다.",
+    extra: (m) => `PSNR ${dB(m.psnr)}`,
+    evalNote: (d) => `SSIM · PSNR 은 층별 오차 표에 쓰지 않은 프롬프트 ${d.evaluation.prompts}개로, 원본 모델이 같은 시드로 만든 이미지와 비교해 쟀습니다 (${d.model.size} px, ${d.model.steps}단계). 품질 자체(사람 평가 · CLIP 점수)가 아니라 원본과의 차이입니다. ${GEN_QUANT}.`,
+    evalIntro: "측정해 둔 SSIM · PSNR 과, 같은 프롬프트로 원본 · 기존 방법 · Auto-tune 이 만든 이미지를 보여 줍니다.",
+    metricsTitle: "같은 크기, 원본과의 차이", metricsUnit: "SSIM × 100 · PSNR dB",
+    metricsHelp: (d, within) => `같은 평가(프롬프트 ${d.evaluation.prompts}개)의 두 지표입니다. '기존 방법' 칸은 지표마다 이 크기 안 기존 방법 ${within.length}가지(${within.map((row) => row.label).join(", ")}) 가운데 가장 좋은 것입니다. 한 번 잰 값이라 표준오차는 없습니다.`,
+    metricsNote: "둘 다 원본 모델의 이미지와 비교한 값입니다 (높을수록 원본에 가까움)."},
+};
+const KD = () => KINDS[st.entry?.kind] ?? KINDS.detector;
+const KD_UNIT = () => ({...AP_UNIT, head: `원본에서 떨어진 정도 (${KD().short} 감소)`, name: KD().short});
 // the sizes Auto-tune was measured at, smallest first — but not a size where the knapsack had no choice (its
 // assignment is an existing way's: at INT3's size with nothing below INT3, every layer is INT3)
 const sameAssignment = (a, b) => Object.keys(a.methods).length === Object.keys(b.methods).length
   && Object.entries(a.methods).every(([layer, method]) => b.methods[layer] === method);
-const detSizes = () => st.det.setups.filter((row) => row.kind === "auto" && row.metrics?.AP_50_95 != null
+const detSizes = () => st.det.setups.filter((row) => row.kind === "auto" && row.metrics?.[KD().key] != null
   && !st.det.setups.some((other) => other.kind !== "auto" && sameAssignment(row, other))).sort((a, b) => a.bits - b.bits);
 // the existing ways measured within the size on screen — the budget Auto-tune was given, not the bits it used —,
 // best mAP first
 const detWithin = () => {
   if (!st.plan) return [];
   const limit = (st.plan.budget_bits ? bitsOf(st.plan.budget_bits) : st.plan.bits) + 1e-9;
-  return st.det.setups.filter((row) => row.kind !== "auto" && row.metrics?.AP_50_95 != null && row.bits <= limit)
-    .sort((a, b) => b.metrics.AP_50_95 - a.metrics.AP_50_95);
+  return st.det.setups.filter((row) => row.kind !== "auto" && row.metrics?.[KD().key] != null && row.bits <= limit)
+    .sort((a, b) => b.metrics[KD().key] - a.metrics[KD().key]);
 };
 const detCurrent = () => (st.plan ? st.det.setups.find((row) => row.id === (st.pick ?? st.plan.id)) ?? st.plan : null);
 
@@ -991,24 +1064,25 @@ function detEdit(pick) {
 function drawTuneDet() {
   $("sec-tune").toggleAttribute("data-off", false);
   const p = st.plan;
-  const native = st.det.native.metrics.AP_50_95;
-  $("tune-state").replaceChildren(...(p ? [chip(`추천 · 크기 ${pct(p.bits)} · mAP ${AP(p.metrics.AP_50_95)}`, "ok")] : []));
-  const sizes = detSizes().map((row) => preset({"data-budget": row.id, "aria-label": `원본의 ${pct(row.bits)}, ${fmt(row.bits, 2)}비트, 추천 셋업의 COCO mAP ${AP(row.metrics.AP_50_95)}`},
-    row.id === st.budget, `평균 ${fmt(row.bits, 3)} 비트 (예산 ${row.bits_fraction}) · 추천 셋업의 COCO mAP50-95 ${AP(row.metrics.AP_50_95)}`,
-    pct(row.bits), [h("span", {class: "k"}, "mAP"), ` ${AP(row.metrics.AP_50_95)}`], () => row.id !== st.budget && detRecommend(row.id)));
+  const native = st.det.native.metrics[KD().key];
+  const k = KD();
+  $("tune-state").replaceChildren(...(p ? [chip(`추천 · 크기 ${pct(p.bits)} · ${k.short} ${AP(p.metrics[k.key])}`, "ok")] : []));
+  const sizes = detSizes().map((row) => preset({"data-budget": row.id, "aria-label": `원본의 ${pct(row.bits)}, ${fmt(row.bits, 2)}비트, 추천 셋업의 ${k.name} ${AP(row.metrics[k.key])}`},
+    row.id === st.budget, `평균 ${fmt(row.bits, 3)} 비트 (예산 ${row.bits_fraction}) · 추천 셋업의 ${k.name} ${AP(row.metrics[k.key])}`,
+    pct(row.bits), [h("span", {class: "k"}, k.short), ` ${AP(row.metrics[k.key])}`], () => row.id !== st.budget && detRecommend(row.id)));
   const parts = [h("div", {class: "ta-block"},
-    blockHead("목표 크기", help("크기", `Conv 층(${st.det.layers.length}개) 가중치 하나를 저장하는 평균 비트 수(출력 채널마다 FP16 스케일 포함)로 정한 크기입니다. 원본(FP16)은 16비트 = 100% 입니다.`),
-      h("span", null, "원본 대비 · 아래 숫자는 그 크기 추천 셋업의 COCO mAP")),
+    blockHead("목표 크기", help("크기", `${k.unit} 층(${st.det.layers.length}개) 가중치 하나를 저장하는 평균 비트 수(${k.scale})로 정한 크기입니다. 원본(${k.origin})은 16비트 = 100% 입니다.`),
+      h("span", null, `원본 대비 · 아래 숫자는 그 크기 추천 셋업의 ${k.name}`)),
     h("div", {class: "ta-presets", role: "group", "aria-label": `목표 크기 — 측정된 ${sizes.length}개`}, sizes))];
-  if (!p) parts.push(h("p", {class: "ta-muted"}, "목표 크기를 고르면 그 안에서 검출 출력의 오차가 가장 작도록 Conv 층마다 비트 수를 골라 추천합니다."));
+  if (!p) parts.push(h("p", {class: "ta-muted"}, `목표 크기를 고르면 그 안에서 ${k.out}의 오차가 가장 작도록 ${k.unit} 층마다 비트 수를 골라 추천합니다.`));
   else {
     const best = detWithin()[0] ?? null;
     parts.push(h("div", {class: "ta-reco", id: "reco"},
-      h("div", {class: "ta-reco-head"}, h("b", null, "Auto-tune 추천"), h("span", {class: "ppl"}, `mAP ${AP(p.metrics.AP_50_95)}`),
-        h("span", {class: "ta-muted"}, `원본 ${AP(native)} 대비 ${signed(100 * (p.metrics.AP_50_95 - native), 1)}`)),
-      h("ol", {class: "ta-steps"}, h("li", null, h("span", null, "Conv 층마다 비트 수를 다르게 골랐습니다"),
-        h("span", {class: "num"}, best ? `기존 최선 ${AP(best.metrics.AP_50_95)} → ${AP(p.metrics.AP_50_95)}` : `mAP ${AP(p.metrics.AP_50_95)}`),
-        h("span", {class: "ta-muted", title: "층 하나만 바꿔 잰 검출 출력 오차의 합이 가장 작은 조합을 크기 예산 안에서 정확히 풀었습니다 (다중 선택 배낭)."},
+      h("div", {class: "ta-reco-head"}, h("b", null, "Auto-tune 추천"), h("span", {class: "ppl"}, `${k.short} ${AP(p.metrics[k.key])}`),
+        h("span", {class: "ta-muted"}, `원본 ${AP(native)} 대비 ${signed(100 * (p.metrics[k.key] - native), 1)}`)),
+      h("ol", {class: "ta-steps"}, h("li", null, h("span", null, `${k.unit} 층마다 비트 수를 다르게 골랐습니다`),
+        h("span", {class: "num"}, best ? `기존 최선 ${AP(best.metrics[k.key])} → ${AP(p.metrics[k.key])}` : `${k.short} ${AP(p.metrics[k.key])}`),
+        h("span", {class: "ta-muted", title: `층 하나만 바꿔 잰 ${k.out} 오차의 합이 가장 작은 조합을 크기 예산 안에서 정확히 풀었습니다 (다중 선택 배낭).`},
           best ? `기존 최선 = ${best.label}` : "정확 해")))));
   }
   $("tune").replaceChildren(...parts);
@@ -1019,9 +1093,9 @@ function stripView(row) {
   const d = st.det;
   const count = new Map();
   const cells = d.layers.map((layer) => {
-    const method = row.methods[layer.name] ?? "fp16";
+    const method = row.methods[layer.name] ?? (isGen() ? "bf16" : "fp16");
     count.set(method, (count.get(method) ?? 0) + 1);
-    const err = method === "fp16" ? 0 : layer.d[method];
+    const err = KEEP.has(method) ? 0 : layer.d[method];
     return withTip(h("i", {class: "ta-cell", "data-b": String(detBits(method))}), () => h("div", null, h("b", null, layer.name),
       h("table", null, h("tbody", null,
         h("tr", null, h("td", null, "방법"), h("td", null, detLabel(method))),
@@ -1031,9 +1105,9 @@ function stripView(row) {
   const used = [...count].sort((a, b) => b[1] - a[1]);
   const bits = [...new Set(used.map(([m]) => detBits(m)))].sort((a, b) => a - b);
   return h("div", {class: "ta-block"},
-    blockHead("층별 배정", h("span", null, `Conv ${cells.length}개 · 입력 쪽 → 검출 헤드 · 칸에 올리면 그 층의 방법`)),
-    h("div", {class: "ta-strip", role: "img", "aria-label": `Conv ${cells.length}개의 비트 배정: ${used.map(([m, n]) => `${detLabel(m)} ${n}층`).join(", ")}`}, cells),
-    h("div", {class: "ta-legend"}, bits.map((b) => h("span", null, h("i", {style: `background: var(--b${b})`}), b === 16 ? "FP16 유지" : `${b}비트`))),
+    blockHead("층별 배정", h("span", null, `${KD().unit} ${cells.length}개 · ${KD().toward} · 칸에 올리면 그 층의 방법`)),
+    h("div", {class: "ta-strip", role: "img", "aria-label": `${KD().unit} ${cells.length}개의 비트 배정: ${used.map(([m, n]) => `${detLabel(m)} ${n}층`).join(", ")}`}, cells),
+    h("div", {class: "ta-legend"}, bits.map((b) => h("span", null, h("i", {style: `background: var(--b${b})`}), b === 16 ? `${KD().origin} 유지` : `${b}비트`))),
     h("p", {class: "ta-muted", id: "used"}, used.map(([m, n]) => `${detLabel(m)} ${n}층`).join(" · ")));
 }
 
@@ -1052,7 +1126,7 @@ function drawEditDet() {
   const group = (kind, label) => {
     const rows = within.filter((row) => row.kind === kind);
     return rows.length ? h("optgroup", {label}, rows.map((row) => h("option", {value: row.id},
-      `${row.label} · 크기 ${pct(row.bits)} · mAP ${AP(row.metrics.AP_50_95)}`))) : null;
+      `${row.label} · 크기 ${pct(row.bits)} · ${KD().short} ${AP(row.metrics[KD().key])}`))) : null;
   };
   const assign = h("select", {id: "assign", "aria-label": "층별 배정"},
     h("option", {value: ""}, "Auto-tune 배정 — 층마다 다른 비트"),
@@ -1062,7 +1136,7 @@ function drawEditDet() {
   $("edit").replaceChildren(h("div", {class: "ta-edit"},
     h("div", {class: "ta-col"},
       h("div", {class: "ta-block"}, blockHead("층별 배정", h("span", null, "추천대로 두거나, 이 크기 안의 기존 방법으로 바꿉니다")), assign),
-      h("p", {class: "ta-muted", title: st.det.quantization}, `${DET_QUANT}. 지금은 측정해 둔 셋업만 고를 수 있습니다.`)),
+      h("p", {class: "ta-muted", title: st.det.quantization}, `${KD().quant}. 지금은 측정해 둔 셋업만 고를 수 있습니다.`)),
     h("div", {class: "ta-col"}, stripView(now))));
 }
 
@@ -1132,29 +1206,62 @@ function detectView(now) {
     h("p", {class: "ta-muted"}, "COCO val2017 사진 (CC BY 2.0, demo/media/SOURCES.md). 이 사진들은 층별 오차 표를 잰 보정 사진에 넣지 않았습니다."));
 }
 
+// the same prompts and starting noise through the original, the existing way (the hand pick, or the best within the
+// size) and Auto-tune
+function imagesView(now) {
+  const d = st.det;
+  const auto = st.plan;
+  const existing = now.id !== auto.id ? now : detWithin()[0] ?? null;
+  const at = Math.min(st.image, d.images.length - 1);
+  const img = d.images[at];
+  const cols = [{id: "native", title: "원본", sub: `${KD().origin} · 100%`, series: "base"},
+    existing ? {id: existing.id, title: "기존 방법", sub: `${existing.label} · ${pct(existing.bits)}`, series: "uni", cur: now.id === existing.id} : null,
+    {id: auto.id, title: "우리 방법 · Auto-tune", sub: `층별 배정 · ${pct(auto.bits)}`, series: "heur", cur: now.id === auto.id}].filter(Boolean);
+  const thumbs = tabRow("photo-tabs", "프롬프트", "ta-thumbs", "ta-thumb", d.images.map((item, k) => ({
+    content: h("img", {src: `demo/${item.files.native}`, alt: "", loading: "lazy"}), attrs: {"aria-label": `프롬프트 ${k + 1}: ${item.prompt}`}})),
+  at, (k) => {
+    st.image = k;
+    drawEval();
+  });
+  return h("div", {class: "ta-block", id: "detections"},
+    blockHead("같은 프롬프트, 같은 크기 — 생성한 이미지", help("생성 비교", "같은 프롬프트와 같은 초기 잡음(시드)을 원본, 모든 층에 같은 방법을 쓴 모델(기존 방법), 층마다 비트 수를 고른 모델(우리 방법)에 넣어 만든 이미지입니다. 숫자는 원본 이미지와의 PSNR 입니다."),
+      h("span", null, `시드 ${img.seed} · ${d.model.steps}단계`)),
+    thumbs,
+    h("p", {class: "ta-prompt"}, `“${img.prompt}”`),
+    h("div", {class: "ta-dets"}, cols.map((c) => {
+      const v = c.id === "native" ? null : img.psnr[c.id];
+      return h("figure", {class: `ta-det ${c.series}${c.cur ? " cur" : ""}`},
+        h("div", {class: "ta-det-img"}, h("img", {src: `demo/${img.files[c.id]}`, alt: `${c.title}: ${img.prompt}`, width: "384", height: "384"})),
+        h("figcaption", null, c.series === "base" ? null : h("i", {class: `ta-sw ${c.series}`}), h("b", null, c.title), h("small", null, c.sub),
+          h("span", {class: "num"}, c.id === "native" ? "기준" : v == null ? "원본과 같음" : `PSNR ${v.toFixed(1)} dB`)));
+    })),
+    h("p", {class: "ta-muted"}, "프롬프트는 이 데이터를 위해 쓴 것이고 층별 오차 표를 잰 프롬프트와 겹치지 않습니다. 이미지는 384 px 로 줄여 보입니다."));
+}
+
 function detRecordView(now) {
   const native = st.det.native.metrics;
   const auto = st.plan;
   const within = detWithin();
-  const rows = [{series: "base", name: "원본", sub: "FP16 · 100%", ppl: native.AP_50_95}];
+  const k = KD();
+  const rows = [{series: "base", name: "원본", sub: `${k.origin} · 100%`, ppl: native[k.key]}];
   for (const row of within) {
-    rows.push({series: "uni", name: row.label, sub: `${row.kind === "heuristic" ? "흔한 규칙" : "한 방법"} · ${pct(row.bits)}`, title: row.id, ppl: row.metrics.AP_50_95, cur: now.id === row.id});
+    rows.push({series: "uni", name: row.label, sub: `${row.kind === "heuristic" ? "흔한 규칙" : "한 방법"} · ${pct(row.bits)}`, title: row.id, ppl: row.metrics[KD().key], cur: now.id === row.id});
   }
-  rows.push({series: "heur", name: "Auto-tune 배정", sub: `층별 · ${pct(auto.bits)}`, ppl: auto.metrics.AP_50_95, cur: now.id === auto.id});
+  rows.push({series: "heur", name: "Auto-tune 배정", sub: `층별 · ${pct(auto.bits)}`, ppl: auto.metrics[KD().key], cur: now.id === auto.id});
   const best = within[0] ?? null;
-  const loss = native.AP_50_95 - auto.metrics.AP_50_95;
-  const gain = best ? 100 * (1 - loss / (native.AP_50_95 - best.metrics.AP_50_95)) : null;
+  const loss = native[k.key] - auto.metrics[k.key];
+  const gain = best ? 100 * (1 - loss / (native[k.key] - best.metrics[k.key])) : null;
   return [
     h("div", {class: "ta-result", id: "eval-result"},
       h("div", {class: "ta-hero"},
-        h("span", null, "COCO mAP50-95", help("mAP", `검출 상자가 정답 상자와 얼마나 잘 맞는지를 IoU 0.5–0.95 에 걸쳐 평균한 값으로, 높을수록 좋습니다. 원본(FP16)은 ${AP(native.AP_50_95)} 입니다.`)),
-        h("b", null, AP(now.metrics.AP_50_95)), h("small", null, `원본 ${AP(native.AP_50_95)} 대비 ${signed(100 * (now.metrics.AP_50_95 - native.AP_50_95), 1)} · mAP50 ${AP(now.metrics.AP_50)}`)),
-      h("div", {class: "ta-col"}, ladder(rows, native.AP_50_95, pct(auto.bits), AP_UNIT),
+        h("span", null, k.name, help(k.short, k.explain(native[k.key]))),
+        h("b", null, AP(now.metrics[k.key])), h("small", null, `원본 ${AP(native[k.key])} 대비 ${signed(100 * (now.metrics[k.key] - native[k.key]), 1)} · ${k.extra(now.metrics)}`)),
+      h("div", {class: "ta-col"}, ladder(rows, native[k.key], pct(auto.bits), KD_UNIT()),
         gain != null ? h("p", {class: "ta-gain", id: "gain"}, `같은 크기의 기존 최선(${best.label})보다 원본에서 떨어진 정도가 `,
           h("b", null, `${fmt(Math.abs(gain), 0)}% ${gain >= 0 ? "작습니다" : "큽니다"}`), ".") : null)),
     detMetricsView(),
-    detectView(now),
-    h("p", {class: "ta-muted", title: st.det.quantization}, `mAP 는 층별 오차 표에 쓰지 않은 COCO val2017 ${st.det.evaluation.images.toLocaleString("en-US")}장으로 쟀습니다 (pycocotools). ${DET_QUANT}.`)];
+    isGen() ? imagesView(now) : detectView(now),
+    h("p", {class: "ta-muted", title: st.det.quantization}, k.evalNote(st.det))];
 }
 
 // COCOeval's standard breakdown of the same run (scripts/quantizer/yolo_tune.py METRIC_KEYS): by IoU threshold and by
@@ -1162,21 +1269,43 @@ function detRecordView(now) {
 const DET_METRICS = [["IoU 기준", [["AP_50_95", "mAP50-95", "IoU 0.5–0.95 평균"], ["AP_50", "AP50", "IoU 0.5 이상이면 맞음"],
   ["AP_75", "AP75", "IoU 0.75 이상 — 상자가 더 정확해야 맞음"]]],
 ["물체 크기", [["AP_small", "작은 물체", "넓이 32² 픽셀 미만"], ["AP_medium", "중간 물체", "32²–96² 픽셀"], ["AP_large", "큰 물체", "96² 픽셀 초과"]]]];
+// the image generator's two comparisons with the unquantized model's image: SSIM (× 100) and PSNR (dB)
+const GEN_METRICS = [["원본과 비교", [["ssim", "SSIM", "구조 유사도 × 100 · 100 = 같은 이미지"], ["psnr", "PSNR", "dB · 높을수록 원본에 가까움", "dB"]]]];
 function detMetricsView() {
   const d = st.det;
   const auto = st.plan;
   const within = detWithin();
-  if (!within.length || DET_METRICS.some(([, items]) => items.some(([key]) => auto.metrics[key] == null))) return null;
-  const groups = DET_METRICS.map(([name, items]) => ({name, rows: items.map(([key, label, sub]) => {
-    const best = within.reduce((a, b) => (b.metrics[key] > a.metrics[key] ? b : a));
-    return {label, sub, native: AP(d.native.metrics[key]), theirs: AP(best.metrics[key]), best: `${best.label} · ${pct(best.bits)}`, ours: AP(auto.metrics[key]),
-      diff: signed(100 * (auto.metrics[key] - best.metrics[key]), 1)};
+  const k = KD();
+  const metrics = isGen() ? GEN_METRICS : DET_METRICS;
+  // a PSNR of null is the same image (infinite PSNR), not a missing value; the table needs the ranking key only
+  const value = (row, key, unit) => (unit === "dB" ? row.metrics[key] ?? Infinity : row.metrics[key]);
+  const missing = isGen() ? auto.metrics[k.key] == null : metrics.some(([, items]) => items.some(([key]) => auto.metrics[key] == null));
+  if (!within.length || missing) return null;
+  const groups = metrics.map(([name, items]) => ({name, rows: items.map(([key, label, sub, unit]) => {
+    const best = within.reduce((a, b) => (value(b, key, unit) > value(a, key, unit) ? b : a));
+    const text = unit === "dB" ? (v) => (v == null ? "같음" : v.toFixed(1)) : AP;
+    const [ours, theirs] = [value(auto, key, unit), value(best, key, unit)];
+    const diff = !Number.isFinite(ours) || !Number.isFinite(theirs) ? "—" : unit === "dB" ? signed(ours - theirs, 1) : signed(100 * (ours - theirs), 1);
+    return {label, sub, native: unit === "dB" ? "기준" : text(d.native.metrics[key]), theirs: text(best.metrics[key]), best: `${best.label} · ${pct(best.bits)}`,
+      ours: text(auto.metrics[key]), diff};
   })}));
   return h("div", {class: "ta-block", id: "bench"},
-    blockHead("같은 크기, COCO 세부 지표", help("COCO 세부 지표", `같은 평가 한 번(${d.evaluation.images.toLocaleString("en-US")}장)을 IoU 기준과 물체 크기별로 나눠 본 값입니다. '기존 방법' 칸은 지표마다 이 크기 안 기존 방법 ${within.length}가지(${within.map((row) => row.label).join(", ")}) 가운데 가장 좋은 것입니다. 한 번 잰 값이라 표준오차는 없습니다.`),
-      h("span", null, "AP × 100 · pycocotools")),
-    benchTable("bench-table", "같은 크기에서 기존 방법과 우리 방법의 COCO 세부 지표", groups),
-    h("p", {class: "ta-muted", id: "bench-sum"}, "다른 데이터셋이 아니라 같은 COCO 평가를 나눠 본 값입니다. 차이는 AP 포인트입니다."));
+    blockHead(k.metricsTitle, help(k.metricsTitle, k.metricsHelp(d, within)), h("span", null, k.metricsUnit)),
+    benchTable("bench-table", `같은 크기에서 기존 방법과 우리 방법의 ${k.metricsTitle.replace("같은 크기, ", "")}`, groups),
+    h("p", {class: "ta-muted", id: "bench-sum"}, k.metricsNote),
+    isGen() && auto.paired ? pairedView(auto) : null);
+}
+
+// the image generator's verdict, fixed before the measurement (scripts/quantizer/zimage_tune.py compare): Auto-tune
+// against the existing way whose size it was given, per-prompt SSIM, exact sign-flip test, Holm over the sizes
+const VERDICT_TEXT = {ours: "우리 우세", same: "차이 없음", theirs: "기존 우세"};
+function pairedView(auto) {
+  const p = auto.paired;
+  const ref = st.det.setups.find((row) => row.id === p.vs);
+  const pText = (v) => (v < 0.001 ? "< 0.001" : v.toFixed(3));
+  return h("p", {class: "ta-gain", id: "paired"},
+    `판정 (측정 전에 정한 짝: ${ref?.label ?? p.vs}) — 프롬프트 ${p.n}개 중 ${p.wins}개에서 원본에 더 가깝고 ${p.losses}개에서 멀었습니다. SSIM 평균 차이 ${signed(100 * p.mean_diff, 1)}, sign-flip p ${pText(p.p_sign_flip)} (크기 ${st.det.setups.filter((row) => row.kind === "auto").length}개 Holm 보정 ${pText(p.p_holm)}) → `,
+    h("b", null, VERDICT_TEXT[p.verdict] ?? p.verdict), ".");
 }
 
 function drawEvalDet() {
@@ -1189,7 +1318,8 @@ function drawEvalDet() {
   }
   const e = st.evaluation;
   const env = now.env ?? st.det.env ?? {};
-  $("eval-state").replaceChildren(...(e ? [chip(`기록된 측정 · CPU ${String(env.host ?? "").split(".")[0]} · git ${String(env.git_sha ?? "").slice(0, 7)}`, "ok")]
+  const where = env.gpu ? String(env.gpu).replace("Tesla ", "").replace("NVIDIA ", "") : `CPU ${String(env.host ?? "").split(".")[0]}`;
+  $("eval-state").replaceChildren(...(e ? [chip(`기록된 측정 · ${where} · git ${String(env.git_sha ?? "").slice(0, 7)}`, "ok")]
     : [chip("측정 기록 대조", "plain")]));
   if (!e) {
     const go = h("button", {type: "button", class: "ta-btn primary", id: "run-eval"}, "평가 결과 불러오기");
@@ -1200,7 +1330,7 @@ function drawEvalDet() {
       reveal($("sec-eval"));
     });
     $("eval-state").append(go);
-    $("eval").replaceChildren(h("p", {class: "ta-muted"}, "측정해 둔 COCO mAP 과, 같은 사진에서 원본 · 기존 방법 · Auto-tune 이 찾은 상자를 보여 줍니다."));
+    $("eval").replaceChildren(h("p", {class: "ta-muted"}, KD().evalIntro));
     return;
   }
   $("eval").replaceChildren(...detRecordView(now));
@@ -1220,19 +1350,45 @@ function drawOutDet() {
   const bar = (label, sub, bytes, cls) => h("div", {class: cls}, h("span", {class: "name"}, label, h("small", null, sub)),
     h("span", {class: "track"}, h("i", {class: "linear", style: `width: ${(100 * bytes / orig).toFixed(2)}%`, title: MB(bytes)})),
     h("span", {class: "num"}, MB(bytes)));
-  const file = {file: `yolo11n_${now.id}.json`, yaml: `${JSON.stringify({model: st.det.model, quantization: st.det.quantization, setup: now.id,
+  const file = {file: `${st.det.model.id}_${now.id}.json`, yaml: `${JSON.stringify({model: st.det.model, quantization: st.det.quantization, setup: now.id,
     label: now.label, bits: now.bits_fraction, methods: now.methods, metrics: now.metrics, env: now.env ?? null}, null, 1)}\n`};
   const save = h("button", {type: "button", class: "ta-btn primary", id: "export"}, "층별 배정 파일 받기 (.json)");
   save.addEventListener("click", () => download(file, "application/json"));
   $("out").replaceChildren(h("div", {class: "ta-outgrid"},
     h("div", {class: "ta-block", id: "size"},
       blockHead("압축 크기", help("압축 크기 (계산값)", st.det.model.size_rule), h("span", null, "계산값")),
-      h("div", {class: "ta-size"}, bar("원본", "FP16", orig, "orig"), bar("이 셋업", `Conv ${fmt(now.bits, 2)}비트`, now.bytes, "cur")),
+      h("div", {class: "ta-size"}, bar("원본", KD().origin, orig, "orig"), bar("이 셋업", `${KD().unit} ${fmt(now.bits, 2)}비트`, now.bytes, "cur")),
       h("p", {class: "ta-gain", id: "size-note"}, "파일 전체 ", h("b", null, `${MB(orig)} → ${MB(now.bytes)} (${fmt(100 * now.bytes / orig, 0)}%)`), ".")),
     h("div", {class: "ta-block", id: "export-block"},
       blockHead("내보내기", h("span", null, "이 셋업의 층별 비트와 측정값")),
       h("div", {class: "ta-row"}, save, h("span", {class: "ta-muted mono"}, file.file)),
-      h("p", {class: "ta-muted"}, "Conv 층마다 고른 방법, 크기, COCO mAP, 실행 환경을 담습니다. 모델 가중치 파일은 넣지 않습니다."))));
+      h("p", {class: "ta-muted"}, `${KD().unit} 층마다 고른 방법, 크기, ${KD().short}, 실행 환경을 담습니다.`))),
+    isGen() ? h("p", {class: "ta-muted", id: "package"}, "이 모델의 저비트 파일(모델 패키지)은 아직 만들지 않았습니다. 위 크기는 계산값입니다.")
+      : onnxView(st.packages?.onnx?.yolo11n?.[now.id] ?? null, now));
+}
+
+// the setup as an ONNX file with integer weights (scripts/quantizer/yolo_tune.py onnx), run by onnxruntime
+function onnxView(pkg, now) {
+  if (!pkg) return h("p", {class: "ta-muted", id: "package"}, "이 셋업은 ONNX 파일 기록이 없습니다.");
+  const kinds = Object.entries(pkg.kinds).map(([k, n]) => `${k.toUpperCase()} ${n}층`).join(" · ");
+  const ap = pkg.metrics.AP_50_95;
+  const torchAp = pkg.pytorch_metrics?.AP_50_95;
+  const boxes = Object.values(pkg.demo_boxes);
+  const same = boxes.filter((b) => b.onnx === b.pytorch && b.same_classes).length;
+  const name = `${now.id}.onnx`;
+  const link = pkg.file ? h("a", {class: "ta-btn primary", id: "onnx-download", href: `demo/autotune/${pkg.file}`, download: name}, "ONNX 파일 받기")
+    : h("span", {class: "ta-muted"}, "파일은 저장소에 넣지 않았습니다 (기록만)");
+  return h("div", {class: "ta-block", id: "package"},
+    blockHead("모델 패키지 · ONNX", help("ONNX 패키지 (실제 파일)", "Conv 가중치를 정수(INT8 · INT4)와 출력 채널마다 FP32 스케일로 저장하고 DequantizeLinear 로 되돌리는 ONNX 파일입니다 (opset 21). onnxruntime 으로 실행해 같은 COCO 사진에서 PyTorch 결과와 비교했습니다."),
+      chip(`실제 파일 · onnxruntime ${pkg.env.onnxruntime}`, "ok")),
+    h("div", {class: "ta-row"}, link, h("span", {class: "ta-muted mono"}, `${name} · ${MB(pkg.bytes)}`)),
+    h("ul", {class: "ta-checks", id: "package-checks"},
+      h("li", null, kinds ? `정수 코드 × 스케일 = PyTorch 가중치 (파일을 쓸 때 층마다 대조) · ${kinds}` : "가중치 FP32 그대로 (양자화한 층 없음)"),
+      h("li", null, `COCO mAP50-95 (${pkg.images.toLocaleString("en-US")}장): onnxruntime ${AP(ap)} · PyTorch ${AP(torchAp)}`),
+      h("li", null, `사진 ${boxes.length}장의 상자 수 · 클래스가 PyTorch 와 같음: ${same}/${boxes.length}`)),
+    h("pre", {class: "ta-cmd"}, `python -c "import onnxruntime as ort; s = ort.InferenceSession('${name}'); print([i.name for i in s.get_inputs()])"`),
+    h("p", {class: "ta-muted"}, `입력 images [N, 3, H, W] (0–1, 32의 배수), 출력 output0 [N, 84, 앵커] — ultralytics 와 같은 후처리(NMS)를 씁니다. ${now.label}.`,
+      kinds ? " 파일이 위 계산값보다 조금 큰 것은 스케일 · 바이어스를 FP32 로 두고(계산은 FP16) 영점 · 그래프 정의를 함께 담기 때문입니다." : ""));
 }
 
 function drawAll() {
@@ -1249,6 +1405,7 @@ function drawAll() {
 async function start() {
   try {
     st.models = (await getJSON("demo/autotune/models.json")).models;
+    st.packages = await getJSON("demo/autotune/packages.json").catch(() => null);  // step 5's measured files
   } catch {
     try {  // a bundle directory without a model list: its one bundle
       const bundle = await getJSON("demo/autotune/bundle.json");

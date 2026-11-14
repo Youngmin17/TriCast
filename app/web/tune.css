@@ -175,6 +175,10 @@
 .ta-table tr:last-child td { border-bottom: 0; }
 .ta-table .num { text-align: right; font-family: var(--font-data); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .ta-table .mono { font-family: var(--font-data); overflow-wrap: anywhere; }
+/* 5 the model package: what was checked, one line each */
+.ta-checks { margin: 0; padding-left: 18px; display: grid; gap: 3px; font-size: var(--t-sm); color: var(--ink-2); }
+#package-files td { padding: 3px 8px; }
+#package .ta-btn { text-decoration: none; }
 /* benchmarks (4): one row each, the existing way's name under its value; the verdict is text with a series dot */
 .ta-bench-wrap { overflow-x: auto; }
 .ta-bench tbody th[scope="row"] { font: 500 var(--t-sm)/1.35 var(--font-ui); color: var(--ink); padding: 6px 8px; }
@@ -273,3 +277,5 @@
   .ta-progress i { transition: none; }
   .ta-ladder .track i, .ta-size .track i { animation: none; }
 }
+/* the image generator's prompt above its three images */
+.ta-prompt { margin: 0; font-size: var(--t-sm); color: var(--ink-2); font-style: italic; overflow-wrap: anywhere; }

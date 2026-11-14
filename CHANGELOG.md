@@ -5,6 +5,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 ## [Unreleased]
 
 ### Added
+- README: "Claude Code 로 쓰기" — what to ask Claude for each task, the command it runs, what to check, and what it
+  will not do (AGENTS.md §3 · §4).
 - An image generator on the tool: Tongyi-MAI/Z-Image-Turbo (6B diffusion transformer, revision f332072,
   Apache-2.0), measured on a V100 in FP32 at 512 px (`scripts/quantizer/zimage_tune.py`: refs / table / merge / solve /
   evaluate / export; record `app/web/demo/autotune/zimage.json`). At the same size Auto-tune stays closer to the

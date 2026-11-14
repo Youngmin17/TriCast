@@ -70,6 +70,7 @@ make check                              # ruff + CPU 테스트
   3. **직접 편집**: 추천을 사람이 바꿔 본다
   4. **평가**: 그 셋업의 품질을 원본 · 다른 방법과 비교한다
   5. **결과물**: 최종 모델의 압축 크기(원본 대비, 계산값), 레시피 묶음(zip) 내보내기, 그리고 실제로 만든 저비트 모델 파일 — 언어 모델은 정수 코드를 담은 safetensors 패키지, YOLO11n 은 INT4 · INT8 가중치 ONNX 파일
+  6. **다른 모델**: Qwen3-8B (언어) · YOLO11n (물체 검출) · Z-Image-Turbo (이미지 생성) 에서 같은 크기의 기존 방법과 우리 방법을 비교 (미리 잰 기록 재생)
 
 ### 실행 및 접속 방법
 
@@ -138,6 +139,45 @@ PYTHONPATH=src python -m app.server --demo --agent evals/fixtures/tune_inputs/s3
   - ③ 에 "레시피 파일: … --agent …" 가 나옴 → 서버를 위 명령처럼 `--agent …` 를 붙여 다시 띄운다.
   - 포트 8765 를 이미 쓰는 중 → 명령 끝에 `--port 8766` 을 붙이고 주소의 포트도 바꾼다.
 - **피드백**: GitHub 이슈로 남겨 주면 된다 (무엇을 하려 했는지 · 본 화면 · 기대한 것).
+
+## Claude Code 로 쓰기 — 이렇게 시키면 된다
+
+이 저장소는 [Claude Code](https://docs.claude.com/claude-code) 가 규칙을 읽고 일하도록 준비돼 있다. 저장소 루트에서 `claude` 를
+띄우면 [`CLAUDE.md`](CLAUDE.md) 가 [`AGENTS.md`](AGENTS.md) (절대 규칙 · 용어집 · 자주 쓰는 명령)를 불러온다. 처음 한 번 `/context` 를
+쳐서 목록에 `CLAUDE.md` 와 `AGENTS.md` 가 함께 있는지 확인한다.
+
+```bash
+cd TriCast && claude        # Claude Code 설치 · 로그인 뒤. 전체 기능은 pip install -e ".[eval,dev,app]" (GPU 노드는 ".[triton,eval,dev,app]")
+```
+
+| 하고 싶은 것 | Claude 에게 이렇게 말한다 | Claude 가 돌리는 것 | 확인할 것 |
+|---|---|---|---|
+| 데모 화면 | "데모 서버 띄우고 튜닝 화면 주소 알려줘" | `PYTHONPATH=src python -m app.server --demo --agent evals/fixtures/tune_inputs/s3150/loop.json` | http://127.0.0.1:8765/tune.html 에서 위 체험 순서가 그대로 된다 |
+| 검사 | `/check` | `make lint` → `make test` → 골든 테스트 (파일 수정 없음) | ruff 경고 0, passed · skipped 와 skip 사유 (CPU 에서는 GPU 전용 1건 skip 이 정상) |
+| 골든 진단 | `/golden` | 골든 케이스 세 묶음을 `-v -rfs` 로 (수정 없음) | 케이스마다 대응 AC · 통과 여부 · 근거 표 |
+| 수 형식 확인 | "FP8 E4M3 에서 464 를 RNE 로 반올림하면?" | `tricast cast --format fp8_e4m3 --rounding rne 464` | 448 (최댓값으로 포화) |
+| 레시피 검사 | "hopper_fp8_w8a8 레시피가 맞는지 보고 해시 알려줘" | `tricast recipe-check hopper_fp8_w8a8` | 스키마 통과와 레시피 SHA-256 |
+| 층별 레시피 만들기 | "q · k · v 는 INT8, 나머지는 NVFP4 인 레시피 YAML 만들어줘" | 격자 JSON → `python -m app.quantizer_recipe --from-json grid.json` → `tricast recipe-check` | 화면이 만드는 것과 바이트가 같은 YAML 과 그 해시. 요청에 없던 값을 채웠다면 무엇을 채웠는지 함께 알려 준다 |
+| 품질 평가 (GPU) | "Qwen3-0.6B 에 hopper_fp8_w8a8 적용해서 WikiText-2 PPL 재줘. 환경 기록까지" | `tricast ppl --model Qwen/Qwen3-0.6B --recipe hopper_fp8_w8a8` | PPL 과 실행 기록 (git SHA · 모델 revision · 데이터 지문 · 레시피 해시) |
+| 어느 층이 문제인지 (GPU) | "이 레시피에서 오차가 큰 층부터 보여줘" | `tricast report --model … --recipe …` | 레이어별 MSE · SQNR · 코사인, 모델 logits KL |
+| Auto-tune (표는 GPU) | "Qwen3-0.6B 를 평균 403/128 비트 안에서 층마다 골라주고 실제로 재줘" | `python -m app.autotune table …` → `solve --budget-bits 403/128` → `measure` | 층별 배정, 예측과 측정 PPL, 같은 크기 한 방법 최선과의 비교 |
+| AI 세부 설정 (Claude 로그인) | "Auto-tune 추천에 AI 라운드 두 번 돌려줘" | `python -m app.tune_loop run --config loop.json --rounds 2 --per-round 4 --proposer claude-code` | 제안마다 인용한 레코드 id, 코드 검사를 통과한 제안만 측정 |
+| 저비트 파일 (GPU) | "그 레시피로 safetensors 패키지 만들고 다시 불러서 PPL 비교해줘" | `python -m tricast.pack build … --ppl` → `python -m tricast.pack run --package …` | 모든 층 비트 일치, 다시 잰 PPL 이 0.1% 안 |
+| 다른 모델 기록 (GPU) | "Z-Image-Turbo 기록을 V100 에서 처음부터 다시 만들어줘" | `scripts/quantizer/zimage_tune.py` refs → table → merge → solve → evaluate → export | `validate` 통과, 판정은 [근거 문서](docs/evidence/2026-11-14_zimage_turbo.md) §1 · §5 의 규칙 그대로 |
+| evals 재채점 | "튜닝 evals 를 저장된 응답으로 다시 채점해줘" | 아래 [검사](#검사) 절의 `python evals/run_tune_evals.py … --mode stored` | 저장소를 바꾸지 않고 지표만 다시 계산 |
+
+**잘 시키는 법**
+- 모델 · revision · 크기 예산(평균 비트) · 장비(CPU / GPU)를 문장에 넣는다. 빠진 값은 기본값으로 채우고, 무엇을 채웠는지 알려 준다
+  (요청 해석의 `assumptions`, 레시피 파일의 주석).
+- 숫자는 실행 기록과 함께 달라고 한다 ("환경 기록까지"). 기록 없는 숫자는 근거로 쓰지 않는다 (AGENTS.md §3).
+- GPU 가 필요한 줄은 GPU 노드에서 시킨다. GPU 가 없는 PC 에서는 레퍼런스 백엔드(CPU)로 돌아 매우 느리다.
+- 비교를 시킬 때는 판정 규칙(짝 · 검정 · 합격선)을 재기 전에 정하게 한다. 결과를 보고 더한 비교는 그렇다고 적게 한다.
+
+**Claude 가 하지 않는 것** ([`AGENTS.md`](AGENTS.md) §3 · §4 — 시켜도 멈추고 사람에게 묻는다)
+- 테스트 · 골든 데이터 · evals 판정 기준을 고쳐서 통과시키지 않는다. skip · xfail · 허용 오차 추가로 완료 조건을 좁히지 않는다.
+- 출처 없는 하드웨어 프리셋이나, 요청에 없는 정밀도 · 누산 파라미터를 지어내지 않는다.
+- 같은 실패가 3번 되풀이되거나 정해지지 않은 판단(동률 규칙 · 기본값 · 허용 범위)이 필요하면 멈추고, 시도한 것과 막힌 결정을 보고한다.
+- 테스트 · 공유 명세 · Makefile · `.claude/` 같은 보호 파일을 고치기 전에는 훅이 사람에게 묻는다 (`TRICAST_HOOKS=off` 로 끈다).
 
 ## 더 해 보기 (선택 — Claude · GPU 가 있는 분)
 
@@ -227,16 +267,16 @@ python evals/run_tune_evals.py --table evals/fixtures/tune_inputs/table.json \
 | 무엇 | 경로 |
 |---|---|
 | 왜 만드는가 — 문제 정의서 | [`docs/PROBLEM.md`](docs/PROBLEM.md) |
-| 무엇을 만드는가 — 제품 스펙과 수용 기준 (AC1–AC31) | [`docs/SPEC.md`](docs/SPEC.md) |
+| 무엇을 만드는가 — 제품 스펙과 수용 기준 (AC1–AC32) | [`docs/SPEC.md`](docs/SPEC.md) |
 | 기술 타당성 스파이크 — 비트 정확 에뮬레이션과 속도 · 레이어 국소 지표 · Auto-tune | [`cuda_core_bit_exact_emulation.md`](docs/spikes/cuda_core_bit_exact_emulation.md) · [`2026-10-13_layer_sqnr_proxy.md`](docs/spikes/2026-10-13_layer_sqnr_proxy.md) · [`2026-10-13_autotune_mckp.md`](docs/spikes/2026-10-13_autotune_mckp.md) |
 | Quantizer 측정 기록 (실행 · 해시) | [`docs/evidence/2026-10-13_quantizer_runs.md`](docs/evidence/2026-10-13_quantizer_runs.md) |
-| 같은 크기 여러 벤치마크 · 모델 패키지 기록 | [`docs/evidence/2026-11-12_tune_benchmarks.md`](docs/evidence/2026-11-12_tune_benchmarks.md) · [`docs/evidence/2026-11-13_model_packages.md`](docs/evidence/2026-11-13_model_packages.md) |
+| 같은 크기 여러 벤치마크 · 모델 패키지 · 이미지 생성 기록 | [`docs/evidence/2026-11-12_tune_benchmarks.md`](docs/evidence/2026-11-12_tune_benchmarks.md) · [`docs/evidence/2026-11-13_model_packages.md`](docs/evidence/2026-11-13_model_packages.md) · [`docs/evidence/2026-11-14_zimage_turbo.md`](docs/evidence/2026-11-14_zimage_turbo.md) |
 | 인터뷰 · 관찰 · Job Story | [`docs/research/interviews.md`](docs/research/interviews.md) |
 | 도메인 온톨로지 (정본 YAML / 분석) | [`docs/ontology.yaml`](docs/ontology.yaml) · [`docs/ontology.md`](docs/ontology.md) |
 | 코딩 에이전트 규칙 · 용어집 | [`AGENTS.md`](AGENTS.md) (Claude Code 는 [`CLAUDE.md`](CLAUDE.md) 가 import) |
 | 구조화 출력 스키마 · 파싱 프롬프트 | [`src/tricast/schemas/`](src/tricast/schemas/) · [`src/tricast/prompts/parse_query.md`](src/tricast/prompts/parse_query.md) |
 | 골든 케이스 · 골든 테스트 | [`tests/harness/golden_cases.yaml`](tests/harness/golden_cases.yaml) · [`tests/test_golden.py`](tests/test_golden.py) · [`tests/harness/golden_compare.yaml`](tests/harness/golden_compare.yaml) · [`tests/test_compare_golden.py`](tests/test_compare_golden.py) |
-| 위임 프롬프트 원본 · 검증 루프 기록 | [`docs/prompts/delegation_compare.md`](docs/prompts/delegation_compare.md) (AC13, 지침 순서 한 사이클) · [`docs/prompts/delegation_examples.md`](docs/prompts/delegation_examples.md) · [`docs/prompts/wave1/`](docs/prompts/wave1/) · [`docs/prompts/delegation_pack.md`](docs/prompts/delegation_pack.md) (AC30 · AC31, 교차 검토 포함) |
+| 위임 프롬프트 원본 · 검증 루프 기록 | [`docs/prompts/delegation_compare.md`](docs/prompts/delegation_compare.md) (AC13, 지침 순서 한 사이클) · [`docs/prompts/delegation_examples.md`](docs/prompts/delegation_examples.md) · [`docs/prompts/wave1/`](docs/prompts/wave1/) · [`docs/prompts/delegation_pack.md`](docs/prompts/delegation_pack.md) (AC30 · AC31, 교차 검토 포함) · [`docs/prompts/delegation_zimage.md`](docs/prompts/delegation_zimage.md) (AC32) |
 | 골든 하니스 결함 주입 검사 · 용어집 작동 확인 | [`docs/prompts/delegation_golden_harness.md`](docs/prompts/delegation_golden_harness.md) · [`docs/prompts/glossary_check.md`](docs/prompts/glossary_check.md) |
 | RAG 설정 · evals 안내 | [`config/rag.yaml`](config/rag.yaml) · [`evals/README.md`](evals/README.md) (v2 = 지금 제품, v1 = 10월 요청 파싱) |
 | 웹 앱 (TriCast Studio · Quantizer · 레이어 지도 · Auto-tune) | [`app/README.md`](app/README.md) · [`app/web/autotune.html`](app/web/autotune.html) |

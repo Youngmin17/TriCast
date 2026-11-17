@@ -91,25 +91,25 @@ PYTHONPATH=src python -m app.server --demo --agent evals/fixtures/tune_inputs/s3
 
 **역할**: "이 모델을 원본의 20% 크기로 줄여 달라"는 요청을 받은 엔지니어. **목표**: 추천 셋업을 받고, 직접 바꿔 보고, 품질 차이를 숫자로 확인한다.
 
-| 단계 | 누를 것 | 보이는 것 |
-|---|---|---|
-| ① 모델 | **불러오기** (모델 칸은 `Qwen/Qwen3-0.6B`) | Linear 196개 · 방법 16종. ② 에 목표 크기 버튼 6개가 열린다 |
-| ② Auto-tune | 목표 크기 **20%** | "AI 추천 PPL 26.51" 과 이유 두 줄: 층마다 방법을 다르게 골라 33.31 → 27.04, AI 가 찾은 세부 설정을 더해 27.04 → 26.51 |
-| ③ 직접 편집 | **층별 배정** 목록에서 `AWQ+클립 3비트` | 격자 196칸이 한 색(3비트)으로 바뀌고, 레시피 파일이 `u_awq_clip_int3.yaml` 로 바뀐다. 머리에 "직접 편집함" |
-| ④ 평가 | **평가 결과 불러오기** | PPL **33.31** 과 비교 막대. "Auto-tune 추천(PPL 26.51)은 이 편집보다 … 55% 작습니다" |
-| 되돌리기 | ③ 의 **추천으로 되돌리기** → ④ **평가 결과 불러오기** | PPL **26.51**. 막대: 한 방법 최선 33.31 · Auto-tune 배정 27.04 · AI 세부 설정 26.82 / 26.51 |
-| 여러 벤치마크 | ④ 아래 **같은 크기, 여러 벤치마크** 표 | PPL 2개(WikiText-2 · C4)와 정확도 7과제(LAMBADA · ARC-E · ARC-C · HellaSwag · PIQA · WinoGrande · MMLU)마다 원본 / 기존 방법(그 과제에서 이 크기 안 한 방법 최선) / 우리 방법과 차이 ± 표준오차. 20% 에서는 PPL 이 34.06 → 27.12 로 낮지만 정확도는 우리 우세 0 · 차이 없음 6 · 기존 우세 1 (MMLU). ② 에서 **19%** 를 고르면 맞는 한 방법이 2비트(13%)뿐이라 기존이 무너진다: LAMBADA 0.0 → 15.7, 정확도 평균 30.2 → 36.6 (+6.3 ± 0.7) |
-| ⑤ 결과물 | 평가가 나오면 열린다. **레시피 묶음 받기 (.zip)** | 압축 크기 막대: 파일 전체 1.50 GB → 0.80 GB (53%, Linear 가중치만 20% 로 줄고 임베딩 · 출력층은 그대로). `act_damp05_r3_tricast.zip` 이 받아진다. 아래 **모델 패키지**: 이 레시피로 실제로 만든 파일 0.51 GB (출력층이 임베딩과 묶여 한 번만 저장돼 계산값보다 작다) · 196층 모두 TriCast 가 곱하는 가중치와 비트 단위로 같음 · PPL TriCast 26.446 / 패키지 26.441 (−0.02%) · 코드만 GPU 에 올리면 0.49 GB |
+| 단계 | AC | 누를 것 | 보이는 것 |
+|---|:-:|---|---|
+| ① 모델 | AC22 | **불러오기** (모델 칸은 `Qwen/Qwen3-0.6B`) | Linear 196개 · 방법 16종. ② 에 목표 크기 버튼 6개가 열린다 |
+| ② Auto-tune | AC22 · AC24 · AC27 | 목표 크기 **20%** | "AI 추천 PPL 26.51" 과 이유 두 줄: 층마다 방법을 다르게 골라 33.31 → 27.04, AI 가 찾은 세부 설정을 더해 27.04 → 26.51 |
+| ③ 직접 편집 | AC15 · AC16 | **층별 배정** 목록에서 `AWQ+클립 3비트` | 격자 196칸이 한 색(3비트)으로 바뀌고, 레시피 파일이 `u_awq_clip_int3.yaml` 로 바뀐다. 머리에 "직접 편집함" |
+| ④ 평가 | AC17 · AC3 | **평가 결과 불러오기** | PPL **33.31** 과 비교 막대. "Auto-tune 추천(PPL 26.51)은 이 편집보다 … 55% 작습니다" |
+| 되돌리기 | AC17 · AC22 | ③ 의 **추천으로 되돌리기** → ④ **평가 결과 불러오기** | PPL **26.51**. 막대: 한 방법 최선 33.31 · Auto-tune 배정 27.04 · AI 세부 설정 26.82 / 26.51 |
+| 여러 벤치마크 | AC29 · AC18 | ④ 아래 **같은 크기, 여러 벤치마크** 표 | PPL 2개(WikiText-2 · C4)와 정확도 7과제(LAMBADA · ARC-E · ARC-C · HellaSwag · PIQA · WinoGrande · MMLU)마다 원본 / 기존 방법(그 과제에서 이 크기 안 한 방법 최선) / 우리 방법과 차이 ± 표준오차. 20% 에서는 PPL 이 34.06 → 27.12 로 낮지만 정확도는 우리 우세 0 · 차이 없음 6 · 기존 우세 1 (MMLU). ② 에서 **19%** 를 고르면 맞는 한 방법이 2비트(13%)뿐이라 기존이 무너진다: LAMBADA 0.0 → 15.7, 정확도 평균 30.2 → 36.6 (+6.3 ± 0.7) |
+| ⑤ 결과물 | AC30 | 평가가 나오면 열린다. **레시피 묶음 받기 (.zip)** | 압축 크기 막대: 파일 전체 1.50 GB → 0.80 GB (53%, Linear 가중치만 20% 로 줄고 임베딩 · 출력층은 그대로). `act_damp05_r3_tricast.zip` 이 받아진다. 아래 **모델 패키지**: 이 레시피로 실제로 만든 파일 0.51 GB (출력층이 임베딩과 묶여 한 번만 저장돼 계산값보다 작다) · 196층 모두 TriCast 가 곱하는 가중치와 비트 단위로 같음 · PPL TriCast 26.446 / 패키지 26.441 (−0.02%) · 코드만 GPU 에 올리면 0.49 GB |
 
 ### 다른 모델 — 같은 크기에서 기존 방법과 우리 방법 (기록 재생)
 
-① 의 모델 목록에서 고른다. **기존 방법** = 모든 층에 한 방법(또는 흔히 쓰는 규칙), **우리 방법** = Auto-tune 이 같은 크기 안에서 층마다 고른 배정이다. 아래 모델은 미리 잰 기록을 재생한다 — GPU 평가 버튼 · AI 세부 설정 · 직접 편집 57개는 Qwen3-0.6B 에만 있다.
+AC 는 [`docs/SPEC.md`](docs/SPEC.md#6-수용-기준) §6 의 수용 기준 번호다. ① 의 모델 목록에서 고른다. **기존 방법** = 모든 층에 한 방법(또는 흔히 쓰는 규칙), **우리 방법** = Auto-tune 이 같은 크기 안에서 층마다 고른 배정이다. 아래 모델은 미리 잰 기록을 재생한다 — GPU 평가 버튼 · AI 세부 설정 · 직접 편집 57개는 Qwen3-0.6B 에만 있다.
 
-| 모델 | 누를 것 | 보이는 것 |
-|---|---|---|
-| Qwen3-8B · 언어 모델 | 목록에서 `Qwen3-8B · 언어 모델` → **불러오기** → ② 크기 **19%** (또는 **18%**) → ④ **평가 결과 불러오기** | 19% 의 ⑤ 에 모델 패키지 5.11 GB (원본 16.38 GB) — 252층 비트 일치, 빌드할 때 잰 TriCast PPL 이 ④ 의 기록과 비트 단위로 같고 패키지 PPL 은 +0.03%. **기존 방법이 무너지고 우리 방법은 남는 크기만** 고를 수 있게 했다 (`models.json` 의 `sizes`). 한 방법은 2 · 3 · 4비트 계단뿐이라 18% · 19% 안에 맞는 것은 GPTQ 2비트(13%)이고 PPL 915 다. Auto-tune 은 19% PPL 11.22 · 18% PPL 11.94 (원본 9.72; 20% 의 GPTQ 3비트는 11.15). 아래 여러 벤치마크 표: 19% 정확도 평균 28.8 → 61.8 (+33.0 ± 0.7), 18% 28.8 → 56.3 (+27.5 ± 0.7), 7과제 모두 우리 우세. 언어 모델은 생성한 답을 화면에 보이지 않는다 (숫자만). 다른 크기(16% · 17% · 20% · 26%)의 측정은 데이터와 근거 문서에 그대로 있다 |
-| YOLO11n · 물체 검출 | 목록에서 `YOLO11n · 물체 검출` → **불러오기** → ② 크기 **26%** → ④ **평가 결과 불러오기** | Conv 87층 줄과 COCO mAP50-95 막대: 원본 39.5 · INT8 가장자리 + INT4 (흔한 규칙) 1.4 · INT4 균일 1.1 · **Auto-tune 24.4**. 그 아래 **COCO 세부 지표** 표 — 같은 평가를 IoU 기준(AP50 · AP75)과 물체 크기(작은 · 중간 · 큰)로 나눠 원본 / 기존 방법(지표마다 이 크기 안 최선) / 우리 방법: 26% 에서 AP75 1.3 → 26.4, 작은 물체 0.9 → 11.6 (원본 42.8 · 20.0). 아래에 같은 사진 3장의 검출 상자 — 원본 / 기존 방법 / 우리 방법 ("원본 상자 12/19 유지" 처럼 원본이 찾은 물체를 몇 개 다시 찾았는지). 크기 25% 에서는 INT4 균일 1.1 · Auto-tune 23.8. ⑤ 에서 셋업마다 **ONNX 파일을 내려받는다** — 가중치가 INT4 · INT8 정수로 들어 있고 onnxruntime 으로 바로 돈다 (26% Auto-tune 1.66 MB, onnxruntime 으로 잰 mAP 가 PyTorch 기록과 10⁻⁷ 안에서 같다) |
-| Z-Image-Turbo · 이미지 생성 | 목록에서 `Z-Image-Turbo · 이미지 생성` → **불러오기** → ② 크기 **19%** → ④ **평가 결과 불러오기** → 이미지 탭 | Linear 275층 줄과 원본 이미지와의 SSIM 막대 (× 100, 100 = 원본과 같은 이미지): 19% 에서 기존 최선은 INT2 균일(13%) 19.4 — 이미지가 잡음이 된다 — · **Auto-tune 57.5** (INT3 균일 19.7% 의 58.8 에 가깝다). 그 아래 SSIM · PSNR 표, 판정 줄, 같은 프롬프트 · 같은 초기 잡음으로 만든 이미지 3장 (원본 / 기존 방법 / 우리 방법, 원본 대비 PSNR). 크기 버튼은 5개: **19% · 16%** 는 첫 결과를 본 뒤 더한 계단 사이 크기 (판정 규칙은 재기 전에 정함, 짝 INT2 균일 — 둘 다 24개 프롬프트 모두에서 원본에 더 가까움, **우리 우세**), **20% · 26% · 27%** 는 측정 전에 정한 짝과의 판정 (크기 3개 Holm): 20% INT3 균일 58.8 → 61.4 **우리 우세** (18/24, p 0.026) · 27% 흔한 규칙 67.9 → 70.7 **우리 우세** (17/24, 0.049) · 26% INT4 균일 67.1 → 69.7 **차이 없음** (17/24, 0.060) — 같은 비트 수에서는 차이가 작다. 이미지 3장은 측정 전에 정한 평가 프롬프트 앞 3개라, 26% 의 첫 장처럼 우리 방법이 더 먼 것도 그대로 나온다. ⑤ 는 크기 계산만 있고 모델 패키지는 만들지 않았다 |
+| 모델 | AC | 누를 것 | 보이는 것 |
+|---|:-:|---|---|
+| Qwen3-8B · 언어 모델 | AC29 · AC30 | 목록에서 `Qwen3-8B · 언어 모델` → **불러오기** → ② 크기 **19%** (또는 **18%**) → ④ **평가 결과 불러오기** | 19% 의 ⑤ 에 모델 패키지 5.11 GB (원본 16.38 GB) — 252층 비트 일치, 빌드할 때 잰 TriCast PPL 이 ④ 의 기록과 비트 단위로 같고 패키지 PPL 은 +0.03%. **기존 방법이 무너지고 우리 방법은 남는 크기만** 고를 수 있게 했다 (`models.json` 의 `sizes`). 한 방법은 2 · 3 · 4비트 계단뿐이라 18% · 19% 안에 맞는 것은 GPTQ 2비트(13%)이고 PPL 915 다. Auto-tune 은 19% PPL 11.22 · 18% PPL 11.94 (원본 9.72; 20% 의 GPTQ 3비트는 11.15). 아래 여러 벤치마크 표: 19% 정확도 평균 28.8 → 61.8 (+33.0 ± 0.7), 18% 28.8 → 56.3 (+27.5 ± 0.7), 7과제 모두 우리 우세. 언어 모델은 생성한 답을 화면에 보이지 않는다 (숫자만). 다른 크기(16% · 17% · 20% · 26%)의 측정은 데이터와 근거 문서에 그대로 있다 |
+| YOLO11n · 물체 검출 | AC31 | 목록에서 `YOLO11n · 물체 검출` → **불러오기** → ② 크기 **26%** → ④ **평가 결과 불러오기** | Conv 87층 줄과 COCO mAP50-95 막대: 원본 39.5 · INT8 가장자리 + INT4 (흔한 규칙) 1.4 · INT4 균일 1.1 · **Auto-tune 24.4**. 그 아래 **COCO 세부 지표** 표 — 같은 평가를 IoU 기준(AP50 · AP75)과 물체 크기(작은 · 중간 · 큰)로 나눠 원본 / 기존 방법(지표마다 이 크기 안 최선) / 우리 방법: 26% 에서 AP75 1.3 → 26.4, 작은 물체 0.9 → 11.6 (원본 42.8 · 20.0). 아래에 같은 사진 3장의 검출 상자 — 원본 / 기존 방법 / 우리 방법 ("원본 상자 12/19 유지" 처럼 원본이 찾은 물체를 몇 개 다시 찾았는지). 크기 25% 에서는 INT4 균일 1.1 · Auto-tune 23.8. ⑤ 에서 셋업마다 **ONNX 파일을 내려받는다** — 가중치가 INT4 · INT8 정수로 들어 있고 onnxruntime 으로 바로 돈다 (26% Auto-tune 1.66 MB, onnxruntime 으로 잰 mAP 가 PyTorch 기록과 10⁻⁷ 안에서 같다) |
+| Z-Image-Turbo · 이미지 생성 | AC32 | 목록에서 `Z-Image-Turbo · 이미지 생성` → **불러오기** → ② 크기 **19%** → ④ **평가 결과 불러오기** → 이미지 탭 | Linear 275층 줄과 원본 이미지와의 SSIM 막대 (× 100, 100 = 원본과 같은 이미지): 19% 에서 기존 최선은 INT2 균일(13%) 19.4 — 이미지가 잡음이 된다 — · **Auto-tune 57.5** (INT3 균일 19.7% 의 58.8 에 가깝다). 그 아래 SSIM · PSNR 표, 판정 줄, 같은 프롬프트 · 같은 초기 잡음으로 만든 이미지 3장 (원본 / 기존 방법 / 우리 방법, 원본 대비 PSNR). 크기 버튼은 5개: **19% · 16%** 는 첫 결과를 본 뒤 더한 계단 사이 크기 (판정 규칙은 재기 전에 정함, 짝 INT2 균일 — 둘 다 24개 프롬프트 모두에서 원본에 더 가까움, **우리 우세**), **20% · 26% · 27%** 는 측정 전에 정한 짝과의 판정 (크기 3개 Holm): 20% INT3 균일 58.8 → 61.4 **우리 우세** (18/24, p 0.026) · 27% 흔한 규칙 67.9 → 70.7 **우리 우세** (17/24, 0.049) · 26% INT4 균일 67.1 → 69.7 **차이 없음** (17/24, 0.060) — 같은 비트 수에서는 차이가 작다. 이미지 3장은 측정 전에 정한 평가 프롬프트 앞 3개라, 26% 의 첫 장처럼 우리 방법이 더 먼 것도 그대로 나온다. ⑤ 는 크기 계산만 있고 모델 패키지는 만들지 않았다 |
 
 ### 기대 결과 및 확인 방법
 
@@ -117,6 +117,26 @@ PYTHONPATH=src python -m app.server --demo --agent evals/fixtures/tune_inputs/s3
 - **결과물**: ⑤ 의 **레시피 묶음 받기** 로 받는 zip — 레시피 파일(YAML, GPU 가 측정한 바로 그 파일), `evaluation.json`(측정 기록), `size.json`(압축 크기 계산), 적용 명령이 든 `README.md`. 레시피 파일 하나로 같은 셋업을 다시 적용한다 (코드 수정 없음). zip 에는 모델 가중치를 넣지 않는다. 저비트 모델 파일은 ⑤ 의 **모델 패키지** 에 따로 나온다 — 언어 모델 패키지(수백 MB ~ 수 GB)는 GPU 클러스터에 있고 화면에는 파일 목록 · 크기 · 검사 결과와 만드는 명령이, YOLO11n 의 ONNX 파일(1.5 MB 안팎)은 바로 내려받기가 있다.
 - **다른 입력으로 다시**: ② 에서 다른 목표 크기(16% · 19% · 22% · 26% · 27%)를 고르거나, ③ 에서 다른 "한 방법" · 다른 세부 설정을 고른 뒤 ④ 를 다시 누른다. 고를 때마다 평가는 지워지고 새로 불러온다. 주소창의 주소를 복사해 두면 같은 셋업으로 다시 열린다.
 - **자동 확인 (선택, Node 22 이상 + Chrome)**: `node scripts/quantizer/demo_rehearsal.mjs /tmp/rehearsal` → `REHEARSAL_DONE 6/6` 가 나오면 위 순서가 그대로 동작한 것이다.
+
+### 핵심 시나리오 — 입력 · 기대 결과 · 관련 AC (테스트용)
+
+화면 체험(위)과 같은 기능을 입력 하나 · 기대 결과 하나로 확인한다. AC 는 [`docs/SPEC.md`](docs/SPEC.md#6-수용-기준) §6 의
+번호이고 (MVP 범위 = MVP 열에 ● 인 31개, AC12 제외), 골든 케이스 이름은 `tests/harness/` 의 `id` 다.
+명령은 저장소 루트에서 `pip install -e ".[eval,dev,app]"` 뒤에 실행한다 (화면 확인은 Node 22 이상 + Chrome).
+
+| # | 시나리오 | 입력 예 | 기대 결과 | AC | 확인 명령 |
+|:-:|---|---|---|:-:|---|
+| 1 | 같은 크기에서 층별 추천 받기 (화면) | 모델 `Qwen/Qwen3-0.6B`, 목표 크기 20% | AI 추천 PPL 26.51 (한 방법 최선 33.31 · Auto-tune 배정 27.04), 레시피 파일이 측정한 파일과 SHA-256 일치 | AC22 · AC24 · AC27 | 위 데모 서버를 띄운 뒤 `node scripts/quantizer/demo_rehearsal.mjs /tmp/rehearsal` → `REHEARSAL_DONE 6/6` |
+| 2 | 예산이 어떤 배정보다도 작은 튜닝 요청 | 해석 결과 `{"model": "Qwen/Qwen3-0.6B", "budget_bits": "1.5"}` | 배정하지 않고 `conflict` — "cheapest assignment these constraints allow is 2.1406 bits" (코드가 표에서 계산) | AC28 | `pytest tests/test_tune_golden.py -k budget_below_any_assignment` |
+| 3 | 모델이 빠진 튜닝 요청 | 해석 결과 `{"budget_bits": "3"}` (모델 없음) | 모델을 지어내지 않고 `needs_clarification` + 질문 | AC28 | `pytest tests/test_tune_golden.py -k no_model_asks` |
+| 4 | ledger 에 없는 근거를 인용한 AI 제안 | 데모 세션 제안의 인용에 `E000000000000` 추가 | 거부 — "cited ids not in the ledger", 세션에 제안이 기록되지 않음 | AC24 | `pytest tests/test_tune_golden.py -k cite_outside_ledger` |
+| 5 | 칩의 수 형식으로 값 변환 | `tricast cast --format fp8_e4m3 --rounding rne 464 465` | `448.0 448.0` (FP8 E4M3 최댓값으로 포화) | AC1 | 명령 그대로 · 골든 `cast_fp8_rne_saturating_boundary` |
+| 6 | 잘못된 레시피 | `group_size: -1` 인 레시피 YAML → `tricast recipe-check bad.yaml` | 모델을 건드리기 전에 거부 — `defaults.weight.group_size: -1 is less than the minimum of 0` (종료 코드 2) | AC5 | 명령 그대로 · 골든 `recipe_error_negative_group_size` |
+| 7 | 조건이 다른 두 평가 기록의 PPL 비교 | 데이터셋 지문이 `fp` 와 `other` 인 두 기록 | 비교하지 않고 거부 — 오류 경로 `metrics.ppl.dataset_fingerprint` | AC14 | `pytest tests/test_compare_golden.py -k dataset_mismatch` |
+| 8 | 튜닝 evals 재채점 (LLM 호출 없음) | 저장된 기준선 응답 `2026-11-09T0054` (35 케이스) | 코드 층 A1–A7 목표 충족, 절대 규칙(A2 · A6 · B2 · B3 · B5) 0건 | AC28 · AC24 | 아래 [검사](#검사) 절의 `python evals/run_tune_evals.py … --mode stored` |
+
+골든 케이스 전체: `pytest tests/test_golden.py tests/test_compare_golden.py tests/test_tune_golden.py -q -rs` (CPU 에서는 GPU 전용
+`e2e_bf16_passthrough_ppl` 1건만 skip 이 정상).
 
 ### 추가 안내
 
@@ -262,6 +282,28 @@ python evals/run_tune_evals.py --table evals/fixtures/tune_inputs/table.json \
 ```
 
 
+## 저장소 표준 구조와 이 저장소의 파일
+
+강의 작성지침의 「저장소 표준 구조」와 이름이 다른 파일은 아래가 정확한 위치다. 평가 대상 브랜치는 기본 브랜치
+`quantizer_develop` 이다. **굵게** 적은 것이 지금 제품(Auto-tune)의 산출물이다.
+
+| 표준 위치 | 이 저장소 | 비고 |
+|---|---|---|
+| `README.md` 실행 방법 | 이 파일의 [설치와 빠른 시작](#설치와-빠른-시작) · [MVP 사용자 가이드](#mvp-사용자-가이드) · [핵심 시나리오](#핵심-시나리오--입력--기대-결과--관련-ac-테스트용) | 실행 환경 · 설치 · 명령, 시나리오마다 입력 · 기대 결과 · AC |
+| `docs/SPEC.md` (MVP 표시) | [`docs/SPEC.md`](docs/SPEC.md) §6 의 MVP 열 | ● 31개 (AC1–AC11 · AC13–AC32), AC12 는 MVP 제외 |
+| `docs/ARCHITECTURE.md` | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | 같은 위치 |
+| `src/<패키지>/` | [`src/tricast/`](src/tricast/) (양자화 · 에뮬레이션 엔진) · [`app/`](app/) (웹 화면 · Auto-tune · 튜닝 루프) | |
+| `tests/harness/golden_cases.yaml` | [`golden_cases.yaml`](tests/harness/golden_cases.yaml) (AC1–AC6, 엔진) · [`golden_compare.yaml`](tests/harness/golden_compare.yaml) (AC13 · AC14) · **[`golden_tune.yaml`](tests/harness/golden_tune.yaml)** (AC24 · AC28) | 케이스마다 `ac`, 정상 · 경계 · 금지 분류는 각 파일 머리와 `- id:` 줄 주석 (compare 는 `kind`) |
+| `tests/test_<기능>_golden.py` | [`tests/test_golden.py`](tests/test_golden.py) · [`tests/test_compare_golden.py`](tests/test_compare_golden.py) · **[`tests/test_tune_golden.py`](tests/test_tune_golden.py)** | 케이스 파일을 읽어 구현 함수를 호출한다. skip 은 GPU 전용 1건뿐 |
+| `docs/prompts/delegation_<기능>.md` (결함 주입) | [`delegation_golden_harness.md`](docs/prompts/delegation_golden_harness.md) (golden_cases) · [`delegation_compare.md`](docs/prompts/delegation_compare.md) §3-3 (compare) · **[`delegation_tune.md`](docs/prompts/delegation_tune.md)** (tune) · [`delegation_evals.md`](docs/prompts/delegation_evals.md) §1-2 (evals 러너 오답 주입) | 바꾼 파일 · 바꾼 내용 · 실패한 케이스 표 |
+| `AGENTS.md` 와 에이전트 하니스 | [`AGENTS.md`](AGENTS.md) · [`CLAUDE.md`](CLAUDE.md) · `.claude/` (명령 `/check` · `/golden`, 보호 파일 훅) | |
+| `evals/EVAL_DESIGN.md` | **[`evals/EVAL_DESIGN.md`](evals/EVAL_DESIGN.md)** | 지표마다 AC · 계산 방법 · 합격선 (§1) |
+| `evals/evalset.jsonl` | **[`evals/tune_evalset.jsonl`](evals/tune_evalset.jsonl)** (35 케이스, 6 범주) | `evals/evalset.jsonl` 은 v1 (10월 요청 파싱, AC6) |
+| `evals/judge_prompt.md` | **[`evals/tune_judge_prompt.md`](evals/tune_judge_prompt.md)** | `evals/judge_prompt.md` 는 v1 참고 루브릭 |
+| `evals/run_evals.py` | **[`evals/run_tune_evals.py`](evals/run_tune_evals.py)** | `evals/run_evals.py` 는 v1 러너 |
+| `evals/results/` | [`evals/results/`](evals/results/) — `<run_id>.json` (케이스별 출력 · 판정) · [`history.csv`](evals/results/history.csv) (실행 이력) | v1 결과는 `2026-10-01.json` |
+| `evals/judge_labels.jsonl` | [`evals/judge_labels.jsonl`](evals/judge_labels.jsonl) (사람 라벨 47 판정) | judge 일치율 0.766 (목표 0.80 미달 → judge 지표 A8 · B8 보류): `history.csv` 의 `judge_agreement` 열 · [`2026-11-08T0104_agreement.json`](evals/results/2026-11-08T0104_agreement.json) |
+
 ## 문서 지도
 
 | 무엇 | 경로 |
@@ -275,9 +317,9 @@ python evals/run_tune_evals.py --table evals/fixtures/tune_inputs/table.json \
 | 도메인 온톨로지 (정본 YAML / 분석) | [`docs/ontology.yaml`](docs/ontology.yaml) · [`docs/ontology.md`](docs/ontology.md) |
 | 코딩 에이전트 규칙 · 용어집 | [`AGENTS.md`](AGENTS.md) (Claude Code 는 [`CLAUDE.md`](CLAUDE.md) 가 import) |
 | 구조화 출력 스키마 · 파싱 프롬프트 | [`src/tricast/schemas/`](src/tricast/schemas/) · [`src/tricast/prompts/parse_query.md`](src/tricast/prompts/parse_query.md) |
-| 골든 케이스 · 골든 테스트 | [`tests/harness/golden_cases.yaml`](tests/harness/golden_cases.yaml) · [`tests/test_golden.py`](tests/test_golden.py) · [`tests/harness/golden_compare.yaml`](tests/harness/golden_compare.yaml) · [`tests/test_compare_golden.py`](tests/test_compare_golden.py) |
+| 골든 케이스 · 골든 테스트 | [`tests/harness/golden_cases.yaml`](tests/harness/golden_cases.yaml) · [`tests/test_golden.py`](tests/test_golden.py) · [`tests/harness/golden_compare.yaml`](tests/harness/golden_compare.yaml) · [`tests/test_compare_golden.py`](tests/test_compare_golden.py) · [`tests/harness/golden_tune.yaml`](tests/harness/golden_tune.yaml) · [`tests/test_tune_golden.py`](tests/test_tune_golden.py) |
 | 위임 프롬프트 원본 · 검증 루프 기록 | [`docs/prompts/delegation_compare.md`](docs/prompts/delegation_compare.md) (AC13, 지침 순서 한 사이클) · [`docs/prompts/delegation_examples.md`](docs/prompts/delegation_examples.md) · [`docs/prompts/wave1/`](docs/prompts/wave1/) · [`docs/prompts/delegation_pack.md`](docs/prompts/delegation_pack.md) (AC30 · AC31, 교차 검토 포함) · [`docs/prompts/delegation_zimage.md`](docs/prompts/delegation_zimage.md) (AC32) |
-| 골든 하니스 결함 주입 검사 · 용어집 작동 확인 | [`docs/prompts/delegation_golden_harness.md`](docs/prompts/delegation_golden_harness.md) · [`docs/prompts/glossary_check.md`](docs/prompts/glossary_check.md) |
+| 골든 하니스 결함 주입 검사 · 용어집 작동 확인 | [`docs/prompts/delegation_golden_harness.md`](docs/prompts/delegation_golden_harness.md) · [`docs/prompts/delegation_tune.md`](docs/prompts/delegation_tune.md) (튜닝 골든) · [`docs/prompts/glossary_check.md`](docs/prompts/glossary_check.md) |
 | RAG 설정 · evals 안내 | [`config/rag.yaml`](config/rag.yaml) · [`evals/README.md`](evals/README.md) (v2 = 지금 제품, v1 = 10월 요청 파싱) |
 | 웹 앱 (TriCast Studio · Quantizer · 레이어 지도 · Auto-tune) | [`app/README.md`](app/README.md) · [`app/web/autotune.html`](app/web/autotune.html) |
 | 아키텍처 — 모듈 경계 · 데이터 흐름 · 불변식 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) |

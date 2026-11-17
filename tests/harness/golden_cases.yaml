@@ -1,6 +1,11 @@
 # AI 작성 초안 — 2026-10-01 팀 승인
 # CPU 산술 사례는 AC1의 레퍼런스 기준이며 Triton 일치 자체는 tests/gpu에서 판정한다.
-- id: cast_fp8_rne_nonsaturating_boundary
+# 케이스 분류 (강의 5 골든 케이스 기준, 각 `- id:` 줄 끝 주석): 정상 9 · 경계 9 · 금지 11 = 29
+#   정상: 올바른 입력에 올바른 출력
+#   경계: 포화 · 동점 · 정밀도 끝 · 예산 한계 · 범위 끝처럼 결과가 정확한 계산에 달린 입력
+#   금지: 거부하거나 지어내지 말아야 할 입력 (잘못된 레시피 · 환각 인용 · 범위 밖 등)
+#   주석이라 판정 데이터는 그대로다 (2026-11-17 분류 추가, 사용자 승인).
+- id: cast_fp8_rne_nonsaturating_boundary  # 분류: 경계
   ac: AC1
   kind: cast
   input:
@@ -11,7 +16,7 @@
   expected: [448, 448, .nan, -448, .nan]
   note: "AC1: 양자 간격 32; 464/32=14.5는 짝수 14로, 465/32는 15로 반올림되어 480>448인 fn 오버플로 NaN."
 
-- id: cast_fp8_rne_saturating_boundary
+- id: cast_fp8_rne_saturating_boundary  # 분류: 경계
   ac: AC1
   kind: cast
   input:
@@ -22,7 +27,7 @@
   expected: [448, 448, 448, -448]
   note: "AC1: 464는 짝수 significand 14로 반올림; 465의 480 및 -465의 -480은 최대 절댓값 448로 포화."
 
-- id: cast_fp4_rne_four_ties
+- id: cast_fp4_rne_four_ties  # 분류: 경계
   ac: AC1
   kind: cast
   input:
@@ -33,7 +38,7 @@
   expected: [0, 1, 2, 4]
   note: "AC1: 간격은 각각 0.5,0.5,1,2; 보존 정수 0,1,2,2의 동점에서 짝수 0,2,2,2를 택해 0,1,2,4."
 
-- id: cast_bf16_rne_ties
+- id: cast_bf16_rne_ties  # 분류: 경계
   ac: AC1
   kind: cast
   input:
@@ -44,7 +49,7 @@
   expected: [1, 1.015625, -1, -1.015625]
   note: "AC1: [1,2) 간격 1/128; 128.5와 129.5에서 짝수 128,130 선택 후 부호 복원."
 
-- id: cast_int4_symmetric_saturation
+- id: cast_int4_symmetric_saturation  # 분류: 경계
   ac: AC1
   kind: cast
   input:
@@ -55,7 +60,7 @@
   expected: [-7, -7, -7, 2, 6, 7, 7]
   note: "AC1: 등록 int4는 대칭 [-7,7]; 정수 RNE로 -8,2,6,8을 얻은 뒤 범위 밖 값을 ±7로 클램프."
 
-- id: cast_ue4m3_negative_nonsaturating
+- id: cast_ue4m3_negative_nonsaturating  # 분류: 경계
   ac: AC1
   kind: cast
   input:
@@ -66,7 +71,7 @@
   expected: [.nan, .nan, 0, 1]
   note: "AC1: UE4M3은 unsigned; 비포화 음수는 NaN이며 0과 1은 정확한 격자 값."
 
-- id: cast_ue4m3_negative_saturating
+- id: cast_ue4m3_negative_saturating  # 분류: 경계
   ac: AC1
   kind: cast
   input:
@@ -77,7 +82,7 @@
   expected: [0, 0, 0, 1]
   note: "AC1: unsigned 포화 정책은 음수를 0에 클램프; 0과 1은 그대로 보존."
 
-- id: quantize_mxfp4_one_block
+- id: quantize_mxfp4_one_block  # 분류: 정상
   ac: AC1
   kind: quantize
   input:
@@ -97,7 +102,7 @@
          0, 2, 4, 12, 0, -2, -4, -12, 0, 2, 4, 6, 8, 12, -8, -6]
   note: "AC1: amax=12, floor(log2 12)-floor(log2 6)=3-2=1이므로 s=2; 0.25,0.75,2.5를 RNE로 0,1,2, 나머지는 격자 보존."
 
-- id: quantize_nvfp4_one_block
+- id: quantize_nvfp4_one_block  # 분류: 정상
   ac: AC1
   kind: quantize
   input:
@@ -111,7 +116,7 @@
     dequantized: [[0, 224, 448, 896, 1344, 0, -224, -448, -896, -1344, 0, 224, 448, 672, 896, -896]]
   note: "AC1: d2=1344/(6×448)=1/2; s=(1344/6)/(1/2)=448, 유효 스케일 224. 56,168,560,1120은 0.25,0.75,2.5,5 동점으로 0,1,2,4."
 
-- id: quantize_int4_zero_point_one_group
+- id: quantize_int4_zero_point_one_group  # 분류: 정상
   ac: AC1
   kind: quantize
   input:
@@ -131,7 +136,7 @@
     dequantized: [[-4, -2, 0, 2, 10]]
   note: "AC1: lo=-4,hi=10,qmin=-7,qmax=7; s=14/14=1,z=-7-(-4)=-3; RNE(x)+z 후 역변환 q-z."
 
-- id: mma_cofda_three_fraction_bits
+- id: mma_cofda_three_fraction_bits  # 분류: 경계
   ac: AC1
   kind: mma
   input:
@@ -142,7 +147,7 @@
   expected: [[2.25]]
   note: "AC1: (9/8)^2=81/64; F=3은 81>>3=10을 보존하여 10/8+8/8=18/8=2.25."
 
-- id: mma_cofda_thirteen_fraction_bits
+- id: mma_cofda_thirteen_fraction_bits  # 분류: 정상
   ac: AC1
   kind: mma
   input:
@@ -153,7 +158,7 @@
   expected: [[2.265625]]
   note: "AC1: F=13은 6비트 곱 소수부를 모두 보존; (81+64)/64=145/64=2.265625이며 정규화에서도 절단 없음."
 
-- id: mma_cofda_c_fused
+- id: mma_cofda_c_fused  # 분류: 경계
   ac: AC1
   kind: mma
   input:
@@ -164,7 +169,7 @@
   expected: [[16]]
   note: "AC1: 첫 c=16의 지수 4에 각 1의 F=3 significand 8을 정렬하면 8>>4=0; 따라서 두 1이 사라져 16."
 
-- id: mma_cofda_c_decoupled
+- id: mma_cofda_c_decoupled  # 분류: 정상
   ac: AC1
   kind: mma
   input:
@@ -175,49 +180,49 @@
   expected: [[18]]
   note: "AC1: 각 chunk의 P=16,1,1은 F=3에서 정확; 별도 F2=23 합산은 16+1+1=18을 보존."
 
-- id: recipe_error_unknown_format
+- id: recipe_error_unknown_format  # 분류: 금지
   ac: AC5
   kind: recipe_error
   input: {name: invalid-format, defaults: {weight: {format: not_a_format}}}
   expected: {path: defaults.weight.format}
   note: "AC5: format 레지스트리와 사용자 정의 문법 어느 쪽에도 없는 이름은 defaults.weight.format에서 실행 전 거부."
 
-- id: recipe_error_negative_group_size
+- id: recipe_error_negative_group_size  # 분류: 금지
   ac: AC5
   kind: recipe_error
   input: {name: invalid-group, defaults: {weight: {format: int4, granularity: group, group_size: -1}}}
   expected: {path: defaults.weight.group_size}
   note: "AC5: group_size=-1은 스키마의 minimum=0을 위반하므로 해당 필드 경로에서 거부."
 
-- id: recipe_error_invalid_c_mode
+- id: recipe_error_invalid_c_mode  # 분류: 금지
   ac: AC5
   kind: recipe_error
   input: {name: invalid-mode, defaults: {mma: {algorithm: cofda, c_mode: invented}}}
   expected: {path: defaults.mma.c_mode}
   note: "AC5: c_mode의 허용값 fused/decoupled에 invented가 없으므로 defaults.mma.c_mode에서 거부."
 
-- id: recipe_error_sparsity_n_not_below_m
+- id: recipe_error_sparsity_n_not_below_m  # 분류: 금지
   ac: AC5
   kind: recipe_error
   input: {name: invalid-sparsity, defaults: {weight: fp8_tensor, sparsity: {kind: "n:m", n: 4, m: 4}}}
   expected: {path: defaults.sparsity.n}
   note: "AC5 (레시피의 희소성 필드): n:m 은 m 개 중 n 개를 남기므로 n < m 이어야 한다. 4:4 는 희소성이 아니므로 defaults.sparsity.n 에서 실행 전 거부."
 
-- id: recipe_error_outliers_without_weight_spec
+- id: recipe_error_outliers_without_weight_spec  # 분류: 금지
   ac: AC5
   kind: recipe_error
   input: {name: invalid-outliers, defaults: {outliers: {fraction: 0.01}}}
   expected: {path: defaults.outliers}
   note: "AC5 (레시피의 이상치 필드): 이상치 보존은 나머지 가중치를 양자화할 때만 뜻이 있다. weight QuantSpec 이 없으면 defaults.outliers 에서 거부."
 
-- id: presets_all_have_provenance
+- id: presets_all_have_provenance  # 분류: 금지
   ac: AC2
   kind: preset
   input: {registry: PRESETS}
   expected: {nonempty_provenance: true}
   note: "AC2: PRESETS의 모든 항목을 열거해 provenance가 공백 아닌 문자열인지 확인; 출처의 진위나 실리콘 검증을 대신하지 않음."
 
-- id: runner_saves_reproducibility_metadata
+- id: runner_saves_reproducibility_metadata  # 분류: 정상
   ac: AC3
   kind: runner_env
   input: {seed: 42, seqlen: 4, text: "t0 t1 t2 t3 t4 t5 t6 t7"}
@@ -231,7 +236,7 @@
     레시피 canonical SHA256, 입력 text SHA256을 확인. 초기 설계 문서(ENGINE §6.4, 2026-10-08 레포에서 제거)와 달리 현재 fingerprint는
     metrics.ppl, recipe_hash는 record 최상위이며 env.json 내부에는 없다; 이 구조 차이는 미해결 계약 사항.
 
-- id: parser_missing_precision_ko
+- id: parser_missing_precision_ko  # 분류: 금지
   ac: AC6
   kind: parser
   input: {text: "Qwen/Qwen3-0.6B 모델의 PPL을 평가해 줘."}
@@ -242,7 +247,7 @@
                          promote_interval]
   note: "AC6: 모델과 PPL만 지정; scheme/preset/누산 파라미터는 null·부재이거나 해당 전체 필드 경로의 assumption이 있어야 함."
 
-- id: parser_missing_accumulator_ko
+- id: parser_missing_accumulator_ko  # 분류: 금지
   ac: AC6
   kind: parser
   input: {text: "Qwen/Qwen3-0.6B를 fp8로 양자화해 PPL을 평가해 줘. 누산기 비트 수는 정하지 않았어."}
@@ -253,7 +258,7 @@
                          promote_interval]
   note: "AC6: fp8만으로 특정 GPU 프리셋이나 F/G/CS를 유도할 수 없음; 생략된 값은 전체 경로 assumption 또는 미지정이어야 함."
 
-- id: parser_missing_precision_en
+- id: parser_missing_precision_en  # 분류: 금지
   ac: AC6
   kind: parser
   input: {text: "Evaluate perplexity for Qwen/Qwen3-0.6B."}
@@ -264,7 +269,7 @@
                          promote_interval]
   note: "AC6: 모델과 평가 목적 이외 수치 형식을 요청하지 않았으므로 정밀도·누산 기본값에는 해당 전체 경로 assumption이 필요."
 
-- id: parser_missing_chunk_size_en
+- id: parser_missing_chunk_size_en  # 분류: 금지
   ac: AC6
   kind: parser
   input: {text: "Evaluate Qwen/Qwen3-0.6B perplexity with CoFDA F=13."}
@@ -274,7 +279,7 @@
                          observer, preset, chunk_size, c_mode, g_bits, group_size, promote_interval]
   note: "AC6: CoFDA와 F=13은 명시했지만 CS,c_mode,G,group_size는 명시하지 않아 null·부재 또는 전체 경로 assumption 필요."
 
-- id: parser_missing_f_bits_ko
+- id: parser_missing_f_bits_ko  # 분류: 금지
   ac: AC6
   kind: parser
   input: {text: "Qwen/Qwen3-0.6B를 GDFS G=6으로 평가해 줘."}
@@ -284,7 +289,7 @@
                          observer, preset, f_bits, chunk_size, c_mode, group_size, promote_interval]
   note: "AC6: GDFS G=6은 그룹 내부 폭만 지정; 데이터패스 F와 그룹 크기를 35/16 등으로 지어내면 안 됨."
 
-- id: nadpe_all_fp8_vectors
+- id: nadpe_all_fp8_vectors  # 분류: 정상
   ac: AC1
   kind: nadpe
   input: {glob: "tests/data/nadpe/fp8_*.pt"}
@@ -293,7 +298,7 @@
     AC1 (독립 구현 대조): 독립 NADPE CUDA 산출 out_bits를 bf16 비트로 전수 비교하며 TriCast 출력으로 기대값을 생성하지 않는다.
     algorithm 1=GDFS(KT=32), 2=CoFDA fused, 3=CoFDA decoupled(F2=23); 외부 벡터 부재만 skip.
 
-- id: nadpe_all_fp4_vectors
+- id: nadpe_all_fp4_vectors  # 분류: 정상
   ac: AC1
   kind: nadpe_fp4
   input: {glob: "tests/data/nadpe/fp4_*.pt"}
@@ -303,7 +308,7 @@
     규칙 — E2M1 4비트 코드, UE4M3 는 MSB 무시(0x00/0x80 = 0 스케일), E8M0 코드 0 = 0 기여(field-0 규칙). GDFS 타일 64,
     NVFP4 CoFDA CS=16, NVFP4 epilogue 는 fp32 acc*alpha 후 bf16. algorithm 1=GDFS, 2=CoFDA fused (FP4 는 decoupled 없음).
 
-- id: e2e_bf16_passthrough_ppl
+- id: e2e_bf16_passthrough_ppl  # 분류: 정상
   ac: AC4
   kind: e2e
   input:

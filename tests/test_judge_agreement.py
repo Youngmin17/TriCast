@@ -4,6 +4,7 @@ direction of every disagreement."""
 
 from __future__ import annotations
 
+import csv
 import importlib.util
 import json
 import sys
@@ -53,6 +54,26 @@ def test_agreement_counts_matched_true_false_pairs_and_their_direction() -> None
     assert report["criteria"]["q2"] == {"n": 1, "agree": 0, "lenient": 1, "strict": 0, "rate": 0.0}
     assert report["criteria"]["c2"]["strict"] == 1 and "c3" not in report["criteria"]
     assert len(report["unmatched"]) == 3  # the other run, the missing unit, c3 judged null
+
+
+def test_people_labels_fill_only_that_runs_history_cell(tmp_path: Path) -> None:
+    results = tmp_path / "evals" / "results"
+    results.mkdir(parents=True)
+    path = results / "R1.json"
+    path.write_text(json.dumps(RESULT))
+    history = results / "history.csv"
+    rows = [["run_id", "A1", "judge_agreement"], ["R0", "1.0000", ""], ["R1", "0.5000", ""], ["R2", "", ""]]
+    with history.open("w", encoding="utf-8", newline="") as handle:
+        csv.writer(handle).writerows(rows)
+    labels = [{"run_id": "R1", "id": "r_q1", "unit": "request", "q1": True, "q2": False}]  # 1 of 2 agree
+    other = tmp_path / "ai_labels.jsonl"
+    other.write_text("\n".join(json.dumps(label) for label in labels))
+    before = history.read_bytes()
+    assert JA.main(["agree", str(path), str(other)]) == 0 and history.read_bytes() == before
+    (tmp_path / "evals" / "judge_labels.jsonl").write_text(other.read_text())
+    assert JA.main(["agree", str(path)]) == 0
+    after = list(csv.reader(history.open(encoding="utf-8", newline="")))
+    assert after == [rows[0], rows[1], ["R1", "0.5000", "0.5000"], rows[3]]
 
 
 def test_agree_without_labels_says_so(tmp_path: Path) -> None:

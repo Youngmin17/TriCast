@@ -14,11 +14,15 @@ compares each labeled criterion with the judge's verdict on that unit: agreement
 and the direction of each disagreement (judge passes what people fail = lenient, the reverse = strict).
 Labels of another run, of a unit the run did not judge, or of a criterion the judge left null are counted
 as unmatched, never as agreement.
-Prints JUDGE_AGREEMENT <overall> (or NO_LABELS) and writes <run_id>_agreement.json. Stdlib only.
+Prints JUDGE_AGREEMENT <overall> (or NO_LABELS) and writes <run_id>_agreement.json. With the default label
+file (people's labels, ``evals/judge_labels.jsonl``) it also writes the overall agreement into that run's
+``judge_agreement`` cell of ``results/history.csv``; other label files (AI cross-labels, re-adjudicated
+labels) are reference values and leave the history alone. Stdlib only.
 """
 
 from __future__ import annotations
 
+import csv
 import json
 import sys
 from pathlib import Path
@@ -88,6 +92,25 @@ def agree(result: dict[str, Any], labels: list[dict[str, Any]]) -> dict[str, Any
             "criteria": {name: row for name, row in per.items() if row["n"]}, "unmatched": unmatched}
 
 
+def record_in_history(history: Path, run_id: str, overall: float | None) -> str:
+    """Write ``overall`` into the judge_agreement cell of run ``run_id``'s row; every other cell stays."""
+    if not history.is_file():
+        return f"no {history}"
+    with history.open(encoding="utf-8", newline="") as handle:
+        rows = list(csv.reader(handle))
+    if "judge_agreement" not in rows[0]:
+        return f"{history} has no judge_agreement column"
+    column = rows[0].index("judge_agreement")
+    hits = [row for row in rows[1:] if row and row[0] == run_id]
+    if len(hits) != 1:
+        return f"{history} has {len(hits)} rows for run {run_id}"
+    hits[0] += [""] * (len(rows[0]) - len(hits[0]))
+    hits[0][column] = "" if overall is None else f"{overall:.4f}"
+    with history.open("w", encoding="utf-8", newline="") as handle:
+        csv.writer(handle).writerows(rows)
+    return f"{history} run {run_id}"
+
+
 def main(argv: list[str]) -> int:
     if len(argv) < 2 or argv[0] not in ("sheet", "agree"):
         print(__doc__.split("\n\n")[1], file=sys.stderr)
@@ -99,7 +122,8 @@ def main(argv: list[str]) -> int:
         out.write_text(sheet(result) + "\n", encoding="utf-8")
         print(f"LABELING_SHEET {out} units={len(units(result))}")
         return 0
-    labels_path = Path(argv[2]) if len(argv) > 2 else path.parent.parent / "judge_labels.jsonl"
+    human_labels = path.parent.parent / "judge_labels.jsonl"
+    labels_path = Path(argv[2]) if len(argv) > 2 else human_labels
     if not labels_path.is_file():
         print(f"NO_LABELS {labels_path}: people label the sheet first (EVAL_DESIGN.md §3)")
         return 1
@@ -111,6 +135,11 @@ def main(argv: list[str]) -> int:
     shown = "n/a" if report["overall"] is None else f"{report['overall']:.3f}"
     print(f"JUDGE_AGREEMENT {shown} judgments={report['judgments']} target>={TARGET} met={report['met']} "
           f"unmatched={len(report['unmatched'])} out={out}")
+    if labels_path.resolve() == human_labels.resolve():
+        written = record_in_history(path.parent / "history.csv", report["run_id"], report["overall"])
+        print(f"HISTORY {written}")
+    else:
+        print("HISTORY unchanged (not the people's label file)")
     return 0
 
 

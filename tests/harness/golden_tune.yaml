@@ -15,9 +15,14 @@
 #   expected.outcome (+ reason_has: 이유의 조각, questions: true 면 질문 1개 이상) 또는 expected.error: RequestError 의 조각
 #   expected.solved: tune 해석을 제약 아래 배낭(app.autotune.solve_mckp)으로 푼 해가 지킬 성질 — 평균 비트 ≤ 예산,
 #     남긴 블록의 층은 전부 bf16, 그 밖의 층에는 bf16 없음, 쓰인 방법에 제외한 방법 없음
+# 케이스 분류 (강의 5 골든 케이스 기준, 각 `- id:` 줄 끝 주석): 정상 5 · 경계 8 · 금지 16 = 29
+#   정상: 올바른 입력에 올바른 출력
+#   경계: 포화 · 동점 · 정밀도 끝 · 예산 한계 · 범위 끝처럼 결과가 정확한 계산에 달린 입력
+#   금지: 거부하거나 지어내지 말아야 할 입력 (잘못된 레시피 · 환각 인용 · 범위 밖 등)
+#   주석이라 판정 데이터는 그대로다 (2026-11-17 분류 추가, 사용자 승인).
 cases:
   # ---------- AC24: 실제로 수락 · 측정된 제안과 한 가지만 바꾼 변형 ----------
-  - id: tune_proposal_real_accepted_same_recipe
+  - id: tune_proposal_real_accepted_same_recipe  # 분류: 정상
     ac: AC24
     kind: proposal
     input: {session: [iso_3.15], from_session: opt_damp_high_r2}
@@ -27,7 +32,7 @@ cases:
       avg_bits_fraction: 84617/26880
     note: "AC24 정상: 데모 세션 라운드 2 에서 수락돼 A100 에서 잰 제안. 근거 글의 kl=0.43614466651129274 는 인용 레코드 E514ab09c524e 의 값, damp=0.05 는 자기 옵션이다. 같은 이름 · 격자 · 옵션이면 레시피 SHA-256 이 세션 기록과 같다 (화면의 '레시피 파일 받기' 가 기대는 사슬)."
 
-  - id: tune_proposal_number_not_in_record
+  - id: tune_proposal_number_not_in_record  # 분류: 금지
     ac: AC24
     kind: proposal
     input:
@@ -37,14 +42,14 @@ cases:
     expected: {refused: "rationale numbers not supported by the cited records or the proposal: ['0.4316']"}
     note: "AC24 거부: 위 제안에서 KL 숫자 하나만 바꿨다. 0.4316 은 인용 레코드(0.43614…) 어디에도 그 자릿수로 없다."
 
-  - id: tune_proposal_cite_outside_ledger
+  - id: tune_proposal_cite_outside_ledger  # 분류: 금지
     ac: AC24
     kind: proposal
     input: {session: [iso_3.15], from_session: opt_damp_high_r2, edit: {cites: [E514ab09c524e, E000000000000]}}
     expected: {refused: "cited ids not in the ledger"}
     note: "AC24 거부: ledger 에 없는 id 를 인용에 더했다 (환각 인용)."
 
-  - id: tune_proposal_rationale_names_unknown_id
+  - id: tune_proposal_rationale_names_unknown_id  # 분류: 금지
     ac: AC24
     kind: proposal
     input:
@@ -54,14 +59,14 @@ cases:
     expected: {refused: "the rationale names ids that are not ledger records: ['E0123456789ab']"}
     note: "AC24 거부: 인용 목록은 그대로지만 근거 글이 ledger 에 없는 id 를 적었다."
 
-  - id: tune_proposal_no_citation
+  - id: tune_proposal_no_citation  # 분류: 금지
     ac: AC24
     kind: proposal
     input: {session: [iso_3.15], from_session: opt_damp_high_r2, edit: {cites: []}}
     expected: {refused: "a proposal cites at least one ledger record"}
     note: "AC24 거부: 근거 레코드 없는 제안."
 
-  - id: tune_proposal_over_budget_by_cells
+  - id: tune_proposal_over_budget_by_cells  # 분류: 경계
     ac: AC24
     kind: proposal
     input:
@@ -76,14 +81,14 @@ cases:
     expected: {refused: "average bits 3.48635 exceed the budget 3.14844"}
     note: "AC24 거부: 출발점이 예산(403/128 = 3.14844)에 거의 붙어 있어(3.14795) down_proj 4개를 16비트로 올리면 무엇도 내주지 않는 한 예산을 넘는다."
 
-  - id: tune_proposal_over_budget_by_session_budget
+  - id: tune_proposal_over_budget_by_session_budget  # 분류: 경계
     ac: AC24
     kind: proposal
     input: {session: [iso_3.15], from_session: opt_damp_high_r2, budget_bits: "3.14"}
     expected: {refused: "average bits 3.14795 exceed the budget 3.14"}
     note: "AC24 거부: 같은 제안도 세션 예산이 3.14 면 평균 3.14795 비트가 넘는다 (옵션은 비트를 바꾸지 않는다)."
 
-  - id: tune_proposal_method_without_table_entry
+  - id: tune_proposal_method_without_table_entry  # 분류: 금지
     ac: AC24
     kind: proposal
     input:
@@ -93,7 +98,7 @@ cases:
     expected: {refused: "the grid uses ['mxfp4'], which the table has no KL for"}
     note: "AC24 거부: MXFP4 는 생성기에는 있지만 이 표(트랙 M, 16 방법)에는 KL 이 없다. gptq_int4 칸을 바꿔 비트는 예산 안이다."
 
-  - id: tune_proposal_unknown_method
+  - id: tune_proposal_unknown_method  # 분류: 금지
     ac: AC24
     kind: proposal
     input:
@@ -103,7 +108,7 @@ cases:
     expected: {refused: "the grid does not build: unknown methods ['quip_e8p']"}
     note: "AC24 거부: 생성기로 만들 수 없는 방법 (QuIP# E8P 는 TriCast 에 없다)."
 
-  - id: tune_session_measurement_protocol
+  - id: tune_session_measurement_protocol  # 분류: 정상
     ac: AC24
     kind: session
     input: {}
@@ -111,7 +116,7 @@ cases:
     note: "AC24 측정 라운드: 데모 세션은 검증 창(WikiText-2 validation, seed 43, 8 x 512)과 표의 모델을 고정한다 — 보정 · 표 · test 와 다른 창."
 
   # ---------- AC24: 기준선 실행에서 제안자가 실제로 낸 응답 (오류 분석의 범주별 대표) ----------
-  - id: tune_reply_predicted_value_as_measured
+  - id: tune_reply_predicted_value_as_measured  # 분류: 금지
     ac: AC24
     kind: proposal
     input:
@@ -121,7 +126,7 @@ cases:
     expected: {refused: "rationale numbers not supported by the cited records or the proposal: ['0.398']"}
     note: "AC24 거부 (실제 응답): \"above the 0.398 predicted\" — 단층 KL 합 예측은 ledger 레코드가 아니다 (EVAL_DESIGN §9 범주 '예측값을 측정값처럼', 9건). 충돌 케이스라 예산은 시작 제안의 비트 그대로."
 
-  - id: tune_reply_floor_subtracted_value
+  - id: tune_reply_floor_subtracted_value  # 분류: 금지
     ac: AC24
     kind: proposal
     input:
@@ -130,7 +135,7 @@ cases:
     expected: {refused: "rationale numbers not supported by the cited records or the proposal: ['0.00497']"}
     note: "AC24 거부 (실제 응답): \"0.00497 above floor, Eb1dd74cd6447\" — 레코드 값은 0.0056964, 0.00497 은 floor 를 뺀 파생값 (범주 'floor 차감 값을 레코드 값처럼', 6건)."
 
-  - id: tune_reply_other_proposals_parameter
+  - id: tune_reply_other_proposals_parameter  # 분류: 금지
     ac: AC24
     kind: proposal
     input:
@@ -139,7 +144,7 @@ cases:
     expected: {refused: "rationale numbers not supported by the cited records or the proposal: ['0.05']"}
     note: "AC24 거부 (실제 응답): 자기 옵션은 damp=0.005 인데 \"the damp=0.05 grid\" 를 적었다 — 자기 옵션도 인용 레시피도 아닌 값 (범주 '다른 제안의 파라미터 값', 3건)."
 
-  - id: tune_reply_real_accepted
+  - id: tune_reply_real_accepted  # 분류: 정상
     ac: AC24
     kind: proposal
     input:
@@ -152,105 +157,105 @@ cases:
     note: "AC24 정상 (실제 응답): 칸은 그대로, GPTQ 계열에 act_order=true. 숫자(KL=0.4361, 0.00572 등)는 인용 레코드 값을 적힌 자릿수로 반올림한 것이라 통과하고, 레시피 SHA-256 은 그 실행의 결과 파일 기록과 같다."
 
   # ---------- AC28: 요청 해석 응답을 코드가 판정하는 부분 ----------
-  - id: tune_request_budget_below_any_assignment
+  - id: tune_request_budget_below_any_assignment  # 분류: 경계
     ac: AC28
     kind: request
     input: {reply: {model: Qwen/Qwen3-0.6B, budget_bits: "1.5"}}
     expected: {outcome: conflict, reason_has: "cheapest assignment these constraints allow is 2.1406 bits"}
     note: "AC28 충돌 (코드 판정): 표의 가장 싼 방법이 2비트 원소(gptq_int2 · hqq_int2 · rht_gptq_int2)라 어떤 배정도 평균 2비트 이상 > 1.5."
 
-  - id: tune_request_only_int8_conflict
+  - id: tune_request_only_int8_conflict  # 분류: 경계
     ac: AC28
     kind: request
     input: {reply: {model: Qwen/Qwen3-0.6B, budget_bits: "2.5", only_methods: [int8_w]}}
     expected: {outcome: conflict, reason_has: "8.0250 bits"}
     note: "AC28 충돌 (코드 판정): int8_w 만 허용하면 모든 층이 8비트 원소 + 행 스케일 ≥ 8 비트 > 2.5 (평가 세트 r_k4 와 같은 상황)."
 
-  - id: tune_request_half_the_blocks_bf16_conflict
+  - id: tune_request_half_the_blocks_bf16_conflict  # 분류: 경계
     ac: AC28
     kind: request
     input: {reply: {model: Qwen/Qwen3-0.6B, budget_bits: "2.2", keep_bf16_blocks: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]}}
     expected: {outcome: conflict, reason_has: "9.0703 bits"}
     note: "AC28 충돌 (코드 판정): 28 블록 중 14 블록이 16비트면 그것만으로 평균 8비트 > 2.2 (평가 세트 r_k2)."
 
-  - id: tune_request_compute_below_any_assignment
+  - id: tune_request_compute_below_any_assignment  # 분류: 경계
     ac: AC28
     kind: request
     input: {reply: {model: Qwen/Qwen3-0.6B, budget_bits: "4", compute_budget: 5/16}}
     expected: {outcome: conflict, reason_has: "the cheapest compute these constraints allow is 1.0000"}
     note: "AC28 충돌 (코드 판정): 이 표의 16 방법은 모두 가중치 전용이라 GEMM 이 BF16 (B200 MAC 가중치 1) 이다. 연산 예산 5/16 < 1 은 어떤 배정으로도 못 맞춘다 (평가 세트 r_k5 — 첫 기준선에서 해석기 1회가 짚은 경우)."
 
-  - id: tune_request_compute_budget_met
+  - id: tune_request_compute_budget_met  # 분류: 경계
     ac: AC28
     kind: request
     input: {reply: {model: Qwen/Qwen3-0.6B, budget_bits: "4", compute_budget: "1"}}
     expected: {outcome: tune, solved: true}
     note: "AC28 tune: 연산 예산 1 (BF16 과 같음) 은 가중치 전용 표에서도 맞는다 — 크기 예산 4 비트 안 배낭."
 
-  - id: tune_request_no_size_budget_asks
+  - id: tune_request_no_size_budget_asks  # 분류: 금지
     ac: AC28
     kind: request
     input: {reply: {model: Qwen/Qwen3-0.6B, compute_budget: "1/4"}}
     expected: {outcome: needs_clarification, questions: true}
     note: "AC28 되묻기 (코드 판정): 해석기가 tune 이라 해도 크기 예산이 없으면 코드가 되묻기로 바꾼다 — 연산 예산만으로는 배정하지 않는다 (평가 세트 r_q4)."
 
-  - id: tune_request_no_model_asks
+  - id: tune_request_no_model_asks  # 분류: 금지
     ac: AC28
     kind: request
     input: {reply: {budget_bits: "3"}}
     expected: {outcome: needs_clarification, questions: true}
     note: "AC28 되묻기 (코드 판정): 모델이 없는 tune 은 지어내지 않고 묻는다 (평가 세트 r_q3 · r_q5)."
 
-  - id: tune_request_out_of_scope_kept
+  - id: tune_request_out_of_scope_kept  # 분류: 금지
     ac: AC28
     kind: request
     input: {reply: {outcome: out_of_scope, model: Qwen/Qwen3-0.6B, budget_bits: "3", reason: power prediction}}
     expected: {outcome: out_of_scope}
     note: "AC28 범위 밖: 해석이 out_of_scope 면 코드는 배낭을 풀지 않고 그대로 안내한다."
 
-  - id: tune_request_unknown_excluded_method
+  - id: tune_request_unknown_excluded_method  # 분류: 금지
     ac: AC28
     kind: request
     input: {reply: {model: Qwen/Qwen3-0.6B, budget_bits: "3", exclude_methods: [spqr]}}
     expected: {error: "exclude_methods: ['spqr'] are not methods of the table"}
     note: "AC28 거부: 표에 없는 방법 이름을 담은 해석은 쓰지 않는다 (평가 세트 r_h3 이 이 실패를 본다)."
 
-  - id: tune_request_unknown_allowed_method
+  - id: tune_request_unknown_allowed_method  # 분류: 금지
     ac: AC28
     kind: request
     input: {reply: {model: Qwen/Qwen3-0.6B, budget_bits: "2.5", only_methods: [quip_e8p]}}
     expected: {error: "only_methods: ['quip_e8p'] are not methods of the table"}
     note: "AC28 거부: 허용 방법에 없는 방법 (평가 세트 r_h2)."
 
-  - id: tune_request_block_outside_model
+  - id: tune_request_block_outside_model  # 분류: 경계
     ac: AC28
     kind: request
     input: {reply: {model: Qwen/Qwen3-0.6B, budget_bits: "3.5", keep_bf16_blocks: [28]}}
     expected: {error: "keep_bf16_blocks: [28] are outside the model's 28 blocks"}
     note: "AC28 거부: Qwen3-0.6B 는 블록 0–27 (-28–-1). 28 은 없다."
 
-  - id: tune_request_model_without_table
+  - id: tune_request_model_without_table  # 분류: 금지
     ac: AC28
     kind: request
     input: {reply: {model: meta-llama/Llama-3.1-8B, budget_bits: "3"}}
     expected: {error: "model 'meta-llama/Llama-3.1-8B' has no table here"}
     note: "AC28 거부: 표가 없는 모델 (평가 세트 r_h1 은 해석기가 이것을 되묻는지 본다)."
 
-  - id: tune_request_budget_not_a_number
+  - id: tune_request_budget_not_a_number  # 분류: 금지
     ac: AC28
     kind: request
     input: {reply: {model: Qwen/Qwen3-0.6B, budget_bits: "3 bits"}}
     expected: {error: "reply does not follow the schema"}
     note: "AC28 거부: 예산은 적힌 숫자(\"3.2\", \"403/128\")만 — 단위가 붙은 문자열은 스키마 위반."
 
-  - id: tune_request_solved_within_constraints
+  - id: tune_request_solved_within_constraints  # 분류: 정상
     ac: AC28
     kind: request
     input: {reply: {model: Qwen/Qwen3-0.6B, budget_bits: "3.5", keep_bf16_blocks: [-1], exclude_methods: [hqq_int2, hqq_int3, hqq_int4]}}
     expected: {outcome: tune, solved: true}
     note: "AC28 tune: 마지막 블록 BF16(1/28 x 16 = 0.57비트) + 나머지 2비트대 이상이라 3.5 안에 들고, 배낭의 해는 블록 27 만 bf16 · HQQ 없음 · 평균 ≤ 3.5 (평가 세트 r_c10)."
 
-  - id: tune_request_solved_fraction_budget
+  - id: tune_request_solved_fraction_budget  # 분류: 정상
     ac: AC28
     kind: request
     input: {reply: {model: Qwen/Qwen3-0.6B, budget_bits: 403/128, keep_bf16_blocks: [0, -1]}}

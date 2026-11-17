@@ -5,6 +5,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 ## [Unreleased]
 
 ### Added
+- Midterm-2 repository check: MVP column in SPEC §6 (31 ACs, AC12 out), README test scenarios with input,
+  expected result and AC, a standard-structure map, normal/boundary/forbidden comments on the golden YAML,
+  `judge_agreement` column in `evals/results/history.csv`, and the tune golden fault-injection record
+  (`docs/prompts/delegation_tune.md`, `scripts/harness/tune_fault_injection.py`: 13/13 faults caught exactly).
 - README: "Claude Code 로 쓰기" — what to ask Claude for each task, the command it runs, what to check, and what it
   will not do (AGENTS.md §3 · §4).
 - An image generator on the tool: Tongyi-MAI/Z-Image-Turbo (6B diffusion transformer, revision f332072,

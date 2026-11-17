@@ -41,7 +41,8 @@ role, key, returncode, stdout — kept as JSON when it parses — and stderr); s
 those replies (--from-run) and calls nothing. To check the runner, edit a kept reply and re-grade it stored.
 
 Records, never overwritten: evals/results/<run_id>.json (run info, metrics, every case's input, raw output,
-checks and judge verdicts), one row appended to evals/results/history.csv, and
+checks and judge verdicts), one row appended to evals/results/history.csv (its judge_agreement cell stays
+empty until people label the run and evals/judge_agreement.py agree fills it), and
 evals/results/<run_id>_labeling.md (the judge-graded inputs and outputs with empty label slots and without the
 judge's verdicts: people label before they see them, EVAL_DESIGN §3).
 """
@@ -88,8 +89,9 @@ PROPOSALS = 4  # proposals asked for per agent case
 AUTHOR = "tune-evals"
 JUDGE_TIMEOUT_S = 300
 METRICS = tuple(f"{group}{number}" for group in "AB" for number in range(1, 9))
+# judge_agreement stays empty here; evals/judge_agreement.py agree writes it once people have labeled the run
 HISTORY = ("run_id", "commit", "change", "evalset_version", "judge_version", "golden_tests", "mode", *METRICS,
-           "cost_usd")
+           "cost_usd", "judge_agreement")
 LABELS = ("q1", "q2", "c1", "c2", "c3", "c4")
 RECORD_VIEW = ("kind", "layer", "method", "tensor", "metric", "value")  # a cited record in the judge input
 RETRIEVED_ID = re.compile(r"\[(E[0-9a-f]+)\]")  # how a ledger document writes a record id
@@ -768,6 +770,7 @@ def append_history(path: Path, run: dict[str, Any], table: dict[str, dict[str, A
     row = {"run_id": run["run_id"], "commit": commit, "change": run["change"],
            "evalset_version": run["evalset"]["version"], "judge_version": run["judge"]["version_id"],
            "golden_tests": run["golden_tests"], "mode": run["mode"], "cost_usd": run["cost_usd"],
+           "judge_agreement": None,  # nobody has labeled this run's outputs yet
            **{metric: table[metric]["value"] for metric in METRICS}}
     with path.open("a", encoding="utf-8", newline="") as handle:
         writer = csv.writer(handle)

@@ -115,3 +115,22 @@
 - README 의 "화면만 보기" 설치는 Python 3.14 · 3.11 에서 확인했다 (3.10 · 3.12 · 3.13 · Windows 는 미확인).
 - evals 의 합격선 · 절대 규칙 기대 결과는 2026-11-08 · 09 사용자 승인. judge 는 사람 라벨(2026-11-14, 1인 · 47 판정, judge 를 보기 전) 대비 일치율 0.766 으로 목표 0.80 미달이라, judge 지표(A8 · B8)는 근거로 쓰지 않는다. 불일치 11건을 judge 이유를 본 뒤 재판정하면 10건이 라벨 쪽 오류였고 일치율은 0.979 (참고값) — 다른 실행으로 judge 를 보기 전 라벨을 다시 매기는 것이 다음 단계 ([설계서 §3](../evals/EVAL_DESIGN.md)).
 - 제안자가 받는 RAG 문서의 프로파일 줄에는 통계 이름만 있고 정의가 없다 (예: `outlier_channels` 가 비율이라는 사실). 진행 중인 데모 세션의 입력이 라운드 중간에 바뀌지 않도록 이번에는 고치지 않았다 — 다음 세션 전에 문서 머리에 정의를 넣는다.
+
+## 5. 중간평가 2 저장소 점검 (2026-11-17)
+
+11/16 교수 평가 안내(MVP 구현 · 결정적 검증 · evals)와 강의 7 작성지침의 자가 점검 목록에 맞춰 저장소를 보강하고 다시 확인했다. 기준 커밋 `7270ac4` + 이번 변경 (`app/` · `src/` 는 바꾸지 않음). 로컬 macOS, Python 3.14.5.
+
+| 영역 | 검사 | 명령 | 결과 |
+|---|---|---|---|
+| 골든 · 문서 대조 | 골든 3묶음 + SPEC 추적성 · 온톨로지 · RAG · 튜닝 evals · judge 일치율 · Auto-tune 내보내기 · 서버 | `pytest -q -rs tests/test_golden.py tests/test_compare_golden.py tests/test_tune_golden.py tests/test_spec_traceability.py tests/test_ontology.py tests/test_rag.py tests/test_tune_evals.py tests/test_judge_agreement.py app/tests/test_autotune_export.py app/tests/test_server.py` | **270 passed, 1 skipped** — skip 은 GPU 전용 `e2e_bf16_passthrough_ppl` (CUDA 없음) |
+| 골든 YAML 분류 주석 | 정상 · 경계 · 금지 주석을 붙이기 전후 `yaml.safe_load` 결과 비교 | 편집 스크립트 안의 대조 | golden_cases 29 · golden_tune 29 모두 같음 (판정 데이터 그대로) |
+| 튜닝 골든 결함 주입 | 결함 13종 × 케이스 29개 전부 | `PYTHONPATH=src python scripts/harness/tune_fault_injection.py` | **13/13** 실패해야 할 케이스만 정확히 실패, 결함 없는 실행 앞뒤 29/29 통과, `app/` 변경 없음 — [기록](./prompts/delegation_tune.md) |
+| evals 러너 · 일치율 도구 (`judge_agreement` 열 추가) | 러너 회귀 테스트 + 새 history 기록 테스트 | `pytest -q tests/test_tune_evals.py tests/test_judge_agreement.py` | **77 passed** |
+| evals 오답 주입 | 위임 기록 §1-2 의 8건 | `python evals/inject_faults.py 2026-11-08T0104 …` | **8/8** (러너 수정 전과 같음) |
+| judge 일치율 재현 | 사람 라벨 47 판정 | `python evals/judge_agreement.py agree evals/results/2026-11-08T0104.json` | 0.766 — `_agreement.json` 바이트 동일, `history.csv` 는 새 열과 그 행의 0.7660 만 바뀜 |
+| evals 재채점 | 저장된 기준선 응답 `2026-11-09T0054` (35 케이스, 출력은 저장소 밖) | `python evals/run_tune_evals.py … --mode stored --from-run 2026-11-09T0054` | 지표 16개(A1–B8)가 history 의 live 행 `2026-11-09T0054` 와 모두 같음 (러너 수정 뒤에도 판정 그대로), 새 행의 `judge_agreement` 는 빈칸. A1–A7 목표 충족, 절대 규칙 A2 · A6 · B2 · B3 · B5 0건. 능력 · judge 지표 B1 0.47 · A8 0.60 · B8 0.43 미달 (judge 미검증으로 A8 · B8 보류) |
+| 화면 리허설 | 시연 6박자 (README 핵심 시나리오 1) | `node scripts/quantizer/demo_rehearsal.mjs <폴더> http://127.0.0.1:8799` | **REHEARSAL_DONE 6/6**, 페이지 오류 0 — 추천 PPL 26.51 · 편집 33.31 · 레시피 SHA 일치 |
+| README 시나리오 5 · 6 | CLI | `tricast cast --format fp8_e4m3 --rounding rne 464 465` · `tricast recipe-check <group_size -1 YAML>` | `448.0 448.0` · `defaults.weight.group_size: -1 is less than the minimum of 0` (종료 코드 2) |
+| 정적 분석 · 문서 표 | ruff · README / SPEC / 위임 기록의 표 열 수 | `ruff check .` | 경고 0 · 표 40개 열 수 일치 |
+
+미실행: CPU 전체 스위트(`tests/` + `app/tests/`, 클러스터 18분 규모)는 이번 변경이 닿는 테스트만 돌렸다. GPU 스위트는 GPU 경로를 바꾸지 않아 돌리지 않았다.

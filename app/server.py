@@ -42,7 +42,9 @@ import threading
 import time
 import uuid
 from collections.abc import Callable
+from contextvars import ContextVar
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from functools import partial
 from importlib import metadata
 from importlib.util import find_spec
@@ -54,6 +56,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
+from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException
 
 from . import listing
@@ -175,6 +178,7 @@ def _bad(message: str) -> ApiError:
 
 
 def _error(status: int, code: str, message: str, headers: dict | None = None) -> JSONResponse:
+    _trace_error(code)
     return JSONResponse({"error": {"code": code, "message": message}}, status_code=status, headers=headers)
 
 
@@ -624,6 +628,7 @@ def _add_run_routes(app: FastAPI, live: LiveBackend) -> None:
 
     @app.post("/api/runs")
     def create_run(body: RunRequest) -> JSONResponse:
+        _trace_input(task=body.task, model=body.model)
         return live.create_run(body)
 
     @app.get("/api/runs/{run_id}")
@@ -638,11 +643,202 @@ def _add_run_routes(app: FastAPI, live: LiveBackend) -> None:
         return FileResponse(path)
 
 
+# API trace: allowlisted structured summaries only; no raw URL, model prose, request, or header.
+_API_TRACE: ContextVar[dict | None] = ContextVar("studio_trace", default=None)
+
+_TRACE_OUTCOMES = ("tune", "needs_clarification", "conflict", "out_of_scope")
+_TRACE_MODELS = ("Qwen/Qwen3-0.6B", "Qwen/Qwen3-8B", "meta-llama/Llama-3.2-1B", "yolo11n", "resnet18")
+_TRACE_TASKS = ("llm.generate", "vision.detect", "vision.classify")
+# Only identifiers already public in the shipped demo may be copied from an LLM response.
+_TRACE_PROVIDERS = frozenset(("claude-haiku-5-5", "claude-opus-5-5"))
+_TRACE_BUDGETS = ("1", "1.5", "2", "2.5", "3", "3.2", "3.5", "4", "5/16", "8", "16", "403/128")
+_TRACE_ERRORS = frozenset(("invalid_request invalid_id invalid_mma unsupported_combination cuda_required "
+                     "live_mode_required agent_unavailable agent_config agent_failed agent_busy "
+                     "agent_timeout provider_limited "
+                     "request_refused not_recorded replay_corrupt invalid_grid invalid_budget bundle_missing "
+                     "tricast_missing unknown_model invalid_recipe recipe_too_large image_too_large "
+                     "job_mismatch not_found method_not_allowed http_error internal_error").split())
+
+
+def _public_trace_value(text: object, values: tuple[str, ...]) -> str | None:
+    return text if isinstance(text, str) and text in values else None
+
+
+def _trace_revision() -> str | None:
+    try:
+        command = ["git", "-C", str(APP_DIR.parent), "rev-parse", "--show-toplevel", "HEAD"]
+        out = subprocess.run(command, capture_output=True,
+                             text=True, timeout=2, check=True).stdout.splitlines()
+        if len(out) != 2 or not Path(out[0]).samefile(APP_DIR.parent):
+            return None
+        sha = out[1]
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return sha if len(sha) in (40, 64) and all(c in "0123456789abcdef" for c in sha) else None
+
+
+def _trace_input(**fields: Any) -> None:
+    """Accept only the fixed projections below. A data value is never used as a key."""
+    r = _API_TRACE.get()
+    if r is None:
+        return
+    data: dict[str, Any] = {}
+    if "text" in fields:
+        text = fields["text"]
+        data = {"text_chars": len(text), "text_retained": False}
+        # Match exactly the shipped public rehearsal keys, never a user-controlled --replay folder.
+        # Never keep a digest of unknown text: even a hash can identify low-entropy personal inputs.
+        if len(text) <= 1000:
+            lower = text.casefold()
+            data["mentions_model"] = [m for m in _TRACE_MODELS if m.split("/")[-1].casefold() in lower]
+            data["features"] = [tag for tag, words in (
+                ("best_effort", ("알아서", "best effort", "best-effort")),
+                ("latency", ("지연", "latency")), ("compute_budget", ("연산 예산", "compute budget")),
+                ("keep_blocks", ("첫 블록", "마지막 블록", "keep block")),
+            ) if any(word in lower for word in words)]
+            stated = re.findall(r"(?<![\w./])([0-9]+(?:[./][0-9]+)?)\s*(?:비트|bits?\b)", text, re.I)
+            data["public_bit_values"] = [v for v in _TRACE_BUDGETS if v in stated]
+            canonical = ("parse\n" + " ".join(text.split())).encode("utf-8", "surrogatepass")
+            digest = hashlib.sha256(canonical).hexdigest()[:16]
+            if (DEFAULT_DEMO_DIR / "autotune/replay" / f"parse_{digest}.json").is_file():
+                data["public_example"] = f"parse_{digest}"
+    elif "count" in fields:
+        n = fields["count"]
+        data = {"count": n if 1 <= n <= 8 else "outside_1_to_8"}
+    elif "grid" in fields:
+        data = {"model": _public_trace_value(fields["model"], _TRACE_MODELS),
+                "kind": "grid" if fields["grid"] is not None else
+                        "proposal" if fields["proposal"] is not None else
+                        "transfer" if fields["transfer"] is not None else "unspecified",
+                "budget_bits": _public_trace_value(fields["budget_bits"], _TRACE_BUDGETS)}
+    elif "tasks" in fields:
+        data = {"n_tasks": len(fields["tasks"])}
+    elif "task" in fields:
+        data = {"task": _public_trace_value(fields["task"], _TRACE_TASKS),
+                "model": _public_trace_value(fields["model"], _TRACE_MODELS)}
+    r["input"] = data
+    r["stages"].append("schema_accepted")
+    if "text" in fields or "count" in fields:
+        r["stages"].append({"replay": "replay_lookup", "live": "live_processing",
+                            "off": "agent_disabled"}[r["agent_mode"]])
+
+
+def _trace_answer(answer: dict) -> dict:
+    """Trace only categoricals/counts, then return exactly the application's original answer."""
+    r = _API_TRACE.get()
+    if r is None:
+        return answer
+    if not isinstance(answer, dict):
+        return answer
+    mode = _public_trace_value(answer.get("mode"), ("live", "replay"))
+    if mode is not None:
+        r["stages"].append("replay_hit" if mode == "replay" else "llm_response")
+    llm = answer.get("llm")
+    names = llm.get("models") if isinstance(llm, dict) else None
+    if isinstance(names, list):
+        r["model"] = [s for s in sorted(_TRACE_PROVIDERS) if s in names] or None
+    r["model_source"] = "recording" if mode == "replay" else "call_metadata" if mode == "live" else None
+    parsed = answer.get("request")
+    if isinstance(parsed, dict):
+        r["output"] = {"outcome": _public_trace_value(parsed.get("outcome"), _TRACE_OUTCOMES),
+                       "model": _public_trace_value(parsed.get("model"), _TRACE_MODELS),
+                       "budget_bits": _public_trace_value(parsed.get("budget_bits"), _TRACE_BUDGETS),
+                       "check_count": len(parsed["checks"]) if isinstance(parsed.get("checks"), list) else 0,
+                       "question_count": len(parsed["questions"]) if isinstance(parsed.get("questions"), list)
+                       else 0}
+    elif isinstance(answer.get("proposals"), list):
+        r["output"] = {"outcome": "proposals", **{
+            key: sum(isinstance(p, dict) and p.get("status") == key for p in answer["proposals"])
+            for key in ("accepted", "refused")}}
+        refused = [p.get("reason") for p in answer["proposals"] if isinstance(p, dict)
+                   and p.get("status") == "refused"]
+        numeric = sum(isinstance(x, str) and x.startswith("rationale numbers not supported by")
+                      for x in refused)
+        r["output"]["refusal_reasons"] = {"unsupported_numeric_evidence": numeric,
+                                           "other": len(refused) - numeric}
+    return answer
+
+
+def _trace_error(code: str) -> None:
+    r = _API_TRACE.get()
+    if r is not None:
+        r["error"] = code if code in _TRACE_ERRORS else "application_error"
+        if code == "invalid_request" and "schema_accepted" not in r["stages"]:
+            r["stages"].append("schema_rejected")
+
+
+def _append_trace(path: Path, record: dict) -> None:
+    # One bounded write with O_APPEND (concurrent workers on a local filesystem). Never rewrite prior lines.
+    line = (json.dumps(record, ensure_ascii=False, separators=(",", ":")) + "\n").encode("utf-8")
+    path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    fd = os.open(path, os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o600)
+    try:
+        if os.write(fd, line) != len(line):
+            raise OSError("short trace write")
+    finally:
+        os.close(fd)
+
+
+def _install_trace(app: FastAPI, path: Path, studio_mode: str, agent_mode: str) -> None:
+    commit = _trace_revision()
+    # A commit alone does not identify uncommitted Studio/LLM code in a course demo workspace.
+    digest = hashlib.sha256()
+    for p in sorted(APP_DIR.glob("*.py")):
+        digest.update(p.name.encode() + b"\0" + hashlib.sha256(p.read_bytes()).digest())
+    app_sha = digest.hexdigest()
+
+    @app.middleware("http")
+    async def trace(request: Request, call_next: Any) -> Response:
+        if not request.scope["path"].startswith("/api/"):
+            return await call_next(request)
+        start = time.perf_counter()
+        rec = {"request_id": "q-" + uuid.uuid4().hex, "ts": datetime.now(timezone.utc).isoformat(),
+               "method": _public_trace_value(request.method, ("GET", "HEAD", "POST", "PUT", "PATCH", "DELETE",
+                                                  "OPTIONS")),
+               "studio_mode": studio_mode, "agent_mode": agent_mode, "model": None,
+               "commit": commit, "app_sha256": app_sha, "input": {}, "stages": ["received"],
+               "output": {}, "error": None}
+        token = _API_TRACE.set(rec)
+        try:
+            try:
+                response = await call_next(request)
+            except Exception:
+                # No exception string, traceback locals, raw model reply or request copied to the audit file.
+                log.error("Studio API internal error (request %s)", rec["request_id"])
+                rec["error"] = "internal_error"
+                message = "서버 내부 오류입니다. 서버 로그를 확인하세요."
+                body = {"error": {"code": "internal_error", "message": message}}
+                response = JSONResponse(body, status_code=500)
+            # FastAPI's static route TEMPLATE, never the raw URL (may contain a real name).
+            rec["route"] = getattr(request.scope.get("route"), "path", None)
+            status = response.status_code
+            rec["http_status"] = status
+            if status >= 400 and not rec["error"]:
+                rec["error"] = "http_error"
+            if not rec["output"]:
+                rec["output"] = {"outcome": "error" if rec["error"] else "queued" if status == 202 else "ok"}
+            rec["stages"].append("failed" if rec["error"] else "responded")
+            rec["latency_ms"] = round((time.perf_counter() - start) * 1000, 3)
+            response.headers["X-Request-ID"] = rec["request_id"]
+            try:
+                await run_in_threadpool(_append_trace, path, rec)
+            except OSError:
+                # The action may already have enqueued work; do not invite a retry or claim it was logged.
+                log.error("Studio trace unavailable (request %s)", rec["request_id"])
+                response.headers["X-Trace-Status"] = "unavailable"
+            else:
+                response.headers["X-Trace-Status"] = "recorded"
+            return response
+        finally:
+            _API_TRACE.reset(token)
+
+
 def create_app(mode: str, device: str, demo_dir: Path, runner: Runner | None = None, *,
                runs_dir: Path = DEFAULT_RUNS_DIR, checkpoints: dict[str, Path] | None = None,
                identity: dict | None = None, quantizer_runner: QuantizerRunner | None = None,
                agent: Path | None = None, agent_runner: Callable[..., Any] | None = None,
-               record: Path | None = None, replay: Path | None = None) -> FastAPI:
+               record: Path | None = None, replay: Path | None = None,
+               trace_file: Path | None = None) -> FastAPI:
     """Build the app; ``mode`` is "demo" or "live", ``runner`` replaces :func:`run_live` and
     ``quantizer_runner`` :func:`run_quantizer_live` (tests), ``checkpoints`` maps vision model ids to
     checkpoint files and ``identity`` (device and code hashes) joins the run cache key (live). ``agent``
@@ -655,6 +851,9 @@ def create_app(mode: str, device: str, demo_dir: Path, runner: Runner | None = N
         backend = LiveBackend(device, demo_dir, runner or run_live, runs_dir, checkpoints or {}, identity,
                               quantizer_runner)
     app = FastAPI(title="TriCast Studio")
+    trace_path = trace_file or Path(os.environ.get("TRICAST_TRACE_PATH")
+                                    or APP_DIR.parent / "logs/trace.jsonl")
+    _install_trace(app, trace_path, mode, "off" if agent is None else "replay" if replay else "live")
     _install_error_handlers(app)
 
     @app.get("/api/health")
@@ -674,6 +873,7 @@ def create_app(mode: str, device: str, demo_dir: Path, runner: Runner | None = N
 
     @app.post("/api/quantizer/jobs")
     def create_quantizer_job(body: QuantizerJobRequest) -> JSONResponse:
+        _trace_input(tasks=body.tasks)
         if not isinstance(backend, LiveBackend):
             raise ApiError(409, "live_mode_required", _LIVE_GPU_ONLY)
         return backend.create_quantizer_job(body)
@@ -686,6 +886,7 @@ def create_app(mode: str, device: str, demo_dir: Path, runner: Runner | None = N
 
     @app.post("/api/autotune/propose")
     def propose(body: ProposeRequest) -> dict:
+        _trace_input(count=body.count)
         if agent is None:
             raise ApiError(503, "agent_unavailable", _AGENT_OFF)
         # the full install, only here
@@ -693,29 +894,30 @@ def create_app(mode: str, device: str, demo_dir: Path, runner: Runner | None = N
 
         try:
             if replay is not None:
-                return replay_answer(replay, "propose", body.count)
+                return _trace_answer(replay_answer(replay, "propose", body.count))
             answer = propose_round(load_config(agent), APP_DIR.parent, body.count,
                                    **({} if agent_runner is None else {"runner": agent_runner}))
             if record is not None:
                 record_answer(record, "propose", body.count, answer)
-            return answer
+            return _trace_answer(answer)
         except LiveError as exc:
             raise ApiError(exc.status, exc.code, exc.message) from exc
 
     @app.post("/api/autotune/parse")
     def parse(body: ParseRequest) -> dict:
+        _trace_input(text=body.text)
         if agent is None:
             raise ApiError(503, "agent_unavailable", _AGENT_OFF)
         from .autotune_live import LiveError, load_config, parse_request, record_answer, replay_answer
 
         try:
             if replay is not None:
-                return replay_answer(replay, "parse", body.text)
+                return _trace_answer(replay_answer(replay, "parse", body.text))
             answer = parse_request(load_config(agent), APP_DIR.parent, body.text,
                                    **({} if agent_runner is None else {"runner": agent_runner}))
             if record is not None:
                 record_answer(record, "parse", body.text, answer)
-            return answer
+            return _trace_answer(answer)
         except LiveError as exc:
             raise ApiError(exc.status, exc.code, exc.message) from exc
 
@@ -756,6 +958,8 @@ def create_app(mode: str, device: str, demo_dir: Path, runner: Runner | None = N
     def autotune_recipe(body: RecipeRequest) -> tuple[dict, dict]:
         """The bundle and the recipe of ``body`` (a grid, a session proposal or an option transfer), with the
         model's size under it (app/autotune_export.model_size, computed)."""
+        _trace_input(model=body.model, grid=body.grid, budget_bits=body.budget_bits,
+                                proposal=body.proposal, transfer=body.transfer)
         from .autotune_export import linear_bits, model_size
         from .autotune_recipe import RecipeError, grid_recipe, load_bundle, proposal_recipe, transfer_recipe
 
@@ -839,6 +1043,7 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--replay", type=Path, metavar="DIR",
                         help="with --agent: answer parse / propose from the answers kept in DIR, never "
                              "calling claude (offline venue; the page badges them as recordings)")
+    parser.add_argument("--trace-file", type=Path, help="privacy-safe API JSONL (default: logs/trace.jsonl)")
     args = parser.parse_args(argv)
     if args.demo and not (args.demo_dir / "catalog.json").is_file():
         parser.error(f"no recorded bundle in {args.demo_dir} (make one with python -m app.demo)")
@@ -867,8 +1072,9 @@ def main(argv: list[str] | None = None) -> None:
     if args.replay and not any(args.replay.glob("*.json")):
         parser.error(f"--replay {args.replay}: no recorded answers (record them with --record on a live run)")
     app = create_app(mode, "none" if args.demo else args.device, args.demo_dir, checkpoints=checkpoints,
-                     identity=identity, agent=args.agent, record=args.record, replay=args.replay)
-    uvicorn.run(app, host=args.host, port=args.port)
+                     identity=identity, agent=args.agent, record=args.record, replay=args.replay,
+                     trace_file=args.trace_file)
+    uvicorn.run(app, host=args.host, port=args.port, access_log=False)
 
 
 if __name__ == "__main__":

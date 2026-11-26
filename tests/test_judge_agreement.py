@@ -72,7 +72,7 @@ def test_people_labels_fill_only_that_runs_history_cell(tmp_path: Path) -> None:
     assert JA.main(["agree", str(path), str(other)]) == 0 and history.read_bytes() == before
     (tmp_path / "evals" / "judge_labels.jsonl").write_text(other.read_text())
     assert JA.main(["agree", str(path)]) == 0
-    after = list(csv.reader(history.open(encoding="utf-8", newline="")))
+    after = list(csv.reader(history.open(encoding="utf-8-sig", newline="")))
     assert after == [rows[0], rows[1], ["R1", "0.5000", "0.5000"], rows[3]]
 
 

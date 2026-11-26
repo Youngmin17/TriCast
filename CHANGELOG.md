@@ -5,6 +5,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 ## [Unreleased]
 
 ### Added
+- Studio request tracing without raw user text, case-level attack success in evaluation history, and a traced Hangul request in the 36-case assessment set.
 - Midterm-2 repository check: MVP column in SPEC §6 (31 ACs, AC12 out), README test scenarios with input,
   expected result and AC, a standard-structure map, normal/boundary/forbidden comments on the golden YAML,
   `judge_agreement` column in `evals/results/history.csv`, and the tune golden fault-injection record

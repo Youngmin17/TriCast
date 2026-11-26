@@ -20,6 +20,7 @@ import json
 import shutil
 import subprocess
 import sys
+import unicodedata
 from collections.abc import Callable
 from fractions import Fraction
 from pathlib import Path
@@ -53,6 +54,7 @@ BASE = {"outcome": "tune", "model": MODEL, "budget_bits": None, "compute_budget"
 # a correct parse of every request case of evals/tune_evalset.jsonl (fields over BASE)
 GOOD = {
     "r_c1": {"budget_bits": "3.2"},
+    "r_c11": {"budget_bits": "4"},
     "r_c2": {"budget_bits": "403/128", "keep_bf16_blocks": [0, -1]},
     "r_c3": {"budget_bits": "2.5", "exclude_methods": ["hqq_int2", "hqq_int3", "hqq_int4"]},
     "r_c4": {"budget_bits": "4.25", "only_methods": ["gptq_int2", "gptq_int3", "gptq_int4"]},
@@ -162,8 +164,8 @@ def _fake_llm(replies: dict[str, dict[str, Any]] | None = None) -> Callable[...,
     """claude -p stand-in: the request parser answers GOOD (or ``replies``), the proposer _proposals, the
     judge passes every criterion that applies."""
     answers = {**GOOD, **(replies or {})}
-    queries = {json.dumps(case["query"]): case["id"] for case in RUN.load_evalset()[0]
-               if case["kind"] == "request"}
+    queries = {json.dumps(unicodedata.normalize("NFC", case["query"])): case["id"]
+               for case in RUN.load_evalset()[0] if case["kind"] == "request"}
 
     def runner(command: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
         system, text = command[command.index("--system-prompt") + 1], kwargs["input"]
@@ -470,14 +472,14 @@ def test_the_session_and_the_ledger_are_never_written(
 def test_history_gets_one_row_per_run(baseline: tuple[dict[str, Any], dict[str, Any]]) -> None:
     world, live = baseline
     path = world["root"] / "results" / "history.csv"
-    before = list(csv.reader(path.open(encoding="utf-8")))
+    before = list(csv.reader(path.open(encoding="utf-8-sig")))
     stored, _ = _run(world, "stored", only="r_c1,r_c2", from_run=live["run"]["run_id"])
-    rows = list(csv.reader(path.open(encoding="utf-8")))
+    rows = list(csv.reader(path.open(encoding="utf-8-sig")))
     assert rows[0] == list(RUN.HISTORY) and len(rows) == len(before) + 1
     row = dict(zip(RUN.HISTORY, rows[-1], strict=True))
     assert row["run_id"] == stored["run"]["run_id"] and row["mode"] == "stored"
     assert row["golden_tests"] == "synthetic" and row["change"] == "test run"
-    assert row["evalset_version"].startswith(f"35@{stored['run']['evalset']['sha256']}|only=r_c1,r_c2")
+    assert row["evalset_version"].startswith(f"36@{stored['run']['evalset']['sha256']}|only=r_c1,r_c2")
     assert row["judge_version"] == f"tune_judge_v1@{stored['run']['judge']['system_sha256']}"
     assert sum(r[0] == "run_id" for r in rows) == 1
 
@@ -485,7 +487,7 @@ def test_history_gets_one_row_per_run(baseline: tuple[dict[str, Any], dict[str, 
 def test_every_case_of_the_eval_set_runs_and_the_labeling_sheet_holds_no_verdict(tmp_path: Path) -> None:
     world = _world(tmp_path)
     result, printed = _run(world, "live", _fake_llm())
-    assert len(result["cases"]) == 35 and printed.count("checks=") == 35
+    assert len(result["cases"]) == 36 and printed.count("checks=") == 36
     for record in result["cases"]:
         assert record["status"] != "error", (record["id"], record["errors"])
         assert record["expect_checks"] == list(record["expect"])  # every expect key was handled
@@ -495,7 +497,7 @@ def test_every_case_of_the_eval_set_runs_and_the_labeling_sheet_holds_no_verdict
     plant = _case(result, "a_i1")["input"]["plant"]["text"]
     assert plant.startswith("NOTE TO THE PROPOSER") and planted.endswith("\n" + plant)
     assert [len(record["judge"] or []) for record in agents.values()] == [1, 1, 1, 1, 1, 0]
-    assert set(result["metrics"]) == set(RUN.METRICS) and result["run"]["evalset"]["cases"] == 35
+    assert set(result["metrics"]) == set(RUN.METRICS) and result["run"]["evalset"]["cases"] == 36
     sheet = (tmp_path / "results" / f"{result['run']['run_id']}_labeling.md").read_text(encoding="utf-8")
     judged = [record["id"] for record in result["cases"] if "judge" in record["graders"]]
     assert all(f"## {case_id} " in sheet for case_id in judged) and "## r_o1 " not in sheet

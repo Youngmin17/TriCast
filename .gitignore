@@ -18,3 +18,9 @@ checkpoints/
 !app/web/demo/runs/
 *.log
 .env
+
+# Local provider credentials, recordings and logs; only the reviewed assessment trace ships.
+.env.*
+!.env.example
+/logs/*
+!/logs/trace.jsonl

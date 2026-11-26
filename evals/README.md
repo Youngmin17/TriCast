@@ -5,7 +5,7 @@
 | 산출물 (강의 7) | v2 — 지금 제품 | v1 — 2026-10 에뮬레이션 요청 파싱 (AC6, 유지) |
 |---|---|---|
 | 1 설계서 | [`EVAL_DESIGN.md`](./EVAL_DESIGN.md) | 이 README 의 아래 절 |
-| 2 평가 데이터셋 | [`tune_evalset.jsonl`](./tune_evalset.jsonl) (35 케이스, 2026-11-09 확장) | `evalset.jsonl` (30 요청) |
+| 2 평가 데이터셋 | [`tune_evalset.jsonl`](./tune_evalset.jsonl) (36 케이스, 2026-11-26 운영 실패 1건 추가) | `evalset.jsonl` (30 요청) |
 | 3 judge 프롬프트 | [`tune_judge_prompt.md`](./tune_judge_prompt.md) | `judge_prompt.md` (러너가 부르지 않는 참고 루브릭) |
 | 4 러너 위임 | [`../docs/prompts/delegation_evals.md`](../docs/prompts/delegation_evals.md) | — |
 | 5 러너 · 결과 | [`run_tune_evals.py`](./run_tune_evals.py), [`results/history.csv`](./results/history.csv), `results/2026-11-0*` | `run_evals.py`, `results/2026-10-01.json` |

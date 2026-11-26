@@ -36,6 +36,31 @@ class LiveError(ValueError):
         self.status, self.code, self.message = status, code, message
 
 
+def _provider(runner: Callable[..., Any]) -> Callable[..., Any]:
+    """Map CLI failures at the HTTP boundary without returning provider stdout/stderr to the client."""
+    def invoke(*args: Any, **kwargs: Any) -> Any:
+        try:
+            done = runner(*args, **kwargs)
+        except subprocess.TimeoutExpired as exc:
+            raise LiveError(504, "agent_timeout", "모델 호출 시간이 초과됐습니다.") from exc
+        except OSError as exc:
+            raise LiveError(503, "agent_unavailable", "서버에서 모델 CLI를 시작할 수 없습니다.") from exc
+        try:
+            envelope = json.loads(done.stdout)
+        except (ValueError, TypeError):
+            envelope = None
+        if done.returncode or (isinstance(envelope, dict) and envelope.get("is_error") is True):
+            # The CLI can report a quota error in a JSON result even when stderr is empty.
+            result = envelope.get("result") if isinstance(envelope, dict) else None
+            diagnostic = (str(result or "") + " " + str(done.stderr or "")).lower()
+            if any(key in diagnostic for key in ("rate limit", "usage limit", "hit your limit",
+                                                  "quota exceeded", "rate_limit")):
+                raise LiveError(503, "provider_limited", "모델 제공자의 사용 한도에 도달했습니다.")
+            raise LiveError(502, "agent_failed", "모델 제공자 호출에 실패했습니다.")
+        return done
+    return invoke
+
+
 def load_config(path: Path) -> dict[str, Any]:
     config = json.loads(path.read_text(encoding="utf-8"))
     for key in ("session", "table", "budget_bits"):
@@ -53,7 +78,7 @@ def parse_request(config: dict[str, Any], root: Path, text: str,
     table = ed.table_bundle(root / config["table"])
     models = [table["meta"]["model_id"]]
     try:
-        raw = tr.ask(text, models, table["methods"], config.get("llm"), runner)
+        raw = tr.ask(text, models, table["methods"], config.get("llm"), _provider(runner))
         result = tr.check(raw["reply"], table, models)
     except tr.RequestError as exc:
         raise LiveError(422, "request_refused", str(exc)) from exc
@@ -87,7 +112,7 @@ def propose_round(config: dict[str, Any], root: Path, count: int,
             scratch_config = {**config, "session": str(copy)}
             try:
                 analysis = tl.analyze(scratch_config, root)
-                proposer = tl.claude_code(scratch_config, root, runner)
+                proposer = tl.claude_code(scratch_config, root, _provider(runner))
                 reply = tl.check_reply(proposer(analysis, number, count))
             except (tl.LoopError, ta.TuneError, subprocess.TimeoutExpired, json.JSONDecodeError) as exc:
                 raise LiveError(502, "agent_failed", f"제안 엔진 호출이 실패했습니다: {exc}") from exc

@@ -96,7 +96,7 @@ def record_in_history(history: Path, run_id: str, overall: float | None) -> str:
     """Write ``overall`` into the judge_agreement cell of run ``run_id``'s row; every other cell stays."""
     if not history.is_file():
         return f"no {history}"
-    with history.open(encoding="utf-8", newline="") as handle:
+    with history.open(encoding="utf-8-sig", newline="") as handle:
         rows = list(csv.reader(handle))
     if "judge_agreement" not in rows[0]:
         return f"{history} has no judge_agreement column"
@@ -106,7 +106,7 @@ def record_in_history(history: Path, run_id: str, overall: float | None) -> str:
         return f"{history} has {len(hits)} rows for run {run_id}"
     hits[0] += [""] * (len(rows[0]) - len(hits[0]))
     hits[0][column] = "" if overall is None else f"{overall:.4f}"
-    with history.open("w", encoding="utf-8", newline="") as handle:
+    with history.open("w", encoding="utf-8-sig", newline="") as handle:
         csv.writer(handle).writerows(rows)
     return f"{history} run {run_id}"
 

@@ -51,6 +51,24 @@ python -m app.autotune solve --table table.json --budget-bits 9/2 --name auto_4.
 make check                              # ruff + CPU 테스트
 ```
 
+## 최종 평가 면담: 요청 한 건을 끝까지 확인하기
+
+**처음에는 재생으로 시작한다.** Python 3.11 또는 3.12에서 위 설치를 마치고 저장소 루트에서 실행한다. GPU나 모델 계정은 필요 없다. 기본 주소는 `127.0.0.1:8765`이며, 인증 없는 시연 서버를 외부에 공개하지 않는다.
+
+```bash
+python -m app.server --demo --agent evals/fixtures/tune_inputs/s3150/loop.json \
+  --replay app/web/demo/autotune/replay --trace-file /tmp/tricast-interview.jsonl
+# 다른 터미널
+curl -si http://127.0.0.1:8765/api/autotune/parse -H 'Content-Type: application/json' \
+  --data-binary '{"text":"레이어별로 알아서 최적화해줘"}'
+tail -1 /tmp/tricast-interview.jsonl
+```
+
+- **AC28:** 모델·크기를 지정하지 않은 요청이다. 응답은 `mode: replay`, `request.outcome: needs_clarification`이며 두 가지를 되묻는다. 응답의 `X-Request-ID`와 JSONL 행의 `request_id`를 대조한다. 공개 추적에는 원문·헤더 대신 길이·허용된 입력 특성, 처리 단계, 결과, 모델 식별자(재생은 녹화 당시 값, 미확인·호출 전 거절은 null), 버전, 지연, 오류 코드가 남는다. `--trace-file`을 생략하면 [logs/trace.jsonl](logs/trace.jsonl)에 추가된다.
+- **임의 문장 시연:** 재생에 없는 문장은 404 `not_recorded`이다. 임의 문장을 **새로** 해석하려면 전체 설치와 로그인된 `claude` CLI가 있는 기기에서 위 명령의 `--replay app/web/demo/autotune/replay`만 뺀다. `claude auth status`와 사용 한도를 먼저 확인한다. 제공자 한도 초과는 HTTP 503 `provider_limited`이지 AC28의 거절(422)이 아니다. 키·원시 녹화는 제출하지 않는다.
+- **실패에서 테스트까지:** [추적](logs/trace.jsonl)의 `q-705d79f930ce489f825e9b610c229788` → [v2 세트](evals/tune_evalset.jsonl)의 `r_c11` → [수정 전 UCL 채점](evals/results/2026-11-26T0757.json). 한글 573자가 NFD에서 1,173자로 세어져 모델 호출 전 422가 났다. 사람이 정한 기대는 **Qwen/Qwen3-0.6B · 평균 4비트 · tune**이다. 수정 전 재채점은 32/36, 고정 보안 사례의 공격 성공은 0/5였다. 저장 응답을 다시 채점한 값이지 새 live 기준점이나 개선 성과가 아니다.
+- **보안과 개선 이력:** [위협 4종·검사 코드·사례 5건](docs/ARCHITECTURE.md#8-위협-목록-auto-tune-요청과-제안), [지표와 회차 판정법](evals/EVAL_DESIGN.md#최종-면담-36건의-측정-순서), [회차별 CSV](evals/results/history.csv). judge의 독립 사람 라벨 일치율은 0.766(목표 0.80 미달)이므로 judge 점수로 개선을 주장하지 않는다.
+
 ## MVP 사용자 가이드
 
 처음 보는 분이 **GPU · 계정 · API 키 없이 5분 안에** 핵심 기능을 실행해 보는 안내다. 리뷰 기간(11월 11일–18일) 동안 이 안내대로 실행되며, 실행 방법이 바뀌면 이 절을 고친다.
@@ -82,7 +100,8 @@ git clone https://github.com/Youngmin17/TriCast.git && cd TriCast
 python3 --version                                            # 3.10 이상이어야 한다 (macOS 기본 python3 는 3.9)
 python3 -m venv .venv && source .venv/bin/activate
 pip install fastapi uvicorn pillow numpy jsonschema pyyaml   # 이 체험에 필요한 것만 (torch 불필요)
-PYTHONPATH=src python -m app.server --demo --agent evals/fixtures/tune_inputs/s3150/loop.json
+PYTHONPATH=src python -m app.server --demo --agent evals/fixtures/tune_inputs/s3150/loop.json \
+  --replay app/web/demo/autotune/replay
 ```
 
 서버가 뜨면 브라우저에서 **http://127.0.0.1:8765/tune.html** 을 연다 (`file://` 로 직접 열면 동작하지 않는다). 끌 때는 터미널에서 Ctrl+C.
@@ -278,7 +297,7 @@ make test-app                                                     # 웹 앱 · A
 node scripts/quantizer/autotune_check.mjs out python <table.json>  # 브라우저 배낭 = Python 배낭 (예산별)
 python evals/run_tune_evals.py --table evals/fixtures/tune_inputs/table.json \
     --ledger evals/fixtures/tune_inputs/ledger.jsonl --fixture s3150=evals/fixtures/tune_inputs/s3150 \
-    --mode stored --from-run 2026-11-09T0054 --change re-grade --golden n/a --out /tmp/tricast_evals   # 튜닝 evals 재채점 (LLM 호출 없음, 저장소를 바꾸지 않음, evals/EVAL_DESIGN.md §9)
+    --mode stored --from-run 2026-11-09T0054 --only r_c1,r_i1 --change re-grade --golden n/a --out /tmp/tricast_evals   # 튜닝 evals 재채점 (LLM 호출 없음, 저장소를 바꾸지 않음, evals/EVAL_DESIGN.md §9)
 ```
 
 
@@ -298,7 +317,7 @@ python evals/run_tune_evals.py --table evals/fixtures/tune_inputs/table.json \
 | `docs/prompts/delegation_<기능>.md` (결함 주입) | [`delegation_golden_harness.md`](docs/prompts/delegation_golden_harness.md) (golden_cases) · [`delegation_compare.md`](docs/prompts/delegation_compare.md) §3-3 (compare) · **[`delegation_tune.md`](docs/prompts/delegation_tune.md)** (tune) · [`delegation_evals.md`](docs/prompts/delegation_evals.md) §1-2 (evals 러너 오답 주입) | 바꾼 파일 · 바꾼 내용 · 실패한 케이스 표 |
 | `AGENTS.md` 와 에이전트 하니스 | [`AGENTS.md`](AGENTS.md) · [`CLAUDE.md`](CLAUDE.md) · `.claude/` (명령 `/check` · `/golden`, 보호 파일 훅) | |
 | `evals/EVAL_DESIGN.md` | **[`evals/EVAL_DESIGN.md`](evals/EVAL_DESIGN.md)** | 지표마다 AC · 계산 방법 · 합격선 (§1) |
-| `evals/evalset.jsonl` | **[`evals/tune_evalset.jsonl`](evals/tune_evalset.jsonl)** (35 케이스, 6 범주) | `evals/evalset.jsonl` 은 v1 (10월 요청 파싱, AC6) |
+| `evals/evalset.jsonl` | **[`evals/tune_evalset.jsonl`](evals/tune_evalset.jsonl)** (36 케이스, 6 범주; 과거 35건과 구분) | `evals/evalset.jsonl` 은 v1 (10월 요청 파싱, AC6) |
 | `evals/judge_prompt.md` | **[`evals/tune_judge_prompt.md`](evals/tune_judge_prompt.md)** | `evals/judge_prompt.md` 는 v1 참고 루브릭 |
 | `evals/run_evals.py` | **[`evals/run_tune_evals.py`](evals/run_tune_evals.py)** | `evals/run_evals.py` 는 v1 러너 |
 | `evals/results/` | [`evals/results/`](evals/results/) — `<run_id>.json` (케이스별 출력 · 판정) · [`history.csv`](evals/results/history.csv) (실행 이력) | v1 결과는 `2026-10-01.json` |

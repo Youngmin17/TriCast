@@ -1,0 +1,437 @@
+{
+ "run_id": "2026-11-26T1000",
+ "case_id": "r_c3",
+ "calls": [
+  {
+   "role": "request",
+   "key": "request",
+   "returncode": 0,
+   "stdout": {
+    "duration_api_ms": 8518,
+    "stop_reason": "tool_use",
+    "session_id": "b76872f7-9ce2-44c9-8e11-3f83830c9d3a",
+    "total_cost_usd": 0.014934099999999999,
+    "usage": {
+     "input_tokens": 2,
+     "cache_creation_input_tokens": 642,
+     "cache_read_input_tokens": 2085,
+     "output_tokens": 452,
+     "output_tokens_details": {
+      "thinking_tokens": 78
+     },
+     "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+     },
+     "service_tier": "standard",
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 642,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "inference_geo": "global",
+     "iterations": [
+      {
+       "input_tokens": 2,
+       "output_tokens": 452,
+       "cache_read_input_tokens": 2085,
+       "cache_creation_input_tokens": 642,
+       "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 642
+       },
+       "type": "message"
+      }
+     ],
+     "speed": "standard",
+     "fallback_credit": null
+    },
+    "modelUsage": {
+     "claude-haiku-5-5": {
+      "inputTokens": 1621,
+      "outputTokens": 342,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.0003331,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 303,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 0,
+      "canonicalModel": "claude-haiku-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     },
+     "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 452,
+      "cacheReadInputTokens": 2085,
+      "cacheCreationInputTokens": 642,
+      "webSearchRequests": 0,
+      "costUSD": 0.014601,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 78,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 642,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "extra_usage_disabled",
+    "subagent_stats": {
+     "spawned": 0,
+     "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+     },
+     "started_in_background": 0,
+     "max_depth": 0,
+     "spawned_by_subagents": 0,
+     "completed": 0,
+     "failed": 0,
+     "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+     },
+     "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+     },
+     "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 2,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "{\"outcome\":\"tune\",\"model\":\"Qwen/Qwen3-0.6B\",\"budget_bits\":\"2.5\",\"compute_budget\":null,\"keep_bf16_blocks\":[],\"exclude_methods\":[\"hqq_int4\",\"hqq_int3\",\"hqq_int2\"],\"only_methods\":null,\"questions\":[],\"reason\":null,\"assumptions\":[\"'HQQ' is read as the whole HQQ family (hqq_int4, hqq_int3, hqq_int2).\",\"The request gives no compute budget, so none is applied.\"]}",
+    "structured_output": {
+     "outcome": "tune",
+     "model": "Qwen/Qwen3-0.6B",
+     "budget_bits": "2.5",
+     "compute_budget": null,
+     "keep_bf16_blocks": [],
+     "exclude_methods": [
+      "hqq_int4",
+      "hqq_int3",
+      "hqq_int2"
+     ],
+     "only_methods": null,
+     "questions": [],
+     "reason": null,
+     "assumptions": [
+      "'HQQ' is read as the whole HQQ family (hqq_int4, hqq_int3, hqq_int2).",
+      "The request gives no compute budget, so none is applied."
+     ]
+    },
+    "ttft_ms": 4575,
+    "type": "result",
+    "duration_ms": 6663,
+    "uuid": "581a7bd4-6e5c-41f0-a708-035be1ca9e65",
+    "ttft_stream_ms": 3480,
+    "time_to_request_ms": 209,
+    "time_to_request_phases_ms": {
+     "other": 7,
+     "system_prompt": 1,
+     "resume_other": 1,
+     "process_user_input": 6,
+     "input_attachments": 99,
+     "input_hooks": 5,
+     "conversation_append": 2,
+     "tool_pool_refresh": 6,
+     "init_message": 22,
+     "init_frame_send": 9,
+     "engine_pickup": 6,
+     "loop_entry": 7,
+     "message_prep": 1,
+     "model_config_wait": 3,
+     "autocompact": 7,
+     "request_announcements": 10,
+     "query_setup": 1,
+     "model_gates": 0,
+     "tool_schema_build": 4,
+     "message_normalization": 2,
+     "client_creation": 6,
+     "request_build": 4
+    },
+    "turn_start_resume_kind": "none",
+    "process_turn_index": 0,
+    "time_to_request_loop_lag_ms": 159,
+    "time_to_request_cpu_ms": 229,
+    "time_to_request_major_faults": 24,
+    "input_attachments_detail": {
+     "slowest_producer": "session_settings",
+     "slowest_producer_ms": 82,
+     "cpu_ms": 111,
+     "major_faults": 24,
+     "setup_ms": 1,
+     "prompt_producers_ms": 1,
+     "ambient_start_ms": 8,
+     "ambient_wait_ms": 82,
+     "render_ms": 3,
+     "producers": 43,
+     "token_counts": 0
+    },
+    "tool_schema_build_detail": {
+     "betas_ms": 1,
+     "waits_ms": 0,
+     "placement_ms": 1,
+     "render_ms": 2,
+     "after_ms": 0,
+     "other_ms": 0,
+     "tools": 1,
+     "new_schemas": 1
+    },
+    "message_normalization_detail": {
+     "before_ms": 0,
+     "normalize_ms": 1,
+     "images_ms": 0,
+     "post_process_ms": 1,
+     "after_ms": 0,
+     "other_ms": 0,
+     "messages": 8,
+     "wire_messages": 2
+    },
+    "request_build_detail": {
+     "records_ms": 0,
+     "system_ms": 1,
+     "headers_ms": 0,
+     "cache_break_record_ms": 1,
+     "plans_ms": 1,
+     "retry_setup_ms": 0,
+     "sent_build_ms": 1,
+     "record_attempt_ms": 0,
+     "other_ms": 0,
+     "sent_build_safety_context_ms": 0,
+     "sent_build_cache_breakpoints_ms": 0,
+     "sent_build_surrogate_scan_ms": 0
+    },
+    "first_content_frame_ms": 3481,
+    "queued_turn_count": 0,
+    "result_index": 0,
+    "credential_expires_at": "2026-12-24T05:16:04.194Z"
+   },
+   "stderr": ""
+  },
+  {
+   "role": "judge",
+   "key": "request",
+   "returncode": 0,
+   "stdout": {
+    "duration_api_ms": 6631,
+    "stop_reason": "tool_use",
+    "session_id": "eacef034-726b-4b63-ba79-785cfd4a6caf",
+    "total_cost_usd": 0.0176226,
+    "usage": {
+     "input_tokens": 2,
+     "cache_creation_input_tokens": 1072,
+     "cache_read_input_tokens": 1426,
+     "output_tokens": 430,
+     "output_tokens_details": {
+      "thinking_tokens": 99
+     },
+     "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+     },
+     "service_tier": "standard",
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 1072,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "inference_geo": "global",
+     "iterations": [
+      {
+       "input_tokens": 2,
+       "output_tokens": 430,
+       "cache_read_input_tokens": 1426,
+       "cache_creation_input_tokens": 1072,
+       "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 1072
+       },
+       "type": "message"
+      }
+     ],
+     "speed": "standard",
+     "fallback_credit": null
+    },
+    "modelUsage": {
+     "claude-haiku-5-5": {
+      "inputTokens": 1339,
+      "outputTokens": 39,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.0001534,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 0,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 0,
+      "canonicalModel": "claude-haiku-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     },
+     "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 430,
+      "cacheReadInputTokens": 1426,
+      "cacheCreationInputTokens": 1072,
+      "webSearchRequests": 0,
+      "costUSD": 0.017469199999999997,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 99,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 1072,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "extra_usage_disabled",
+    "subagent_stats": {
+     "spawned": 0,
+     "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+     },
+     "started_in_background": 0,
+     "max_depth": 0,
+     "spawned_by_subagents": 0,
+     "completed": 0,
+     "failed": 0,
+     "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+     },
+     "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+     },
+     "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 2,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "{\"q1\":null,\"q2\":{\"reason\":\"The request states the model and the budget (\\\"Qwen3-0.6B 를 2.5비트로\\\"), and the output uses both (\\\"Qwen/Qwen3-0.6B\\\", \\\"2.5\\\"). Both open points are written in assumptions: excluding the whole HQQ family (\\\"'HQQ' is read as the whole HQQ family\\\") and applying no compute budget (\\\"none is applied\\\").\",\"pass\":true},\"c1\":null,\"c2\":null,\"c3\":null,\"c4\":null,\"needs_human_review\":false}",
+    "structured_output": {
+     "q1": null,
+     "q2": {
+      "reason": "The request states the model and the budget (\"Qwen3-0.6B 를 2.5비트로\"), and the output uses both (\"Qwen/Qwen3-0.6B\", \"2.5\"). Both open points are written in assumptions: excluding the whole HQQ family (\"'HQQ' is read as the whole HQQ family\") and applying no compute budget (\"none is applied\").",
+      "pass": true
+     },
+     "c1": null,
+     "c2": null,
+     "c3": null,
+     "c4": null,
+     "needs_human_review": false
+    },
+    "ttft_ms": 3988,
+    "type": "result",
+    "duration_ms": 5794,
+    "uuid": "68f8352c-92e8-40c8-9da6-73e089744156",
+    "ttft_stream_ms": 2648,
+    "time_to_request_ms": 296,
+    "time_to_request_phases_ms": {
+     "other": 10,
+     "system_prompt": 1,
+     "resume_other": 1,
+     "process_user_input": 4,
+     "input_attachments": 79,
+     "input_hooks": 5,
+     "conversation_append": 1,
+     "tool_pool_refresh": 4,
+     "init_message": 34,
+     "init_frame_send": 10,
+     "engine_pickup": 2,
+     "loop_entry": 12,
+     "message_prep": 18,
+     "model_config_wait": 4,
+     "autocompact": 28,
+     "request_announcements": 27,
+     "query_setup": 3,
+     "model_gates": 0,
+     "tool_schema_build": 15,
+     "message_normalization": 8,
+     "client_creation": 17,
+     "request_build": 13
+    },
+    "turn_start_resume_kind": "none",
+    "process_turn_index": 0,
+    "time_to_request_loop_lag_ms": 246,
+    "time_to_request_cpu_ms": 265,
+    "time_to_request_major_faults": 847,
+    "input_attachments_detail": {
+     "slowest_producer": "session_settings",
+     "slowest_producer_ms": 67,
+     "cpu_ms": 103,
+     "major_faults": 15,
+     "setup_ms": 1,
+     "prompt_producers_ms": 0,
+     "ambient_start_ms": 6,
+     "ambient_wait_ms": 67,
+     "render_ms": 3,
+     "producers": 43,
+     "token_counts": 0
+    },
+    "tool_schema_build_detail": {
+     "betas_ms": 2,
+     "waits_ms": 6,
+     "placement_ms": 3,
+     "render_ms": 4,
+     "after_ms": 0,
+     "other_ms": 0,
+     "tools": 1,
+     "new_schemas": 1
+    },
+    "message_normalization_detail": {
+     "before_ms": 0,
+     "normalize_ms": 6,
+     "images_ms": 1,
+     "post_process_ms": 0,
+     "after_ms": 0,
+     "other_ms": 1,
+     "messages": 8,
+     "wire_messages": 2
+    },
+    "request_build_detail": {
+     "records_ms": 1,
+     "system_ms": 3,
+     "headers_ms": 2,
+     "cache_break_record_ms": 2,
+     "plans_ms": 3,
+     "retry_setup_ms": 0,
+     "sent_build_ms": 2,
+     "record_attempt_ms": 0,
+     "other_ms": 0,
+     "sent_build_safety_context_ms": 0,
+     "sent_build_cache_breakpoints_ms": 0,
+     "sent_build_surrogate_scan_ms": 0
+    },
+    "first_content_frame_ms": 2649,
+    "queued_turn_count": 0,
+    "result_index": 0,
+    "credential_expires_at": "2026-12-24T05:16:04.194Z"
+   },
+   "stderr": ""
+  }
+ ]
+}

@@ -1,0 +1,434 @@
+{
+ "run_id": "2026-11-26T1000",
+ "case_id": "r_c7",
+ "calls": [
+  {
+   "role": "request",
+   "key": "request",
+   "returncode": 0,
+   "stdout": {
+    "duration_api_ms": 9102,
+    "stop_reason": "tool_use",
+    "session_id": "ccab40ae-a48c-4ced-99fe-a543920a0c06",
+    "total_cost_usd": 0.0162947,
+    "usage": {
+     "input_tokens": 2,
+     "cache_creation_input_tokens": 644,
+     "cache_read_input_tokens": 2072,
+     "output_tokens": 521,
+     "output_tokens_details": {
+      "thinking_tokens": 99
+     },
+     "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+     },
+     "service_tier": "standard",
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 644,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "inference_geo": "global",
+     "iterations": [
+      {
+       "input_tokens": 2,
+       "output_tokens": 521,
+       "cache_read_input_tokens": 2072,
+       "cache_creation_input_tokens": 644,
+       "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 644
+       },
+       "type": "message"
+      }
+     ],
+     "speed": "standard",
+     "fallback_credit": null
+    },
+    "modelUsage": {
+     "claude-haiku-5-5": {
+      "inputTokens": 1608,
+      "outputTokens": 279,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.0003003,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 245,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 0,
+      "canonicalModel": "claude-haiku-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     },
+     "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 521,
+      "cacheReadInputTokens": 2072,
+      "cacheCreationInputTokens": 644,
+      "webSearchRequests": 0,
+      "costUSD": 0.0159944,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 99,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 644,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "extra_usage_disabled",
+    "subagent_stats": {
+     "spawned": 0,
+     "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+     },
+     "started_in_background": 0,
+     "max_depth": 0,
+     "spawned_by_subagents": 0,
+     "completed": 0,
+     "failed": 0,
+     "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+     },
+     "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+     },
+     "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 2,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "{\"outcome\":\"tune\",\"model\":\"Qwen/Qwen3-0.6B\",\"budget_bits\":\"4\",\"compute_budget\":null,\"keep_bf16_blocks\":[],\"exclude_methods\":[],\"only_methods\":null,\"questions\":[],\"reason\":null,\"assumptions\":[\"BF16 크기의 25%는 BF16(16비트)의 25%이므로 가중치당 평균 4비트 예산으로 환산했습니다.\",\"연산(compute) 예산이 명시되지 않아 설정하지 않았습니다.\",\"BF16으로 유지할 블록이나 제외할 방법이 지정되지 않아 모든 방법을 허용합니다.\"]}",
+    "structured_output": {
+     "outcome": "tune",
+     "model": "Qwen/Qwen3-0.6B",
+     "budget_bits": "4",
+     "compute_budget": null,
+     "keep_bf16_blocks": [],
+     "exclude_methods": [],
+     "only_methods": null,
+     "questions": [],
+     "reason": null,
+     "assumptions": [
+      "BF16 크기의 25%는 BF16(16비트)의 25%이므로 가중치당 평균 4비트 예산으로 환산했습니다.",
+      "연산(compute) 예산이 명시되지 않아 설정하지 않았습니다.",
+      "BF16으로 유지할 블록이나 제외할 방법이 지정되지 않아 모든 방법을 허용합니다."
+     ]
+    },
+    "ttft_ms": 4890,
+    "type": "result",
+    "duration_ms": 7464,
+    "uuid": "1a8ef0c5-e1f3-43fb-ac9c-6e983924d6dd",
+    "ttft_stream_ms": 3245,
+    "time_to_request_ms": 265,
+    "time_to_request_phases_ms": {
+     "other": 5,
+     "system_prompt": 4,
+     "resume_other": 4,
+     "process_user_input": 24,
+     "input_attachments": 116,
+     "input_hooks": 8,
+     "conversation_append": 13,
+     "tool_pool_refresh": 6,
+     "init_message": 20,
+     "init_frame_send": 8,
+     "engine_pickup": 5,
+     "loop_entry": 10,
+     "message_prep": 4,
+     "model_config_wait": 5,
+     "autocompact": 4,
+     "request_announcements": 9,
+     "query_setup": 1,
+     "model_gates": 0,
+     "tool_schema_build": 5,
+     "message_normalization": 1,
+     "client_creation": 6,
+     "request_build": 7
+    },
+    "turn_start_resume_kind": "none",
+    "process_turn_index": 0,
+    "time_to_request_loop_lag_ms": 215,
+    "time_to_request_cpu_ms": 211,
+    "time_to_request_major_faults": 184,
+    "input_attachments_detail": {
+     "slowest_producer": "session_settings",
+     "slowest_producer_ms": 88,
+     "cpu_ms": 98,
+     "major_faults": 121,
+     "setup_ms": 1,
+     "prompt_producers_ms": 1,
+     "ambient_start_ms": 14,
+     "ambient_wait_ms": 88,
+     "render_ms": 11,
+     "producers": 43,
+     "token_counts": 0
+    },
+    "tool_schema_build_detail": {
+     "betas_ms": 0,
+     "waits_ms": 1,
+     "placement_ms": 1,
+     "render_ms": 3,
+     "after_ms": 0,
+     "other_ms": 0,
+     "tools": 1,
+     "new_schemas": 1
+    },
+    "message_normalization_detail": {
+     "before_ms": 0,
+     "normalize_ms": 1,
+     "images_ms": 0,
+     "post_process_ms": 0,
+     "after_ms": 0,
+     "other_ms": 0,
+     "messages": 8,
+     "wire_messages": 2
+    },
+    "request_build_detail": {
+     "records_ms": 1,
+     "system_ms": 0,
+     "headers_ms": 1,
+     "cache_break_record_ms": 1,
+     "plans_ms": 2,
+     "retry_setup_ms": 0,
+     "sent_build_ms": 2,
+     "record_attempt_ms": 0,
+     "other_ms": 0,
+     "sent_build_safety_context_ms": 0,
+     "sent_build_cache_breakpoints_ms": 0,
+     "sent_build_surrogate_scan_ms": 0
+    },
+    "first_content_frame_ms": 3246,
+    "queued_turn_count": 0,
+    "result_index": 0,
+    "credential_expires_at": "2026-12-24T05:16:04.194Z"
+   },
+   "stderr": ""
+  },
+  {
+   "role": "judge",
+   "key": "request",
+   "returncode": 0,
+   "stdout": {
+    "duration_api_ms": 7677,
+    "stop_reason": "tool_use",
+    "session_id": "4661d832-1e88-4390-a185-c792b1d3bd0d",
+    "total_cost_usd": 0.017934000000000002,
+    "usage": {
+     "input_tokens": 2,
+     "cache_creation_input_tokens": 1136,
+     "cache_read_input_tokens": 1426,
+     "output_tokens": 420,
+     "output_tokens_details": {
+      "thinking_tokens": 79
+     },
+     "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+     },
+     "service_tier": "standard",
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 1136,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "inference_geo": "global",
+     "iterations": [
+      {
+       "input_tokens": 2,
+       "output_tokens": 420,
+       "cache_read_input_tokens": 1426,
+       "cache_creation_input_tokens": 1136,
+       "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 1136
+       },
+       "type": "message"
+      }
+     ],
+     "speed": "standard",
+     "fallback_credit": null
+    },
+    "modelUsage": {
+     "claude-haiku-5-5": {
+      "inputTokens": 1403,
+      "outputTokens": 25,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.0001528,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 0,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 0,
+      "canonicalModel": "claude-haiku-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     },
+     "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 420,
+      "cacheReadInputTokens": 1426,
+      "cacheCreationInputTokens": 1136,
+      "webSearchRequests": 0,
+      "costUSD": 0.0177812,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 79,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 1136,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "extra_usage_disabled",
+    "subagent_stats": {
+     "spawned": 0,
+     "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+     },
+     "started_in_background": 0,
+     "max_depth": 0,
+     "spawned_by_subagents": 0,
+     "completed": 0,
+     "failed": 0,
+     "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+     },
+     "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+     },
+     "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 2,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "{\"q1\":null,\"q2\":{\"reason\":\"The request gives the model (\\\"Qwen3-0.6B\\\") and a relative budget (\\\"BF16 크기의 25%\\\"). Turning that into 4 bits is recorded in assumptions (\\\"가중치당 평균 4비트 예산으로 환산\\\"). The open method restriction is also recorded (\\\"모든 방법을 허용합니다\\\"), and the compute budget was explicitly left unset, so no value is settled silently.\",\"pass\":true},\"c1\":null,\"c2\":null,\"c3\":null,\"c4\":null,\"needs_human_review\":false}",
+    "structured_output": {
+     "q1": null,
+     "q2": {
+      "reason": "The request gives the model (\"Qwen3-0.6B\") and a relative budget (\"BF16 크기의 25%\"). Turning that into 4 bits is recorded in assumptions (\"가중치당 평균 4비트 예산으로 환산\"). The open method restriction is also recorded (\"모든 방법을 허용합니다\"), and the compute budget was explicitly left unset, so no value is settled silently.",
+      "pass": true
+     },
+     "c1": null,
+     "c2": null,
+     "c3": null,
+     "c4": null,
+     "needs_human_review": false
+    },
+    "ttft_ms": 4857,
+    "type": "result",
+    "duration_ms": 6993,
+    "uuid": "e766ed14-8955-4ed7-8760-7cef118b1c8b",
+    "ttft_stream_ms": 3864,
+    "time_to_request_ms": 173,
+    "time_to_request_phases_ms": {
+     "other": 6,
+     "system_prompt": 1,
+     "resume_other": 1,
+     "process_user_input": 4,
+     "input_attachments": 60,
+     "input_hooks": 3,
+     "conversation_append": 0,
+     "tool_pool_refresh": 4,
+     "init_message": 8,
+     "init_frame_send": 5,
+     "engine_pickup": 2,
+     "loop_entry": 5,
+     "message_prep": 1,
+     "model_config_wait": 3,
+     "autocompact": 3,
+     "request_announcements": 21,
+     "query_setup": 3,
+     "model_gates": 0,
+     "tool_schema_build": 7,
+     "message_normalization": 2,
+     "client_creation": 27,
+     "request_build": 7
+    },
+    "turn_start_resume_kind": "none",
+    "process_turn_index": 0,
+    "time_to_request_loop_lag_ms": 123,
+    "time_to_request_cpu_ms": 208,
+    "time_to_request_major_faults": 1,
+    "input_attachments_detail": {
+     "slowest_producer": "session_settings",
+     "slowest_producer_ms": 48,
+     "cpu_ms": 76,
+     "major_faults": 1,
+     "setup_ms": 1,
+     "prompt_producers_ms": 0,
+     "ambient_start_ms": 7,
+     "ambient_wait_ms": 47,
+     "render_ms": 2,
+     "producers": 43,
+     "token_counts": 0
+    },
+    "tool_schema_build_detail": {
+     "betas_ms": 1,
+     "waits_ms": 1,
+     "placement_ms": 2,
+     "render_ms": 2,
+     "after_ms": 0,
+     "other_ms": 1,
+     "tools": 1,
+     "new_schemas": 1
+    },
+    "message_normalization_detail": {
+     "before_ms": 0,
+     "normalize_ms": 2,
+     "images_ms": 0,
+     "post_process_ms": 0,
+     "after_ms": 0,
+     "other_ms": 0,
+     "messages": 8,
+     "wire_messages": 2
+    },
+    "request_build_detail": {
+     "records_ms": 0,
+     "system_ms": 2,
+     "headers_ms": 0,
+     "cache_break_record_ms": 2,
+     "plans_ms": 1,
+     "retry_setup_ms": 0,
+     "sent_build_ms": 1,
+     "record_attempt_ms": 1,
+     "other_ms": 0,
+     "sent_build_safety_context_ms": 0,
+     "sent_build_cache_breakpoints_ms": 0,
+     "sent_build_surrogate_scan_ms": 0
+    },
+    "first_content_frame_ms": 3864,
+    "queued_turn_count": 0,
+    "result_index": 0,
+    "credential_expires_at": "2026-12-24T05:16:04.194Z"
+   },
+   "stderr": ""
+  }
+ ]
+}

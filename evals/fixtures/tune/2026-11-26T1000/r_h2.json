@@ -1,0 +1,222 @@
+{
+ "run_id": "2026-11-26T1000",
+ "case_id": "r_h2",
+ "calls": [
+  {
+   "role": "request",
+   "key": "request",
+   "returncode": 0,
+   "stdout": {
+    "duration_api_ms": 13568,
+    "stop_reason": "tool_use",
+    "session_id": "f6e86143-5c74-4e3b-84b4-1da3067731b4",
+    "total_cost_usd": 0.023885299999999998,
+    "usage": {
+     "input_tokens": 2,
+     "cache_creation_input_tokens": 646,
+     "cache_read_input_tokens": 2094,
+     "output_tokens": 899,
+     "output_tokens_details": {
+      "thinking_tokens": 339
+     },
+     "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+     },
+     "service_tier": "standard",
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 646,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "inference_geo": "global",
+     "iterations": [
+      {
+       "input_tokens": 2,
+       "output_tokens": 899,
+       "cache_read_input_tokens": 2094,
+       "cache_creation_input_tokens": 646,
+       "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 646
+       },
+       "type": "message"
+      }
+     ],
+     "speed": "standard",
+     "fallback_credit": null
+    },
+    "modelUsage": {
+     "claude-haiku-5-5": {
+      "inputTokens": 1630,
+      "outputTokens": 295,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.0003105,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 258,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 0,
+      "canonicalModel": "claude-haiku-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     },
+     "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 899,
+      "cacheReadInputTokens": 2094,
+      "cacheCreationInputTokens": 646,
+      "webSearchRequests": 0,
+      "costUSD": 0.0235748,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 339,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 646,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "extra_usage_disabled",
+    "subagent_stats": {
+     "spawned": 0,
+     "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+     },
+     "started_in_background": 0,
+     "max_depth": 0,
+     "spawned_by_subagents": 0,
+     "completed": 0,
+     "failed": 0,
+     "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+     },
+     "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+     },
+     "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 2,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "{\"outcome\":\"tune\",\"model\":\"Qwen/Qwen3-0.6B\",\"budget_bits\":\"2.5\",\"compute_budget\":null,\"keep_bf16_blocks\":[],\"exclude_methods\":[],\"only_methods\":null,\"questions\":[],\"reason\":\"QuIP# E8P 코드북(벡터 양자화)은 TriCast 메서드 목록에 없어서 쓸 수 없습니다. 대신 지원되는 메서드들 중에서 2.5비트 예산 안에서 층별로 선택해 튜닝합니다. 같은 Hadamard 비일관성 처리를 쓰는 rht_gptq_int2/int3/int4가 가장 비슷한 대안입니다.\",\"assumptions\":[\"The requested QuIP# E8P codebook is not an available method, so I did not add it. The method choice is left unrestricted (only_methods null) instead of limiting it to a substitute the user didn't name.\",\"No compute budget was given, so only the weight-size budget of 2.5 bits per weight applies.\",\"No decoder blocks are kept in BF16.\"]}",
+    "structured_output": {
+     "outcome": "tune",
+     "model": "Qwen/Qwen3-0.6B",
+     "budget_bits": "2.5",
+     "compute_budget": null,
+     "keep_bf16_blocks": [],
+     "exclude_methods": [],
+     "only_methods": null,
+     "questions": [],
+     "reason": "QuIP# E8P 코드북(벡터 양자화)은 TriCast 메서드 목록에 없어서 쓸 수 없습니다. 대신 지원되는 메서드들 중에서 2.5비트 예산 안에서 층별로 선택해 튜닝합니다. 같은 Hadamard 비일관성 처리를 쓰는 rht_gptq_int2/int3/int4가 가장 비슷한 대안입니다.",
+     "assumptions": [
+      "The requested QuIP# E8P codebook is not an available method, so I did not add it. The method choice is left unrestricted (only_methods null) instead of limiting it to a substitute the user didn't name.",
+      "No compute budget was given, so only the weight-size budget of 2.5 bits per weight applies.",
+      "No decoder blocks are kept in BF16."
+     ]
+    },
+    "ttft_ms": 7660,
+    "type": "result",
+    "duration_ms": 11785,
+    "uuid": "0312355a-0b5b-4d07-838b-aa01ad23a7b2",
+    "ttft_stream_ms": 4076,
+    "time_to_request_ms": 236,
+    "time_to_request_phases_ms": {
+     "other": 10,
+     "system_prompt": 3,
+     "resume_other": 2,
+     "process_user_input": 8,
+     "input_attachments": 98,
+     "input_hooks": 5,
+     "conversation_append": 2,
+     "tool_pool_refresh": 6,
+     "init_message": 19,
+     "init_frame_send": 7,
+     "engine_pickup": 2,
+     "loop_entry": 7,
+     "message_prep": 1,
+     "model_config_wait": 5,
+     "autocompact": 5,
+     "request_announcements": 12,
+     "query_setup": 1,
+     "model_gates": 1,
+     "tool_schema_build": 7,
+     "message_normalization": 1,
+     "client_creation": 24,
+     "request_build": 10
+    },
+    "turn_start_resume_kind": "none",
+    "process_turn_index": 0,
+    "time_to_request_loop_lag_ms": 185,
+    "time_to_request_cpu_ms": 240,
+    "time_to_request_major_faults": 55,
+    "input_attachments_detail": {
+     "slowest_producer": "session_settings",
+     "slowest_producer_ms": 79,
+     "cpu_ms": 111,
+     "major_faults": 21,
+     "setup_ms": 1,
+     "prompt_producers_ms": 0,
+     "ambient_start_ms": 11,
+     "ambient_wait_ms": 79,
+     "render_ms": 4,
+     "producers": 43,
+     "token_counts": 0
+    },
+    "tool_schema_build_detail": {
+     "betas_ms": 1,
+     "waits_ms": 1,
+     "placement_ms": 1,
+     "render_ms": 4,
+     "after_ms": 0,
+     "other_ms": 0,
+     "tools": 1,
+     "new_schemas": 1
+    },
+    "message_normalization_detail": {
+     "before_ms": 0,
+     "normalize_ms": 1,
+     "images_ms": 0,
+     "post_process_ms": 0,
+     "after_ms": 0,
+     "other_ms": 0,
+     "messages": 8,
+     "wire_messages": 2
+    },
+    "request_build_detail": {
+     "records_ms": 1,
+     "system_ms": 2,
+     "headers_ms": 2,
+     "cache_break_record_ms": 1,
+     "plans_ms": 2,
+     "retry_setup_ms": 0,
+     "sent_build_ms": 1,
+     "record_attempt_ms": 1,
+     "other_ms": 0,
+     "sent_build_safety_context_ms": 0,
+     "sent_build_cache_breakpoints_ms": 0,
+     "sent_build_surrogate_scan_ms": 0
+    },
+    "first_content_frame_ms": 4077,
+    "queued_turn_count": 0,
+    "result_index": 0,
+    "credential_expires_at": "2026-12-24T05:16:04.194Z"
+   },
+   "stderr": ""
+  }
+ ]
+}

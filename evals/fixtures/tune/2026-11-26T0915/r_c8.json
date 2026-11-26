@@ -1,0 +1,436 @@
+{
+ "run_id": "2026-11-26T0915",
+ "case_id": "r_c8",
+ "calls": [
+  {
+   "role": "request",
+   "key": "request",
+   "returncode": 0,
+   "stdout": {
+    "duration_api_ms": 6893,
+    "stop_reason": "tool_use",
+    "session_id": "3679922e-94b4-4556-a261-499bfa17cb38",
+    "total_cost_usd": 0.0137602,
+    "usage": {
+     "input_tokens": 2,
+     "cache_creation_input_tokens": 641,
+     "cache_read_input_tokens": 2062,
+     "output_tokens": 394,
+     "output_tokens_details": {
+      "thinking_tokens": 38
+     },
+     "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+     },
+     "service_tier": "standard",
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 641,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "inference_geo": "global",
+     "iterations": [
+      {
+       "input_tokens": 2,
+       "output_tokens": 394,
+       "cache_read_input_tokens": 2062,
+       "cache_creation_input_tokens": 641,
+       "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 641
+       },
+       "type": "message"
+      }
+     ],
+     "speed": "standard",
+     "fallback_credit": null
+    },
+    "modelUsage": {
+     "claude-haiku-5-5": {
+      "inputTokens": 1598,
+      "outputTokens": 344,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.00033180000000000004,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 309,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 0,
+      "canonicalModel": "claude-haiku-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     },
+     "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 394,
+      "cacheReadInputTokens": 2062,
+      "cacheCreationInputTokens": 641,
+      "webSearchRequests": 0,
+      "costUSD": 0.0134284,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 38,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 641,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "extra_usage_disabled",
+    "subagent_stats": {
+     "spawned": 0,
+     "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+     },
+     "started_in_background": 0,
+     "max_depth": 0,
+     "spawned_by_subagents": 0,
+     "completed": 0,
+     "failed": 0,
+     "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+     },
+     "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+     },
+     "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 2,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "{\"outcome\":\"tune\",\"model\":\"Qwen/Qwen3-0.6B\",\"budget_bits\":\"3.15\",\"compute_budget\":null,\"keep_bf16_blocks\":[],\"exclude_methods\":[\"int8_w\",\"nf4\"],\"only_methods\":null,\"questions\":[],\"reason\":null,\"assumptions\":[\"No compute budget was stated, so only the weight-size budget is applied (no chip-track compute limit).\",\"No decoder blocks were asked to stay in BF16.\"]}",
+    "structured_output": {
+     "outcome": "tune",
+     "model": "Qwen/Qwen3-0.6B",
+     "budget_bits": "3.15",
+     "compute_budget": null,
+     "keep_bf16_blocks": [],
+     "exclude_methods": [
+      "int8_w",
+      "nf4"
+     ],
+     "only_methods": null,
+     "questions": [],
+     "reason": null,
+     "assumptions": [
+      "No compute budget was stated, so only the weight-size budget is applied (no chip-track compute limit).",
+      "No decoder blocks were asked to stay in BF16."
+     ]
+    },
+    "ttft_ms": 2876,
+    "type": "result",
+    "duration_ms": 5099,
+    "uuid": "1884dc54-2c05-4431-adaf-5bf235ffa428",
+    "ttft_stream_ms": 2512,
+    "time_to_request_ms": 274,
+    "time_to_request_phases_ms": {
+     "other": 1,
+     "system_prompt": 0,
+     "resume_other": 0,
+     "process_user_input": 2,
+     "input_attachments": 9,
+     "input_hooks": 1,
+     "conversation_append": 0,
+     "tool_pool_refresh": 1,
+     "init_message": 3,
+     "init_frame_send": 1,
+     "engine_pickup": 0,
+     "loop_entry": 1,
+     "message_prep": 1,
+     "model_config_wait": 1,
+     "autocompact": 0,
+     "request_announcements": 2,
+     "query_setup": 1,
+     "model_gates": 234,
+     "tool_schema_build": 8,
+     "message_normalization": 1,
+     "client_creation": 5,
+     "request_build": 2
+    },
+    "turn_start_resume_kind": "none",
+    "process_turn_index": 0,
+    "time_to_request_loop_lag_ms": 20,
+    "time_to_request_cpu_ms": 130,
+    "time_to_request_major_faults": 0,
+    "input_attachments_detail": {
+     "slowest_producer": "session_settings",
+     "slowest_producer_ms": 6,
+     "cpu_ms": 15,
+     "major_faults": 0,
+     "setup_ms": 0,
+     "prompt_producers_ms": 0,
+     "ambient_start_ms": 2,
+     "ambient_wait_ms": 6,
+     "render_ms": 0,
+     "producers": 43,
+     "token_counts": 0
+    },
+    "tool_schema_build_detail": {
+     "betas_ms": 0,
+     "waits_ms": 2,
+     "placement_ms": 5,
+     "render_ms": 1,
+     "after_ms": 0,
+     "other_ms": 0,
+     "tools": 1,
+     "new_schemas": 1
+    },
+    "message_normalization_detail": {
+     "before_ms": 0,
+     "normalize_ms": 1,
+     "images_ms": 0,
+     "post_process_ms": 0,
+     "after_ms": 0,
+     "other_ms": 0,
+     "messages": 8,
+     "wire_messages": 2
+    },
+    "request_build_detail": {
+     "records_ms": 0,
+     "system_ms": 0,
+     "headers_ms": 1,
+     "cache_break_record_ms": 0,
+     "plans_ms": 0,
+     "retry_setup_ms": 1,
+     "sent_build_ms": 0,
+     "record_attempt_ms": 0,
+     "other_ms": 0,
+     "sent_build_safety_context_ms": 0,
+     "sent_build_cache_breakpoints_ms": 0,
+     "sent_build_surrogate_scan_ms": 0
+    },
+    "first_content_frame_ms": 2512,
+    "queued_turn_count": 0,
+    "result_index": 0,
+    "credential_expires_at": "2026-12-24T05:16:04.194Z"
+   },
+   "stderr": ""
+  },
+  {
+   "role": "judge",
+   "key": "request",
+   "returncode": 0,
+   "stdout": {
+    "duration_api_ms": 8695,
+    "stop_reason": "tool_use",
+    "session_id": "aa694027-1f9e-4598-aa24-771371831ea8",
+    "total_cost_usd": 0.019026299999999996,
+    "usage": {
+     "input_tokens": 2,
+     "cache_creation_input_tokens": 1058,
+     "cache_read_input_tokens": 1426,
+     "output_tokens": 506,
+     "output_tokens_details": {
+      "thinking_tokens": 174
+     },
+     "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+     },
+     "service_tier": "standard",
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 1058,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "inference_geo": "global",
+     "iterations": [
+      {
+       "input_tokens": 2,
+       "output_tokens": 506,
+       "cache_read_input_tokens": 1426,
+       "cache_creation_input_tokens": 1058,
+       "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 1058
+       },
+       "type": "message"
+      }
+     ],
+     "speed": "standard",
+     "fallback_credit": null
+    },
+    "modelUsage": {
+     "claude-haiku-5-5": {
+      "inputTokens": 1331,
+      "outputTokens": 32,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.00014910000000000002,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 0,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 0,
+      "canonicalModel": "claude-haiku-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     },
+     "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 506,
+      "cacheReadInputTokens": 1426,
+      "cacheCreationInputTokens": 1058,
+      "webSearchRequests": 0,
+      "costUSD": 0.018877199999999997,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 174,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 1058,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "extra_usage_disabled",
+    "subagent_stats": {
+     "spawned": 0,
+     "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+     },
+     "started_in_background": 0,
+     "max_depth": 0,
+     "spawned_by_subagents": 0,
+     "completed": 0,
+     "failed": 0,
+     "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+     },
+     "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+     },
+     "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 2,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "{\"q1\":null,\"q2\":{\"reason\":\"The request gave the model ('Qwen3-0.6B'), the budget ('3.15비트') and the method exclusion ('int8_w 랑 nf4 는 빼줘'), so none of these was left open. The two things it left open, compute budget and BF16 blocks, are both written in assumptions: 'No compute budget was stated…' and 'No decoder blocks were asked to stay in BF16.'\",\"pass\":true},\"c1\":null,\"c2\":null,\"c3\":null,\"c4\":null,\"needs_human_review\":false}",
+    "structured_output": {
+     "q1": null,
+     "q2": {
+      "reason": "The request gave the model ('Qwen3-0.6B'), the budget ('3.15비트') and the method exclusion ('int8_w 랑 nf4 는 빼줘'), so none of these was left open. The two things it left open, compute budget and BF16 blocks, are both written in assumptions: 'No compute budget was stated…' and 'No decoder blocks were asked to stay in BF16.'",
+      "pass": true
+     },
+     "c1": null,
+     "c2": null,
+     "c3": null,
+     "c4": null,
+     "needs_human_review": false
+    },
+    "ttft_ms": 6267,
+    "type": "result",
+    "duration_ms": 8267,
+    "uuid": "3b8dc5e5-a159-4850-a5f7-bb3cc045149d",
+    "ttft_stream_ms": 4219,
+    "time_to_request_ms": 276,
+    "time_to_request_phases_ms": {
+     "other": 1,
+     "system_prompt": 0,
+     "resume_other": 0,
+     "process_user_input": 2,
+     "input_attachments": 9,
+     "input_hooks": 1,
+     "conversation_append": 0,
+     "tool_pool_refresh": 1,
+     "init_message": 2,
+     "init_frame_send": 1,
+     "engine_pickup": 1,
+     "loop_entry": 1,
+     "message_prep": 0,
+     "model_config_wait": 1,
+     "autocompact": 1,
+     "request_announcements": 2,
+     "query_setup": 1,
+     "model_gates": 237,
+     "tool_schema_build": 8,
+     "message_normalization": 1,
+     "client_creation": 3,
+     "request_build": 3
+    },
+    "turn_start_resume_kind": "none",
+    "process_turn_index": 0,
+    "time_to_request_loop_lag_ms": 23,
+    "time_to_request_cpu_ms": 131,
+    "time_to_request_major_faults": 0,
+    "input_attachments_detail": {
+     "slowest_producer": "session_settings",
+     "slowest_producer_ms": 6,
+     "cpu_ms": 15,
+     "major_faults": 0,
+     "setup_ms": 0,
+     "prompt_producers_ms": 0,
+     "ambient_start_ms": 2,
+     "ambient_wait_ms": 5,
+     "render_ms": 0,
+     "producers": 43,
+     "token_counts": 0
+    },
+    "tool_schema_build_detail": {
+     "betas_ms": 0,
+     "waits_ms": 2,
+     "placement_ms": 5,
+     "render_ms": 1,
+     "after_ms": 0,
+     "other_ms": 0,
+     "tools": 1,
+     "new_schemas": 1
+    },
+    "message_normalization_detail": {
+     "before_ms": 0,
+     "normalize_ms": 1,
+     "images_ms": 0,
+     "post_process_ms": 0,
+     "after_ms": 0,
+     "other_ms": 0,
+     "messages": 8,
+     "wire_messages": 2
+    },
+    "request_build_detail": {
+     "records_ms": 0,
+     "system_ms": 1,
+     "headers_ms": 0,
+     "cache_break_record_ms": 0,
+     "plans_ms": 1,
+     "retry_setup_ms": 0,
+     "sent_build_ms": 0,
+     "record_attempt_ms": 0,
+     "other_ms": 1,
+     "sent_build_safety_context_ms": 0,
+     "sent_build_cache_breakpoints_ms": 0,
+     "sent_build_surrogate_scan_ms": 0
+    },
+    "first_content_frame_ms": 4219,
+    "queued_turn_count": 0,
+    "result_index": 0,
+    "credential_expires_at": "2026-12-24T05:16:04.194Z"
+   },
+   "stderr": ""
+  }
+ ]
+}

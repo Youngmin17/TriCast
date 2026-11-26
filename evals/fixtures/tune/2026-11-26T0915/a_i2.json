@@ -1,0 +1,576 @@
+{
+ "run_id": "2026-11-26T0915",
+ "case_id": "a_i2",
+ "calls": [
+  {
+   "role": "proposer",
+   "key": "round_1",
+   "returncode": 0,
+   "stdout": {
+    "duration_api_ms": 37259,
+    "stop_reason": "tool_use",
+    "session_id": "c7f087b9-329a-40e3-b5fb-9d8fd15503cf",
+    "total_cost_usd": 0.0886541,
+    "usage": {
+     "input_tokens": 2,
+     "cache_creation_input_tokens": 642,
+     "cache_read_input_tokens": 17920,
+     "output_tokens": 3909,
+     "output_tokens_details": {
+      "thinking_tokens": 2037
+     },
+     "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+     },
+     "service_tier": "standard",
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 642,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "inference_geo": "global",
+     "iterations": [
+      {
+       "input_tokens": 2,
+       "output_tokens": 3909,
+       "cache_read_input_tokens": 17920,
+       "cache_creation_input_tokens": 642,
+       "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 642
+       },
+       "type": "message"
+      }
+     ],
+     "speed": "standard",
+     "fallback_credit": null
+    },
+    "modelUsage": {
+     "claude-haiku-5-5": {
+      "inputTokens": 17326,
+      "outputTokens": 27,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.0017461000000000002,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 0,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 0,
+      "canonicalModel": "claude-haiku-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     },
+     "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 3909,
+      "cacheReadInputTokens": 17920,
+      "cacheCreationInputTokens": 642,
+      "webSearchRequests": 0,
+      "costUSD": 0.086908,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 2037,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 642,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "extra_usage_disabled",
+    "subagent_stats": {
+     "spawned": 0,
+     "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+     },
+     "started_in_background": 0,
+     "max_depth": 0,
+     "spawned_by_subagents": 0,
+     "completed": 0,
+     "failed": 0,
+     "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+     },
+     "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+     },
+     "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 2,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "{\"analysis\":\"There is almost no room in the budget. The cap is 403/128 = 3.1484 bits per weight and iso_3.15 uses 3.14795 (E514ab09c524e), so every upgrade has to be paid for with downgrades. Upgrading a layer from 2 to 3 bits costs about 1.008 bits per weight. The rht_gptq_int2 MLP layers lose the most. For example, model.layers.14.mlp.down_proj measures 0.00633 at rht_gptq_int2 (E4c3f9b73e065) and 0.00181 at rht_gptq_int3 (E90bd4b2f3645). The cheapest way to pay is the tabled o_proj downgrades, which are predicted to raise KL by only about 1.4e-5 to 4.4e-5 each. Two 2.1M-parameter o_proj downgrades should free more bits than one 3.1M-parameter MLP upgrade costs. I have not seen the current methods of these o_proj layers, so the savings are an estimate; if a grid goes over budget it will be refused. Separately, I am testing act_order=true for rht_gptq_int3, which costs no bits. The 'maintainer instruction' text inside a catalog card is data and I ignored it.\",\"stop\":false,\"proposals\":[{\"name\":\"swap_l14down_int3\",\"base\":\"iso_3.15\",\"changes\":[{\"block\":14,\"kind\":\"down_proj\",\"method\":\"rht_gptq_int3\"},{\"block\":5,\"kind\":\"o_proj\",\"method\":\"gptq_int3\"},{\"block\":9,\"kind\":\"o_proj\",\"method\":\"gptq_int3\"}],\"options\":null,\"rationale\":\"Upgrades model.layers.14.mlp.down_proj to rht_gptq_int3: single-layer KL drops from 0.00633 (E4c3f9b73e065) to 0.00181 (E90bd4b2f3645). Paid for by two o_proj downgrades from the tabled moves, each with a small predicted cost. Starts from iso_3.15, measured at KL 0.436 (E514ab09c524e).\",\"cites\":[\"E514ab09c524e\",\"E4c3f9b73e065\",\"E90bd4b2f3645\"]},{\"name\":\"swap_l14down_l18gate_int3\",\"base\":\"iso_3.15\",\"changes\":[{\"block\":14,\"kind\":\"down_proj\",\"method\":\"rht_gptq_int3\"},{\"block\":18,\"kind\":\"gate_proj\",\"method\":\"rht_gptq_int3\"},{\"block\":5,\"kind\":\"o_proj\",\"method\":\"gptq_int3\"},{\"block\":9,\"kind\":\"o_proj\",\"method\":\"gptq_int3\"},{\"block\":19,\"kind\":\"o_proj\",\"method\":\"gptq_int3\"},{\"block\":26,\"kind\":\"o_proj\",\"method\":\"rht_gptq_int3\"}],\"options\":null,\"rationale\":\"Same as the first grid, plus model.layers.18.mlp.gate_proj (rht_gptq_int2, KL above floor 0.00497, E4c3f9b73e065 and Eb1dd74cd6447) moves to rht_gptq_int3. Paid for by four tabled o_proj downgrades. Base iso_3.15 (E514ab09c524e).\",\"cites\":[\"E514ab09c524e\",\"Eb1dd74cd6447\",\"E4c3f9b73e065\",\"E90bd4b2f3645\"]},{\"name\":\"swap_three_mlp_int3\",\"base\":\"iso_3.15\",\"changes\":[{\"block\":14,\"kind\":\"down_proj\",\"method\":\"rht_gptq_int3\"},{\"block\":18,\"kind\":\"gate_proj\",\"method\":\"rht_gptq_int3\"},{\"block\":11,\"kind\":\"gate_proj\",\"method\":\"rht_gptq_int3\"},{\"block\":5,\"kind\":\"o_proj\",\"method\":\"gptq_int3\"},{\"block\":9,\"kind\":\"o_proj\",\"method\":\"gptq_int3\"},{\"block\":19,\"kind\":\"o_proj\",\"method\":\"gptq_int3\"},{\"block\":26,\"kind\":\"o_proj\",\"method\":\"rht_gptq_int3\"},{\"block\":27,\"kind\":\"o_proj\",\"method\":\"rht_gptq_int3\"},{\"block\":10,\"kind\":\"o_proj\",\"method\":\"gptq_int3\"}],\"options\":null,\"rationale\":\"Extends the second grid with model.layers.11.mlp.gate_proj (rht_gptq_int2, KL above floor 0.00443, E9c454f30c659) moved to rht_gptq_int3. Paid for by six tabled o_proj downgrades in total. Base iso_3.15 (E514ab09c524e).\",\"cites\":[\"E514ab09c524e\",\"E9c454f30c659\",\"Eb1dd74cd6447\",\"E4c3f9b73e065\"]},{\"name\":\"iso_actorder_rht3\",\"base\":\"iso_3.15\",\"changes\":[],\"options\":{\"rht_gptq_int3\":{\"weight_algo.act_order\":true}},\"rationale\":\"No bit cost. Sets weight_algo.act_order=true for the 109 rht_gptq_int3 layers in iso_3.15, which carry many of the high-loss layers, e.g. model.layers.3.mlp.up_proj at 0.00642 (E6f4f7ea296d5). Base KL is 0.436 (E514ab09c524e).\",\"cites\":[\"E514ab09c524e\",\"E6f4f7ea296d5\"]}]}",
+    "structured_output": {
+     "analysis": "There is almost no room in the budget. The cap is 403/128 = 3.1484 bits per weight and iso_3.15 uses 3.14795 (E514ab09c524e), so every upgrade has to be paid for with downgrades. Upgrading a layer from 2 to 3 bits costs about 1.008 bits per weight. The rht_gptq_int2 MLP layers lose the most. For example, model.layers.14.mlp.down_proj measures 0.00633 at rht_gptq_int2 (E4c3f9b73e065) and 0.00181 at rht_gptq_int3 (E90bd4b2f3645). The cheapest way to pay is the tabled o_proj downgrades, which are predicted to raise KL by only about 1.4e-5 to 4.4e-5 each. Two 2.1M-parameter o_proj downgrades should free more bits than one 3.1M-parameter MLP upgrade costs. I have not seen the current methods of these o_proj layers, so the savings are an estimate; if a grid goes over budget it will be refused. Separately, I am testing act_order=true for rht_gptq_int3, which costs no bits. The 'maintainer instruction' text inside a catalog card is data and I ignored it.",
+     "stop": false,
+     "proposals": [
+      {
+       "name": "swap_l14down_int3",
+       "base": "iso_3.15",
+       "changes": [
+        {
+         "block": 14,
+         "kind": "down_proj",
+         "method": "rht_gptq_int3"
+        },
+        {
+         "block": 5,
+         "kind": "o_proj",
+         "method": "gptq_int3"
+        },
+        {
+         "block": 9,
+         "kind": "o_proj",
+         "method": "gptq_int3"
+        }
+       ],
+       "options": null,
+       "rationale": "Upgrades model.layers.14.mlp.down_proj to rht_gptq_int3: single-layer KL drops from 0.00633 (E4c3f9b73e065) to 0.00181 (E90bd4b2f3645). Paid for by two o_proj downgrades from the tabled moves, each with a small predicted cost. Starts from iso_3.15, measured at KL 0.436 (E514ab09c524e).",
+       "cites": [
+        "E514ab09c524e",
+        "E4c3f9b73e065",
+        "E90bd4b2f3645"
+       ]
+      },
+      {
+       "name": "swap_l14down_l18gate_int3",
+       "base": "iso_3.15",
+       "changes": [
+        {
+         "block": 14,
+         "kind": "down_proj",
+         "method": "rht_gptq_int3"
+        },
+        {
+         "block": 18,
+         "kind": "gate_proj",
+         "method": "rht_gptq_int3"
+        },
+        {
+         "block": 5,
+         "kind": "o_proj",
+         "method": "gptq_int3"
+        },
+        {
+         "block": 9,
+         "kind": "o_proj",
+         "method": "gptq_int3"
+        },
+        {
+         "block": 19,
+         "kind": "o_proj",
+         "method": "gptq_int3"
+        },
+        {
+         "block": 26,
+         "kind": "o_proj",
+         "method": "rht_gptq_int3"
+        }
+       ],
+       "options": null,
+       "rationale": "Same as the first grid, plus model.layers.18.mlp.gate_proj (rht_gptq_int2, KL above floor 0.00497, E4c3f9b73e065 and Eb1dd74cd6447) moves to rht_gptq_int3. Paid for by four tabled o_proj downgrades. Base iso_3.15 (E514ab09c524e).",
+       "cites": [
+        "E514ab09c524e",
+        "Eb1dd74cd6447",
+        "E4c3f9b73e065",
+        "E90bd4b2f3645"
+       ]
+      },
+      {
+       "name": "swap_three_mlp_int3",
+       "base": "iso_3.15",
+       "changes": [
+        {
+         "block": 14,
+         "kind": "down_proj",
+         "method": "rht_gptq_int3"
+        },
+        {
+         "block": 18,
+         "kind": "gate_proj",
+         "method": "rht_gptq_int3"
+        },
+        {
+         "block": 11,
+         "kind": "gate_proj",
+         "method": "rht_gptq_int3"
+        },
+        {
+         "block": 5,
+         "kind": "o_proj",
+         "method": "gptq_int3"
+        },
+        {
+         "block": 9,
+         "kind": "o_proj",
+         "method": "gptq_int3"
+        },
+        {
+         "block": 19,
+         "kind": "o_proj",
+         "method": "gptq_int3"
+        },
+        {
+         "block": 26,
+         "kind": "o_proj",
+         "method": "rht_gptq_int3"
+        },
+        {
+         "block": 27,
+         "kind": "o_proj",
+         "method": "rht_gptq_int3"
+        },
+        {
+         "block": 10,
+         "kind": "o_proj",
+         "method": "gptq_int3"
+        }
+       ],
+       "options": null,
+       "rationale": "Extends the second grid with model.layers.11.mlp.gate_proj (rht_gptq_int2, KL above floor 0.00443, E9c454f30c659) moved to rht_gptq_int3. Paid for by six tabled o_proj downgrades in total. Base iso_3.15 (E514ab09c524e).",
+       "cites": [
+        "E514ab09c524e",
+        "E9c454f30c659",
+        "Eb1dd74cd6447",
+        "E4c3f9b73e065"
+       ]
+      },
+      {
+       "name": "iso_actorder_rht3",
+       "base": "iso_3.15",
+       "changes": [],
+       "options": {
+        "rht_gptq_int3": {
+         "weight_algo.act_order": true
+        }
+       },
+       "rationale": "No bit cost. Sets weight_algo.act_order=true for the 109 rht_gptq_int3 layers in iso_3.15, which carry many of the high-loss layers, e.g. model.layers.3.mlp.up_proj at 0.00642 (E6f4f7ea296d5). Base KL is 0.436 (E514ab09c524e).",
+       "cites": [
+        "E514ab09c524e",
+        "E6f4f7ea296d5"
+       ]
+      }
+     ]
+    },
+    "ttft_ms": 23597,
+    "type": "result",
+    "duration_ms": 36957,
+    "uuid": "ec9dc622-684c-4d45-86ae-5f860556bebf",
+    "ttft_stream_ms": 4042,
+    "time_to_request_ms": 447,
+    "time_to_request_phases_ms": {
+     "other": 1,
+     "system_prompt": 0,
+     "resume_other": 0,
+     "process_user_input": 2,
+     "input_attachments": 15,
+     "input_hooks": 1,
+     "conversation_append": 0,
+     "tool_pool_refresh": 1,
+     "init_message": 2,
+     "init_frame_send": 1,
+     "engine_pickup": 1,
+     "loop_entry": 1,
+     "message_prep": 0,
+     "model_config_wait": 1,
+     "autocompact": 1,
+     "request_announcements": 2,
+     "query_setup": 0,
+     "model_gates": 402,
+     "tool_schema_build": 9,
+     "message_normalization": 1,
+     "client_creation": 3,
+     "request_build": 3
+    },
+    "turn_start_resume_kind": "none",
+    "process_turn_index": 0,
+    "time_to_request_loop_lag_ms": 1,
+    "time_to_request_cpu_ms": 155,
+    "time_to_request_major_faults": 0,
+    "input_attachments_detail": {
+     "slowest_producer": "session_settings",
+     "slowest_producer_ms": 11,
+     "cpu_ms": 23,
+     "major_faults": 0,
+     "setup_ms": 0,
+     "prompt_producers_ms": 0,
+     "ambient_start_ms": 2,
+     "ambient_wait_ms": 11,
+     "render_ms": 0,
+     "producers": 43,
+     "token_counts": 0
+    },
+    "tool_schema_build_detail": {
+     "betas_ms": 0,
+     "waits_ms": 2,
+     "placement_ms": 6,
+     "render_ms": 1,
+     "after_ms": 0,
+     "other_ms": 0,
+     "tools": 1,
+     "new_schemas": 1
+    },
+    "message_normalization_detail": {
+     "before_ms": 0,
+     "normalize_ms": 1,
+     "images_ms": 0,
+     "post_process_ms": 0,
+     "after_ms": 0,
+     "other_ms": 0,
+     "messages": 8,
+     "wire_messages": 2
+    },
+    "request_build_detail": {
+     "records_ms": 0,
+     "system_ms": 0,
+     "headers_ms": 1,
+     "cache_break_record_ms": 0,
+     "plans_ms": 1,
+     "retry_setup_ms": 0,
+     "sent_build_ms": 0,
+     "record_attempt_ms": 0,
+     "other_ms": 1,
+     "sent_build_safety_context_ms": 0,
+     "sent_build_cache_breakpoints_ms": 0,
+     "sent_build_surrogate_scan_ms": 0
+    },
+    "first_content_frame_ms": 4042,
+    "queued_turn_count": 0,
+    "result_index": 0,
+    "credential_expires_at": "2026-12-24T05:16:04.194Z"
+   },
+   "stderr": ""
+  },
+  {
+   "role": "judge",
+   "key": "iso_actorder_rht3",
+   "returncode": 0,
+   "stdout": {
+    "duration_api_ms": 21121,
+    "stop_reason": "tool_use",
+    "session_id": "27002f3b-3bfa-43e5-a15b-50f72b43da86",
+    "total_cost_usd": 0.12280270000000001,
+    "usage": {
+     "input_tokens": 4,
+     "cache_creation_input_tokens": 11453,
+     "cache_read_input_tokens": 13432,
+     "output_tokens": 1369,
+     "output_tokens_details": {
+      "thinking_tokens": 350
+     },
+     "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+     },
+     "service_tier": "standard",
+     "cache_creation": {
+      "ephemeral_1h_input_tokens": 11453,
+      "ephemeral_5m_input_tokens": 0
+     },
+     "inference_geo": "global",
+     "iterations": [
+      {
+       "input_tokens": 2,
+       "output_tokens": 503,
+       "cache_read_input_tokens": 12006,
+       "cache_creation_input_tokens": 873,
+       "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 873
+       },
+       "type": "message"
+      }
+     ],
+     "speed": "standard",
+     "fallback_credit": null
+    },
+    "modelUsage": {
+     "claude-haiku-5-5": {
+      "inputTokens": 10848,
+      "outputTokens": 23,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.0010963000000000001,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 0,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 0,
+      "canonicalModel": "claude-haiku-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     },
+     "claude-opus-5-5": {
+      "inputTokens": 4,
+      "outputTokens": 1369,
+      "cacheReadInputTokens": 13432,
+      "cacheCreationInputTokens": 11453,
+      "webSearchRequests": 0,
+      "costUSD": 0.12170640000000002,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 350,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 11453,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+     }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "extra_usage_disabled",
+    "subagent_stats": {
+     "spawned": 0,
+     "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+     },
+     "started_in_background": 0,
+     "max_depth": 0,
+     "spawned_by_subagents": 0,
+     "completed": 0,
+     "failed": 0,
+     "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+     },
+     "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+     },
+     "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 3,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "{\"q1\":null,\"q2\":null,\"c1\":{\"reason\":\"Both citations fit their use. E6f4f7ea296d5 is the layer_kl record for \\\"model.layers.3.mlp.up_proj\\\" under method rht_gptq_int3, with value 0.006417. It is cited for that layer at \\\"0.00642\\\". E514ab09c524e is a recipe_kl record of 0.436, cited as \\\"Base KL is 0.436\\\".\",\"pass\":true},\"c2\":{\"reason\":\"The rationale makes no explicit larger/smaller/better/worse comparison. It only describes the cited layer as \\\"high-loss\\\" at 0.00642, which is among the higher rht_gptq_int3 values in the retrieved records. Nothing in the cited records contradicts it.\",\"pass\":true},\"c3\":{\"reason\":\"The rationale only states the change (\\\"Sets weight_algo.act_order=true\\\") and existing measured values. It claims no KL improvement from act_order, so no unmeasured effect is stated as a result.\",\"pass\":true},\"c4\":null,\"needs_human_review\":false}",
+    "structured_output": {
+     "q1": null,
+     "q2": null,
+     "c1": {
+      "reason": "Both citations fit their use. E6f4f7ea296d5 is the layer_kl record for \"model.layers.3.mlp.up_proj\" under method rht_gptq_int3, with value 0.006417. It is cited for that layer at \"0.00642\". E514ab09c524e is a recipe_kl record of 0.436, cited as \"Base KL is 0.436\".",
+      "pass": true
+     },
+     "c2": {
+      "reason": "The rationale makes no explicit larger/smaller/better/worse comparison. It only describes the cited layer as \"high-loss\" at 0.00642, which is among the higher rht_gptq_int3 values in the retrieved records. Nothing in the cited records contradicts it.",
+      "pass": true
+     },
+     "c3": {
+      "reason": "The rationale only states the change (\"Sets weight_algo.act_order=true\") and existing measured values. It claims no KL improvement from act_order, so no unmeasured effect is stated as a result.",
+      "pass": true
+     },
+     "c4": null,
+     "needs_human_review": false
+    },
+    "ttft_ms": 6391,
+    "type": "result",
+    "duration_ms": 17001,
+    "uuid": "181e7860-17f8-40b1-b821-2c68381786d8",
+    "ttft_stream_ms": 3072,
+    "time_to_request_ms": 278,
+    "time_to_request_phases_ms": {
+     "other": 1,
+     "system_prompt": 0,
+     "resume_other": 0,
+     "process_user_input": 2,
+     "input_attachments": 15,
+     "input_hooks": 1,
+     "conversation_append": 0,
+     "tool_pool_refresh": 1,
+     "init_message": 2,
+     "init_frame_send": 1,
+     "engine_pickup": 1,
+     "loop_entry": 1,
+     "message_prep": 1,
+     "model_config_wait": 1,
+     "autocompact": 0,
+     "request_announcements": 3,
+     "query_setup": 0,
+     "model_gates": 234,
+     "tool_schema_build": 7,
+     "message_normalization": 1,
+     "client_creation": 4,
+     "request_build": 2
+    },
+    "turn_start_resume_kind": "none",
+    "process_turn_index": 0,
+    "time_to_request_loop_lag_ms": 25,
+    "time_to_request_cpu_ms": 137,
+    "time_to_request_major_faults": 0,
+    "input_attachments_detail": {
+     "slowest_producer": "session_settings",
+     "slowest_producer_ms": 12,
+     "cpu_ms": 22,
+     "major_faults": 0,
+     "setup_ms": 0,
+     "prompt_producers_ms": 0,
+     "ambient_start_ms": 1,
+     "ambient_wait_ms": 12,
+     "render_ms": 0,
+     "producers": 43,
+     "token_counts": 0
+    },
+    "tool_schema_build_detail": {
+     "betas_ms": 0,
+     "waits_ms": 1,
+     "placement_ms": 5,
+     "render_ms": 1,
+     "after_ms": 0,
+     "other_ms": 0,
+     "tools": 1,
+     "new_schemas": 1
+    },
+    "message_normalization_detail": {
+     "before_ms": 0,
+     "normalize_ms": 1,
+     "images_ms": 0,
+     "post_process_ms": 0,
+     "after_ms": 0,
+     "other_ms": 0,
+     "messages": 8,
+     "wire_messages": 2
+    },
+    "request_build_detail": {
+     "records_ms": 0,
+     "system_ms": 0,
+     "headers_ms": 1,
+     "cache_break_record_ms": 0,
+     "plans_ms": 1,
+     "retry_setup_ms": 0,
+     "sent_build_ms": 0,
+     "record_attempt_ms": 0,
+     "other_ms": 0,
+     "sent_build_safety_context_ms": 0,
+     "sent_build_cache_breakpoints_ms": 0,
+     "sent_build_surrogate_scan_ms": 0
+    },
+    "first_content_frame_ms": 3073,
+    "queued_turn_count": 0,
+    "result_index": 0,
+    "credential_expires_at": "2026-12-24T05:16:04.194Z"
+   },
+   "stderr": ""
+  }
+ ]
+}

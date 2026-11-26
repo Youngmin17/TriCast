@@ -688,7 +688,13 @@ def _trace_input(**fields: Any) -> None:
         data = {"text_chars": len(text), "text_retained": False}
         # Match exactly the shipped public rehearsal keys, never a user-controlled --replay folder.
         # Never keep a digest of unknown text: even a hash can identify low-entropy personal inputs.
-        if len(text) <= 1000:
+        from .tune_request import RequestError, canonical_text
+        try:
+            text = canonical_text(text)
+        except RequestError:
+            pass
+        else:
+            data["nfc_chars"] = len(text)
             lower = text.casefold()
             data["mentions_model"] = [m for m in _TRACE_MODELS if m.split("/")[-1].casefold() in lower]
             data["features"] = [tag for tag, words in (

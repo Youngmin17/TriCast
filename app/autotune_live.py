@@ -147,7 +147,14 @@ REPLAY_SCHEMA = "tricast.autotune.replay/1"
 
 def _replay_key(kind: str, value: str | int) -> str:
     """A parse request is keyed by its sentence (white space runs made one space), a round by its count."""
-    return " ".join(str(value).split()) if kind == "parse" else f"count={value}"
+    if kind != "parse":
+        return f"count={value}"
+    from app.tune_request import RequestError, canonical_text
+
+    try:
+        return " ".join(canonical_text(str(value)).split())
+    except RequestError as exc:
+        raise LiveError(422, "request_refused", str(exc)) from exc
 
 
 def _replay_path(folder: Path, kind: str, key: str) -> Path:

@@ -239,6 +239,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   animated), rendered from the v3 deck PDF, followed by a short Korean text section.
 
 ### Fixed
+- Hangul requests are normalized to NFC before the 1,000-character limit, the replay key and trace features
+  (R1, adopted after a three-run live baseline of the 36-case set).
 - The recipe route's `measured.gpu` / `git_sha` come from the PPL record when a row has no KL record (they were
   empty for setups measured for PPL only); the tool's "한 방법 최선" says how many uniform recipes it was picked
   from.

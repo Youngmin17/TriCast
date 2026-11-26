@@ -7,11 +7,11 @@ bits as the setup it is compared with.
 
 Stages (each ends with one log marker: YOLO_<STAGE>_DONE, or YOLO_FAIL stage=<stage>):
   table     D(layer, method) on 128 calibration images, one conv quantized at a time -> table.json
-  solve     knapsack at u_int4 / heur_8_4 / u_int3 average bits -> solutions.json
+  solve     knapsack at u_int4 / heur_8_4 / u_int3 average bits and at the SWEEP budgets -> solutions.json
   evaluate  per setup: COCO bbox AP (4872 evaluation images), measured D, demo detections -> eval_<setup>.json
   export    app/web/demo/autotune/yolo11n.json
-  onnx      per setup: an ONNX file whose quantized conv weights are INT8 / INT4 codes decoded by
-            DequantizeLinear, run by onnxruntime on the demo photos and the evaluation images -> onnx/
+  onnx      per setup: native INT8 / INT4 or packed INT3 conv weights, run by onnxruntime on the
+            demo photos and the evaluation images -> onnx/
 
 Numerics: weight-only fake-quant. Each conv weight is viewed as [out, in/groups*kh*kw] (EmuConv2d's K order)
 and replaced by tricast.quant.api.fake_quant (reference backend): symmetric intN (k in [-(2^(N-1)-1),
@@ -74,7 +74,16 @@ DRAW = {"conf": 0.25, "iou": 0.7, "max_det": 100}
 UNIFORM = {"u_int8": "int8", "u_int4": "int4", "u_int3": "int3"}
 HEURISTIC = "heur_8_4"
 AUTO = {"auto_iso_u4": "u_int4", "auto_iso_h84": HEURISTIC, "auto_iso_u3": "u_int3"}  # auto -> size reference
-SETUPS = ("native", *UNIFORM, HEURISTIC, *AUTO)
+# Auto-tune at fixed average-bit budgets between INT4 and INT8: the size/mAP curve to pick a size on
+SWEEP = {
+    "auto_b450": Fraction(9, 2),
+    "auto_b500": Fraction(5),
+    "auto_b550": Fraction(11, 2),
+    "auto_b600": Fraction(6),
+    "auto_b700": Fraction(7),
+}
+SOLVED = (*AUTO, *SWEEP)  # setups whose assignment comes from solutions.json
+SETUPS = ("native", *UNIFORM, HEURISTIC, *AUTO, *SWEEP)
 LABELS = {
     "u_int8": "INT8 균일",
     "u_int4": "INT4 균일",
@@ -83,6 +92,7 @@ LABELS = {
     "auto_iso_u4": "Auto-tune · INT4 균일 크기",
     "auto_iso_h84": "Auto-tune · INT8/4 경험칙 크기",
     "auto_iso_u3": "Auto-tune · INT3 균일 크기",
+    **{setup: f"Auto-tune · 평균 {float(budget):g}비트" for setup, budget in SWEEP.items()},
 }
 QUANTIZATION = (
     "weight-only fake-quant: symmetric per-output-channel absmax, RNE, fp16 scale; activations FP32"
@@ -566,8 +576,12 @@ def stage_solve(args: argparse.Namespace) -> None:
     layers, d = table_layers(table)
     params = sum(layer.params for layer in layers)
     solutions = {}
-    for auto, reference in AUTO.items():
-        target = avg_bits(layers, baseline_assignment(reference, layers, table["heuristic_int8"]))
+    int8 = table["heuristic_int8"]
+    budgets = {
+        **{a: (ref, avg_bits(layers, baseline_assignment(ref, layers, int8))) for a, ref in AUTO.items()},
+        **{auto: (None, budget) for auto, budget in SWEEP.items()},
+    }
+    for auto, (reference, target) in budgets.items():
         assignment, solution = solve(layers, d, target * params)
         bits = avg_bits(layers, assignment)
         require(bits <= target, f"{auto}: {bits} bits exceed the budget {target}")
@@ -613,9 +627,11 @@ def stage_evaluate(args: argparse.Namespace) -> None:
     eval_ids = evaluation_ids(all_ids, calib)
     require(len(eval_ids) == COCO_IMAGES - CALIB_COUNT, "evaluation ids must be the other 4872")
     plans = {}
-    if any(setup in AUTO for setup in setups):
+    if any(setup in SOLVED for setup in setups):
         solutions = json.loads((args.work / "solutions.json").read_text())["solutions"]
-        plans = {setup: solutions[setup]["methods"] for setup in setups if setup in AUTO}
+        missing = [setup for setup in setups if setup in SOLVED and setup not in solutions]
+        require(not missing, f"{missing}: not in solutions.json (run solve with this version)")
+        plans = {setup: solutions[setup]["methods"] for setup in setups if setup in SOLVED}
     demo = []
     for image_id in DEMO_IDS:
         source = image_file(args.coco, image_id)
@@ -648,7 +664,7 @@ def stage_evaluate(args: argparse.Namespace) -> None:
     )
     for setup in setups:
         tick = time.monotonic()
-        assignment = plans[setup] if setup in AUTO else baseline_assignment(setup, layers, int8)
+        assignment = plans[setup] if setup in SOLVED else baseline_assignment(setup, layers, int8)
         require(set(assignment) == set(modules), f"{setup}: assignment does not cover the conv layers")
         predictions: list[dict] = []
         seen: list[int] = []
@@ -754,60 +770,86 @@ class OrtDetector:
 
 
 def int_weights_onnx(
-    source: Path, target: Path, weights: Mapping[str, tuple[Any, Any, int]]
+    source: Path, target: Path, weights: Mapping[str, tuple[Any, Any, int]], int3: str = "packed"
 ) -> dict[str, Any]:
-    """Rewrite an exported ONNX graph so each quantized conv weight is stored as integer codes (INT8, or INT4
-    for 3- and 4-bit codes) with one FP32 scale per output channel, decoded by DequantizeLinear (opset 21,
-    axis 0) into the initializer name the Conv reads. ``weights``: conv weight initializer name ->
-    (codes [out, ...] int, scale [out] fp32, bits)."""
+    """Store signed INT8/INT4 natively and INT3 in a UINT8 bitstream (ceil(3N/8) bytes), or with
+    ``int3="int4"`` the INT3 codes in INT4 (a runtime whose ONNX parser refuses the bit-unpacking graph).
+    All decode to FP32 with one scale per output channel before the original Conv.
+    ``weights`` maps the conv initializer to (integer codes [out, in/groups, h, w], FP32 scales [out], bits).
+    """
     import ml_dtypes
     import numpy as np
     import onnx
+    import torch
     from onnx import helper, numpy_helper
 
+    from tricast.bitpack import pack_bits
+    from tricast.onnx_export import _GraphBuilder, _verify_decoded_weights
+
     model = onnx.load(str(source))
-    initializers = {init.name: init for init in model.graph.initializer}
-    missing = sorted(set(weights) - set(initializers))
+    graph = _GraphBuilder(model)
+    missing = sorted(set(weights) - set(graph.initializers))
     require(not missing, f"no ONNX initializer for {missing[:3]}")
-    nodes = []
-    stored = {}
+    consumed = {node.input[1] for node in model.graph.node if node.op_type == "Conv" and len(node.input) > 1}
+    require(set(weights) <= consumed, "selected weight is not a Conv kernel")
+    targets, stored = {}, {}
     for name, (codes, scale, bits) in weights.items():
-        original = numpy_helper.to_array(initializers[name])
-        dtype = np.int8 if bits > 4 else ml_dtypes.int4
-        limit = 1 << (7 if bits > 4 else 3)
-        require(
-            codes.dtype.kind in "iu" and int(codes.min()) >= -limit and int(codes.max()) < limit,
-            f"{name}: codes do not fit {np.dtype(dtype).name}",
-        )
-        q = numpy_helper.from_array(codes.astype(dtype), f"{name}__q")
-        # what DequantizeLinear computes from the stored integers; the sign of a zero aside (codes have none)
-        stored_codes = numpy_helper.to_array(q).astype(np.float32)
-        decoded = (stored_codes * scale.astype(np.float32).reshape(-1, *([1] * (codes.ndim - 1)))).astype(
-            np.float32
-        )
-        require(
-            decoded.shape == original.shape
-            and np.array_equal((decoded + 0.0).view(np.int32), (original + 0.0).view(np.int32)),
-            f"{name}: codes x scale is not the exported weight",
-        )
-        zero = numpy_helper.from_array(np.zeros(codes.shape[0], dtype=dtype), f"{name}__zero")
-        s = numpy_helper.from_array(scale.astype(np.float32), f"{name}__scale")
-        model.graph.initializer.remove(initializers[name])
-        model.graph.initializer.extend([q, s, zero])
-        nodes.append(
-            helper.make_node(
+        original_init = graph.initializers[name]
+        original = numpy_helper.to_array(original_init)
+        codes, scale = np.asarray(codes), np.asarray(scale)
+        require(bits in (3, 4, 8), f"{name}: unsupported weight bit width {bits}")
+        require(original.dtype == np.float32 and codes.ndim == 4 and codes.shape == original.shape
+                and codes.size > 0, f"{name}: expected codes with the same shape as the FP32 conv kernel")
+        require(scale.shape == (codes.shape[0],) and scale.dtype == np.float32 and np.isfinite(scale).all()
+                and (scale > 0).all(), f"{name}: expected one positive finite FP32 scale per output channel")
+        limit = 1 << (bits - 1)
+        require(codes.dtype.kind in "iu" and int(codes.min()) >= -limit and int(codes.max()) < limit,
+                f"{name}: codes do not fit signed int{bits}")
+        model.graph.initializer.remove(original_init)
+        targets[name] = (name, torch.from_numpy(original.copy()))
+        stored[name] = {"bits": bits, "dtype": f"int{bits}", "params": int(codes.size)}
+        require(int3 in ("packed", "int4"), f"unknown INT3 storage {int3}")
+        carrier = 4 if bits == 3 and int3 == "int4" else bits
+        if carrier == 3:
+            offset_codes = torch.from_numpy(codes.astype(np.int64)) + limit
+            packed = pack_bits(offset_codes, bits).numpy()
+            unsigned = graph.emit_unpack(name, packed, bits, codes.size)
+            payload = graph.payloads[name]
+            code_bytes = len(graph.initializers[payload].raw_data)
+            require(code_bytes == (bits * codes.size + 7) // 8, f"{name}: wrong packed INT3 payload length")
+            lut = graph.add_init(f"{name}__signed", np.arange(-limit, limit, dtype=np.float32))
+            signed = graph.fresh(f"{name}__values")
+            graph.add_node("Gather", [lut, unsigned], [signed], axis=0)
+            shape = graph.add_init(f"{name}__shape", np.array(codes.shape, dtype=np.int64))
+            rows = graph.fresh(f"{name}__rows")
+            graph.add_node("Reshape", [signed, shape], [rows])
+            s = graph.add_init(f"{name}__scale", scale.reshape(-1, 1, 1, 1))
+            graph.add_node("Mul", [rows, s], [name])
+            stored[name].update(dtype="packed_int3", initializer=payload, code_bytes=code_bytes)
+        else:
+            dtype = np.int8 if carrier == 8 else ml_dtypes.int4
+            q = numpy_helper.from_array(codes.astype(dtype), f"{name}__q")
+            zero = numpy_helper.from_array(np.zeros(codes.shape[0], dtype=dtype), f"{name}__zero")
+            s = numpy_helper.from_array(scale, f"{name}__scale")
+            require(len(q.raw_data) == (carrier * codes.size + 7) // 8, f"{name}: wrong code payload length")
+            if carrier != bits:
+                stored[name].update(dtype="int3_in_int4", code_bytes=len(q.raw_data))
+            for init in (q, s, zero):
+                require(init.name not in graph.used_names, f"{name}: ONNX value already exists: {init.name}")
+                graph.used_names.add(init.name)
+            model.graph.initializer.extend([q, s, zero])
+            graph.prepended_nodes.append(helper.make_node(
                 "DequantizeLinear", [q.name, s.name, zero.name], [name], axis=0, name=f"{name}__dequant"
-            )
-        )
-        stored[name] = {"bits": bits, "dtype": "int8" if bits > 4 else "int4", "params": int(codes.size)}
-    for node in reversed(nodes):
+            ))
+    for node in reversed(graph.prepended_nodes):
         model.graph.node.insert(0, node)
     for opset in model.opset_import:
         if opset.domain in ("", "ai.onnx"):
-            # opset 21 adds the INT4 type to DequantizeLinear; the ops this graph uses keep their semantics
             opset.version = max(opset.version, 21)
-    model.ir_version = max(model.ir_version, 10)  # INT4 tensors need IR version 10
+    model.ir_version = max(model.ir_version, 10)
     onnx.checker.check_model(model)
+    mismatched = _verify_decoded_weights(model, targets)
+    require(not mismatched, f"{mismatched[:3]}: decoded codes x scale is not the exported weight")
     onnx.save(model, str(target))
     return stored
 
@@ -824,7 +866,7 @@ def stage_onnx(args: argparse.Namespace) -> None:
     setup_torch(args.threads)
     setups = [s.strip() for s in args.setups.split(",") if s.strip()]
     require(setups and set(setups) <= set(SETUPS), f"setups must be among {SETUPS}")
-    out = args.work / "onnx"
+    out = args.work / ("onnx" if args.int3 == "packed" else "onnx_int3in4")
     out.mkdir(parents=True, exist_ok=True)
     model, names = load_model(args.checkpoint)
     layers, modules, int8, _ = conv_layers(model)
@@ -832,9 +874,11 @@ def stage_onnx(args: argparse.Namespace) -> None:
     detect = model.model[-1]
     detect.export, detect.format, detect.dynamic = True, "onnx", True  # one decoded tensor, any input size
     plans = {}
-    if any(setup in AUTO for setup in setups):
+    if any(setup in SOLVED for setup in setups):
         solutions = json.loads((args.work / "solutions.json").read_text())["solutions"]
-        plans = {setup: solutions[setup]["methods"] for setup in setups if setup in AUTO}
+        missing = [setup for setup in setups if setup in SOLVED and setup not in solutions]
+        require(not missing, f"{missing}: not in solutions.json (run solve with this version)")
+        plans = {setup: solutions[setup]["methods"] for setup in setups if setup in SOLVED}
     annotations = args.coco / "annotations" / "instances_val2017.json"
     all_ids = annotation_ids(annotations)
     eval_ids = evaluation_ids(all_ids, calibration_ids(all_ids))
@@ -850,7 +894,7 @@ def stage_onnx(args: argparse.Namespace) -> None:
     print(f"YOLO_ONNX_START setups={','.join(setups)} threads={args.threads}", flush=True)
     for setup in setups:
         tick = time.monotonic()
-        assignment = plans[setup] if setup in AUTO else baseline_assignment(setup, layers, int8)
+        assignment = plans[setup] if setup in SOLVED else baseline_assignment(setup, layers, int8)
         original = {name: modules[name].weight.detach().clone() for name in modules}
         weights = {}
         for name, method in assignment.items():
@@ -876,7 +920,7 @@ def stage_onnx(args: argparse.Namespace) -> None:
                 },
                 dynamo=False,
             )
-            stored = int_weights_onnx(float_path, int_path, weights)
+            stored = int_weights_onnx(float_path, int_path, weights, args.int3)
             session = OrtDetector(int_path, args.threads)
             parity, kept = [], {}
             for image_id in DEMO_IDS:
@@ -941,6 +985,7 @@ def stage_onnx(args: argparse.Namespace) -> None:
             "sha256": sha256_file(int_path),
             "float_bytes": float_path.stat().st_size,
             "stored": stored,
+            "int3_storage": args.int3,
             "raw_max_abs_diff": parity,
             "demo_boxes": kept,
             "metrics": {k: metrics[k] for k in METRIC_KEYS},
@@ -1001,7 +1046,7 @@ def stage_export(args: argparse.Namespace) -> None:
         bits = avg_bits(layers, assignment)
         entry = {
             "id": setup,
-            "kind": "auto" if setup in AUTO else "uniform" if setup in UNIFORM else "heuristic",
+            "kind": "auto" if setup in SOLVED else "uniform" if setup in UNIFORM else "heuristic",
             "label": LABELS[setup],
             "bits": float(bits),
             "bits_fraction": fraction_text(bits),
@@ -1013,10 +1058,10 @@ def stage_export(args: argparse.Namespace) -> None:
             "metrics": eval_metrics(setup, result),
             "env": result["env"],
         }
-        if setup in AUTO:
+        if setup in SOLVED:
             solution = solved["solutions"][setup]
             require(solution["methods"] == assignment, f"{setup}: evaluated methods differ from the solution")
-            # the exact budget the knapsack was given (the reference setup's average bits); bits <= it
+            # the exact budget the knapsack was given (the reference setup's or the sweep's average bits)
             entry["budget_bits"] = solution["budget_fraction"]
         setups.append(entry)
     data = {
@@ -1159,7 +1204,7 @@ def validate(data: Mapping[str, Any]) -> list[str]:
     names = {layer.name for layer in layers}
     for setup in data["setups"]:
         sid = setup["id"]
-        keys = SETUP_KEYS + (("budget_bits",) if sid in AUTO else ())
+        keys = SETUP_KEYS + (("budget_bits",) if sid in SOLVED else ())
         check(tuple(setup) == keys, f"{sid}: keys {tuple(setup)}")
         assignment = setup["methods"]
         check(set(assignment) == names and set(assignment.values()) <= set(METHODS), f"{sid}: methods")
@@ -1185,6 +1230,9 @@ def validate(data: Mapping[str, Any]) -> list[str]:
                     budget == parse_fraction(reference["bits_fraction"]), f"{sid}: budget != reference bits"
                 )
                 check(bits <= budget, f"{sid}: bits exceed the budget")
+        if sid in SWEEP and "budget_bits" in setup:
+            check(parse_fraction(setup["budget_bits"]) == SWEEP[sid], f"{sid}: budget != the sweep budget")
+            check(bits <= SWEEP[sid], f"{sid}: bits exceed the budget")
     for image in data["images"]:
         check(set(image["detections"]) == set(SETUPS), f"image {image.get('coco_id')}: detection setups")
         for boxes in image["detections"].values():
@@ -1226,6 +1274,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         if name == "onnx":
             stage.add_argument(
                 "--more", type=Path, nargs="*", default=[], help="other work dirs with eval_*.json"
+            )
+            stage.add_argument(
+                "--int3", choices=("packed", "int4"), default="packed",
+                help="INT3 codes as a 3-bit stream (onnx/) or in INT4 for runtimes without bit ops "
+                "(onnx_int3in4/)",
             )
         if name == "evaluate":
             stage.add_argument("--media", type=Path, default=ROOT / "app" / "web" / "demo" / "media")

@@ -20,6 +20,7 @@ eval = ["transformers>=4.55", "lm_eval>=0.4.13", "datasets>=4.0", "accelerate"]
 agent = ["anthropic"]
 # TriCast Studio server and its tests (app/tests); the GPU runners also need app/requirements.txt.
 app = ["fastapi", "uvicorn", "httpx", "pillow"]
+onnx = ["onnx>=1.18", "onnxruntime>=1.25.1", "ml_dtypes"]
 dev = ["pytest", "hypothesis", "ruff"]
 
 [project.scripts]

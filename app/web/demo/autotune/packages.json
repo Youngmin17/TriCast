@@ -416,6 +416,330 @@
      "git_sha": "6bc78e6dd5c2835d3057ecc1e892a97e3c54c6c6",
      "utc": "2026-11-13T06:17:08+00:00"
     }
+   },
+   "auto_b450": {
+    "file": "packages/yolo11n/auto_b450.onnx",
+    "bytes": 1674869,
+    "sha256": "68b0ed3d3c287e5b23aab5ed44cd1cc8cacbd3ee68a1fe7ac5c1ce4c56d4f0b4",
+    "kinds": {
+     "int8": 39,
+     "int4": 36,
+     "packed_int3": 12
+    },
+    "metrics": {
+     "AP_50_95": 0.28625940617545387,
+     "AP_50": 0.4531316645542708,
+     "AP_75": 0.31434572565003216,
+     "AP_small": 0.13538663798641323,
+     "AP_medium": 0.30101378826766284,
+     "AP_large": 0.4412807678003332
+    },
+    "pytorch_metrics": {
+     "AP_50_95": 0.28626068296262586,
+     "AP_50": 0.45313160220843773,
+     "AP_75": 0.3143459560792983,
+     "AP_small": 0.1353889446497606,
+     "AP_medium": 0.30101416280367516,
+     "AP_large": 0.4412807659777918
+    },
+    "raw_max_abs_diff": 0.00286865234375,
+    "demo_boxes": {
+     "1000": {
+      "onnx": 23,
+      "pytorch": 23,
+      "same_classes": true
+     },
+     "5001": {
+      "onnx": 19,
+      "pytorch": 19,
+      "same_classes": true
+     },
+     "8021": {
+      "onnx": 5,
+      "pytorch": 5,
+      "same_classes": true
+     }
+    },
+    "images": 4872,
+    "env": {
+     "onnx": "1.19.1",
+     "onnxruntime": "1.23.2",
+     "host": "canterbury.ee.ucl.ac.uk",
+     "git_sha": "26fc532461ca65578f715f98672de585bfdbc8df",
+     "utc": "2026-11-26T08:56:28+00:00"
+    },
+    "int3_storage": "packed"
+   },
+   "auto_b500": {
+    "file": "packages/yolo11n/auto_b500.onnx",
+    "bytes": 1864945,
+    "sha256": "f73d6fbffc3255ead13162f66c05318eded16a9b2464d4250a333b94b8716a00",
+    "kinds": {
+     "int8": 47,
+     "int4": 29,
+     "int3_in_int4": 10
+    },
+    "metrics": {
+     "AP_50_95": 0.3106745080348349,
+     "AP_50": 0.4850935827471252,
+     "AP_75": 0.34094793921570876,
+     "AP_small": 0.14581464039557523,
+     "AP_medium": 0.3279179318072745,
+     "AP_large": 0.47781164606254084
+    },
+    "pytorch_metrics": {
+     "AP_50_95": 0.31067453340563,
+     "AP_50": 0.485094051828749,
+     "AP_75": 0.3409481449565543,
+     "AP_small": 0.1458144020288566,
+     "AP_medium": 0.3279178346239777,
+     "AP_large": 0.4778119845431517
+    },
+    "raw_max_abs_diff": 0.00360107421875,
+    "demo_boxes": {
+     "1000": {
+      "onnx": 19,
+      "pytorch": 19,
+      "same_classes": true
+     },
+     "5001": {
+      "onnx": 22,
+      "pytorch": 22,
+      "same_classes": true
+     },
+     "8021": {
+      "onnx": 4,
+      "pytorch": 4,
+      "same_classes": true
+     }
+    },
+    "images": 4872,
+    "env": {
+     "onnx": "1.19.1",
+     "onnxruntime": "1.23.2",
+     "host": "oslo.ee.ucl.ac.uk",
+     "git_sha": "26fc532461ca65578f715f98672de585bfdbc8df",
+     "utc": "2026-11-26T09:04:18+00:00"
+    },
+    "int3_storage": "int4",
+    "runtimes": [
+     {
+      "runtime": "ONNX Runtime",
+      "version": "1.23.2",
+      "device": "CPU",
+      "artifact": "ONNX",
+      "artifact_sha256": "f73d6fbffc3255ead13162f66c05318eded16a9b2464d4250a333b94b8716a00",
+      "metrics": {
+       "AP_50_95": 0.3106745080348349,
+       "AP_50": 0.4850935827471252,
+       "AP_75": 0.34094793921570876,
+       "AP_small": 0.14581464039557523,
+       "AP_medium": 0.3279179318072745,
+       "AP_large": 0.47781164606254084
+      },
+      "images": 4872,
+      "gate": null
+     },
+     {
+      "runtime": "OpenVINO",
+      "version": "2026.4.1",
+      "device": "Intel(R) Xeon(R) Gold 6126 CPU @ 2.60GHz",
+      "artifact": "IR (XML + BIN)",
+      "artifact_sha256": "c1bcc190cd61823040d06809db3ac32641e3b14df4cfcc6ce7006e584f8e97d1",
+      "metrics": {
+       "AP_50_95": 0.3106730476878345,
+       "AP_50": 0.48509283640005846,
+       "AP_75": 0.3409482018598835,
+       "AP_small": 0.1458120756276364,
+       "AP_medium": 0.32791778443731845,
+       "AP_large": 0.47781142027102996
+      },
+      "images": 4872,
+      "gate": {
+       "max_abs_ap_delta": 0.001,
+       "passed": true
+      }
+     },
+     {
+      "runtime": "TensorRT",
+      "version": "10.13.3.9",
+      "device": "NVIDIA H200 NVL",
+      "artifact": "engine plan",
+      "artifact_sha256": "1d1fb586ef7cb9d98010827f62be498d08715e0311d39204f5584cbd644aee3f",
+      "metrics": {
+       "AP_50_95": 0.3106747968873569,
+       "AP_50": 0.4850944833611593,
+       "AP_75": 0.34094875225750504,
+       "AP_small": 0.14581498919979577,
+       "AP_medium": 0.32791803264222,
+       "AP_large": 0.47781203942927514
+      },
+      "images": 4872,
+      "gate": {
+       "max_abs_ap_delta": 0.001,
+       "passed": true
+      }
+     }
+    ]
+   },
+   "auto_b550": {
+    "file": "packages/yolo11n/auto_b550.onnx",
+    "bytes": 1998721,
+    "sha256": "68cc7b903aa41748b34af760c4a489999c6463c9b65e854cf7231fc5cd24c5d7",
+    "kinds": {
+     "int8": 60,
+     "int4": 17,
+     "packed_int3": 9
+    },
+    "metrics": {
+     "AP_50_95": 0.33546553120087225,
+     "AP_50": 0.5078054222912153,
+     "AP_75": 0.3635008920556124,
+     "AP_small": 0.15368726000445895,
+     "AP_medium": 0.35199449739313116,
+     "AP_large": 0.5242247758636169
+    },
+    "pytorch_metrics": {
+     "AP_50_95": 0.3354654973380831,
+     "AP_50": 0.5078054725757969,
+     "AP_75": 0.3635012452834144,
+     "AP_small": 0.1536878286239453,
+     "AP_medium": 0.3519933962208978,
+     "AP_large": 0.5242247867518651
+    },
+    "raw_max_abs_diff": 0.0035400390625,
+    "demo_boxes": {
+     "1000": {
+      "onnx": 20,
+      "pytorch": 20,
+      "same_classes": true
+     },
+     "5001": {
+      "onnx": 20,
+      "pytorch": 20,
+      "same_classes": true
+     },
+     "8021": {
+      "onnx": 4,
+      "pytorch": 4,
+      "same_classes": true
+     }
+    },
+    "images": 4872,
+    "env": {
+     "onnx": "1.19.1",
+     "onnxruntime": "1.23.2",
+     "host": "canterbury.ee.ucl.ac.uk",
+     "git_sha": "26fc532461ca65578f715f98672de585bfdbc8df",
+     "utc": "2026-11-26T09:16:12+00:00"
+    },
+    "int3_storage": "packed"
+   },
+   "auto_b600": {
+    "file": "packages/yolo11n/auto_b600.onnx",
+    "bytes": 2161964,
+    "sha256": "b01d02ae95118e6d98abb27c7cf2284f4450470b023fa9da0c5d881a62804406",
+    "kinds": {
+     "int8": 65,
+     "int4": 12,
+     "packed_int3": 9
+    },
+    "metrics": {
+     "AP_50_95": 0.34212719717127454,
+     "AP_50": 0.5168952103930168,
+     "AP_75": 0.3731067402867274,
+     "AP_small": 0.15304252286450618,
+     "AP_medium": 0.3598992937058519,
+     "AP_large": 0.5293412439192015
+    },
+    "pytorch_metrics": {
+     "AP_50_95": 0.3421284668199873,
+     "AP_50": 0.5168970886674541,
+     "AP_75": 0.37310906634533175,
+     "AP_small": 0.15304294417892758,
+     "AP_medium": 0.3598991986189305,
+     "AP_large": 0.5293412513880357
+    },
+    "raw_max_abs_diff": 0.002838134765625,
+    "demo_boxes": {
+     "1000": {
+      "onnx": 22,
+      "pytorch": 22,
+      "same_classes": true
+     },
+     "5001": {
+      "onnx": 22,
+      "pytorch": 22,
+      "same_classes": true
+     },
+     "8021": {
+      "onnx": 4,
+      "pytorch": 4,
+      "same_classes": true
+     }
+    },
+    "images": 4872,
+    "env": {
+     "onnx": "1.19.1",
+     "onnxruntime": "1.23.2",
+     "host": "canterbury.ee.ucl.ac.uk",
+     "git_sha": "26fc532461ca65578f715f98672de585bfdbc8df",
+     "utc": "2026-11-26T08:56:28+00:00"
+    },
+    "int3_storage": "packed"
+   },
+   "auto_b700": {
+    "file": "packages/yolo11n/auto_b700.onnx",
+    "bytes": 2548556,
+    "sha256": "a6bc6fbc222c593187e11d6f0171715065c813d97591e881f8a51315db1147fc",
+    "kinds": {
+     "int8": 69,
+     "int4": 3,
+     "packed_int3": 6
+    },
+    "metrics": {
+     "AP_50_95": 0.35983865372417806,
+     "AP_50": 0.5275571861844771,
+     "AP_75": 0.38878744548831357,
+     "AP_small": 0.15564040827234168,
+     "AP_medium": 0.38733770027528897,
+     "AP_large": 0.5585048578995889
+    },
+    "pytorch_metrics": {
+     "AP_50_95": 0.35983853405085675,
+     "AP_50": 0.5275569546911041,
+     "AP_75": 0.3887875138249811,
+     "AP_small": 0.1556403567388295,
+     "AP_medium": 0.3873379037779889,
+     "AP_large": 0.5585035192642663
+    },
+    "raw_max_abs_diff": 0.00433349609375,
+    "demo_boxes": {
+     "1000": {
+      "onnx": 20,
+      "pytorch": 20,
+      "same_classes": true
+     },
+     "5001": {
+      "onnx": 23,
+      "pytorch": 23,
+      "same_classes": true
+     },
+     "8021": {
+      "onnx": 5,
+      "pytorch": 5,
+      "same_classes": true
+     }
+    },
+    "images": 4872,
+    "env": {
+     "onnx": "1.19.1",
+     "onnxruntime": "1.23.2",
+     "host": "bradford.ee.ucl.ac.uk",
+     "git_sha": "26fc532461ca65578f715f98672de585bfdbc8df",
+     "utc": "2026-11-26T09:03:14+00:00"
+    },
+    "int3_storage": "packed"
    }
   }
  }

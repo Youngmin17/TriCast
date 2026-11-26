@@ -90,6 +90,7 @@ from pathlib import Path
 from typing import Any
 
 from app import export_quantizer_demo as ex
+from app import packed_targets
 from app import quantizer_recipe as qr
 
 TABLE_SCHEMA = "tricast.autotune.table/2"
@@ -1132,6 +1133,23 @@ def cmd_measure(args: argparse.Namespace, model_factory: ModelFactory | None = N
 def cmd_solve(args: argparse.Namespace) -> int:
     started = time.perf_counter()
     table_path = Path(args.table)
+    if getattr(args, "target", None) is not None:
+        if (args.kv != "none" or args.compute_budget is not None or args.compute_resolution is not None
+                or args.drop_unrated or args.no_subtract_floor):
+            raise AutotuneError("packed plans do not model KV, patch floors or B200 dense compute budgets")
+        raw = table_path.read_bytes()
+        budget = args.budget_bits if args.budget_bits is not None else args.budget_fraction * 16
+        try:
+            plan = packed_targets.solve(json.loads(raw), args.target, budget, args.resolution)
+        except ValueError as exc:
+            raise AutotuneError(str(exc)) from None
+        plan["table_sha256"] = hashlib.sha256(raw).hexdigest()
+        out = Path(args.out) / "packed-plan.json"
+        plan["name"] = args.name or f"{args.target}_{default_name(budget, 'none')}"
+        _dump(out, plan)
+        print(f"PACKED_PLAN_DONE target={args.target} bits={plan['avg_bits']:.6f} "
+              f"projections={len(plan['layers'])} runtime_verified=false out={out}")
+        return 0
     table, raw, layers, methods = load_table(table_path)
     params = sum(layer.params for layer in layers)
     bits = args.budget_bits if args.budget_bits is not None else args.budget_fraction * 16
@@ -1458,6 +1476,8 @@ def main(argv: Sequence[str] | None = None, model_factory: ModelFactory | None =
     measure.add_argument("recipes", nargs="+", metavar="RECIPE")
     solve = commands.add_parser("solve", help="multiple-choice knapsack over a table")
     solve.add_argument("--table", required=True)
+    solve.add_argument("--target", choices=packed_targets.TARGETS, help="target-native packed table only: "
+                       "write packed-plan.json, not a fake-quant recipe")
     budget = solve.add_mutually_exclusive_group(required=True)
     budget.add_argument("--budget-bits", type=Fraction, help="Linear-weighted average bits")
     budget.add_argument("--budget-fraction", type=Fraction, help="fraction of the BF16 Linear size")

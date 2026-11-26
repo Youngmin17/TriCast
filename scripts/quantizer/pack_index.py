@@ -104,7 +104,37 @@ def llm_entry(package: Path) -> dict[str, Any]:
     return entry
 
 
-def onnx_entries(model: str, work: Path, copy: Path | None) -> dict[str, Any]:
+def runtime_entry(path: Path, onnx_sha256: str) -> dict[str, Any]:
+    """Another runtime's COCO check of a setup's ONNX file: an OpenVINO IR or a TensorRT plan built from
+    that very file (refused when the record names another file). Its gate result is listed, passed or not."""
+    record = json.loads(path.read_text(encoding="utf-8"))
+    if "metrics_tensorrt" in record:
+        if record["model_sha256"] != onnx_sha256:
+            raise SystemExit(f"{path}: the TensorRT plan was built from another ONNX file")
+        return {
+            "runtime": "TensorRT", "version": record["tensorrt"], "device": record["gpu"],
+            "artifact": "engine plan", "artifact_sha256": record["plan_sha256"],
+            "metrics": record["metrics_tensorrt"], "images": record["n_scored"],
+            "gate": {"max_abs_ap_delta": record["ap_delta_gate"], "passed": bool(record["passed"])},
+        }
+    if "xml_sha256" in record:
+        if record["source_onnx_sha256"] != onnx_sha256:
+            raise SystemExit(f"{path}: the OpenVINO IR was converted from another ONNX file")
+        # the IR's own COCOeval (record["openvino"]); its delta against the source file's ORT run
+        metrics = {k: record["openvino"][k] for k in record["delta"]}
+        passed = bool(record["ap_absolute_difference_within_0_001"])
+        return {
+            "runtime": "OpenVINO", "version": record["env"]["openvino"].split("-")[0],
+            "device": record["env"].get("cpu", "CPU"), "artifact": "IR (XML + BIN)",
+            "artifact_sha256": record["bin_sha256"],
+            "metrics": metrics, "images": record["evaluation_images"],
+            "gate": {"max_abs_ap_delta": 0.001, "passed": passed},
+        }
+    raise SystemExit(f"{path}: neither an OpenVINO nor a TensorRT COCO record")
+
+
+def onnx_entries(model: str, work: Path, copy: Path | None,
+                 runtimes: dict[str, list[Path]] | None = None) -> dict[str, Any]:
     out = {}
     for path in sorted(work.glob("onnx_*.json")):
         record = json.loads(path.read_text(encoding="utf-8"))
@@ -132,6 +162,15 @@ def onnx_entries(model: str, work: Path, copy: Path | None) -> dict[str, Any]:
             "images": record["evaluation_images"],
             "env": {k: record["env"].get(k) for k in ("onnx", "onnxruntime", "host", "git_sha", "utc")},
         }
+        if record.get("int3_storage"):
+            out[record["setup"]]["int3_storage"] = record["int3_storage"]
+        extra = (runtimes or {}).get(record["setup"], [])
+        if extra:
+            out[record["setup"]]["runtimes"] = [
+                {"runtime": "ONNX Runtime", "version": record["env"].get("onnxruntime"), "device": "CPU",
+                 "artifact": "ONNX", "artifact_sha256": record["sha256"], "metrics": record["metrics"],
+                 "images": record["evaluation_images"], "gate": None},
+                *(runtime_entry(path, record["sha256"]) for path in extra)]
     return out
 
 
@@ -141,15 +180,30 @@ def main() -> int:
     parser.add_argument("--llm", type=Path, action="append", default=[])
     parser.add_argument("--onnx", action="append", default=[], help="<model>=<onnx work dir>")
     parser.add_argument("--onnx-copy", type=Path, help="where the ONNX files go next to the page")
+    parser.add_argument("--runtime", action="append", default=[], metavar="MODEL:SETUP=RESULT_JSON",
+                        help="an OpenVINO / TensorRT COCO record of that setup's ONNX file")
     args = parser.parse_args()
     llm = [llm_entry(path) for path in args.llm]
     keys = [(e["model"], e["recipe_sha256"]) for e in llm]
     if len(set(keys)) != len(keys):
         raise SystemExit("two packages of the same model and recipe file")
-    onnx = {}
-    for spec in args.onnx:
+    runtimes: dict[str, dict[str, list[Path]]] = {}
+    for spec in args.runtime:
+        key, result = spec.split("=", 1)
+        model, setup = key.split(":", 1)
+        runtimes.setdefault(model, {}).setdefault(setup, []).append(Path(result))
+    onnx: dict[str, dict[str, Any]] = {}
+    for spec in args.onnx:  # a model may come from several work dirs; a setup only from one
         model, work = spec.split("=", 1)
-        onnx[model] = onnx_entries(model, Path(work), args.onnx_copy)
+        entries = onnx_entries(model, Path(work), args.onnx_copy, runtimes.get(model))
+        twice = sorted(set(entries) & set(onnx.get(model, {})))
+        if twice:
+            raise SystemExit(f"{model}: setups {twice} come from two work dirs")
+        onnx.setdefault(model, {}).update(entries)
+    listed = {(m, s) for m, entries in onnx.items() for s in entries}
+    unused = sorted((m, s) for m, by in runtimes.items() for s in by if (m, s) not in listed)
+    if unused:
+        raise SystemExit(f"runtime records for setups without an ONNX record: {unused}")
     args.out.write_text(
         json.dumps({"schema": SCHEMA, "llm": llm, "onnx": onnx}, ensure_ascii=False, indent=1) + "\n",
         encoding="utf-8",

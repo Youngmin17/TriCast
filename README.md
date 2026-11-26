@@ -171,7 +171,7 @@ AC 는 [`docs/SPEC.md`](docs/SPEC.md#6-수용-기준) §6 의 수용 기준 번�
   - Z-Image-Turbo 도 **가중치만** 양자화한 fake-quant 다 (보정 없는 RTN: INT8 은 출력 행마다, INT4 · 3 · 2 는 입력 128개마다 FP16 스케일 + 영점, 활성값 · 텍스트 인코더 · VAE 는 그대로). V100 에서 FP16 이 값 범위를 넘어 **FP32 · 512 px** (모델 기본 1024 px) 로 쟀다. SSIM · PSNR 은 원본 모델이 같은 시드로 만든 이미지와의 차이이지 이미지 품질(사람 평가 · CLIP 점수)이 아니다. Auto-tune 도 원본에서 SSIM 이 29–63 떨어진다 (27% → 16%) — 8단계 생성에서는 작은 오차도 이미지 구도를 바꾼다 (INT8 균일 50% 도 90.1). 19% · 16% 는 첫 결과를 본 뒤 "기존이 무너지는 크기" 로 더한 시연용 크기다 (8B 의 18% · 19% 와 같은 방식, 같은 비트 수끼리의 비교가 아니다). 16% 의 Auto-tune 은 무엇을 그렸는지 알아볼 수 있지만 잡음이 많다 (SSIM 37.3). 층별 오차 표는 프롬프트 4개로 쟀다. 모델 패키지는 만들지 않았다.
   - 직접 편집은 GPU 로 재 둔 조합만 고를 수 있다 (전체를 한 방법으로 · 세부 설정, 6개 크기에 모두 57개). **층 하나씩 바꾸는 편집은 아직 없다.**
   - GPU 에서 바로 평가하는 버튼은 GPU 서버(`--live`, CUDA)에서만 나온다. 이 경로는 가짜 GPU 로 화면 처리만 확인했다.
-  - ⑤ 의 압축 크기는 **계산값**이다 (원본 파일의 텐서 수 × 고른 비트). 실제로 만든 모델 패키지는 두 셋업뿐이다 — 0.6B 20% AI 추천(`act_damp05_r3`)과 8B 19% (`auto_3.00`). 다른 셋업은 ⑤ 에 만드는 명령만 나온다. 패키지는 정수 코드를 풀어 PyTorch 의 BF16 행렬곱으로 계산하므로 **원본보다 빠르지 않다** (저비트 커널 없음, 줄어드는 것은 파일 · 메모리). HQQ 층은 공식 라이브러리가 정수 코드를 남기지 않아 BF16 으로 저장한다 (0.6B 에서 4층). ONNX 는 YOLO11n 만이다.
+  - ⑤ 의 압축 크기는 **계산값**이다 (원본 파일의 텐서 수 × 고른 비트). 실제로 만든 모델 패키지는 두 셋업뿐이다 — 0.6B 20% AI 추천(`act_damp05_r3`)과 8B 19% (`auto_3.00`). 다른 셋업은 ⑤ 에 만드는 명령만 나온다. 이 화면에서 쓰는 종전 패키지 실행기는 정수 코드를 풀어 PyTorch 행렬곱으로 계산하며 저비트 전용 커널을 쓰지 않는다. CLI의 타일 실행과 표준 GGUF·HF 배포는 [별도 실측](docs/evidence/2026-11-26_packed_inference.md)을 참조한다. HQQ 층은 공식 라이브러리가 정수 코드를 남기지 않아 BF16 으로 저장한다 (0.6B 에서 4층). 웹에서 바로 내려받는 ONNX는 YOLO11n이다. 언어 모델의 실제 비트폭 ONNX는 아래 CLI로 별도 생성한다.
   - 글꼴은 인터넷이 있을 때 내려받는다 (없으면 기본 글꼴로 보인다).
 - **알려진 오류와 해결**:
   - `python3` 가 3.9 이하 → 3.10 이상을 설치해 `python3.12 -m venv .venv` 처럼 만든다.
@@ -288,6 +288,74 @@ python scripts/quantizer/yolo_tune.py onnx --work <작업 폴더> --setups nativ
 python scripts/quantizer/pack_index.py --out app/web/demo/autotune/packages.json \
     --llm <패키지 폴더> --onnx yolo11n=<작업 폴더>/onnx --onnx-copy app/web/demo/autotune/packages/yolo11n
 ```
+
+### 실제 비트폭의 ONNX 내보내기
+
+모델 전체를 다시 보정하지 않고도 기존 TriCast 패키지를 변환할 수 있다. 새 출력 경로를 지정한다.
+ONNX extra는 Python 3.11 이상에서 설치한다. 명령은 CPU에서도 실행할 수 있다. 설치: `python -m pip install -e ".[onnx,eval]"`.
+
+```bash
+# 기존 패키지 → ONNX (로컬 config.json, model.safetensors, quant_config.json, manifest.json 사용)
+tricast export-onnx --package pkg --out deploy/model.onnx
+# 또는 고정된 HF 체크포인트에 weight-only 레시피를 적용하고 직접 내보낸다.
+tricast export-onnx --model Qwen/Qwen3-0.6B --revision <sha> --recipe recipe.yaml --device cpu --out deploy/new.onnx
+python -m tricast.onnx_export run --onnx deploy/model.onnx --tokenizer pkg --threads 4 --prompt "The capital of France is"
+```
+
+표준 경로는 가능한 INT4/INT8 계열을 ONNX 내장 형식으로 저장한다. 3비트처럼 opset 21에 없는 형식은 8개 값을 3바이트에 묶고
+그래프에서 복원한다. 성공 시 `model.onnx.manifest.json`의 `quantized_weight_bytes`는 **양자화된 가중치 코드만** 센다.
+스케일·영점·비양자화 층과 그래프를 포함한 전체 크기는 `bytes`이다. 외부 데이터 파일이 있으면 `files`에 열거된 파일을 함께 옮긴다.
+
+- 기본 모드는 정수 코드를 복원할 수 없는 층에서 중단한다. 기존 0.6B 20% 패키지의 HQQ 4층처럼 원래 가중치를 유지해야 하면
+  `--allow-dense-fallback`을 명시한다. 이 층은 `fallback_layers`에 표시하며 저비트 층 수에서 제외한다.
+- 가중치를 풀어낸 값과 최종 logits의 일치는 별도다. 활성값 양자화·KV 캐시·칩의 누산 규칙을 재현하거나 추론 가속을 보장하지 않는다.
+  `--kernel matmul_nbits`는 선택 기능이다. 지원되는 Linear만 ORT 전용 연산으로 바꾸며, 복원 시 반올림 차이가 있는 층은 따로 기록한다.
+- 실험과 검증 범위: [실제 파일 · 모델별 검증 기록](docs/evidence/2026-11-26_onnx_export.md).
+
+### YOLO11n: 크기 고르기부터 배포 파일까지
+
+물체 검출 모델 하나로 층별 민감도 측정 → 크기별 최적 배정 → COCO 평가 → 정수 가중치 ONNX → 다른 런타임 확인까지 이어서 실행한다.
+각 단계는 `YOLO_<단계>_DONE` 또는 `YOLO_FAIL`로 끝난다. CPU만으로 실행되며, 체크포인트와 COCO val2017 경로는 `--checkpoint`·`--coco`로 준다.
+
+```bash
+python scripts/quantizer/yolo_tune.py table    --work W            # Conv 87층 × INT8/4/3, 보정 사진 128장
+python scripts/quantizer/yolo_tune.py solve    --work W            # 기존 크기 3개 + 평균 4.5·5·5.5·6·7비트 배낭
+python scripts/quantizer/yolo_tune.py evaluate --work W --setups auto_b500,u_int8,...   # COCO 4,872장 mAP
+python scripts/quantizer/yolo_tune.py onnx     --work W2 --setups auto_b500 --more W    # 정수 ONNX + onnxruntime 재채점
+python scripts/quantizer/yolo_tune.py onnx     --work W3 --setups auto_b500 --int3 int4 --more W   # TensorRT용 (INT3 → INT4 칸)
+python scripts/quantizer/openvino_export.py --task detector --onnx W3/onnx_int3in4/auto_b500.onnx --gather-split-conv-inputs \
+    --image a.jpg --out deploy/openvino                             # OpenVINO IR (CPU)
+python scripts/quantizer/tensorrt_export.py --model yolo --onnx W3/onnx_int3in4/auto_b500.onnx --image-npy a.npy \
+    --out-dir deploy/tensorrt                                       # TensorRT plan (GPU마다 다시 빌드)
+```
+
+웹 화면(⑤ 결과물)은 크기마다 ONNX 파일과 onnxruntime mAP를 보여 주고, 런타임 기록이 있는 셋업은 OpenVINO·TensorRT mAP도 함께 보인다.
+크기 버튼의 "배포 추천"은 원본 대비 mAP 손실 1.0 이하인 가장 작은 Auto-tune 크기이며, 현재 기록에는 해당 크기가 없다
+(곡선과 판정: [크기 스윕 기록](docs/evidence/2026-11-26_yolo_size_sweep.md)).
+
+### 다른 추론 런타임에서 열기
+
+원래 가중치 코드를 유지하려면 먼저 ONNX 또는 `.ort`를 사용한다. `.safetensors`라는
+확장자만으로 TriCast 패키지를 일반 HF 모델처럼 열 수는 없다. 표준 Transformers·vLLM용
+밀집 체크포인트와 llama.cpp용 GGUF는 **별도의 명시적 변환**이다. 런타임·모델별로
+성공 범위가 다르다. [실제 파일, 변환 명령, 정확도와 실패 사례](docs/evidence/2026-11-26_runtime_interop.md).
+
+### 압축 가중치를 유지한 채 추론하기
+
+작은 파일을 만드는 것과 추론기가 작은 가중치를 실제로 읽는 것은 다른 조건이다. 아래는
+Qwen3-0.6B, Llama-3.2-1B, YOLO11n을 대상으로 한 경로다. 링크한 기록은 파일 크기, 상주 바이트,
+실행 연산과 전체 모델 품질을 분리한다. 활성값·KV까지 전부 4비트라는 뜻은 아니다.
+
+| 목적 | 경로 |
+|---|---|
+| 기존 TriCast 혼합 코드·층별 변환 유지 | `python -m tricast.pack run --package "$PACK" --device cuda --mode tiled --tile-rows 256 --prompt 'A triangle has'`. PyTorch가 출력 행 단위로 풀어 곱한다. 코드를 잃은 HQQ 층은 패키지에 선언된 BF16 그대로이며, 이 경로는 저비트 전용 커널이 아니다. |
+| NVIDIA에서 표준 W4 서빙 | `python scripts/quantizer/hf_packed_export.py --original-hf "$SRC" --out deploy/w4` → stock vLLM이 읽는 BF16 활성·대칭 group-128 W4 체크포인트. `$SRC`는 지원되는 로컬 단일 shard Qwen3 또는 Llama-3.2-1B 원본이다. 같은 Qwen W4를 Transformers 기본 로더로 생성하면 196개 projection이 모두 밀집화됐다. 압축 상주가 목적이면 검증된 vLLM 경로를 쓴다. |
+| 같은 W4를 CPU에서도 사용 | 공식 llama.cpp 변환기로 **같은 원본**의 F32 GGUF를 만든 뒤 `python scripts/quantizer/hf_packed_gguf.py --original-hf "$SRC" --checkpoint deploy/w4 --template "$F32_GGUF" --llama-cpp "$LLAMA_CPP" --out deploy/w4.gguf`. Q4_0 블록으로 재배치 후 검증한다. 두 파일의 복원 가중치는 같지만 백엔드 산술·logits는 다를 수 있다. |
+| 용량에 맞춘 GGUF | `python -m app.packed_targets`로 실물 GGUF에서 층별 후보와 오차를 측정하고 `python -m app.autotune solve --target llama.cpp-cpu-gguf …` → `scripts/quantizer/gguf_apply_plan.py`. 예산은 decoder projection의 코드·스케일 기준이며 파일 전체나 PPL의 상한이 아니다. |
+| CPU에서 검출 모델 실행 | `scripts/quantizer/yolo_packed_int8.py`는 지원되는 YOLO11n ONNX의 Conv 코드를 부호 있는 INT8로 보존하고 활성값을 별도로 보정한다. ORT CPU에서 QLinearConv로 실행한다. 기존 3·4비트 저장보다 파일이 커질 수 있다. |
+
+기존 혼합 패키지를 FP32로 풀었다가 W4로 **다시** 양자화하는 것은 위의 직접 W4 생성과 다르다.
+생성 예: `python examples/generate_packed.py deploy/w4 --prompt "What is 2+2?"` (vLLM CUDA). 재양자화 경로에는 `--allow-requantization`이 필요하다. [실제 모델·실행 명령·선택 기준](docs/evidence/2026-11-26_packed_inference.md).
 
 ### 검사
 

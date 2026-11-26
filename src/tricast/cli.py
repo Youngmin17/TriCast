@@ -169,6 +169,21 @@ def main(argv: list[str] | None = None) -> int:
     agent.add_argument("--execute", action="store_true")
     agent.add_argument("--llm", choices=("auto", "anthropic", "offline"), default="auto")
     agent.add_argument("--json", action="store_true")
+    export_onnx = commands.add_parser(
+        "export-onnx", help="export a quantized model or tricast.pack directory to true-bitwidth ONNX"
+    )
+    export_src = export_onnx.add_mutually_exclusive_group(required=True)
+    export_src.add_argument("--package", type=Path, help="existing tricast.pack directory")
+    export_src.add_argument("--model", help="Hugging Face model id or local path")
+    export_onnx.add_argument(
+        "--allow-dense-fallback", action="store_true", help="allow and report dense layers"
+    )
+    export_onnx.add_argument("--revision")
+    export_onnx.add_argument("--recipe", type=Path, help="recipe YAML/JSON (required with --model)")
+    export_onnx.add_argument("--out", type=Path, required=True, help="output .onnx path")
+    export_onnx.add_argument("--device", help="execution device (default: cuda if available, otherwise cpu)")
+    export_onnx.add_argument("--kernel", choices=("standard", "matmul_nbits"), default="standard")
+    export_onnx.add_argument("--hessian-max-bytes", type=int)
     args = parser.parse_args(argv)
     try:
         return _dispatch(args)
@@ -178,10 +193,32 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def _dispatch(args: argparse.Namespace) -> int:
-    if args.command in ("ppl", "eval", "report") and args.device is None:
+    if args.command in ("ppl", "eval", "report", "export-onnx") and args.device is None:
         import torch
 
         args.device = "cuda" if torch.cuda.is_available() else "cpu"
+    if args.command == "export-onnx":
+        from .onnx_export import build_onnx, export_package_onnx
+
+        if args.package is not None:
+            manifest = export_package_onnx(
+                args.package, args.out, kernel=args.kernel, allow_dense_fallback=args.allow_dense_fallback
+            )
+        else:
+            if args.recipe is None:
+                raise ValueError("--recipe is required with --model")
+            manifest = build_onnx(
+                args.model,
+                args.revision,
+                args.recipe,
+                args.out,
+                device=args.device,
+                kernel=args.kernel,
+                allow_dense_fallback=args.allow_dense_fallback,
+                hessian_max_bytes=args.hessian_max_bytes,
+            )
+        print(json.dumps(manifest, ensure_ascii=False, indent=2))
+        return 0
     if args.command == "agent":
         from .agent.loop import run_agent
 

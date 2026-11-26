@@ -57,6 +57,8 @@ _LAZY = {
     "unpatch_attention": "tricast.nn.attention",
     "patch_model": "tricast.nn.patch",
     "calibrate": "tricast.calibration",
+    "export_onnx": "tricast.onnx_export",
+    "export_package_onnx": "tricast.onnx_export",
 }
 
 

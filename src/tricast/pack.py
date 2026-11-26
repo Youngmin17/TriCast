@@ -33,6 +33,7 @@ import json
 import shutil
 import sys
 import time
+from contextlib import ExitStack
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -41,7 +42,20 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
-from .formats import IntFormat
+from .bitpack import (
+    decode_razer_weight,
+    decode_scale_tensor,
+    encode_float_codes,
+    encode_int_codes,
+    encode_razer_weight,
+    encode_scale_tensor,
+    float_codebook,
+    narrow_float_tensor,
+    pack_bits,
+    same_bits,
+    unpack_bits,
+)
+from .formats import FloatFormat, IntFormat, get_format
 from .quant.qtensor import QTensor
 from .transforms import LinearTransform
 
@@ -62,50 +76,12 @@ CHECKPOINT_FILES = (
 )
 
 
-# ---------- bit packing ----------
-def pack_bits(codes: torch.Tensor, bits: int) -> torch.Tensor:
-    """Unsigned ``bits``-bit codes (any shape, values < 2**bits) as a flat uint8 stream, eight codes in
-    ``bits`` bytes, little-endian, the last group padded with zeros."""
-    if not 1 <= bits <= 8:
-        raise ValueError(f"bits must be 1..8, got {bits}")
-    flat = codes.reshape(-1).to(torch.int64)
-    if flat.numel() and (int(flat.min()) < 0 or int(flat.max()) >= 1 << bits):
-        raise ValueError(f"codes do not fit in {bits} bits")
-    if bits == 8:
-        return flat.to(torch.uint8)
-    flat = F.pad(flat, (0, -flat.numel() % 8)).reshape(-1, 8)
-    shifts = torch.arange(8, dtype=torch.int64, device=flat.device) * bits
-    word = (flat << shifts).sum(dim=1)
-    out = torch.stack([(word >> (8 * j)) & 0xFF for j in range(bits)], dim=1)
-    return out.reshape(-1).to(torch.uint8)
-
-
-def unpack_bits(data: torch.Tensor, bits: int, count: int) -> torch.Tensor:
-    """The first ``count`` codes of a ``pack_bits`` stream, as uint8."""
-    if bits == 8:
-        return data[:count].clone()
-    groups = data.to(torch.int64).reshape(-1, bits)
-    shifts = torch.arange(bits, dtype=torch.int64, device=data.device) * 8
-    word = (groups << shifts).sum(dim=1)
-    codes = torch.stack([(word >> (bits * i)) & ((1 << bits) - 1) for i in range(8)], dim=1)
-    return codes.reshape(-1)[:count].to(torch.uint8)
-
-
-def same_bits(a: torch.Tensor, b: torch.Tensor) -> bool:
-    """Two fp32 tensors with the same bit pattern in every element, the sign of a zero aside: a weight that
-    rounds to -0.0 decodes to +0.0 (codes carry no sign of zero), which changes no product sum that starts
-    from +0.0 — TriCast's and PyTorch's both do."""
-    if a.shape != b.shape or a.dtype != torch.float32 or b.dtype != torch.float32:
-        return False
-    return torch.equal((a + 0.0).view(torch.int32), (b + 0.0).view(torch.int32))
-
-
 # ---------- what a layer stores ----------
 @dataclass
 class Encoded:
     """One quantized Linear: how it is stored (``kind``), its tensors and the bits they take."""
 
-    kind: str  # "affine" (integer codes, scales, zero points), "nf4", "dense" (BF16 weight)
+    kind: str  # "affine" (int codes), "float" (4..8-bit float codes), "nf4", "razer", "dense"
     shape: tuple[int, int]
     tensors: dict[str, torch.Tensor]
     meta: dict[str, Any]
@@ -113,51 +89,81 @@ class Encoded:
 
 def _scale_tensor(scale: torch.Tensor) -> tuple[torch.Tensor, str]:
     """A scale in the narrowest float type that holds every value exactly."""
-    for dtype, name in ((torch.float16, "float16"), (torch.bfloat16, "bfloat16")):
-        narrow = scale.to(dtype)
-        if torch.equal(narrow.float(), scale.float()):
-            return narrow, name
-    return scale.float(), "float32"
+    return narrow_float_tensor(scale)
 
 
 def encode_qtensor(qt: QTensor) -> Encoded | None:
-    """Integer codes of an int-format QTensor with group or row scales; None for anything else."""
+    """Bit-packed codes of a 2-D QTensor (1..8-bit IntFormat or FloatFormat, any granularity, single or
+    two-level scales); None for wider element formats (>8 bits)."""
     spec = qt.spec
-    if not isinstance(spec.format, IntFormat) or qt.global_scale is not None or len(qt.shape) != 2:
+    if len(qt.shape) != 2:
         return None
-    if spec.granularity not in ("group", "row") or qt.scale is None:
-        return None
-    if qt.zero_point is not None and spec.zero_point != "int":
-        return None
-    if getattr(spec.format, "frac_bits", 0):  # fixed-point codes: stored as the dense weight instead
-        return None
-    qmin, bits = spec.format.qmin, spec.format.bits
-    values = qt.values.to(torch.int64)
-    codes = values - qmin
-    tensors = {"codes": pack_bits(codes.cpu(), bits)}
-    tensors["scale"], scale_dtype = _scale_tensor(qt.scale.cpu())
-    meta = {
-        "bits": bits,
-        "qmin": qmin,
-        "count": values.numel(),
-        "scale_shape": list(qt.scale.shape),
-        "scale_dtype": scale_dtype,
-        "granularity": spec.granularity,
-        "group_size": spec.group_size,
-    }
-    if qt.zero_point is not None:
-        zero = qt.zero_point.to(torch.int64)
-        if not torch.equal(zero.to(qt.zero_point.dtype), qt.zero_point):
-            return None  # a fractional zero point
-        meta.update(zero_shape=list(qt.zero_point.shape), zero_count=zero.numel())
-        if int(zero.min()) >= qmin and int(zero.max()) <= spec.format.qmax:
-            tensors["zero"] = pack_bits((zero - qmin).cpu(), bits)
-            meta["zero_bits"] = bits
-        else:  # outside the code range: int16 (or int32), wider than the computed size counts
-            wide = -(1 << 15) <= int(zero.min()) and int(zero.max()) < 1 << 15
-            tensors["zero"] = zero.to(torch.int16 if wide else torch.int32).cpu()
-            meta["zero_bits"] = 16 if wide else 32
-    return Encoded("affine", tuple(qt.shape), tensors, meta)
+    if isinstance(spec.format, IntFormat):
+        if not 1 <= spec.format.bits <= 8:
+            return None
+        qmin, bits, frac_bits = spec.format.qmin, spec.format.bits, spec.format.frac_bits
+        codes = encode_int_codes(qt.values.cpu(), spec.format)
+        tensors: dict[str, torch.Tensor] = {"codes": pack_bits(codes, bits)}
+        meta: dict[str, Any] = {
+            "bits": bits,
+            "qmin": qmin,
+            "count": qt.values.numel(),
+            "granularity": spec.granularity,
+            "group_size": spec.group_size,
+        }
+        if frac_bits:
+            meta["frac_bits"] = frac_bits
+        if spec.granularity == "block":
+            meta["block"] = list(spec.block)
+        if qt.scale is not None:
+            scale_fmt = spec.scale.format if spec.scale is not None else get_format("fp32")
+            tensors["scale"], scale_meta = encode_scale_tensor(qt.scale, scale_fmt)
+            meta.update(scale_meta)
+        if qt.global_scale is not None:
+            tensors["global_scale"] = qt.global_scale.detach().float().cpu()
+        if qt.zero_point is not None:
+            if spec.zero_point == "int":
+                zero = qt.zero_point.to(torch.int64)
+                if not torch.equal(zero.to(qt.zero_point.dtype), qt.zero_point):
+                    return None
+                meta.update(zero_shape=list(qt.zero_point.shape), zero_count=zero.numel())
+                if int(zero.min()) >= qmin and int(zero.max()) <= spec.format.qmax:
+                    tensors["zero"] = pack_bits((zero - qmin).cpu(), bits)
+                    meta["zero_bits"] = bits
+                else:  # outside the code range: int16 (or int32), wider than the computed size counts
+                    wide = -(1 << 15) <= int(zero.min()) and int(zero.max()) < 1 << 15
+                    tensors["zero"] = zero.to(torch.int16 if wide else torch.int32).cpu()
+                    meta["zero_bits"] = 16 if wide else 32
+            else:
+                tensors["zero"], zp_dtype = _scale_tensor(qt.zero_point.cpu())
+                meta.update(
+                    zero_shape=list(qt.zero_point.shape),
+                    zero_count=qt.zero_point.numel(),
+                    zero_kind="float",
+                    zero_dtype=zp_dtype,
+                )
+        return Encoded("affine", tuple(qt.shape), tensors, meta)
+    if isinstance(spec.format, FloatFormat) and 1 <= spec.format.bits <= 8:
+        bits = spec.format.bits
+        codes = encode_float_codes(qt.values.cpu(), spec.format)
+        tensors = {"codes": pack_bits(codes, bits)}
+        meta = {
+            "bits": bits,
+            "format": spec.format.name,
+            "count": qt.values.numel(),
+            "granularity": spec.granularity,
+            "group_size": spec.group_size,
+        }
+        if spec.granularity == "block":
+            meta["block"] = list(spec.block)
+        if qt.scale is not None:
+            scale_fmt = spec.scale.format if spec.scale is not None else get_format("fp32")
+            tensors["scale"], scale_meta = encode_scale_tensor(qt.scale, scale_fmt)
+            meta.update(scale_meta)
+        if qt.global_scale is not None:
+            tensors["global_scale"] = qt.global_scale.detach().float().cpu()
+        return Encoded("float", tuple(qt.shape), tensors, meta)
+    return None
 
 
 def encode_nf4(weight: torch.Tensor) -> Encoded:
@@ -170,6 +176,11 @@ def encode_nf4(weight: torch.Tensor) -> Encoded:
         {"codes": pack_bits(index.cpu(), 4), "absmax": absmax.float().cpu()},
         {"bits": 4, "count": index.numel(), "blocksize": BLOCKSIZE},
     )
+
+
+def encode_razer(weight: torch.Tensor) -> Encoded:
+    tensors, meta = encode_razer_weight(weight)
+    return Encoded("razer", tuple(weight.shape), tensors, meta)
 
 
 def encode_dense(weight: torch.Tensor) -> Encoded:
@@ -192,33 +203,56 @@ def decode(entry: dict[str, Any], tensors: dict[str, torch.Tensor], spec: Any) -
 
         index = unpack_bits(tensors["codes"], 4, entry["count"]).reshape(shape)
         return nf4_dequantize(index, tensors["absmax"].float(), entry["blocksize"]).to(torch.bfloat16).float()
+    if kind == "razer":
+        return decode_razer_weight(tensors, entry, shape)
+    from .formats import container_dtype
+    from .nn.linear import _operand_value
+
+    qspec = spec.weight
+    scale = decode_scale_tensor(tensors["scale"], entry) if "scale" in tensors else None
+    global_scale = tensors["global_scale"].float() if "global_scale" in tensors else None
+    if kind == "float":
+        fmt = qspec.format
+        assert isinstance(fmt, FloatFormat)
+        lut = float_codebook(fmt).to(tensors["codes"].device)
+        codes = unpack_bits(tensors["codes"], entry["bits"], entry["count"])
+        values = lut[codes.long()].to(container_dtype(fmt)).reshape(shape)
+        qt = QTensor(
+            values=values,
+            scale=scale,
+            zero_point=None,
+            global_scale=global_scale,
+            spec=qspec,
+            shape=shape,
+        )
+        return _operand_value(qt.mma_operand())
     if kind != "affine":
         raise ValueError(f"unknown stored layer kind {kind!r}")
-    qspec = spec.weight
-    codes = unpack_bits(tensors["codes"], entry["bits"], entry["count"]).to(torch.int64) + entry["qmin"]
-    from .formats import container_dtype
-
-    values = codes.to(container_dtype(qspec.format)).reshape(shape)
+    codes_i64 = unpack_bits(tensors["codes"], entry["bits"], entry["count"]).to(torch.int64) + entry["qmin"]
+    frac_bits = int(entry.get("frac_bits", 0))
+    raw_vals = (codes_i64.to(torch.float64) * (2.0**-frac_bits)) if frac_bits else codes_i64
+    values = raw_vals.to(container_dtype(qspec.format)).reshape(shape)
     zero = None
     if "zero" in tensors:
-        if entry["zero_bits"] in (16, 32):
-            zero = tensors["zero"].to(torch.int64)
+        if entry.get("zero_kind") == "float":
+            zero = tensors["zero"].reshape(entry["zero_shape"]).to(torch.float32)
         else:
-            zero = (
-                unpack_bits(tensors["zero"], entry["bits"], entry["zero_count"]).to(torch.int64)
-                + entry["qmin"]
-            )
-        zero = zero.reshape(entry["zero_shape"]).to(torch.float32)
+            if entry["zero_bits"] in (16, 32):
+                zero = tensors["zero"].to(torch.int64)
+            else:
+                zero = (
+                    unpack_bits(tensors["zero"], entry["bits"], entry["zero_count"]).to(torch.int64)
+                    + entry["qmin"]
+                )
+            zero = zero.reshape(entry["zero_shape"]).to(torch.float32)
     qt = QTensor(
         values=values,
-        scale=tensors["scale"].float(),
+        scale=scale,
         zero_point=zero,
-        global_scale=None,
+        global_scale=global_scale,
         spec=qspec,
         shape=shape,
     )
-    from .nn.linear import _operand_value
-
     return _operand_value(qt.mma_operand())
 
 
@@ -272,6 +306,15 @@ class Capture:
 
             if not torch.equal(nf4(weight).float(), result.float()):
                 encoded = None
+        elif layer.spec.weight_algo.kind == "razer":
+            try:
+                encoded = encode_razer(weight)
+                decoded_razer = decode_razer_weight(encoded.tensors, encoded.meta, encoded.shape)
+                if not same_bits(decoded_razer, result.float().cpu()):
+                    encoded = None
+            except ValueError:
+                encoded = None
+            reason = "RaZeR codes did not decode to the replaced weight"
         else:
             reason = f"{layer.spec.weight_algo.kind} keeps no integer codes TriCast can read back"
         if encoded is None:
@@ -309,10 +352,14 @@ _OUT_FORMATS = (
 
 
 class PackedLinear(nn.Module):
-    """A Linear with a decoded low-bit weight, computed as TriCast's emulation rounds it: fp32 products and
-    accumulation, the output rounded to the MMA spec's output format (BF16 for the recipes' ``fp32_fma``).
-    ``mode="load"`` decodes once (the weight in BF16 when every value is a BF16, else fp32);
-    ``mode="codes"`` keeps the packed codes and decodes on every forward (low memory, slower)."""
+    """Package Linear with the stored input transform and output-format rounding.
+
+    The default load mode decodes once and keeps each recovered weight in BF16 when exact, otherwise
+    FP32. Codes mode keeps packed data but constructs the whole FP32 operand on each forward. Tiled mode
+    is opt-in, inference-only: original encoded weights stay resident and each FP32 GEMM consumes at most
+    tile_rows output rows (strictly fewer than all rows for a coded layer). This is not native INT arithmetic.
+    Different GEMM shapes may change accumulation order; it does not promise bitwise-identical logits.
+    """
 
     def __init__(
         self,
@@ -322,10 +369,11 @@ class PackedLinear(nn.Module):
         spec: Any,
         bias: torch.Tensor | None,
         mode: str = "load",
+        tile_rows: int = 128,
     ) -> None:
         super().__init__()
-        if mode not in ("load", "codes"):
-            raise ValueError("mode must be 'load' or 'codes'")
+        if mode not in ("load", "codes", "tiled"):
+            raise ValueError("mode must be load, codes or tiled")
         self.name, self.entry, self.spec, self.mode = name, entry, spec, mode
         self.out_features, self.in_features = entry["shape"]
         transform = entry.get("transform") or {"kind": "none"}
@@ -336,6 +384,19 @@ class PackedLinear(nn.Module):
         out_format = getattr(getattr(spec, "mma", None), "out_format", None)
         self.out_dtype = _OUT_DTYPES.get(getattr(out_format, "name", None))
         self.bias = None if bias is None else nn.Parameter(bias.float(), requires_grad=False)
+        if mode == "tiled":
+            from . import packed_tiles
+
+            if type(tile_rows) is not int or tile_rows < 1:
+                raise ValueError("tile_rows must be a positive integer")
+            packed_tiles.validate(entry, tensors, spec)
+            self.tile_rows = min(tile_rows, max(1, (self.out_features + 1) // 2))
+            self.tile_calls = self.max_tile_elements = 0
+            if diag is not None:
+                self.register_buffer("stored_diag", diag)
+                self.transform.diag = diag
+            lut = packed_tiles.codebook(tensors["codes"].device) if entry["kind"] == "nf4" else None
+            self.register_buffer("nf4_lut", lut, persistent=False)
         if mode == "load":
             weight = decode(entry, tensors, spec)
             narrow = weight.to(torch.bfloat16)
@@ -349,9 +410,14 @@ class PackedLinear(nn.Module):
         # .to(dtype) / .half() / .bfloat16() move this layer but never round its weight, codes or bias: they
         # hold the values TriCast multiplies with
         device = fn(torch.zeros((), dtype=torch.float32)).device
-        return super()._apply(lambda t: t.to(device), recurse)
+        result = super()._apply(lambda t: t.to(device), recurse)
+        if self.mode == "tiled" and self.transform.diag is not None:
+            self.transform.diag = self.stored_diag
+        return result
 
     def _weight(self) -> torch.Tensor:
+        if self.mode == "tiled":
+            raise RuntimeError("tiled mode forbids full-projection decoding")
         if self.mode == "load":
             return self.weight
         tensors = {
@@ -359,14 +425,37 @@ class PackedLinear(nn.Module):
         }
         return decode(self.entry, tensors, self.spec)
 
+    def weight_tile(self, start: int, stop: int) -> torch.Tensor:
+        from . import packed_tiles
+
+        if self.mode != "tiled" or stop - start > self.tile_rows:
+            raise ValueError("not a bounded tile of this projection")
+        stored = {key[7:]: value for key, value in self._buffers.items() if key.startswith("stored_")}
+        return packed_tiles.tile(self.entry, stored, start, stop, self.nf4_lut)
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        weight = self._weight()
         if self.transform.kind != "none":
             if self.transform.diag is not None and self.transform.diag.device != x.device:
                 self.transform.diag = self.transform.diag.to(x.device)
             xin = self.transform.apply_activation(x)
         else:
             xin = x
+        if self.mode == "tiled":
+            if torch.is_grad_enabled() and x.requires_grad:
+                raise ValueError("tiled mode is inference-only; use inference_mode or detach inputs")
+            xin = xin.float()
+            result = x.new_empty((*x.shape[:-1], self.out_features))
+            for start in range(0, self.out_features, self.tile_rows):
+                stop = min(start + self.tile_rows, self.out_features)
+                weight = self.weight_tile(start, stop)
+                bias = None if self.bias is None else self.bias[start:stop]
+                part = F.linear(xin, weight, bias)
+                result[..., start:stop] = part if self.out_dtype is None else part.to(self.out_dtype)
+                self.tile_calls += 1
+                self.max_tile_elements = max(self.max_tile_elements, weight.numel())
+                del weight, part
+            return result
+        weight = self._weight()
         if (
             xin.dtype == torch.bfloat16
             and self.bias is None
@@ -521,7 +610,34 @@ def finish_manifest(
 
 
 # ---------- load ----------
-def load(package: str | Path, device: str = "cpu", mode: str = "load", dtype: torch.dtype = torch.bfloat16):
+def _load_remaining_state(
+    model: nn.Module, tensors: dict[str, torch.Tensor], config: dict[str, Any], package: Path,
+    *, assign: bool = False,
+) -> None:
+    """Load ordinary checkpoint tensors, including aliases omitted from the safetensors file."""
+    if assign:
+        # Match the ordinary destination dtype before binding stored tensors to empty parameters.
+        expected = model.state_dict()
+        for key in tensors.keys() & expected.keys():
+            tensors[key] = tensors[key].to(dtype=expected[key].dtype)
+    tied = config.get("tied") or {}
+    for alias, source in tied.items():
+        if source not in tensors or alias in tensors:
+            raise ValueError(f"{package}: invalid tied weight {alias} -> {source}")
+        tensors[alias] = tensors[source]
+    result = model.load_state_dict(tensors, strict=False, assign=assign)
+    owned = tuple(f"{name}." for name in config["layers"])  # loaded into each PackedLinear above
+    missing = [key for key in result.missing_keys if not key.startswith(owned)]
+    if missing or result.unexpected_keys:
+        raise ValueError(
+            f"{package}: tensors missing {missing[:3]} or unexpected {result.unexpected_keys[:3]}"
+        )
+    if config.get("tied"):
+        model.tie_weights()
+
+
+def load(package: str | Path, device: str = "cpu", mode: str = "load", dtype: torch.dtype = torch.bfloat16,
+         *, tile_rows: int = 128):
     """The package as a Hugging Face causal LM with PackedLinear layers, and its tokenizer (None when the
     package has no tokenizer files)."""
     from safetensors.torch import load_file
@@ -537,7 +653,18 @@ def load(package: str | Path, device: str = "cpu", mode: str = "load", dtype: to
         raise ValueError(f"{package}: not a {SCHEMA} package")
     source = package if (package / "config.json").is_file() else config["model"]
     hf_config = AutoConfig.from_pretrained(source, revision=None if source == package else config["revision"])
-    with no_init_weights(), torch.device(device):
+    if mode not in ("load", "codes", "tiled"):
+        raise ValueError("mode must be load, codes or tiled")
+    with ExitStack() as stack:
+        stack.enter_context(no_init_weights())
+        if mode == "tiled":
+            from accelerate import init_empty_weights
+
+            stack.enter_context(torch.device("cpu"))
+            # Keep nonpersistent buffers (e.g. RoPE) real; no dense GPU projection allocations.
+            stack.enter_context(init_empty_weights(include_buffers=False))
+        else:
+            stack.enter_context(torch.device(device))
         model = AutoModelForCausalLM.from_config(hf_config, torch_dtype=dtype)
     tensors = load_file(str(package / WEIGHTS), device=device)
     import yaml
@@ -555,17 +682,19 @@ def load(package: str | Path, device: str = "cpu", mode: str = "load", dtype: to
         }
         bias = stored.pop("bias", None)
         parent, _, child = name.rpartition(".")
-        setattr(model.get_submodule(parent), child, PackedLinear(name, entry, stored, spec, bias, mode))
-    result = model.load_state_dict(tensors, strict=False)
-    owned = tuple(f"{name}." for name in config["layers"])  # loaded into each PackedLinear above
-    tied = set(config.get("tied") or {})
-    missing = [key for key in result.missing_keys if not key.startswith(owned) and key not in tied]
-    if missing or result.unexpected_keys:
-        raise ValueError(
-            f"{package}: tensors missing {missing[:3]} or unexpected {result.unexpected_keys[:3]}"
-        )
-    if config.get("tied"):
-        model.tie_weights()
+        owner = model.get_submodule(parent)
+        if mode == "tiled":
+            original = getattr(owner, child)
+            if (not isinstance(original, nn.Linear) or tuple(original.weight.shape) != tuple(entry["shape"])
+                    or original.weight.device.type != "meta"
+                    or bool(entry.get("bias")) != (bias is not None)
+                    or (bias is not None and bias.shape != (original.out_features,))):
+                raise ValueError(f"{name}: package layout differs from the meta Linear")
+        setattr(owner, child, PackedLinear(name, entry, stored, spec, bias, mode, tile_rows))
+    _load_remaining_state(model, tensors, config, package, assign=mode == "tiled")
+    if mode == "tiled":
+        model.requires_grad_(False)
+        model.to(device)  # place nonpersistent HF buffers after assigning existing tensors
     model.eval()
     tokenizer = None
     if (package / "tokenizer_config.json").is_file():
@@ -649,12 +778,13 @@ def build(
 
 
 def run(
-    package: Path, device: str, ppl: bool, prompts: list[str], max_new_tokens: int, mode: str
+    package: Path, device: str, ppl: bool, prompts: list[str], max_new_tokens: int, mode: str,
+    tile_rows: int = 128,
 ) -> dict[str, Any]:
     from .eval import perplexity
 
     started = time.time()
-    model, tokenizer = load(package, device=device, mode=mode)
+    model, tokenizer = load(package, device=device, mode=mode, tile_rows=tile_rows)
     result: dict[str, Any] = {
         "package": str(package),
         "mode": mode,
@@ -716,7 +846,8 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--ppl", action="store_true")
     r.add_argument("--prompt", action="append", default=[])
     r.add_argument("--max-new-tokens", type=int, default=128)
-    r.add_argument("--mode", choices=("load", "codes"), default="load")
+    r.add_argument("--mode", choices=("load", "codes", "tiled"), default="load")
+    r.add_argument("--tile-rows", type=int, default=128, help="maximum output rows per tiled GEMM")
     r.add_argument("--out", type=Path, help="also write the result as JSON to this file")
     args = parser.parse_args(argv)
     if args.command == "build":
@@ -734,7 +865,8 @@ def main(argv: list[str] | None = None) -> int:
         )
         print(f"PACK_DONE out={args.out} bytes={manifest['bytes']}", flush=True)
         return 0
-    result = run(args.package, args.device, args.ppl, args.prompt, args.max_new_tokens, args.mode)
+    result = run(args.package, args.device, args.ppl, args.prompt, args.max_new_tokens,
+                 args.mode, args.tile_rows)
     text = json.dumps(result, ensure_ascii=False, indent=1)
     print(text)
     if args.out is not None:

@@ -1045,6 +1045,11 @@ const detWithin = () => {
     .sort((a, b) => b.metrics[KD().key] - a.metrics[KD().key]);
 };
 const detCurrent = () => (st.plan ? st.det.setups.find((row) => row.id === (st.pick ?? st.plan.id)) ?? st.plan : null);
+// the deployment size a detector is offered: the smallest measured Auto-tune size whose score is at most MAX_DROP
+// points (0–100) below the original's (docs/evidence/2026-11-26_yolo_size_sweep.md §1); none when no size is within
+const MAX_DROP = 1.0;
+const detDeploy = () => (st.entry?.kind === "detector"
+  ? detSizes().find((row) => 100 * (st.det.native.metrics[KD().key] - row.metrics[KD().key]) <= MAX_DROP + 1e-9) ?? null : null);
 
 function detRecommend(id) {
   const plan = st.det.setups.find((row) => row.id === id);
@@ -1066,14 +1071,25 @@ function drawTuneDet() {
   const p = st.plan;
   const native = st.det.native.metrics[KD().key];
   const k = KD();
+  const deploy = detDeploy();
   $("tune-state").replaceChildren(...(p ? [chip(`추천 · 크기 ${pct(p.bits)} · ${k.short} ${AP(p.metrics[k.key])}`, "ok")] : []));
-  const sizes = detSizes().map((row) => preset({"data-budget": row.id, "aria-label": `원본의 ${pct(row.bits)}, ${fmt(row.bits, 2)}비트, 추천 셋업의 ${k.name} ${AP(row.metrics[k.key])}`},
+  const sizes = detSizes().map((row) => preset({"data-budget": row.id, "data-deploy": String(row.id === deploy?.id), "aria-label": `원본의 ${pct(row.bits)}, ${fmt(row.bits, 2)}비트, 추천 셋업의 ${k.name} ${AP(row.metrics[k.key])}${row.id === deploy?.id ? ", 배포 추천 크기" : ""}`},
     row.id === st.budget, `평균 ${fmt(row.bits, 3)} 비트 (예산 ${row.bits_fraction}) · 추천 셋업의 ${k.name} ${AP(row.metrics[k.key])}`,
-    pct(row.bits), [h("span", {class: "k"}, k.short), ` ${AP(row.metrics[k.key])}`], () => row.id !== st.budget && detRecommend(row.id)));
+    pct(row.bits), [h("span", {class: "k"}, k.short), ` ${AP(row.metrics[k.key])}`, ...(row.id === deploy?.id ? [h("span", {class: "ta-deploy"}, "배포 추천")] : [])],
+    () => row.id !== st.budget && detRecommend(row.id)));
   const parts = [h("div", {class: "ta-block"},
     blockHead("목표 크기", help("크기", `${k.unit} 층(${st.det.layers.length}개) 가중치 하나를 저장하는 평균 비트 수(${k.scale})로 정한 크기입니다. 원본(${k.origin})은 16비트 = 100% 입니다.`),
       h("span", null, `원본 대비 · 아래 숫자는 그 크기 추천 셋업의 ${k.name}`)),
     h("div", {class: "ta-presets", role: "group", "aria-label": `목표 크기 — 측정된 ${sizes.length}개`}, sizes))];
+  if (deploy) parts.push(h("p", {class: "ta-muted", id: "deploy-size"},
+    `배포 추천: 원본 대비 ${k.short} 손실이 ${fmt(MAX_DROP, 1)} 이하인 가장 작은 크기 — 원본의 ${pct(deploy.bits)}, ${k.short} ${AP(deploy.metrics[k.key])} (원본 ${AP(st.det.native.metrics[k.key])}).`));
+  else if (st.entry?.kind === "detector") {
+    // no Auto-tune size within the tolerance: say so, and name the smallest measured setup of any kind that is
+    const within = st.det.setups.filter((row) => 100 * (st.det.native.metrics[k.key] - row.metrics[k.key]) <= MAX_DROP + 1e-9)
+      .sort((a, b) => a.bits - b.bits)[0];
+    parts.push(h("p", {class: "ta-muted", id: "deploy-size"}, `${k.short} 손실 ${fmt(MAX_DROP, 1)} 이하의 Auto-tune 크기는 측정한 범위에 없습니다.`
+      + (within ? ` 이 기준을 만족하는 가장 작은 측정 셋업은 ${within.label} (원본의 ${pct(within.bits)}, ${k.short} ${AP(within.metrics[k.key])}) 입니다.` : "")));
+  }
   if (!p) parts.push(h("p", {class: "ta-muted"}, `목표 크기를 고르면 그 안에서 ${k.out}의 오차가 가장 작도록 ${k.unit} 층마다 비트 수를 골라 추천합니다.`));
   else {
     const best = detWithin()[0] ?? null;
@@ -1374,9 +1390,16 @@ function drawOutDet() {
 }
 
 // the setup as an ONNX file with integer weights (scripts/quantizer/yolo_tune.py onnx), run by onnxruntime
+// how a conv's codes are stored in the ONNX file (scripts/quantizer/yolo_tune.py int_weights_onnx)
+const STORED = {int8: "INT8", int4: "INT4", packed_int3: "INT3 (3비트 묶음)", int3_in_int4: "INT3 (INT4 칸)"};
 function onnxView(pkg, now) {
   if (!pkg) return h("p", {class: "ta-muted", id: "package"}, "이 셋업은 ONNX 파일 기록이 없습니다.");
-  const kinds = Object.entries(pkg.kinds).map(([k, n]) => `${k.toUpperCase()} ${n}층`).join(" · ");
+  const kinds = Object.entries(pkg.kinds).map(([k, n]) => `${STORED[k] ?? k.toUpperCase()} ${n}층`).join(" · ");
+  // the same file (or an IR / engine built from it) scored on the same COCO images by other runtimes
+  const runtimes = (pkg.runtimes ?? []).filter((r) => r.runtime !== "ONNX Runtime").map((r) => h("li", null,
+    `${r.runtime} ${r.version ?? ""} · ${r.device} (${r.artifact}): COCO mAP50-95 ${AP(r.metrics.AP_50_95)}`,
+    r.gate ? ` · ONNX Runtime 과 차이 ${(100 * Math.abs(r.metrics.AP_50_95 - pkg.metrics.AP_50_95)).toFixed(3)}`
+      + (r.gate.passed ? ` (기준 ±${(100 * r.gate.max_abs_ap_delta).toFixed(1)} 이내)` : ` — 기준 ±${(100 * r.gate.max_abs_ap_delta).toFixed(1)} 초과`) : ""));
   const ap = pkg.metrics.AP_50_95;
   const torchAp = pkg.pytorch_metrics?.AP_50_95;
   const boxes = Object.values(pkg.demo_boxes);
@@ -1385,13 +1408,13 @@ function onnxView(pkg, now) {
   const link = pkg.file ? h("a", {class: "ta-btn primary", id: "onnx-download", href: `demo/autotune/${pkg.file}`, download: name}, "ONNX 파일 받기")
     : h("span", {class: "ta-muted"}, "파일은 저장소에 넣지 않았습니다 (기록만)");
   return h("div", {class: "ta-block", id: "package"},
-    blockHead("모델 패키지 · ONNX", help("ONNX 패키지 (실제 파일)", "Conv 가중치를 정수(INT8 · INT4)와 출력 채널마다 FP32 스케일로 저장하고 DequantizeLinear 로 되돌리는 ONNX 파일입니다 (opset 21). onnxruntime 으로 실행해 같은 COCO 사진에서 PyTorch 결과와 비교했습니다."),
+    blockHead("모델 패키지 · ONNX", help("ONNX 패키지 (실제 파일)", "Conv 가중치를 정수(INT8 · INT4, INT3 는 3비트씩 묶어서)와 출력 채널마다 FP32 스케일로 저장하고 그래프 안에서 되돌리는 ONNX 파일입니다 (opset 21). onnxruntime 으로 실행해 같은 COCO 사진에서 PyTorch 결과와 비교했고, 기록이 있는 셋업은 OpenVINO · TensorRT 에서도 같은 사진으로 다시 쟀습니다."),
       chip(`실제 파일 · onnxruntime ${pkg.env.onnxruntime}`, "ok")),
     h("div", {class: "ta-row"}, link, h("span", {class: "ta-muted mono"}, `${name} · ${MB(pkg.bytes)}`)),
     h("ul", {class: "ta-checks", id: "package-checks"},
       h("li", null, kinds ? `정수 코드 × 스케일 = PyTorch 가중치 (파일을 쓸 때 층마다 대조) · ${kinds}` : "가중치 FP32 그대로 (양자화한 층 없음)"),
       h("li", null, `COCO mAP50-95 (${pkg.images.toLocaleString("en-US")}장): onnxruntime ${AP(ap)} · PyTorch ${AP(torchAp)}`),
-      h("li", null, `사진 ${boxes.length}장의 상자 수 · 클래스가 PyTorch 와 같음: ${same}/${boxes.length}`)),
+      h("li", null, `사진 ${boxes.length}장의 상자 수 · 클래스가 PyTorch 와 같음: ${same}/${boxes.length}`), ...runtimes),
     h("pre", {class: "ta-cmd"}, `python -c "import onnxruntime as ort; s = ort.InferenceSession('${name}'); print([i.name for i in s.get_inputs()])"`),
     h("p", {class: "ta-muted"}, `입력 images [N, 3, H, W] (0–1, 32의 배수), 출력 output0 [N, 84, 앵커] — ultralytics 와 같은 후처리(NMS)를 씁니다. ${now.label}.`,
       kinds ? " 파일이 위 계산값보다 조금 큰 것은 스케일 · 바이어스를 FP32 로 두고(계산은 FP16) 영점 · 그래프 정의를 함께 담기 때문입니다." : ""));

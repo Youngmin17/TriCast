@@ -5,7 +5,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 ## [Unreleased]
 
 ### Added
+- YOLO11n size sweep (Auto-tune at 4.5–7 average bits) with a pre-registered deployment-size rule shown on the
+  tuning page, INT3-in-INT4 ONNX storage for runtimes without bit operations, and OpenVINO / TensorRT COCO records
+  attached to the shipped ONNX files.
 - Studio request tracing without raw user text, case-level attack success in evaluation history, and a traced Hangul request in the 36-case assessment set.
+- Packed inference paths for Qwen3 (tiled TriCast weights, stock compressed-tensors W4A16 and GGUF)
+  and Llama-3.2-1B (vLLM W4A16, llama.cpp Q4_0), plus an audited YOLO11n ORT INT8 convolution path.
+- Runtime-specific ORT, OpenVINO IR, TensorRT and opt-in dense HF/GGUF exporters with physical storage and inference checks.
+- Weight-only ONNX export from a patched model or a TriCast package, with per-layer physical code sizes
+  and decode checks. The detector exporter packs INT3 weights into three bits by default (INT4 carrier on request).
 - Midterm-2 repository check: MVP column in SPEC §6 (31 ACs, AC12 out), README test scenarios with input,
   expected result and AC, a standard-structure map, normal/boundary/forbidden comments on the golden YAML,
   `judge_agreement` column in `evals/results/history.csv`, and the tune golden fault-injection record

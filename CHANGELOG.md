@@ -5,6 +5,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 ## [Unreleased]
 
 ### Added
+- `constraints.txt` for the README installs (Python 3.11 pins from the Makefile `install-cpu` versions, plus hqq). The
+  README full-suite command adds hqq and 4 BLAS threads, the interview command traces to `logs/trace.jsonl`, the minimum
+  Python is 3.11, and the README lists optional environment variables and the `data/seed/` map.
 - YOLO11n size sweep (Auto-tune at 4.5–7 average bits) with a pre-registered deployment-size rule shown on the
   tuning page, INT3-in-INT4 ONNX storage for runtimes without bit operations, and OpenVINO / TensorRT COCO records
   attached to the shipped ONNX files.

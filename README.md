@@ -39,7 +39,7 @@ core 에서 **비트 단위로 똑같이** 에뮬레이트한다. 누산 모델(
 ## 설치와 빠른 시작
 
 ```bash
-pip install -e ".[eval,dev,app]"        # Linux + CUDA GPU 에서는 ".[triton,eval,dev,app]" — 그 외에는 레퍼런스 백엔드
+pip install -c constraints.txt -e ".[eval,dev,app]"   # Linux + CUDA GPU 에서는 ".[triton,eval,dev,app]" — 그 외에는 레퍼런스 백엔드
 tricast formats && tricast presets      # 등록된 수 형식 20종 · 하드웨어 프리셋 8종 (출처 포함)
 tricast cast --format fp8_e4m3 --rounding rne 464 465     # → 448 448 (포화)
 tricast recipe-check hopper_fp8_w8a8                      # 스키마 검증 + 레시피 SHA-256
@@ -48,8 +48,13 @@ python -m app.server --demo             # TriCast Studio — GPU 없이 기록�
                                         #   Quantizer 격자: /quantizer.html · 레이어 지도: /layers.html
 python -m app.quantizer_recipe --preset qd_mixed           # 화면과 바이트 동일한 레시피 YAML
 python -m app.autotune solve --table table.json --budget-bits 9/2 --name auto_4.50 --out out/   # Auto-tune
-make check                              # ruff + CPU 테스트
+pip install -c constraints.txt hqq==0.2.8.post1      # 전체 CPU 테스트의 HQQ 사례용 (어댑터가 이 버전에 고정)
+OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 make check       # ruff + CPU 테스트 (스레드 4: 아래 버전 고정)
 ```
+
+**버전 고정.** [`constraints.txt`](constraints.txt)는 UCL CPU 전체 테스트를 통과한 버전(torch 2.8.0 · transformers 4.55.2 · lm_eval 0.4.13 · datasets 4.8.5, `Makefile`의 `install-cpu`)을 Python 3.11에서 설치하고 그대로 적은 목록이다. Python 3.11 · 3.12에서 쓴다 (torch 2.8.0은 3.14를 지원하지 않는다). 전체 CPU 테스트의 GPTQ 사례 3건은 보정 행렬 `XᵀX`가 비트 단위로 대칭이어야 하는데, Linux MKL(UCL bath, AVX-512)에서는 스레드 1 · 2 · 4일 때만 대칭이고 3 · 12 · 24에서는 최대 2.4×10⁻¹³ 어긋났다. 그래서 위 명령은 스레드를 4로 준다 (macOS 기본 8스레드에서는 통과). 빈 환경에 이 파일로 설치해 골든 · CPU · 앱 테스트를 확인한 기록은 [docs/evidence/2026-11-27_constraints.md](docs/evidence/2026-11-27_constraints.md)에 있다.
+
+**환경 변수.** 필수는 없다. 선택: `TRICAST_TRACE_PATH`(추적 파일, 기본 `logs/trace.jsonl`) · `TRICAST_AUTOTUNE=0`(Triton 타일 탐색 끔) · `TRICAST_OFFICIAL_DIR`(공식 구현 클론 위치, 기본 `~/.cache/tricast/official`) · `TRICAST_HOOKS=off`(Claude Code 훅 끔). 다른 머신에서 전체 CPU 테스트를 돌릴 때는 `MKL_CBWR=COMPATIBLE` · `PYTHONPATH=src`를 준다. Auto-tune의 실시간 호출은 API 키 대신 로그인된 `claude` CLI를 쓰고, v1 요청 파싱 평가(`evals/run_evals.py --llm anthropic`)만 `ANTHROPIC_API_KEY` · `TRICAST_AGENT_MODEL`을 읽는다.
 
 ## 최종 평가 면담: 요청 한 건을 끝까지 확인하기
 
@@ -57,21 +62,21 @@ make check                              # ruff + CPU 테스트
 
 ```bash
 python -m app.server --demo --agent evals/fixtures/tune_inputs/s3150/loop.json \
-  --replay app/web/demo/autotune/replay --trace-file /tmp/tricast-interview.jsonl
+  --replay app/web/demo/autotune/replay          # 요청마다 logs/trace.jsonl 에 한 줄 추가
 # 다른 터미널
 curl -si http://127.0.0.1:8765/api/autotune/parse -H 'Content-Type: application/json' \
   --data-binary '{"text":"레이어별로 알아서 최적화해줘"}'
-tail -1 /tmp/tricast-interview.jsonl
+tail -1 logs/trace.jsonl
 ```
 
-- **AC28:** 모델·크기를 지정하지 않은 요청이다. 응답은 `mode: replay`, `request.outcome: needs_clarification`이며 두 가지를 되묻는다. 응답의 `X-Request-ID`와 JSONL 행의 `request_id`를 대조한다. 공개 추적에는 원문·헤더 대신 길이·허용된 입력 특성, 처리 단계, 결과, 모델 식별자(재생은 녹화 당시 값, 미확인·호출 전 거절은 null), 버전, 지연, 오류 코드가 남는다. `--trace-file`을 생략하면 [logs/trace.jsonl](logs/trace.jsonl)에 추가된다.
+- **AC28:** 모델·크기를 지정하지 않은 요청이다. 응답은 `mode: replay`, `request.outcome: needs_clarification`이며 두 가지를 되묻는다. 응답의 `X-Request-ID`와 JSONL 행의 `request_id`를 대조한다. 공개 추적에는 원문·헤더 대신 길이·허용된 입력 특성, 처리 단계, 결과, 모델 식별자(재생은 녹화 당시 값, 미확인·호출 전 거절은 null), 버전, 지연, 오류 코드가 남는다. 기록 위치는 기본 [logs/trace.jsonl](logs/trace.jsonl)이고 `--trace-file <경로>` 또는 `TRICAST_TRACE_PATH`로 바꾼다. 연습 실행은 `--trace-file /tmp/…`처럼 저장소 밖에 쓴다.
 - **임의 문장 시연:** 재생에 없는 문장은 404 `not_recorded`이다. 임의 문장을 **새로** 해석하려면 전체 설치와 로그인된 `claude` CLI가 있는 기기에서 위 명령의 `--replay app/web/demo/autotune/replay`만 뺀다. `claude auth status`와 사용 한도를 먼저 확인한다. 제공자 한도 초과는 HTTP 503 `provider_limited`이지 AC28의 거절(422)이 아니다. 키·원시 녹화는 제출하지 않는다.
 - **실패에서 테스트까지:** [추적](logs/trace.jsonl)의 `q-705d79f930ce489f825e9b610c229788` → [v2 세트](evals/tune_evalset.jsonl)의 `r_c11` → [수정 전 UCL 채점](evals/results/2026-11-26T0757.json). 한글 573자가 NFD에서 1,173자로 세어져 모델 호출 전 422가 났다. 사람이 정한 기대는 **Qwen/Qwen3-0.6B · 평균 4비트 · tune**이다. 수정 전 재채점은 32/36, 고정 보안 사례의 공격 성공은 0/5였다. 같은 커밋 `26fc532`의 live 기준점 3회(`0838`·`0851`·`0915`)에서도 `r_c11`만 코드 검사로 실패했다. 개선 회차 **R1**(`7e00e19`, NFC 정규화)에서 `r_c11`이 통과하고 A1 0.900→1.000, A7 0.967→1.000(변동 폭 0), 공격 성공 0/5를 유지해 팀이 채택했다 ([결과 표](evals/EVAL_DESIGN.md#최종-면담-기준점-3회와-r1-결과-2026-11-26)).
 - **보안과 개선 이력:** [위협 4종·검사 코드·사례 5건](docs/ARCHITECTURE.md#8-위협-목록-auto-tune-요청과-제안), [지표와 회차 판정법](evals/EVAL_DESIGN.md#최종-면담-36건의-측정-순서), [회차별 CSV](evals/results/history.csv). judge의 독립 사람 라벨 일치율은 0.766(목표 0.80 미달)이므로 judge 점수로 개선을 주장하지 않는다.
 
 ## MVP 사용자 가이드
 
-처음 보는 분이 **GPU · 계정 · API 키 없이 5분 안에** 핵심 기능을 실행해 보는 안내다. 리뷰 기간(11월 11일–18일) 동안 이 안내대로 실행되며, 실행 방법이 바뀌면 이 절을 고친다.
+처음 보는 분이 **GPU · 계정 · API 키 없이 5분 안에** 핵심 기능을 실행해 보는 안내다. 기본 브랜치에서 이 안내대로 실행되며, 실행 방법이 바뀌면 이 절을 고친다.
 
 ### 서비스 소개
 
@@ -93,13 +98,13 @@ tail -1 /tmp/tricast-interview.jsonl
 ### 실행 및 접속 방법
 
 - **저장소**: https://github.com/Youngmin17/TriCast (브랜치 `quantizer_develop` — 기본 브랜치)
-- **지원 환경**: macOS · Linux (Windows 는 WSL), Python 3.10 이상, 최신 Chrome · Edge · Safari. **GPU 는 필요 없다.** (확인한 환경: macOS + Chrome)
+- **지원 환경**: macOS · Linux (Windows 는 WSL), Python 3.11 이상 (아래 최소 설치는 3.11 · 3.14 에서 확인), 최신 Chrome · Edge · Safari. **GPU 는 필요 없다.** (확인한 환경: macOS + Chrome)
 
 ```bash
 git clone https://github.com/Youngmin17/TriCast.git && cd TriCast
-python3 --version                                            # 3.10 이상이어야 한다 (macOS 기본 python3 는 3.9)
+python3 --version                                            # 3.11 이상이어야 한다 (macOS 기본 python3 는 3.9)
 python3 -m venv .venv && source .venv/bin/activate
-pip install fastapi uvicorn pillow numpy jsonschema pyyaml   # 이 체험에 필요한 것만 (torch 불필요)
+pip install -c constraints.txt fastapi uvicorn pillow numpy jsonschema pyyaml   # 이 체험에 필요한 것만 (torch 불필요)
 PYTHONPATH=src python -m app.server --demo --agent evals/fixtures/tune_inputs/s3150/loop.json \
   --replay app/web/demo/autotune/replay
 ```
@@ -174,7 +179,7 @@ AC 는 [`docs/SPEC.md`](docs/SPEC.md#6-수용-기준) §6 의 수용 기준 번�
   - ⑤ 의 압축 크기는 **계산값**이다 (원본 파일의 텐서 수 × 고른 비트). 실제로 만든 모델 패키지는 두 셋업뿐이다 — 0.6B 20% AI 추천(`act_damp05_r3`)과 8B 19% (`auto_3.00`). 다른 셋업은 ⑤ 에 만드는 명령만 나온다. 이 화면에서 쓰는 종전 패키지 실행기는 정수 코드를 풀어 PyTorch 행렬곱으로 계산하며 저비트 전용 커널을 쓰지 않는다. CLI의 타일 실행과 표준 GGUF·HF 배포는 [별도 실측](docs/evidence/2026-11-26_packed_inference.md)을 참조한다. HQQ 층은 공식 라이브러리가 정수 코드를 남기지 않아 BF16 으로 저장한다 (0.6B 에서 4층). 웹에서 바로 내려받는 ONNX는 YOLO11n이다. 언어 모델의 실제 비트폭 ONNX는 아래 CLI로 별도 생성한다.
   - 글꼴은 인터넷이 있을 때 내려받는다 (없으면 기본 글꼴로 보인다).
 - **알려진 오류와 해결**:
-  - `python3` 가 3.9 이하 → 3.10 이상을 설치해 `python3.12 -m venv .venv` 처럼 만든다.
+  - `python3` 가 3.10 이하 → 3.11 이상을 설치해 `python3.12 -m venv .venv` 처럼 만든다 (`constraints.txt` 의 numpy 2.4.6 은 3.11 이상).
   - ③ 에 "레시피 파일: … --agent …" 가 나옴 → 서버를 위 명령처럼 `--agent …` 를 붙여 다시 띄운다.
   - 포트 8765 를 이미 쓰는 중 → 명령 끝에 `--port 8766` 을 붙이고 주소의 포트도 바꾼다.
 - **피드백**: GitHub 이슈로 남겨 주면 된다 (무엇을 하려 했는지 · 본 화면 · 기대한 것).
@@ -360,7 +365,7 @@ Qwen3-0.6B, Llama-3.2-1B, YOLO11n을 대상으로 한 경로다. 링크한 기�
 ### 검사
 
 ```bash
-make check                                                        # ruff + CPU 테스트
+OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 make check                    # ruff + CPU 테스트 (hqq 와 스레드: 설치와 빠른 시작)
 make test-app                                                     # 웹 앱 · Auto-tune · 튜닝 루프 테스트
 node scripts/quantizer/autotune_check.mjs out python <table.json>  # 브라우저 배낭 = Python 배낭 (예산별)
 python evals/run_tune_evals.py --table evals/fixtures/tune_inputs/table.json \
@@ -380,6 +385,7 @@ python evals/run_tune_evals.py --table evals/fixtures/tune_inputs/table.json \
 | `docs/SPEC.md` (MVP 표시) | [`docs/SPEC.md`](docs/SPEC.md) §6 의 MVP 열 | ● 31개 (AC1–AC11 · AC13–AC32), AC12 는 MVP 제외 |
 | `docs/ARCHITECTURE.md` | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | 같은 위치 |
 | `src/<패키지>/` | [`src/tricast/`](src/tricast/) (양자화 · 에뮬레이션 엔진) · [`app/`](app/) (웹 화면 · Auto-tune · 튜닝 루프) | |
+| `data/seed/` (예시 데이터) | [`app/web/demo/`](app/web/demo/) (기록된 측정 · 화면 데이터) · [`evals/fixtures/`](evals/fixtures/) (평가 입력) · [`tests/data/`](tests/data/) (골든 벡터) | 파일 목록은 [추가 안내](#추가-안내)의 샘플 데이터 |
 | `tests/harness/golden_cases.yaml` | [`golden_cases.yaml`](tests/harness/golden_cases.yaml) (AC1–AC6, 엔진) · [`golden_compare.yaml`](tests/harness/golden_compare.yaml) (AC13 · AC14) · **[`golden_tune.yaml`](tests/harness/golden_tune.yaml)** (AC24 · AC28) | 케이스마다 `ac`, 정상 · 경계 · 금지 분류는 각 파일 머리와 `- id:` 줄 주석 (compare 는 `kind`) |
 | `tests/test_<기능>_golden.py` | [`tests/test_golden.py`](tests/test_golden.py) · [`tests/test_compare_golden.py`](tests/test_compare_golden.py) · **[`tests/test_tune_golden.py`](tests/test_tune_golden.py)** | 케이스 파일을 읽어 구현 함수를 호출한다. skip 은 GPU 전용 1건뿐 |
 | `docs/prompts/delegation_<기능>.md` (결함 주입) | [`delegation_golden_harness.md`](docs/prompts/delegation_golden_harness.md) (golden_cases) · [`delegation_compare.md`](docs/prompts/delegation_compare.md) §3-3 (compare) · **[`delegation_tune.md`](docs/prompts/delegation_tune.md)** (tune) · [`delegation_evals.md`](docs/prompts/delegation_evals.md) §1-2 (evals 러너 오답 주입) | 바꾼 파일 · 바꾼 내용 · 실패한 케이스 표 |
